@@ -1,0 +1,305 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { generateNextId } from "@/lib/idgen";
+import { formatDate, statusBadgeClass, type Field, type ModuleSchema } from "@/lib/modules";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { toast } from "sonner";
+
+type Row = Record<string, unknown> & { id: string };
+
+interface Props {
+  module: ModuleSchema;
+}
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+function emptyForm(mod: ModuleSchema): Record<string, unknown> {
+  const f: Record<string, unknown> = {};
+  for (const field of mod.fields) {
+    if (field.type === "number") f[field.name] = 0;
+    else if (field.type === "boolean") f[field.name] = false;
+    else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
+    else if (field.type === "select") f[field.name] = field.options?.[0] ?? "";
+    else f[field.name] = "";
+  }
+  return f;
+}
+
+export function ModulePage({ module: mod }: Props) {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [openForm, setOpenForm] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
+  const [saving, setSaving] = useState(false);
+  const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from(mod.table as never)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) toast.error("লোড করতে সমস্যা: " + error.message);
+    setRows(((data as unknown) as Row[]) ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [mod.key]);
+
+  const filtered = useMemo(() => {
+    let xs = rows;
+    if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      xs = xs.filter((r) =>
+        Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q))
+      );
+    }
+    return xs;
+  }, [rows, search, statusFilter]);
+
+  const startCreate = () => {
+    setEditing(null);
+    setForm(emptyForm(mod));
+    setOpenForm(true);
+  };
+
+  const startEdit = (r: Row) => {
+    setEditing(r);
+    const f: Record<string, unknown> = {};
+    for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
+    setForm(f);
+    setOpenForm(true);
+  };
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      // Build payload, coerce types, drop empty optional dates.
+      const payload: Record<string, unknown> = {};
+      for (const field of mod.fields) {
+        const v = form[field.name];
+        if (field.type === "number") payload[field.name] = Number(v) || 0;
+        else if (field.type === "boolean") payload[field.name] = Boolean(v);
+        else if (field.type === "date") payload[field.name] = v ? v : null;
+        else payload[field.name] = v ?? null;
+      }
+
+      if (editing) {
+        const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editing.id);
+        if (error) throw error;
+        toast.success("আপডেট হয়েছে");
+      } else {
+        const newId = await generateNextId(mod);
+        (payload as Record<string, unknown>)[mod.idColumn] = newId;
+        const { error } = await supabase.from(mod.table as never).insert(payload as never);
+        if (error) throw error;
+        toast.success(`নতুন এন্ট্রি যোগ হয়েছে: ${newId}`);
+      }
+      setOpenForm(false);
+      await load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("সমস্যা: " + msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteRow) return;
+    const { error } = await supabase.from(mod.table as never).delete().eq("id", deleteRow.id);
+    if (error) toast.error("ডিলিট করতে সমস্যা: " + error.message);
+    else { toast.success("ডিলিট হয়েছে"); await load(); }
+    setDeleteRow(null);
+  };
+
+  const listFields = mod.fields.filter((f) => f.showInList);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{mod.label}</h1>
+          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
+        </div>
+        <Dialog open={openForm} onOpenChange={setOpenForm}>
+          <DialogTrigger asChild>
+            <Button onClick={startCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" /> নতুন এন্ট্রি
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+              {mod.fields.map((field) => (
+                <FormField
+                  key={field.name}
+                  field={field}
+                  value={form[field.name]}
+                  onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+                />
+              ))}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
+              <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="খুঁজুন... (নাম, পাসপোর্ট, ID যেকোনো ফিল্ড)"
+                className="pl-8"
+              />
+            </div>
+            {mod.statuses && (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">সব Status</SelectItem>
+                  {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">{mod.idColumn}</TableHead>
+                  {listFields.map((f) => <TableHead key={f.name} className="whitespace-nowrap">{f.label}</TableHead>)}
+                  {mod.computed?.map((c) => <TableHead key={c.name} className="whitespace-nowrap text-right">{c.label}</TableHead>)}
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                ) : filtered.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
+                    {listFields.map((f) => (
+                      <TableCell key={f.name} className="whitespace-nowrap">
+                        {f.name === "status" && mod.statuses ? (
+                          <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                        ) : f.type === "date" ? (
+                          formatDate(r[f.name] as string | null)
+                        ) : f.type === "number" ? (
+                          <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
+                        ) : (
+                          String(r[f.name] ?? "")
+                        )}
+                      </TableCell>
+                    ))}
+                    {mod.computed?.map((c) => {
+                      const v = c.compute(r);
+                      return (
+                        <TableCell key={c.name} className="text-right tabular-nums whitespace-nowrap">
+                          <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>
+                            {v.toLocaleString()}
+                          </span>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteRow(r)}><Trash2 className="h-3.5 w-3.5 text-rose-500" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">ডিলিট</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function FormField({ field, value, onChange }: {
+  field: Field;
+  value: unknown;
+  onChange: (v: unknown) => void;
+}) {
+  const span = field.type === "textarea" ? "sm:col-span-2" : "";
+  return (
+    <div className={`space-y-1.5 ${span}`}>
+      <Label>{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+      {field.type === "textarea" ? (
+        <Textarea value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} rows={2} />
+      ) : field.type === "select" ? (
+        <Select value={(value as string) ?? ""} onValueChange={onChange}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ) : field.type === "boolean" ? (
+        <div className="flex items-center h-10">
+          <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
+          <span className="ml-2 text-sm text-muted-foreground">Yes</span>
+        </div>
+      ) : (
+        <Input
+          type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+          value={field.type === "number" ? (value as number) ?? 0 : (value as string) ?? ""}
+          onChange={(e) => onChange(field.type === "number" ? Number(e.target.value) : e.target.value)}
+          required={field.required}
+        />
+      )}
+    </div>
+  );
+}
