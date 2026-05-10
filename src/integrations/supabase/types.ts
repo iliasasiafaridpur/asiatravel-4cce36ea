@@ -14,6 +14,222 @@ export type Database = {
   }
   public: {
     Tables: {
+      agency_ledger: {
+        Row: {
+          agent_name: string
+          created_at: string
+          entry_date: string
+          id: string
+          ledger_id: string
+          passenger_name: string | null
+          received_amount: number | null
+          remarks: string | null
+          service_type: string | null
+          total_bill: number | null
+          updated_at: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          ledger_id: string
+          passenger_name?: string | null
+          received_amount?: number | null
+          remarks?: string | null
+          service_type?: string | null
+          total_bill?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          ledger_id?: string
+          passenger_name?: string | null
+          received_amount?: number | null
+          remarks?: string | null
+          service_type?: string | null
+          total_bill?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agents: {
+        Row: {
+          address: string | null
+          agent_code: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          agent_code: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          agent_code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bmet_cards: {
+        Row: {
+          agency_sold: string | null
+          attested_date: string | null
+          bmet_id: string
+          cost_price: number | null
+          country_name: string | null
+          created_at: string
+          delivery_date: string | null
+          entry_by: string | null
+          entry_date: string
+          id: string
+          mobile: string | null
+          notes: string | null
+          passenger_name: string
+          passport: string | null
+          received_amount: number | null
+          received_date: string | null
+          sold_price: number | null
+          status: string
+          updated_at: string
+          vendor_bought: string | null
+          vendor_sent_date: string | null
+        }
+        Insert: {
+          agency_sold?: string | null
+          attested_date?: string | null
+          bmet_id: string
+          cost_price?: number | null
+          country_name?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          entry_by?: string | null
+          entry_date?: string
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          passenger_name: string
+          passport?: string | null
+          received_amount?: number | null
+          received_date?: string | null
+          sold_price?: number | null
+          status?: string
+          updated_at?: string
+          vendor_bought?: string | null
+          vendor_sent_date?: string | null
+        }
+        Update: {
+          agency_sold?: string | null
+          attested_date?: string | null
+          bmet_id?: string
+          cost_price?: number | null
+          country_name?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          entry_by?: string | null
+          entry_date?: string
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          passenger_name?: string
+          passport?: string | null
+          received_amount?: number | null
+          received_date?: string | null
+          sold_price?: number | null
+          status?: string
+          updated_at?: string
+          vendor_bought?: string | null
+          vendor_sent_date?: string | null
+        }
+        Relationships: []
+      }
+      kuwait_visas: {
+        Row: {
+          agency_sold: string | null
+          cost_price: number | null
+          created_at: string
+          delivery_date: string | null
+          entry_by: string | null
+          entry_date: string
+          id: string
+          kuwait_id: string
+          medical_status: string | null
+          mobile: string | null
+          notes: string | null
+          passenger_name: string
+          passport: string | null
+          received: number | null
+          sold_price: number | null
+          sponsor_name: string | null
+          status: string
+          updated_at: string
+          vendor_bought: string | null
+          visa_no: string | null
+        }
+        Insert: {
+          agency_sold?: string | null
+          cost_price?: number | null
+          created_at?: string
+          delivery_date?: string | null
+          entry_by?: string | null
+          entry_date?: string
+          id?: string
+          kuwait_id: string
+          medical_status?: string | null
+          mobile?: string | null
+          notes?: string | null
+          passenger_name: string
+          passport?: string | null
+          received?: number | null
+          sold_price?: number | null
+          sponsor_name?: string | null
+          status?: string
+          updated_at?: string
+          vendor_bought?: string | null
+          visa_no?: string | null
+        }
+        Update: {
+          agency_sold?: string | null
+          cost_price?: number | null
+          created_at?: string
+          delivery_date?: string | null
+          entry_by?: string | null
+          entry_date?: string
+          id?: string
+          kuwait_id?: string
+          medical_status?: string | null
+          mobile?: string | null
+          notes?: string | null
+          passenger_name?: string
+          passport?: string | null
+          received?: number | null
+          sold_price?: number | null
+          sponsor_name?: string | null
+          status?: string
+          updated_at?: string
+          vendor_bought?: string | null
+          visa_no?: string | null
+        }
+        Relationships: []
+      }
       passengers: {
         Row: {
           created_at: string
@@ -47,12 +263,266 @@ export type Database = {
         }
         Relationships: []
       }
+      saudi_visas: {
+        Row: {
+          agency_sold: string | null
+          bmet_finger: boolean | null
+          bmet_status: string | null
+          bmet_training: boolean | null
+          cost_price: number | null
+          created_at: string
+          delivery_date: string | null
+          entry_by: string | null
+          entry_date: string
+          final_visa_no: string | null
+          id: string
+          id_no: string | null
+          medical_status: string | null
+          mobile: string | null
+          mofa_no: string | null
+          notes: string | null
+          passenger_name: string
+          passport: string | null
+          received_amount: number | null
+          received_vendor: number | null
+          rl_no: string | null
+          saudi_id: string
+          sold_price: number | null
+          sponsor_name: string | null
+          status: string
+          tasheer_finger_date: string | null
+          update_date: string | null
+          updated_at: string
+          vendor_bought: string | null
+          vendor_sent_date: string | null
+          visa_no: string | null
+          visa_type: string | null
+        }
+        Insert: {
+          agency_sold?: string | null
+          bmet_finger?: boolean | null
+          bmet_status?: string | null
+          bmet_training?: boolean | null
+          cost_price?: number | null
+          created_at?: string
+          delivery_date?: string | null
+          entry_by?: string | null
+          entry_date?: string
+          final_visa_no?: string | null
+          id?: string
+          id_no?: string | null
+          medical_status?: string | null
+          mobile?: string | null
+          mofa_no?: string | null
+          notes?: string | null
+          passenger_name: string
+          passport?: string | null
+          received_amount?: number | null
+          received_vendor?: number | null
+          rl_no?: string | null
+          saudi_id: string
+          sold_price?: number | null
+          sponsor_name?: string | null
+          status?: string
+          tasheer_finger_date?: string | null
+          update_date?: string | null
+          updated_at?: string
+          vendor_bought?: string | null
+          vendor_sent_date?: string | null
+          visa_no?: string | null
+          visa_type?: string | null
+        }
+        Update: {
+          agency_sold?: string | null
+          bmet_finger?: boolean | null
+          bmet_status?: string | null
+          bmet_training?: boolean | null
+          cost_price?: number | null
+          created_at?: string
+          delivery_date?: string | null
+          entry_by?: string | null
+          entry_date?: string
+          final_visa_no?: string | null
+          id?: string
+          id_no?: string | null
+          medical_status?: string | null
+          mobile?: string | null
+          mofa_no?: string | null
+          notes?: string | null
+          passenger_name?: string
+          passport?: string | null
+          received_amount?: number | null
+          received_vendor?: number | null
+          rl_no?: string | null
+          saudi_id?: string
+          sold_price?: number | null
+          sponsor_name?: string | null
+          status?: string
+          tasheer_finger_date?: string | null
+          update_date?: string | null
+          updated_at?: string
+          vendor_bought?: string | null
+          vendor_sent_date?: string | null
+          visa_no?: string | null
+          visa_type?: string | null
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          agency_sold: string | null
+          airline: string | null
+          cost_price: number | null
+          created_at: string
+          entry_by: string | null
+          entry_date: string
+          flight_date: string | null
+          id: string
+          mobile: string | null
+          notes: string | null
+          passenger_name: string
+          passport: string | null
+          pnr: string | null
+          received: number | null
+          sold_price: number | null
+          status: string
+          ticket_id: string
+          updated_at: string
+          vendor_bought: string | null
+        }
+        Insert: {
+          agency_sold?: string | null
+          airline?: string | null
+          cost_price?: number | null
+          created_at?: string
+          entry_by?: string | null
+          entry_date?: string
+          flight_date?: string | null
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          passenger_name: string
+          passport?: string | null
+          pnr?: string | null
+          received?: number | null
+          sold_price?: number | null
+          status?: string
+          ticket_id: string
+          updated_at?: string
+          vendor_bought?: string | null
+        }
+        Update: {
+          agency_sold?: string | null
+          airline?: string | null
+          cost_price?: number | null
+          created_at?: string
+          entry_by?: string | null
+          entry_date?: string
+          flight_date?: string | null
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          passenger_name?: string
+          passport?: string | null
+          pnr?: string | null
+          received?: number | null
+          sold_price?: number | null
+          status?: string
+          ticket_id?: string
+          updated_at?: string
+          vendor_bought?: string | null
+        }
+        Relationships: []
+      }
+      vendor_ledger: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          ledger_id: string
+          paid_amount: number | null
+          passenger_name: string | null
+          remarks: string | null
+          service_type: string | null
+          total_payable: number | null
+          updated_at: string
+          vendor_name: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          ledger_id: string
+          paid_amount?: number | null
+          passenger_name?: string | null
+          remarks?: string | null
+          service_type?: string | null
+          total_payable?: number | null
+          updated_at?: string
+          vendor_name: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          ledger_id?: string
+          paid_amount?: number | null
+          passenger_name?: string | null
+          remarks?: string | null
+          service_type?: string | null
+          total_payable?: number | null
+          updated_at?: string
+          vendor_name?: string
+        }
+        Relationships: []
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          vendor_code: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          vendor_code: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          vendor_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      next_module_id: {
+        Args: { _column: string; _prefix: string; _table: string }
+        Returns: string
+      }
       next_passenger_id: { Args: never; Returns: string }
+      next_simple_id: {
+        Args: { _column: string; _prefix: string; _table: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
