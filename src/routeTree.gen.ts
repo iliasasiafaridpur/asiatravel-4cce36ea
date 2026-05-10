@@ -9,8 +9,80 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorsRouteImport } from './routes/vendors'
+import { Route as VendorLedgerRouteImport } from './routes/vendor-ledger'
+import { Route as TicketsRouteImport } from './routes/tickets'
+import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
+import { Route as ManpowerRouteImport } from './routes/manpower'
+import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
+import { Route as InvoiceRouteImport } from './routes/invoice'
+import { Route as DayBookRouteImport } from './routes/day-book'
+import { Route as BmetRouteImport } from './routes/bmet'
+import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
+import { Route as ActionBoardRouteImport } from './routes/action-board'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VendorsRoute = VendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorLedgerRoute = VendorLedgerRouteImport.update({
+  id: '/vendor-ledger',
+  path: '/vendor-ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TicketsRoute = TicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SaudiVisaRoute = SaudiVisaRouteImport.update({
+  id: '/saudi-visa',
+  path: '/saudi-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManpowerRoute = ManpowerRouteImport.update({
+  id: '/manpower',
+  path: '/manpower',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KuwaitVisaRoute = KuwaitVisaRouteImport.update({
+  id: '/kuwait-visa',
+  path: '/kuwait-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoiceRoute = InvoiceRouteImport.update({
+  id: '/invoice',
+  path: '/invoice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DayBookRoute = DayBookRouteImport.update({
+  id: '/day-book',
+  path: '/day-book',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BmetRoute = BmetRouteImport.update({
+  id: '/bmet',
+  path: '/bmet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyLedgerRoute = AgencyLedgerRouteImport.update({
+  id: '/agency-ledger',
+  path: '/agency-ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActionBoardRoute = ActionBoardRouteImport.update({
+  id: '/action-board',
+  path: '/action-board',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +91,200 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/action-board': typeof ActionBoardRoute
+  '/agency-ledger': typeof AgencyLedgerRoute
+  '/agents': typeof AgentsRoute
+  '/bmet': typeof BmetRoute
+  '/day-book': typeof DayBookRoute
+  '/invoice': typeof InvoiceRoute
+  '/kuwait-visa': typeof KuwaitVisaRoute
+  '/manpower': typeof ManpowerRoute
+  '/saudi-visa': typeof SaudiVisaRoute
+  '/tickets': typeof TicketsRoute
+  '/vendor-ledger': typeof VendorLedgerRoute
+  '/vendors': typeof VendorsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/action-board': typeof ActionBoardRoute
+  '/agency-ledger': typeof AgencyLedgerRoute
+  '/agents': typeof AgentsRoute
+  '/bmet': typeof BmetRoute
+  '/day-book': typeof DayBookRoute
+  '/invoice': typeof InvoiceRoute
+  '/kuwait-visa': typeof KuwaitVisaRoute
+  '/manpower': typeof ManpowerRoute
+  '/saudi-visa': typeof SaudiVisaRoute
+  '/tickets': typeof TicketsRoute
+  '/vendor-ledger': typeof VendorLedgerRoute
+  '/vendors': typeof VendorsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/action-board': typeof ActionBoardRoute
+  '/agency-ledger': typeof AgencyLedgerRoute
+  '/agents': typeof AgentsRoute
+  '/bmet': typeof BmetRoute
+  '/day-book': typeof DayBookRoute
+  '/invoice': typeof InvoiceRoute
+  '/kuwait-visa': typeof KuwaitVisaRoute
+  '/manpower': typeof ManpowerRoute
+  '/saudi-visa': typeof SaudiVisaRoute
+  '/tickets': typeof TicketsRoute
+  '/vendor-ledger': typeof VendorLedgerRoute
+  '/vendors': typeof VendorsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/action-board'
+    | '/agency-ledger'
+    | '/agents'
+    | '/bmet'
+    | '/day-book'
+    | '/invoice'
+    | '/kuwait-visa'
+    | '/manpower'
+    | '/saudi-visa'
+    | '/tickets'
+    | '/vendor-ledger'
+    | '/vendors'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/action-board'
+    | '/agency-ledger'
+    | '/agents'
+    | '/bmet'
+    | '/day-book'
+    | '/invoice'
+    | '/kuwait-visa'
+    | '/manpower'
+    | '/saudi-visa'
+    | '/tickets'
+    | '/vendor-ledger'
+    | '/vendors'
+  id:
+    | '__root__'
+    | '/'
+    | '/action-board'
+    | '/agency-ledger'
+    | '/agents'
+    | '/bmet'
+    | '/day-book'
+    | '/invoice'
+    | '/kuwait-visa'
+    | '/manpower'
+    | '/saudi-visa'
+    | '/tickets'
+    | '/vendor-ledger'
+    | '/vendors'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActionBoardRoute: typeof ActionBoardRoute
+  AgencyLedgerRoute: typeof AgencyLedgerRoute
+  AgentsRoute: typeof AgentsRoute
+  BmetRoute: typeof BmetRoute
+  DayBookRoute: typeof DayBookRoute
+  InvoiceRoute: typeof InvoiceRoute
+  KuwaitVisaRoute: typeof KuwaitVisaRoute
+  ManpowerRoute: typeof ManpowerRoute
+  SaudiVisaRoute: typeof SaudiVisaRoute
+  TicketsRoute: typeof TicketsRoute
+  VendorLedgerRoute: typeof VendorLedgerRoute
+  VendorsRoute: typeof VendorsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendors': {
+      id: '/vendors'
+      path: '/vendors'
+      fullPath: '/vendors'
+      preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor-ledger': {
+      id: '/vendor-ledger'
+      path: '/vendor-ledger'
+      fullPath: '/vendor-ledger'
+      preLoaderRoute: typeof VendorLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tickets': {
+      id: '/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof TicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saudi-visa': {
+      id: '/saudi-visa'
+      path: '/saudi-visa'
+      fullPath: '/saudi-visa'
+      preLoaderRoute: typeof SaudiVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manpower': {
+      id: '/manpower'
+      path: '/manpower'
+      fullPath: '/manpower'
+      preLoaderRoute: typeof ManpowerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kuwait-visa': {
+      id: '/kuwait-visa'
+      path: '/kuwait-visa'
+      fullPath: '/kuwait-visa'
+      preLoaderRoute: typeof KuwaitVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoice': {
+      id: '/invoice'
+      path: '/invoice'
+      fullPath: '/invoice'
+      preLoaderRoute: typeof InvoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/day-book': {
+      id: '/day-book'
+      path: '/day-book'
+      fullPath: '/day-book'
+      preLoaderRoute: typeof DayBookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bmet': {
+      id: '/bmet'
+      path: '/bmet'
+      fullPath: '/bmet'
+      preLoaderRoute: typeof BmetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency-ledger': {
+      id: '/agency-ledger'
+      path: '/agency-ledger'
+      fullPath: '/agency-ledger'
+      preLoaderRoute: typeof AgencyLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/action-board': {
+      id: '/action-board'
+      path: '/action-board'
+      fullPath: '/action-board'
+      preLoaderRoute: typeof ActionBoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,7 +297,29 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActionBoardRoute: ActionBoardRoute,
+  AgencyLedgerRoute: AgencyLedgerRoute,
+  AgentsRoute: AgentsRoute,
+  BmetRoute: BmetRoute,
+  DayBookRoute: DayBookRoute,
+  InvoiceRoute: InvoiceRoute,
+  KuwaitVisaRoute: KuwaitVisaRoute,
+  ManpowerRoute: ManpowerRoute,
+  SaudiVisaRoute: SaudiVisaRoute,
+  TicketsRoute: TicketsRoute,
+  VendorLedgerRoute: VendorLedgerRoute,
+  VendorsRoute: VendorsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
