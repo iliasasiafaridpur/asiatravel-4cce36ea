@@ -5,13 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, Search } from "lucide-react";
 import { toast } from "sonner";
+import { FormSections } from "@/components/ModulePage";
+import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
@@ -20,25 +19,38 @@ export const Route = createFileRoute("/action-board")({
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+function emptyForm(modKey: string): Record<string, unknown> {
+  const mod = moduleByKey(modKey)!;
+  const f: Record<string, unknown> = {};
+  for (const field of mod.fields) {
+    if (field.type === "number") f[field.name] = 0;
+    else if (field.type === "boolean") f[field.name] = false;
+    else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
+    else if (field.type === "select") f[field.name] = field.options?.[0] ?? "";
+    else f[field.name] = "";
+  }
+  return f;
+}
+
 function ActionBoardPage() {
   const navigate = useNavigate();
+  const { user, profile } = useCurrentUser();
   const [category, setCategory] = useState(SERVICE_CATEGORIES[0].key);
-  const [form, setForm] = useState<Record<string, unknown>>({ entry_date: todayIso() });
+  const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(SERVICE_CATEGORIES[0].key));
   const [saving, setSaving] = useState(false);
 
   const mod = moduleByKey(category)!;
 
   const onCategoryChange = (v: string) => {
     setCategory(v);
-    setForm({ entry_date: todayIso() });
+    setForm(emptyForm(v));
   };
-
-  const set = (k: string, v: unknown) => setForm((s) => ({ ...s, [k]: v }));
 
   const save = async () => {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {};
+      const hasField = (n: string) => mod.fields.some((f) => f.name === n);
       for (const f of mod.fields) {
         const v = form[f.name];
         if (f.type === "number") payload[f.name] = Number(v) || 0;
@@ -51,12 +63,23 @@ function ActionBoardPage() {
           return;
         }
       }
+
+      // Audit fields
+      const me = displayName(profile, user);
+      const recvAmount = ["received", "received_amount", "paid_amount"]
+        .reduce((s, c) => s + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
+      if (user?.id) {
+        (payload as Record<string, unknown>).created_by = user.id;
+        if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
+      }
+      if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+
       const newId = await generateNextId(mod);
       payload[mod.idColumn] = newId;
       const { error } = await supabase.from(mod.table as never).insert(payload as never);
       if (error) throw error;
       toast.success(`Saved: ${newId}`);
-      setForm({ entry_date: todayIso() });
+      setForm(emptyForm(category));
     } catch (e) {
       toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -98,35 +121,15 @@ function ActionBoardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
-            {mod.fields.map((f) => (
-              <div key={f.name} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
-                <Label>{f.label}{f.required && <span className="text-rose-500"> *</span>}</Label>
-                <div className="mt-1.5">
-                  {f.type === "textarea" ? (
-                    <Textarea value={(form[f.name] as string) ?? ""} onChange={(e) => set(f.name, e.target.value)} rows={2} />
-                  ) : f.type === "select" ? (
-                    <Select value={(form[f.name] as string) ?? f.options?.[0] ?? ""} onValueChange={(v) => set(f.name, v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {f.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  ) : f.type === "boolean" ? (
-                    <div className="flex items-center h-10">
-                      <Checkbox checked={Boolean(form[f.name])} onCheckedChange={(v) => set(f.name, Boolean(v))} />
-                      <span className="ml-2 text-sm text-muted-foreground">Yes</span>
-                    </div>
-                  ) : (
-                    <Input
-                      type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
-                      value={f.type === "number" ? (form[f.name] as number) ?? 0 : (form[f.name] as string) ?? ""}
-                      onChange={(e) => set(f.name, f.type === "number" ? Number(e.target.value) : e.target.value)}
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
+          {/* Same 3-section form as the edit dialog */}
+          <div className="border-t border-border pt-2">
+            <FormSections mod={mod} form={form} setForm={setForm} />
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-border">
+            <Button onClick={save} disabled={saving} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+              <Save className="h-4 w-4" /> {saving ? "Saving..." : "SAVE DATA"}
+            </Button>
           </div>
         </CardContent>
       </Card>
