@@ -230,6 +230,27 @@ export type Database = {
         }
         Relationships: []
       }
+      lookups: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          value?: string
+        }
+        Relationships: []
+      }
       passengers: {
         Row: {
           created_at: string

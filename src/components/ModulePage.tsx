@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, statusBadgeClass, type Field, type ModuleSchema } from "@/lib/modules";
+import { formatDate, statusBadgeClass, type Field, type ModuleSchema, type Section } from "@/lib/modules";
+import { LookupSelect } from "@/components/LookupSelect";
+import { applyFormat, capitalizeWords } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,16 +159,8 @@ export function ModulePage({ module: mod }: Props) {
             <DialogHeader>
               <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
-              {mod.fields.map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={form[field.name]}
-                  onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
-                />
-              ))}
-            </div>
+            <FormSections mod={mod} form={form} setForm={setForm} />
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
               <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
@@ -269,19 +263,64 @@ export function ModulePage({ module: mod }: Props) {
   );
 }
 
+const SECTION_LABELS: Record<Section, string> = {
+  passenger: "১. Passenger Details",
+  agency: "২. Sub Agency / Reference",
+  vendor: "৩. Vendor Information",
+};
+
+function FormSections({ mod, form, setForm }: {
+  mod: ModuleSchema;
+  form: Record<string, unknown>;
+  setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+}) {
+  const sections: Section[] = ["passenger", "agency", "vendor"];
+  const grouped = sections
+    .map((s) => ({ section: s, fields: mod.fields.filter((f) => (f.section ?? "passenger") === s) }))
+    .filter((g) => g.fields.length > 0);
+  // If no field uses sections at all, render as one block (e.g. agents/vendors/ledgers).
+  const usesSections = mod.fields.some((f) => f.section);
+  return (
+    <div className="space-y-5 py-2">
+      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: mod.fields }]).map((g) => (
+        <div key={g.section}>
+          {usesSections && (
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 pb-1 border-b">
+              {SECTION_LABELS[g.section]}
+            </h3>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {g.fields.map((field) => (
+              <FormField
+                key={field.name}
+                field={field}
+                value={form[field.name]}
+                onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FormField({ field, value, onChange }: {
   field: Field;
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
   const span = field.type === "textarea" ? "sm:col-span-2" : "";
+  const strVal = (value as string) ?? "";
   return (
     <div className={`space-y-1.5 ${span}`}>
       <Label>{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
-      {field.type === "textarea" ? (
-        <Textarea value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} rows={2} />
+      {field.lookup ? (
+        <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} />
+      ) : field.type === "textarea" ? (
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={2} />
       ) : field.type === "select" ? (
-        <Select value={(value as string) ?? ""} onValueChange={onChange}>
+        <Select value={strVal} onValueChange={onChange}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -295,11 +334,18 @@ function FormField({ field, value, onChange }: {
       ) : (
         <Input
           type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-          value={field.type === "number" ? (value as number) ?? 0 : (value as string) ?? ""}
-          onChange={(e) => onChange(field.type === "number" ? Number(e.target.value) : e.target.value)}
+          value={field.type === "number" ? (value as number) ?? 0 : strVal}
+          onChange={(e) => {
+            if (field.type === "number") onChange(Number(e.target.value));
+            else onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
+          }}
+          onBlur={(e) => {
+            if (field.format === "name") onChange(capitalizeWords(e.target.value));
+          }}
           required={field.required}
         />
       )}
     </div>
   );
 }
+
