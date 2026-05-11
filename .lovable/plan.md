@@ -1,69 +1,83 @@
-পরিকল্পনা — চারটি ফিচার একসাথে যোগ করা হবে।
+## লক্ষ্য
+আপনার সফটওয়্যার টিকে একটি সম্পূর্ণ স্মার্ট ট্রাভেল এজেন্সি ম্যানেজমেন্ট সিস্টেমে আপগ্রেড করা — ২ জন ইউজার (Manager + Md sir), সম্পূর্ণ অডিট ট্রেইল, অটো-লেজার, আধুনিক ড্যাশবোর্ড।
 
-## ১. Database — Dynamic Lookup table
+---
 
-নতুন একটি `lookups` টেবিল তৈরি হবে যেখানে ডাইনামিক ড্রপডাউন অপশনগুলো জমা থাকবে:
+## ১) ইউজার ও অডিট ট্রেইল (Who did what)
 
-```
-lookups (id, kind, value, created_at)
-kind = 'country' | 'airline' | 'sub_agency' | 'vendor'
-unique (kind, value)
-```
+- **প্রোফাইল টেবিল** — `profiles (user_id, full_name, role)` যেখানে আপনি ও Md sir-এর নাম রাখা হবে। লগইন-এর পর App জানবে কোন ইউজার লগইন আছে।
+- প্রতিটি মূল টেবিলে (tickets, bmet_cards, saudi_visas, kuwait_visas, agency_ledger, vendor_ledger) যোগ হবে:
+  - `created_by uuid` — কে এন্ট্রি করেছে
+  - `received_by uuid` — কে টাকা রিসিভ করেছে (received > 0 হলে)
+  - `entry_by` কলামটি অটো-পূর্ণ হবে লগইন ইউজারের নাম দিয়ে
+- নতুন টেবিল **`cash_transfers`** — Manager → Md sir হ্যান্ড ক্যাশ / ব্যাংক / অন্যান্য খরচের রেকর্ড: তারিখ, from_user, to_user, amount, method (Hand Cash / Bank / Other), purpose, remarks
+- নতুন পেজ `/cash-transfers` — এন্ট্রি ও রিপোর্ট
 
-পাবলিক RLS (insert/select/delete) থাকবে। কিছু ডিফল্ট কান্ট্রি/এয়ারলাইন seed করা হবে।
+## ২) অটো-লেজার সিস্টেম
 
-কোনো বিদ্যমান টেবিলের কলাম পরিবর্তন/মুছে ফেলা হবে না — শুধু লেবেল পরিবর্তন:
-- `agency_sold` কলামে এখনো ডেটা সেভ হবে, কিন্তু UI-তে দেখাবে **Sub Agency / Reference**
-- `vendor_bought` কলামে vendor নাম সেভ হবে, UI ড্রপডাউন থেকে
-- BMET-এর `received_date` লেবেল হবে **Received Date From Vendor**
+- Tickets / BMET / Saudi / Kuwait — যেকোনো এন্ট্রিতে `agency_sold` থাকলে সেটা স্বয়ংক্রিয়ভাবে `agency_ledger`-এ যোগ হবে (DB ট্রিগার দিয়ে)। পরে আপডেটে লেজার সিঙ্ক হবে।
+- একইভাবে `vendor_bought` থাকলে `vendor_ledger`-এ অটো এন্ট্রি।
+- নতুন `agents` যোগ করলে — `agency_ledger`-এ একটি opening row তৈরি হবে যেন তার নামে হিসাব খোলা থাকে। একইভাবে `vendors` → `vendor_ledger`।
+- Agency / Vendor পেজে balance summary দেখাবে (কত পাওনা, কত পরিশোধিত)।
 
-## ২. modules.ts schema পরিবর্তন
+## ৩) আধুনিক ড্যাশবোর্ড (রঙিন, রিয়েল-টাইম)
 
-প্রতিটি ফিল্ডে নতুন optional প্রপার্টি:
-- `lookup?: 'country' | 'airline' | 'sub_agency' | 'vendor'` — ডাইনামিক ড্রপডাউন
-- `format?: 'name' | 'passport' | 'mobile'` — ইনপুট ফরম্যাটিং
-- `section?: 'passenger' | 'agency' | 'vendor'` — ফর্মে গ্রুপিং
+- সম্পূর্ণ নতুন ড্যাশবোর্ড — সব মডিউলের ডেটা টানবে (এখন শুধু passengers টেবিল টানে — সেজন্যই হালনাগাদ হয় না)
+- **Stat Cards** (গ্রেডিয়েন্ট): মোট টিকিট, BMET, Saudi, Kuwait, মোট বিক্রি, মোট রিসিভ, মোট বাকি, মোট লাভ
+- **চার্টস**: মাসিক বিক্রি vs রিসিভ (Area chart), সার্ভিস-ভিত্তিক pie, ইউজার-ভিত্তিক রিসিভ bar chart, সর্বশেষ ৭ দিনের এন্ট্রি
+- **Realtime** — Supabase realtime subscribe, কেউ নতুন এন্ট্রি দিলে সাথে সাথে ড্যাশবোর্ড আপডেট
+- **Quick Actions** — সরাসরি Action Board / Day Book বাটন
+- React Query auto-refetch প্রতি ৩০ সেকেন্ডে + window focus-এ
 
-ফিল্ডের ক্রম রিঅর্ডার (Tickets, BMET, Saudi/Kuwait Visa, Manpower):
-1. **Passenger section** — entry_date, passenger_name, passport, mobile, [airline/visa_no/country], flight_date, sold_price, status
-2. **Sub Agency / Reference section** — sub_agency (dropdown), received (পেমেন্ট)
-3. **Vendor section** — vendor (dropdown), cost_price, vendor_sent_date, received_date_from_vendor, pnr/visa_no, notes
+## ৪) Action Board ৩-সেকশন ফর্ম
 
-লেবেল পরিবর্তন: "Agency Sold" → "Sub Agency / Reference", "Vendor Bought" → "Vendor", "Received Date" → "Received Date From Vendor"।
+বর্তমানে Action Board সব ফিল্ড একসাথে দেখায়। এটাকে Edit Dialog-এর মতো ৩ ভাগে দেখাব:
+- ১. Passenger Details & Price
+- ২. Sub Agency / Reference
+- ৩. Vendor Information
 
-## ৩. ModulePage ফর্ম পরিবর্তন
+`ModulePage`-এর `FormSections` কম্পোনেন্ট রিইউজ করব যেন এক জায়গায় চেঞ্জ → সব জায়গায় কাজ করে।
 
-- **Section heading**: ফর্মে তিনটি সেকশন হেডার দেখাবে — Passenger Details, Sub Agency / Reference, Vendor Information
-- **LookupSelect কম্পোনেন্ট**: ড্রপডাউন + পাশে ছোট `+` বাটন। `+` চাপলে inline dialog খোলে নতুন value যোগ করার জন্য, save হলে তাৎক্ষণিক list-এ যুক্ত হয় ও সিলেক্ট হয়
-- **Input ফরম্যাটিং**:
-  - `format='name'` → প্রতিটি শব্দের প্রথম অক্ষর Capitalize on blur
-  - `format='passport'` → অক্ষর uppercase, on input
-  - `format='mobile'` → শুধু digit রাখে, ৫টি digit-এর পর `-` insert (mask), max 12 chars (`01711-XXXXXX`)
-- তারিখ display সর্বত্র `formatDate()` (DD-MMM-YYYY) — এটি `modules.ts`-এ আছে, list view-তে ইতিমধ্যে ব্যবহৃত
+## ৫) UX ছোট উন্নতি
 
-## ৪. Smart Dashboard — `src/routes/index.tsx` পুনর্নির্মাণ
+- লগআউট বাটনে ইউজারের নাম দেখাবে ("Manager", "Md Sir")
+- Day Book-এ "Entered By" ও "Received By" কলাম
+- প্রতিটি ledger row-এ ইউজার ব্যাজ
 
-নতুন কন্ট্রোল:
-- **Date Range Picker** (Popover + shadcn Calendar): "All / This Month / This Year / Custom" preset + custom date range
-- **Module ফিল্টার** চিপ-গ্রুপ (Tickets, BMET, Saudi Visa, Kuwait Visa, Manpower)
-- **Country ফিল্টার** ড্রপডাউন — শুধু Tickets+BMET সিলেক্ট থাকলে দেখাবে; দেশ অনুযায়ী চার্ট/স্ট্যাট ফিল্টার করবে (Tickets-এ এয়ারলাইন/route ডেটা; BMET-এ `country_name`)
-- চারটি গ্রাফ:
-  1. **Pie chart** — মডিউলভিত্তিক এন্ট্রি ভাগ
-  2. **Bar chart** — মাসিক এন্ট্রি (ফিল্টার অনুযায়ী)
-  3. **Pie chart** — Status distribution
-  4. **Bar chart** — Top countries (BMET) বা Top airlines (Tickets)
-- উপরে স্ট্যাট কার্ড (মোট entries, মোট sold, মোট received, due) — ফিল্টার হিসেবে আপডেট হবে
-- সাম্প্রতিক এন্ট্রি লিস্ট — DD-MMM-YYYY ফরম্যাটে
+---
 
-সব চার্ট recharts দিয়ে interactive (tooltip, color cells)।
+## টেকনিক্যাল বিবরণ
 
-## ফাইল পরিবর্তনসমূহ
+**DB মাইগ্রেশন:**
+1. `profiles` টেবিল + auto-create trigger on auth.users insert
+2. `cash_transfers` টেবিল
+3. ৬টি মূল টেবিলে `created_by`, `received_by` (uuid, nullable) যোগ
+4. ট্রিগার: `sync_agency_ledger()` ও `sync_vendor_ledger()` — INSERT/UPDATE on tickets/bmet/saudi/kuwait
+5. ট্রিগার: `agents` INSERT → opening agency_ledger row; `vendors` INSERT → opening vendor_ledger row
+6. RLS — সবাইকে read/write দেওয়া হবে (যেহেতু office sharing model)
 
-- **নতুন migration**: `lookups` টেবিল + RLS + কিছু seed data
-- **নতুন**: `src/components/LookupSelect.tsx`
-- **নতুন**: `src/lib/format.ts` (input formatters)
-- **এডিট**: `src/lib/modules.ts` (field section/lookup/format meta + reorder)
-- **এডিট**: `src/components/ModulePage.tsx` (section heading + LookupSelect + formatter integration)
-- **এডিট**: `src/routes/index.tsx` (Smart Dashboard বানানো)
+**ফ্রন্টএন্ড:**
+- `src/hooks/useCurrentUser.ts` — লগইন ইউজার + profile
+- `src/components/Dashboard.tsx` — সম্পূর্ণ পুনর্লিখন
+- `src/components/ActionBoard.tsx` ও `src/routes/action-board.tsx` — ৩-সেকশন ফর্ম (FormSections রিইউজ)
+- `src/routes/cash-transfers.tsx` — নতুন পেজ
+- `src/lib/modules.ts` — `cash_transfers` মডিউল যোগ
+- `src/components/AppSidebar.tsx` — Cash Transfer লিঙ্ক
+- `src/components/ModulePage.tsx` — submit-এ created_by/received_by সেট
 
-ডেটাবেস স্কিমাতে কোনো destructive পরিবর্তন নেই; পুরনো ডেটা অক্ষুন্ন থাকবে।
+**Realtime:** Dashboard mount-এ ৬টি টেবিলে subscribe → invalidate queries।
+
+---
+
+## প্রথমবার Admin তৈরি (আপনার করণীয়)
+
+মাইগ্রেশন approve করার পর আমি কোড deploy করব। তারপর:
+1. Lovable Cloud → Users → Add User
+   - Email: `01XXXXXXXXX@asiatravel.local` (আপনার ফোন)
+   - Password + Auto-Confirm ✅
+2. একই ভাবে Md sir-এর জন্য আরেকটা
+3. Cloud → SQL → প্রতিটি user-এর `profiles` row-এ `full_name` ('Manager' / 'Md Sir') ও `role` সেট করব (আমি instructions দেব)
+
+---
+
+**Approve করলে আমি প্রথমে DB মাইগ্রেশন submit করব, তারপর সব কোড একসাথে আপডেট করব।**

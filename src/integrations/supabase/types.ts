@@ -18,39 +18,51 @@ export type Database = {
         Row: {
           agent_name: string
           created_at: string
+          created_by: string | null
           entry_date: string
           id: string
           ledger_id: string
           passenger_name: string | null
           received_amount: number | null
+          received_by: string | null
           remarks: string | null
           service_type: string | null
+          source_id: string | null
+          source_table: string | null
           total_bill: number | null
           updated_at: string
         }
         Insert: {
           agent_name: string
           created_at?: string
+          created_by?: string | null
           entry_date?: string
           id?: string
           ledger_id: string
           passenger_name?: string | null
           received_amount?: number | null
+          received_by?: string | null
           remarks?: string | null
           service_type?: string | null
+          source_id?: string | null
+          source_table?: string | null
           total_bill?: number | null
           updated_at?: string
         }
         Update: {
           agent_name?: string
           created_at?: string
+          created_by?: string | null
           entry_date?: string
           id?: string
           ledger_id?: string
           passenger_name?: string | null
           received_amount?: number | null
+          received_by?: string | null
           remarks?: string | null
           service_type?: string | null
+          source_id?: string | null
+          source_table?: string | null
           total_bill?: number | null
           updated_at?: string
         }
@@ -97,6 +109,7 @@ export type Database = {
           cost_price: number | null
           country_name: string | null
           created_at: string
+          created_by: string | null
           delivery_date: string | null
           entry_by: string | null
           entry_date: string
@@ -106,6 +119,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           received_amount: number | null
+          received_by: string | null
           received_date: string | null
           sold_price: number | null
           status: string
@@ -120,6 +134,7 @@ export type Database = {
           cost_price?: number | null
           country_name?: string | null
           created_at?: string
+          created_by?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -129,6 +144,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           received_amount?: number | null
+          received_by?: string | null
           received_date?: string | null
           sold_price?: number | null
           status?: string
@@ -143,6 +159,7 @@ export type Database = {
           cost_price?: number | null
           country_name?: string | null
           created_at?: string
+          created_by?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -152,6 +169,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           received_amount?: number | null
+          received_by?: string | null
           received_date?: string | null
           sold_price?: number | null
           status?: string
@@ -161,11 +179,63 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          from_name: string | null
+          from_user: string | null
+          id: string
+          method: string
+          purpose: string | null
+          remarks: string | null
+          to_name: string | null
+          to_user: string | null
+          transfer_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          from_name?: string | null
+          from_user?: string | null
+          id?: string
+          method?: string
+          purpose?: string | null
+          remarks?: string | null
+          to_name?: string | null
+          to_user?: string | null
+          transfer_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          from_name?: string | null
+          from_user?: string | null
+          id?: string
+          method?: string
+          purpose?: string | null
+          remarks?: string | null
+          to_name?: string | null
+          to_user?: string | null
+          transfer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kuwait_visas: {
         Row: {
           agency_sold: string | null
           cost_price: number | null
           created_at: string
+          created_by: string | null
           delivery_date: string | null
           entry_by: string | null
           entry_date: string
@@ -177,6 +247,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           received: number | null
+          received_by: string | null
           sold_price: number | null
           sponsor_name: string | null
           status: string
@@ -188,6 +259,7 @@ export type Database = {
           agency_sold?: string | null
           cost_price?: number | null
           created_at?: string
+          created_by?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -199,6 +271,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           received?: number | null
+          received_by?: string | null
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
@@ -210,6 +283,7 @@ export type Database = {
           agency_sold?: string | null
           cost_price?: number | null
           created_at?: string
+          created_by?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -221,6 +295,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           received?: number | null
+          received_by?: string | null
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
@@ -284,6 +359,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saudi_visas: {
         Row: {
           agency_sold: string | null
@@ -292,6 +391,7 @@ export type Database = {
           bmet_training: boolean | null
           cost_price: number | null
           created_at: string
+          created_by: string | null
           delivery_date: string | null
           entry_by: string | null
           entry_date: string
@@ -305,6 +405,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           received_amount: number | null
+          received_by: string | null
           received_vendor: number | null
           rl_no: string | null
           saudi_id: string
@@ -326,6 +427,7 @@ export type Database = {
           bmet_training?: boolean | null
           cost_price?: number | null
           created_at?: string
+          created_by?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -339,6 +441,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           received_amount?: number | null
+          received_by?: string | null
           received_vendor?: number | null
           rl_no?: string | null
           saudi_id: string
@@ -360,6 +463,7 @@ export type Database = {
           bmet_training?: boolean | null
           cost_price?: number | null
           created_at?: string
+          created_by?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -373,6 +477,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           received_amount?: number | null
+          received_by?: string | null
           received_vendor?: number | null
           rl_no?: string | null
           saudi_id?: string
@@ -395,6 +500,7 @@ export type Database = {
           airline: string | null
           cost_price: number | null
           created_at: string
+          created_by: string | null
           entry_by: string | null
           entry_date: string
           flight_date: string | null
@@ -405,6 +511,7 @@ export type Database = {
           passport: string | null
           pnr: string | null
           received: number | null
+          received_by: string | null
           sold_price: number | null
           status: string
           ticket_id: string
@@ -416,6 +523,7 @@ export type Database = {
           airline?: string | null
           cost_price?: number | null
           created_at?: string
+          created_by?: string | null
           entry_by?: string | null
           entry_date?: string
           flight_date?: string | null
@@ -426,6 +534,7 @@ export type Database = {
           passport?: string | null
           pnr?: string | null
           received?: number | null
+          received_by?: string | null
           sold_price?: number | null
           status?: string
           ticket_id: string
@@ -437,6 +546,7 @@ export type Database = {
           airline?: string | null
           cost_price?: number | null
           created_at?: string
+          created_by?: string | null
           entry_by?: string | null
           entry_date?: string
           flight_date?: string | null
@@ -447,6 +557,7 @@ export type Database = {
           passport?: string | null
           pnr?: string | null
           received?: number | null
+          received_by?: string | null
           sold_price?: number | null
           status?: string
           ticket_id?: string
@@ -458,39 +569,51 @@ export type Database = {
       vendor_ledger: {
         Row: {
           created_at: string
+          created_by: string | null
           entry_date: string
           id: string
           ledger_id: string
           paid_amount: number | null
           passenger_name: string | null
+          received_by: string | null
           remarks: string | null
           service_type: string | null
+          source_id: string | null
+          source_table: string | null
           total_payable: number | null
           updated_at: string
           vendor_name: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           entry_date?: string
           id?: string
           ledger_id: string
           paid_amount?: number | null
           passenger_name?: string | null
+          received_by?: string | null
           remarks?: string | null
           service_type?: string | null
+          source_id?: string | null
+          source_table?: string | null
           total_payable?: number | null
           updated_at?: string
           vendor_name: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           entry_date?: string
           id?: string
           ledger_id?: string
           paid_amount?: number | null
           passenger_name?: string | null
+          received_by?: string | null
           remarks?: string | null
           service_type?: string | null
+          source_id?: string | null
+          source_table?: string | null
           total_payable?: number | null
           updated_at?: string
           vendor_name?: string
