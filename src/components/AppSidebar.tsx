@@ -4,13 +4,13 @@ import {
   ClipboardList,
   Plane,
   IdCard,
-  
   Users,
   Truck,
   BookOpen,
   FileText,
   UserCog,
   Globe2,
+  ArrowRightLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +40,7 @@ const NAV = [
   { group: "হিসাব", items: [
     { to: "/agency-ledger", title: "Agency খাতা", icon: Users },
     { to: "/vendor-ledger", title: "Vendor খাতা", icon: Truck },
+    { to: "/cash-transfers", title: "Cash Transfer", icon: ArrowRightLeft },
   ]},
   { group: "তালিকা", items: [
     { to: "/agents", title: "Agent List", icon: UserCog },

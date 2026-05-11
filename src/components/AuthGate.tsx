@@ -118,18 +118,35 @@ function LoginScreen() {
 }
 
 export function LogoutButton() {
+  const [name, setName] = useState<string>("");
+
+  useEffect(() => {
+    let cancel = false;
+    const load = async (uid?: string) => {
+      if (!uid) { setName(""); return; }
+      const { data } = await supabase.from("profiles").select("full_name").eq("user_id", uid).maybeSingle();
+      if (!cancel) setName((data as { full_name?: string } | null)?.full_name ?? "");
+    };
+    supabase.auth.getSession().then(({ data: { session } }) => load(session?.user?.id));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => load(s?.user?.id));
+    return () => { cancel = true; subscription.unsubscribe(); };
+  }, []);
+
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={async () => {
-        await supabase.auth.signOut();
-        toast.success("Logged out");
-      }}
-      aria-label="Logout"
-      title="Logout"
-    >
-      <LogOut className="h-4 w-4" />
-    </Button>
+    <div className="flex items-center gap-1.5">
+      {name && <span className="hidden sm:inline text-xs font-medium text-muted-foreground max-w-[120px] truncate">{name}</span>}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={async () => {
+          await supabase.auth.signOut();
+          toast.success("Logged out");
+        }}
+        aria-label="Logout"
+        title="Logout"
+      >
+        <LogOut className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }
