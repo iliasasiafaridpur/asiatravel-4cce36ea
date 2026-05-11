@@ -32,7 +32,7 @@ const NAV = [
     { to: "/day-book", title: "Day Book", icon: BookOpen },
   ]},
   { group: "Services", items: [
-    { to: "/tickets", title: "বিমান টিকিট", icon: Plane },
+    { to: "/tickets", title: "AIR TICKET", icon: Plane },
     { to: "/bmet", title: "BMET Card", icon: IdCard },
     { to: "/saudi-visa", title: "Saudi Visa", icon: Globe2 },
     { to: "/kuwait-visa", title: "Kuwait Visa", icon: Globe2 },
