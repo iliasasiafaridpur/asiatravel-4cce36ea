@@ -53,10 +53,18 @@ export function PassportScanner({ onResult, compact }: Props) {
     try {
       const dataUrl = await fileToDataUrl(file);
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!session?.access_token) {
+        toast.error("লগ-ইন প্রয়োজন");
+        setBusy(false);
+        return;
+      }
       const resp = await fetch(FUNC_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
         body: JSON.stringify({ image: dataUrl }),
       });
       const json = await resp.json();

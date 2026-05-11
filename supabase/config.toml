@@ -1,4 +1,4 @@
 project_id = "epcwrtrkfxfryukysdcu"
 
 [functions.passport-ocr]
-verify_jwt = false
+verify_jwt = true
