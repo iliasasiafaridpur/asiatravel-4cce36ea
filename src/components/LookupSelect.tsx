@@ -68,22 +68,27 @@ export function LookupSelect({ kind, value, onChange }: Props) {
     };
   }, [kind]);
 
-  const addNew = async () => {
+  const addNew = () => {
     const v = newVal.trim();
     if (!v) return;
-    setSaving(true);
-    const { error } = await supabase.from("lookups").insert({ kind, value: v });
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    // Optimistic: update UI immediately, persist in background
+    if (!(cache[kind] ?? []).includes(v)) {
+      cache[kind] = [...(cache[kind] ?? []), v].sort((a, b) => a.localeCompare(b));
+      notify(kind);
     }
-    cache[kind] = [...(cache[kind] ?? []), v].sort((a, b) => a.localeCompare(b));
-    notify(kind);
     onChange(v);
     setNewVal("");
     setOpenAdd(false);
-    toast.success(`${LABELS[kind]} যোগ হয়েছে`);
+    void supabase.from("lookups").insert({ kind, value: v }).then(({ error }) => {
+      if (error) {
+        // Rollback on failure
+        cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
+        notify(kind);
+        toast.error(error.message);
+      } else {
+        toast.success(`${LABELS[kind]} যোগ হয়েছে`);
+      }
+    });
   };
 
   const removeOne = async (v: string) => {
