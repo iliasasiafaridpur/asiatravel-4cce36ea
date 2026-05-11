@@ -96,8 +96,9 @@ function DashboardPage() {
     queryFn: async () => {
       const all: Row[] = [];
       await Promise.all(TARGET_MODULES.map(async (m) => {
-        const cols = `id,${m.idColumn},passenger_name,status,country_name,airline,sold_price,received,received_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by`;
-        const { data } = await supabase.from(m.table as never).select(cols).limit(1000);
+        // Use '*' so we don't fail when a column doesn't exist on a particular table
+        const { data, error } = await supabase.from(m.table as never).select("*").limit(1000);
+        if (error) { console.error(`[dashboard] ${m.table}`, error); return; }
         for (const r of (data as unknown as Record<string, unknown>[] | null) ?? []) {
           all.push({
             module: m.key, moduleLabel: m.label,
