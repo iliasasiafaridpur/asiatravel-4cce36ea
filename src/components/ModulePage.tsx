@@ -103,54 +103,68 @@ export function ModulePage({ module: mod }: Props) {
 
   const submit = async () => {
     setSaving(true);
-    try {
-      // Build payload, coerce types, drop empty optional dates.
-      const payload: Record<string, unknown> = {};
-      const hasField = (n: string) => mod.fields.some((f) => f.name === n);
-      for (const field of mod.fields) {
-        const v = form[field.name];
-        if (field.type === "number") payload[field.name] = Number(v) || 0;
-        else if (field.type === "boolean") payload[field.name] = Boolean(v);
-        else if (field.type === "date") payload[field.name] = v ? v : null;
-        else payload[field.name] = v ?? null;
-      }
-
-      // Audit fields — set automatically based on logged-in user
-      const me = displayName(profile, user);
-      const recvCols = ["received", "received_amount", "paid_amount"];
-      const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
-
-      if (user?.id) {
-        if (!editing) (payload as Record<string, unknown>).created_by = user.id;
-        if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
-      }
-      if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
-
-      // Auto-derive status based on field values (e.g. BMET workflow)
-      if (mod.deriveStatus && hasField("status")) {
-        const derived = mod.deriveStatus(payload);
-        if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
-      }
-
-      if (editing) {
-        const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editing.id);
-        if (error) throw error;
-        toast.success("আপডেট হয়েছে");
-      } else {
-        const newId = await generateNextId(mod);
-        (payload as Record<string, unknown>)[mod.idColumn] = newId;
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
-        toast.success(`নতুন এন্ট্রি যোগ হয়েছে: ${newId}`);
-      }
-      setOpenForm(false);
-      await load();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error("সমস্যা: " + msg);
-    } finally {
-      setSaving(false);
+    // Build payload, coerce types, drop empty optional dates.
+    const payload: Record<string, unknown> = {};
+    const hasField = (n: string) => mod.fields.some((f) => f.name === n);
+    for (const field of mod.fields) {
+      const v = form[field.name];
+      if (field.type === "number") payload[field.name] = Number(v) || 0;
+      else if (field.type === "boolean") payload[field.name] = Boolean(v);
+      else if (field.type === "date") payload[field.name] = v ? v : null;
+      else payload[field.name] = v ?? null;
     }
+
+    const me = displayName(profile, user);
+    const recvCols = ["received", "received_amount", "paid_amount"];
+    const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
+
+    if (user?.id) {
+      if (!editing) (payload as Record<string, unknown>).created_by = user.id;
+      if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
+    }
+    if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+
+    if (mod.deriveStatus && hasField("status")) {
+      const derived = mod.deriveStatus(payload);
+      if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
+    }
+
+    const isEdit = !!editing;
+    const editId = editing?.id;
+
+    // Close immediately for snappy UX
+    setOpenForm(false);
+    setSaving(false);
+
+    // Optimistic local update
+    if (isEdit && editId) {
+      setRows((prev) => prev.map((r) => (r.id === editId ? { ...r, ...payload } as Row : r)));
+    } else {
+      const tempId = `tmp-${Date.now()}`;
+      setRows((prev) => [{ id: tempId, ...payload } as Row, ...prev]);
+    }
+
+    // Persist in background
+    void (async () => {
+      try {
+        if (isEdit && editId) {
+          const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editId);
+          if (error) throw error;
+          toast.success("আপডেট হয়েছে");
+        } else {
+          const newId = await generateNextId(mod);
+          (payload as Record<string, unknown>)[mod.idColumn] = newId;
+          const { error } = await supabase.from(mod.table as never).insert(payload as never);
+          if (error) throw error;
+          toast.success(`✓ যোগ হয়েছে: ${newId}`);
+        }
+        void load();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.error("সমস্যা: " + msg);
+        void load();
+      }
+    })();
   };
 
   const confirmDelete = async () => {
