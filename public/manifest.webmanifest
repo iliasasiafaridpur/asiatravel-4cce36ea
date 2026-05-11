@@ -1,0 +1,15 @@
+{
+  "name": "Asia Travel — Manager",
+  "short_name": "AsiaTravel",
+  "description": "ASIA TOURS AND TRAVEL — সম্পূর্ণ ট্রাভেল এজেন্সি ম্যানেজমেন্ট ও Accounts",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
