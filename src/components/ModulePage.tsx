@@ -27,6 +27,7 @@ import {
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -294,8 +295,23 @@ export function FormSections({ mod, form, setForm }: {
     .filter((g) => g.fields.length > 0);
   // If no field uses sections at all, render as one block (e.g. agents/vendors/ledgers).
   const usesSections = mod.fields.some((f) => f.section);
+  const hasPassportFields = mod.fields.some((f) => f.name === "passenger_name") && mod.fields.some((f) => f.name === "passport");
+  const applyOcr = (fields: PassportFields) => {
+    setForm((s) => {
+      const next = { ...s };
+      if (fields.passenger_name) next.passenger_name = fields.passenger_name;
+      if (fields.passport) next.passport = fields.passport.toUpperCase();
+      if (fields.country_code && mod.fields.some((f) => f.name === "country_name")) {
+        next.country_name = fields.country_code;
+      }
+      return next;
+    });
+  };
   return (
     <div className="space-y-5 py-2">
+      {hasPassportFields && (
+        <PassportScanner onResult={applyOcr} />
+      )}
       {(usesSections ? grouped : [{ section: "passenger" as Section, fields: mod.fields }]).map((g) => (
         <div key={g.section}>
           {usesSections && (
