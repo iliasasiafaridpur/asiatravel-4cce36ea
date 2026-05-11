@@ -50,7 +50,7 @@ export function LookupSelect({ kind, value, onChange }: Props) {
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
   const [newVal, setNewVal] = useState("");
-  const [saving, setSaving] = useState(false);
+  
 
   useEffect(() => {
     let alive = true;
