@@ -78,7 +78,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#0f172a" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "AsiaTravel" },
       { title: "ASIA TOURS AND TRAVEL" },
       { name: "description", content: "Passenger Hub is a travel management application for tracking passenger information and travel statuses." },
       { name: "author", content: "Lovable" },
@@ -93,10 +97,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/qOyCu4HoHOUZ6podTkawyCuD4wB3/social-images/social-1778501361157-Blue___White_Simple_Travel_Agency_Logo.webp" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-512.png" },
+      { rel: "icon", href: "/icon-512.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,
