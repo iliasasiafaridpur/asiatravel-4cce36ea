@@ -15,6 +15,7 @@ export interface Field {
   format?: FormatKind;     // input formatting
   lookup?: LookupKind;     // dynamic dropdown (overrides type)
   section?: Section;       // grouping in form
+  defaultEmpty?: boolean;  // for selects: start empty instead of first option
 }
 
 export interface ModuleSchema {
@@ -28,6 +29,7 @@ export interface ModuleSchema {
   statuses?: string[];
   fields: Field[];
   computed?: { name: string; label: string; compute: (row: Record<string, unknown>) => number }[];
+  deriveStatus?: (row: Record<string, unknown>) => string | undefined;
 }
 
 const STATUS_DEFAULT = ["Pending", "Processing", "Done", "Cancelled"];
