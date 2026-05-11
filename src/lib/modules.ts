@@ -83,7 +83,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "bmet_id",
     idPrefix: "BMET",
     monthlyId: true,
-    statuses: STATUS_DELIVERY,
+    statuses: STATUS_BMET,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
@@ -92,8 +92,8 @@ export const MODULES: ModuleSchema[] = [
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "country_name", label: "Country", type: "text", showInList: true, lookup: "country", section: "passenger" },
       { name: "attested_date", label: "Attested Date", type: "date", section: "passenger" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
-      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true, section: "passenger" },
+      { name: "sold_price", label: "PRICE", type: "number", showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_BMET, showInList: true, section: "passenger", defaultEmpty: true },
       { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
       // 2) Sub Agency / Reference & price
       { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
@@ -107,6 +107,16 @@ export const MODULES: ModuleSchema[] = [
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
     computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
+    deriveStatus: (r) => {
+      // Auto-update status based on date fields. Manual selection wins only when no later date is set.
+      if (r.delivery_date) return "Delivered";
+      if (r.received_date) return "Ready for Delivery";
+      // If user manually picked "Card Ready", keep it (it falls between vendor_sent and received_date)
+      const cur = String(r.status ?? "");
+      if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
+      if (r.vendor_sent_date) return "File Process";
+      return cur || undefined;
+    },
   },
   {
     key: "saudi-visa",
