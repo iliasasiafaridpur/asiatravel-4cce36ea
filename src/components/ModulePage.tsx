@@ -126,6 +126,12 @@ export function ModulePage({ module: mod }: Props) {
       }
       if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
 
+      // Auto-derive status based on field values (e.g. BMET workflow)
+      if (mod.deriveStatus && hasField("status")) {
+        const derived = mod.deriveStatus(payload);
+        if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
+      }
+
       if (editing) {
         const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editing.id);
         if (error) throw error;
