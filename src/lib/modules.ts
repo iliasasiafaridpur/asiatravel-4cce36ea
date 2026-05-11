@@ -1,7 +1,9 @@
 // Central module schema. Each module = one table + list of fields.
-// A generic ModulePage component renders list/form using this schema.
 
 export type FieldType = "text" | "number" | "date" | "select" | "textarea" | "boolean";
+export type FormatKind = "name" | "passport" | "mobile";
+export type LookupKind = "country" | "airline" | "sub_agency" | "vendor";
+export type Section = "passenger" | "agency" | "vendor";
 
 export interface Field {
   name: string;
@@ -9,20 +11,22 @@ export interface Field {
   type: FieldType;
   options?: string[];
   required?: boolean;
-  showInList?: boolean; // include in table view
+  showInList?: boolean;
+  format?: FormatKind;     // input formatting
+  lookup?: LookupKind;     // dynamic dropdown (overrides type)
+  section?: Section;       // grouping in form
 }
 
 export interface ModuleSchema {
-  key: string;            // route key, e.g. "tickets"
-  label: string;          // display name (Bengali)
-  short: string;          // sidebar short label
-  table: string;          // supabase table name
-  idColumn: string;       // human ID column (e.g. "ticket_id")
-  idPrefix: string;       // for auto-gen, e.g. "TKT" → TKT-2605-001
-  monthlyId?: boolean;    // true → uses next_module_id (YYMM in id)
+  key: string;
+  label: string;
+  short: string;
+  table: string;
+  idColumn: string;
+  idPrefix: string;
+  monthlyId?: boolean;
   statuses?: string[];
-  fields: Field[];        // editable fields (excluding idColumn, created_at)
-  // Computed columns added to list view (e.g. due = sold - received)
+  fields: Field[];
   computed?: { name: string; label: string; compute: (row: Record<string, unknown>) => number }[];
 }
 
@@ -47,10 +51,10 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     statuses: STATUS_DEFAULT,
     fields: [
-      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true },
-      { name: "passport", label: "Passport", type: "text", required: true, showInList: true },
-      { name: "status", label: "Status", type: "select", options: STATUS_DEFAULT, showInList: true },
-      { name: "notes", label: "Notes", type: "textarea" },
+      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
+      { name: "passport", label: "Passport", type: "text", required: true, showInList: true, format: "passport", section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_DEFAULT, showInList: true, section: "passenger" },
+      { name: "notes", label: "Notes", type: "textarea", section: "passenger" },
     ],
   },
   {
@@ -63,21 +67,24 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     statuses: STATUS_DELIVERY,
     fields: [
-      { name: "entry_date", label: "Date", type: "date", showInList: true },
-      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true },
-      { name: "passport", label: "Passport", type: "text", showInList: true },
-      { name: "mobile", label: "Mobile", type: "text" },
-      { name: "airline", label: "Airline", type: "text", showInList: true },
-      { name: "pnr", label: "PNR", type: "text" },
-      { name: "flight_date", label: "Flight Date", type: "date", showInList: true },
-      { name: "agency_sold", label: "Agency Sold", type: "text" },
-      { name: "vendor_bought", label: "Vendor Bought", type: "text" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true },
-      { name: "cost_price", label: "Cost Price", type: "number" },
-      { name: "received", label: "Received", type: "number", showInList: true },
-      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true },
-      { name: "entry_by", label: "Entry By", type: "text" },
-      { name: "notes", label: "Notes", type: "textarea" },
+      // 1) Passenger Details & price
+      { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
+      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
+      { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
+      { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
+      { name: "airline", label: "Airline", type: "text", showInList: true, lookup: "airline", section: "passenger" },
+      { name: "flight_date", label: "Flight Date", type: "date", showInList: true, section: "passenger" },
+      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true, section: "passenger" },
+      // 2) Sub Agency / Reference & price
+      { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
+      { name: "received", label: "Received", type: "number", showInList: true, section: "agency" },
+      // 3) Vendor information
+      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
+      { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
+      { name: "pnr", label: "PNR", type: "text", section: "vendor" },
+      { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
+      { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
     computed: [
       { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
@@ -94,23 +101,26 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     statuses: STATUS_DELIVERY,
     fields: [
-      { name: "entry_date", label: "Date", type: "date", showInList: true },
-      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true },
-      { name: "passport", label: "Passport", type: "text", showInList: true },
-      { name: "mobile", label: "Mobile", type: "text" },
-      { name: "country_name", label: "Country", type: "text", showInList: true },
-      { name: "attested_date", label: "Attested Date", type: "date" },
-      { name: "agency_sold", label: "Agency Sold", type: "text" },
-      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date" },
-      { name: "received_date", label: "Received Date", type: "date" },
-      { name: "vendor_bought", label: "Vendor Bought", type: "text" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true },
-      { name: "cost_price", label: "Cost Price", type: "number" },
-      { name: "received_amount", label: "Received", type: "number", showInList: true },
-      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true },
-      { name: "delivery_date", label: "Delivery Date", type: "date" },
-      { name: "entry_by", label: "Entry By", type: "text" },
-      { name: "notes", label: "Notes", type: "textarea" },
+      // 1) Passenger Details & price
+      { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
+      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
+      { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
+      { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
+      { name: "country_name", label: "Country", type: "text", showInList: true, lookup: "country", section: "passenger" },
+      { name: "attested_date", label: "Attested Date", type: "date", section: "passenger" },
+      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true, section: "passenger" },
+      { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
+      // 2) Sub Agency / Reference & price
+      { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
+      { name: "received_amount", label: "Received", type: "number", showInList: true, section: "agency" },
+      // 3) Vendor information
+      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
+      { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
+      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", section: "vendor" },
+      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor" },
+      { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
+      { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
     computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
   },
@@ -124,32 +134,35 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     statuses: STATUS_VISA,
     fields: [
-      { name: "entry_date", label: "Date", type: "date", showInList: true },
-      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true },
-      { name: "passport", label: "Passport", type: "text", showInList: true },
-      { name: "mobile", label: "Mobile", type: "text" },
-      { name: "visa_type", label: "Visa Type", type: "text", showInList: true },
-      { name: "sponsor_name", label: "Sponsor", type: "text" },
-      { name: "visa_no", label: "Visa No", type: "text" },
-      { name: "id_no", label: "ID No", type: "text" },
-      { name: "mofa_no", label: "MOFA No", type: "text" },
-      { name: "medical_status", label: "Medical Status", type: "text" },
-      { name: "rl_no", label: "RL No", type: "text" },
-      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date" },
-      { name: "tasheer_finger_date", label: "Tasheer Finger Date", type: "date" },
-      { name: "final_visa_no", label: "Final Visa No", type: "text" },
-      { name: "bmet_training", label: "BMET Training", type: "boolean" },
-      { name: "bmet_finger", label: "BMET Finger", type: "boolean" },
-      { name: "bmet_status", label: "BMET Status", type: "text" },
-      { name: "agency_sold", label: "Agency Sold", type: "text" },
-      { name: "vendor_bought", label: "Vendor Bought", type: "text" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true },
-      { name: "cost_price", label: "Cost Price", type: "number" },
-      { name: "received_amount", label: "Received", type: "number", showInList: true },
-      { name: "status", label: "Status", type: "select", options: STATUS_VISA, showInList: true },
-      { name: "delivery_date", label: "Delivery Date", type: "date" },
-      { name: "entry_by", label: "Entry By", type: "text" },
-      { name: "notes", label: "Notes", type: "textarea" },
+      // 1) Passenger
+      { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
+      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
+      { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
+      { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
+      { name: "visa_type", label: "Visa Type", type: "text", showInList: true, section: "passenger" },
+      { name: "sponsor_name", label: "Sponsor", type: "text", section: "passenger" },
+      { name: "visa_no", label: "Visa No", type: "text", section: "passenger" },
+      { name: "id_no", label: "ID No", type: "text", section: "passenger" },
+      { name: "mofa_no", label: "MOFA No", type: "text", section: "passenger" },
+      { name: "medical_status", label: "Medical Status", type: "text", section: "passenger" },
+      { name: "rl_no", label: "RL No", type: "text", section: "passenger" },
+      { name: "bmet_training", label: "BMET Training", type: "boolean", section: "passenger" },
+      { name: "bmet_finger", label: "BMET Finger", type: "boolean", section: "passenger" },
+      { name: "bmet_status", label: "BMET Status", type: "text", section: "passenger" },
+      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_VISA, showInList: true, section: "passenger" },
+      { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
+      // 2) Sub Agency
+      { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
+      { name: "received_amount", label: "Received", type: "number", showInList: true, section: "agency" },
+      // 3) Vendor
+      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
+      { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
+      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", section: "vendor" },
+      { name: "tasheer_finger_date", label: "Tasheer Finger Date", type: "date", section: "vendor" },
+      { name: "final_visa_no", label: "Final Visa No", type: "text", section: "vendor" },
+      { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
+      { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
     computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
   },
@@ -163,22 +176,22 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     statuses: STATUS_VISA,
     fields: [
-      { name: "entry_date", label: "Date", type: "date", showInList: true },
-      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true },
-      { name: "passport", label: "Passport", type: "text", showInList: true },
-      { name: "mobile", label: "Mobile", type: "text" },
-      { name: "visa_no", label: "Visa No", type: "text", showInList: true },
-      { name: "sponsor_name", label: "Sponsor", type: "text" },
-      { name: "medical_status", label: "Medical Status", type: "text" },
-      { name: "agency_sold", label: "Agency Sold", type: "text" },
-      { name: "vendor_bought", label: "Vendor Bought", type: "text" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true },
-      { name: "cost_price", label: "Cost Price", type: "number" },
-      { name: "received", label: "Received", type: "number", showInList: true },
-      { name: "status", label: "Status", type: "select", options: STATUS_VISA, showInList: true },
-      { name: "delivery_date", label: "Delivery Date", type: "date" },
-      { name: "entry_by", label: "Entry By", type: "text" },
-      { name: "notes", label: "Notes", type: "textarea" },
+      { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
+      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
+      { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
+      { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
+      { name: "visa_no", label: "Visa No", type: "text", showInList: true, section: "passenger" },
+      { name: "sponsor_name", label: "Sponsor", type: "text", section: "passenger" },
+      { name: "medical_status", label: "Medical Status", type: "text", section: "passenger" },
+      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_VISA, showInList: true, section: "passenger" },
+      { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
+      { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
+      { name: "received", label: "Received", type: "number", showInList: true, section: "agency" },
+      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
+      { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
+      { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
+      { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
     computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received") }],
   },
@@ -193,7 +206,7 @@ export const MODULES: ModuleSchema[] = [
     fields: [
       { name: "entry_date", label: "Date", type: "date", showInList: true },
       { name: "agent_name", label: "Agent Name", type: "text", required: true, showInList: true },
-      { name: "passenger_name", label: "Passenger", type: "text", showInList: true },
+      { name: "passenger_name", label: "Passenger", type: "text", showInList: true, format: "name" },
       { name: "service_type", label: "Service Type", type: "text", showInList: true },
       { name: "total_bill", label: "Total Bill", type: "number", showInList: true },
       { name: "received_amount", label: "Received", type: "number", showInList: true },
@@ -212,7 +225,7 @@ export const MODULES: ModuleSchema[] = [
     fields: [
       { name: "entry_date", label: "Date", type: "date", showInList: true },
       { name: "vendor_name", label: "Vendor Name", type: "text", required: true, showInList: true },
-      { name: "passenger_name", label: "Passenger", type: "text", showInList: true },
+      { name: "passenger_name", label: "Passenger", type: "text", showInList: true, format: "name" },
       { name: "service_type", label: "Service Type", type: "text", showInList: true },
       { name: "total_payable", label: "Total Payable", type: "number", showInList: true },
       { name: "paid_amount", label: "Paid", type: "number", showInList: true },
@@ -229,8 +242,8 @@ export const MODULES: ModuleSchema[] = [
     idPrefix: "AGT",
     monthlyId: false,
     fields: [
-      { name: "name", label: "Name", type: "text", required: true, showInList: true },
-      { name: "phone", label: "Phone", type: "text", showInList: true },
+      { name: "name", label: "Name", type: "text", required: true, showInList: true, format: "name" },
+      { name: "phone", label: "Phone", type: "text", showInList: true, format: "mobile" },
       { name: "address", label: "Address", type: "text", showInList: true },
       { name: "notes", label: "Notes", type: "textarea" },
     ],
@@ -244,8 +257,8 @@ export const MODULES: ModuleSchema[] = [
     idPrefix: "VND",
     monthlyId: false,
     fields: [
-      { name: "name", label: "Name", type: "text", required: true, showInList: true },
-      { name: "phone", label: "Phone", type: "text", showInList: true },
+      { name: "name", label: "Name", type: "text", required: true, showInList: true, format: "name" },
+      { name: "phone", label: "Phone", type: "text", showInList: true, format: "mobile" },
       { name: "address", label: "Address", type: "text", showInList: true },
       { name: "notes", label: "Notes", type: "textarea" },
     ],
@@ -254,8 +267,6 @@ export const MODULES: ModuleSchema[] = [
 
 export const moduleByKey = (key: string) => MODULES.find((m) => m.key === key);
 
-// Service categories selectable from the universal Action Board form.
-// Keys must match MODULES keys.
 export const SERVICE_CATEGORIES = [
   { key: "tickets", label: "Ticket" },
   { key: "bmet", label: "BMET Card" },
