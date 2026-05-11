@@ -32,9 +32,9 @@ export interface ModuleSchema {
   deriveStatus?: (row: Record<string, unknown>) => string | undefined;
 }
 
-const STATUS_DEFAULT = ["Pending", "Processing", "Done", "Cancelled"];
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
 const STATUS_VISA = ["Pending", "Applied", "Medical", "Finger", "MOFA", "Visa Issued", "Delivered", "Cancelled"];
+const STATUS_BMET = ["File Process", "Card Ready", "Ready for Delivery", "Delivered"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
@@ -45,13 +45,12 @@ const PROFIT = (sold: string, cost: string) => (r: Record<string, unknown>) =>
 export const MODULES: ModuleSchema[] = [
   {
     key: "tickets",
-    label: "বিমান টিকিট",
-    short: "Tickets",
+    label: "AIR TICKET",
+    short: "Air Ticket",
     table: "tickets",
     idColumn: "ticket_id",
     idPrefix: "TKT",
     monthlyId: true,
-    statuses: STATUS_DELIVERY,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
@@ -60,8 +59,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "airline", label: "Airline", type: "text", showInList: true, lookup: "airline", section: "passenger" },
       { name: "flight_date", label: "Flight Date", type: "date", showInList: true, section: "passenger" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
-      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true, section: "passenger" },
+      { name: "sold_price", label: "Price", type: "number", showInList: true, section: "passenger" },
       // 2) Sub Agency / Reference & price
       { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
       { name: "received", label: "Received", type: "number", showInList: true, section: "agency" },
