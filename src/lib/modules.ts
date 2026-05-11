@@ -256,7 +256,7 @@ export const SERVICE_CATEGORIES = [
   { key: "bmet", label: "BMET Card" },
   { key: "saudi-visa", label: "Saudi Visa" },
   { key: "kuwait-visa", label: "Kuwait Visa" },
-  { key: "manpower", label: "Manpower" },
+  
 ];
 
 export function formatDate(d?: string | null): string {
