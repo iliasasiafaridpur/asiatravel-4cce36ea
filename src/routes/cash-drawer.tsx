@@ -66,7 +66,8 @@ function CashDrawerPage() {
     const drs: Drawer[] = [];
     for (const pr of profs) {
       const { data } = await supabase.rpc("get_cash_drawer" as never, { _user_id: pr.user_id } as never);
-      if (Array.isArray(data) && data.length > 0) drs.push(data[0] as unknown as Drawer);
+      const arr = data as unknown as Drawer[] | null;
+      if (arr && arr.length > 0) drs.push(arr[0]);
     }
     setDrawers(drs);
 
