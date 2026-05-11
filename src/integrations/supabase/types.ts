@@ -179,6 +179,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          expense_id: string
+          id: string
+          purpose: string | null
+          remarks: string | null
+          spent_by: string | null
+          spent_by_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          expense_id: string
+          id?: string
+          purpose?: string | null
+          remarks?: string | null
+          spent_by?: string | null
+          spent_by_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          expense_id?: string
+          id?: string
+          purpose?: string | null
+          remarks?: string | null
+          spent_by?: string | null
+          spent_by_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cash_transfers: {
         Row: {
           amount: number
@@ -658,6 +703,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_cash_drawer: {
+        Args: { _user_id: string }
+        Returns: {
+          current_balance: number
+          full_name: string
+          total_expenses: number
+          total_handed_over: number
+          total_received: number
+          total_received_in: number
+          total_received_today: number
+          user_id: string
+        }[]
+      }
       next_module_id: {
         Args: { _column: string; _prefix: string; _table: string }
         Returns: string

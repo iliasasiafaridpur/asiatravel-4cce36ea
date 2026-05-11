@@ -11,6 +11,7 @@ import {
   UserCog,
   Globe2,
   ArrowRightLeft,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +39,7 @@ const NAV = [
     
   ]},
   { group: "হিসাব", items: [
+    { to: "/cash-drawer", title: "Cash Drawer", icon: Wallet },
     { to: "/agency-ledger", title: "Agency খাতা", icon: Users },
     { to: "/vendor-ledger", title: "Vendor খাতা", icon: Truck },
     { to: "/cash-transfers", title: "Cash Transfer", icon: ArrowRightLeft },
