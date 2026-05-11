@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -48,6 +49,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 }
 
 export function ModulePage({ module: mod }: Props) {
+  const { user, profile } = useCurrentUser();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -103,6 +105,7 @@ export function ModulePage({ module: mod }: Props) {
     try {
       // Build payload, coerce types, drop empty optional dates.
       const payload: Record<string, unknown> = {};
+      const hasField = (n: string) => mod.fields.some((f) => f.name === n);
       for (const field of mod.fields) {
         const v = form[field.name];
         if (field.type === "number") payload[field.name] = Number(v) || 0;
@@ -110,6 +113,17 @@ export function ModulePage({ module: mod }: Props) {
         else if (field.type === "date") payload[field.name] = v ? v : null;
         else payload[field.name] = v ?? null;
       }
+
+      // Audit fields — set automatically based on logged-in user
+      const me = displayName(profile, user);
+      const recvCols = ["received", "received_amount", "paid_amount"];
+      const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
+
+      if (user?.id) {
+        if (!editing) (payload as Record<string, unknown>).created_by = user.id;
+        if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
+      }
+      if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
 
       if (editing) {
         const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editing.id);
@@ -263,13 +277,13 @@ export function ModulePage({ module: mod }: Props) {
   );
 }
 
-const SECTION_LABELS: Record<Section, string> = {
+export const SECTION_LABELS: Record<Section, string> = {
   passenger: "১. Passenger Details",
   agency: "২. Sub Agency / Reference",
   vendor: "৩. Vendor Information",
 };
 
-function FormSections({ mod, form, setForm }: {
+export function FormSections({ mod, form, setForm }: {
   mod: ModuleSchema;
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
