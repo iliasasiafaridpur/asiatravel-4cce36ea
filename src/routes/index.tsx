@@ -14,7 +14,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { CalendarIcon, Plane, IdCard, Globe2, StickyNote, Users, Truck, ClipboardList, TrendingUp, TrendingDown, Wallet, FileText } from "lucide-react";
+import { CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList, TrendingUp, TrendingDown, Wallet, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   tickets: Plane, bmet: IdCard, "saudi-visa": Globe2, "kuwait-visa": Globe2,
-  manpower: StickyNote, "agency-ledger": Users, "vendor-ledger": Truck,
+  "agency-ledger": Users, "vendor-ledger": Truck,
 };
 
 const MODULE_COLORS: Record<string, string> = {
@@ -36,7 +36,6 @@ const MODULE_COLORS: Record<string, string> = {
   bmet: "hsl(160 84% 45%)",
   "saudi-visa": "hsl(27 96% 55%)",
   "kuwait-visa": "hsl(280 65% 60%)",
-  manpower: "hsl(190 80% 50%)",
 };
 
 type Row = {
@@ -56,7 +55,7 @@ type Row = {
 
 type Range = "all" | "today" | "month" | "year" | "custom";
 
-const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa", "manpower"].includes(m.key));
+const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(m.key));
 
 function DashboardPage() {
   const [rows, setRows] = useState<Row[]>([]);

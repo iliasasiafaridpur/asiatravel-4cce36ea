@@ -42,22 +42,6 @@ const PROFIT = (sold: string, cost: string) => (r: Record<string, unknown>) =>
 
 export const MODULES: ModuleSchema[] = [
   {
-    key: "manpower",
-    label: "Manpower",
-    short: "Manpower",
-    table: "passengers",
-    idColumn: "passenger_id",
-    idPrefix: "MAN",
-    monthlyId: true,
-    statuses: STATUS_DEFAULT,
-    fields: [
-      { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
-      { name: "passport", label: "Passport", type: "text", required: true, showInList: true, format: "passport", section: "passenger" },
-      { name: "status", label: "Status", type: "select", options: STATUS_DEFAULT, showInList: true, section: "passenger" },
-      { name: "notes", label: "Notes", type: "textarea", section: "passenger" },
-    ],
-  },
-  {
     key: "tickets",
     label: "বিমান টিকিট",
     short: "Tickets",
@@ -272,7 +256,7 @@ export const SERVICE_CATEGORIES = [
   { key: "bmet", label: "BMET Card" },
   { key: "saudi-visa", label: "Saudi Visa" },
   { key: "kuwait-visa", label: "Kuwait Visa" },
-  { key: "manpower", label: "Manpower" },
+  
 ];
 
 export function formatDate(d?: string | null): string {

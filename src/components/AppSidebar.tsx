@@ -4,7 +4,7 @@ import {
   ClipboardList,
   Plane,
   IdCard,
-  StickyNote,
+  
   Users,
   Truck,
   BookOpen,
@@ -35,7 +35,7 @@ const NAV = [
     { to: "/bmet", title: "BMET Card", icon: IdCard },
     { to: "/saudi-visa", title: "Saudi Visa", icon: Globe2 },
     { to: "/kuwait-visa", title: "Kuwait Visa", icon: Globe2 },
-    { to: "/manpower", title: "Manpower", icon: StickyNote },
+    
   ]},
   { group: "হিসাব", items: [
     { to: "/agency-ledger", title: "Agency খাতা", icon: Users },

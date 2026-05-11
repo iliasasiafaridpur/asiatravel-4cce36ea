@@ -13,7 +13,6 @@ import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as VendorLedgerRouteImport } from './routes/vendor-ledger'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
-import { Route as ManpowerRouteImport } from './routes/manpower'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as DayBookRouteImport } from './routes/day-book'
@@ -41,11 +40,6 @@ const TicketsRoute = TicketsRouteImport.update({
 const SaudiVisaRoute = SaudiVisaRouteImport.update({
   id: '/saudi-visa',
   path: '/saudi-visa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManpowerRoute = ManpowerRouteImport.update({
-  id: '/manpower',
-  path: '/manpower',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KuwaitVisaRoute = KuwaitVisaRouteImport.update({
@@ -98,7 +92,6 @@ export interface FileRoutesByFullPath {
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
-  '/manpower': typeof ManpowerRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/tickets': typeof TicketsRoute
   '/vendor-ledger': typeof VendorLedgerRoute
@@ -113,7 +106,6 @@ export interface FileRoutesByTo {
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
-  '/manpower': typeof ManpowerRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/tickets': typeof TicketsRoute
   '/vendor-ledger': typeof VendorLedgerRoute
@@ -129,7 +121,6 @@ export interface FileRoutesById {
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
-  '/manpower': typeof ManpowerRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/tickets': typeof TicketsRoute
   '/vendor-ledger': typeof VendorLedgerRoute
@@ -146,7 +137,6 @@ export interface FileRouteTypes {
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
-    | '/manpower'
     | '/saudi-visa'
     | '/tickets'
     | '/vendor-ledger'
@@ -161,7 +151,6 @@ export interface FileRouteTypes {
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
-    | '/manpower'
     | '/saudi-visa'
     | '/tickets'
     | '/vendor-ledger'
@@ -176,7 +165,6 @@ export interface FileRouteTypes {
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
-    | '/manpower'
     | '/saudi-visa'
     | '/tickets'
     | '/vendor-ledger'
@@ -192,7 +180,6 @@ export interface RootRouteChildren {
   DayBookRoute: typeof DayBookRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
-  ManpowerRoute: typeof ManpowerRoute
   SaudiVisaRoute: typeof SaudiVisaRoute
   TicketsRoute: typeof TicketsRoute
   VendorLedgerRoute: typeof VendorLedgerRoute
@@ -227,13 +214,6 @@ declare module '@tanstack/react-router' {
       path: '/saudi-visa'
       fullPath: '/saudi-visa'
       preLoaderRoute: typeof SaudiVisaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manpower': {
-      id: '/manpower'
-      path: '/manpower'
-      fullPath: '/manpower'
-      preLoaderRoute: typeof ManpowerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kuwait-visa': {
@@ -304,7 +284,6 @@ const rootRouteChildren: RootRouteChildren = {
   DayBookRoute: DayBookRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
-  ManpowerRoute: ManpowerRoute,
   SaudiVisaRoute: SaudiVisaRoute,
   TicketsRoute: TicketsRoute,
   VendorLedgerRoute: VendorLedgerRoute,
