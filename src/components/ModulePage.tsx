@@ -159,16 +159,8 @@ export function ModulePage({ module: mod }: Props) {
             <DialogHeader>
               <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
-              {mod.fields.map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={form[field.name]}
-                  onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
-                />
-              ))}
-            </div>
+            <FormSections mod={mod} form={form} setForm={setForm} />
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
               <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
