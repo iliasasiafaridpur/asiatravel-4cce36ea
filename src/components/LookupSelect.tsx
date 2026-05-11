@@ -86,6 +86,16 @@ export function LookupSelect({ kind, value, onChange }: Props) {
     toast.success(`${LABELS[kind]} যোগ হয়েছে`);
   };
 
+  const removeOne = async (v: string) => {
+    if (!confirm(`"${v}" ডিলিট করবেন?`)) return;
+    const { error } = await supabase.from("lookups").delete().eq("kind", kind).eq("value", v);
+    if (error) { toast.error(error.message); return; }
+    cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
+    notify(kind);
+    if (value === v) onChange("");
+    toast.success("ডিলিট হয়েছে");
+  };
+
   // Ensure current value (even if not in cache yet) is selectable.
   const allOpts = value && !options.includes(value) ? [value, ...options] : options;
 
@@ -105,6 +115,9 @@ export function LookupSelect({ kind, value, onChange }: Props) {
         <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${LABELS[kind]} যোগ`}>
           <Plus className="h-4 w-4" />
         </Button>
+        <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${LABELS[kind]} ম্যানেজ`}>
+          <Settings2 className="h-4 w-4" />
+        </Button>
       </div>
 
       <Dialog open={openAdd} onOpenChange={setOpenAdd}>
@@ -122,6 +135,29 @@ export function LookupSelect({ kind, value, onChange }: Props) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenAdd(false)}>বাতিল</Button>
             <Button onClick={addNew} disabled={saving || !newVal.trim()}>{saving ? "সেভ..." : "যোগ করুন"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openManage} onOpenChange={setOpenManage}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{LABELS[kind]} ম্যানেজ করুন</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-80 overflow-y-auto divide-y">
+            {options.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">কোনো অপশন নেই</div>
+            ) : options.map((o) => (
+              <div key={o} className="flex items-center justify-between py-2">
+                <span className="text-sm">{o}</span>
+                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)}>
+                  <Trash2 className="h-4 w-4 text-rose-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenManage(false)}>বন্ধ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
