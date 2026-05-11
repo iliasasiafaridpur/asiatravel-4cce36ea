@@ -139,7 +139,7 @@ export function LookupSelect({ kind, value, onChange }: Props) {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenAdd(false)}>বাতিল</Button>
-            <Button onClick={addNew} disabled={saving || !newVal.trim()}>{saving ? "সেভ..." : "যোগ করুন"}</Button>
+            <Button onClick={addNew} disabled={!newVal.trim()}>যোগ করুন</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
