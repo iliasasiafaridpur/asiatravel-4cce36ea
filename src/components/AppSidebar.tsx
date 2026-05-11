@@ -4,7 +4,7 @@ import {
   ClipboardList,
   Plane,
   IdCard,
-  StickyNote,
+  
   Users,
   Truck,
   BookOpen,
