@@ -15,6 +15,7 @@ export interface Field {
   format?: FormatKind;     // input formatting
   lookup?: LookupKind;     // dynamic dropdown (overrides type)
   section?: Section;       // grouping in form
+  defaultEmpty?: boolean;  // for selects: start empty instead of first option
 }
 
 export interface ModuleSchema {
@@ -28,11 +29,12 @@ export interface ModuleSchema {
   statuses?: string[];
   fields: Field[];
   computed?: { name: string; label: string; compute: (row: Record<string, unknown>) => number }[];
+  deriveStatus?: (row: Record<string, unknown>) => string | undefined;
 }
 
-const STATUS_DEFAULT = ["Pending", "Processing", "Done", "Cancelled"];
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
 const STATUS_VISA = ["Pending", "Applied", "Medical", "Finger", "MOFA", "Visa Issued", "Delivered", "Cancelled"];
+const STATUS_BMET = ["File Process", "Card Ready", "Ready for Delivery", "Delivered"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
@@ -43,13 +45,12 @@ const PROFIT = (sold: string, cost: string) => (r: Record<string, unknown>) =>
 export const MODULES: ModuleSchema[] = [
   {
     key: "tickets",
-    label: "বিমান টিকিট",
-    short: "Tickets",
+    label: "AIR TICKET",
+    short: "Air Ticket",
     table: "tickets",
     idColumn: "ticket_id",
     idPrefix: "TKT",
     monthlyId: true,
-    statuses: STATUS_DELIVERY,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
@@ -58,8 +59,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "airline", label: "Airline", type: "text", showInList: true, lookup: "airline", section: "passenger" },
       { name: "flight_date", label: "Flight Date", type: "date", showInList: true, section: "passenger" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
-      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true, section: "passenger" },
+      { name: "sold_price", label: "Price", type: "number", showInList: true, section: "passenger" },
       // 2) Sub Agency / Reference & price
       { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
       { name: "received", label: "Received", type: "number", showInList: true, section: "agency" },
@@ -83,7 +83,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "bmet_id",
     idPrefix: "BMET",
     monthlyId: true,
-    statuses: STATUS_DELIVERY,
+    statuses: STATUS_BMET,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
@@ -92,8 +92,8 @@ export const MODULES: ModuleSchema[] = [
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "country_name", label: "Country", type: "text", showInList: true, lookup: "country", section: "passenger" },
       { name: "attested_date", label: "Attested Date", type: "date", section: "passenger" },
-      { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
-      { name: "status", label: "Status", type: "select", options: STATUS_DELIVERY, showInList: true, section: "passenger" },
+      { name: "sold_price", label: "PRICE", type: "number", showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "select", options: STATUS_BMET, showInList: true, section: "passenger", defaultEmpty: true },
       { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
       // 2) Sub Agency / Reference & price
       { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
@@ -107,6 +107,16 @@ export const MODULES: ModuleSchema[] = [
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
     computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
+    deriveStatus: (r) => {
+      // Auto-update status based on date fields. Manual selection wins only when no later date is set.
+      if (r.delivery_date) return "Delivered";
+      if (r.received_date) return "Ready for Delivery";
+      // If user manually picked "Card Ready", keep it (it falls between vendor_sent and received_date)
+      const cur = String(r.status ?? "");
+      if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
+      if (r.vendor_sent_date) return "File Process";
+      return cur || undefined;
+    },
   },
   {
     key: "saudi-visa",

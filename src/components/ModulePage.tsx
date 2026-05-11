@@ -43,7 +43,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
     if (field.type === "number") f[field.name] = 0;
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
-    else if (field.type === "select") f[field.name] = field.options?.[0] ?? "";
+    else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
     else f[field.name] = "";
   }
   return f;
@@ -125,6 +125,12 @@ export function ModulePage({ module: mod }: Props) {
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
       if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+
+      // Auto-derive status based on field values (e.g. BMET workflow)
+      if (mod.deriveStatus && hasField("status")) {
+        const derived = mod.deriveStatus(payload);
+        if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
+      }
 
       if (editing) {
         const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editing.id);
