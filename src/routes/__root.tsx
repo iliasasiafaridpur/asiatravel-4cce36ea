@@ -79,14 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "ASIA TOURS AND TRAVEL" },
+      { name: "description", content: "Passenger Hub is a travel management application for tracking passenger information and travel statuses." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "ASIA TOURS AND TRAVEL" },
+      { property: "og:description", content: "Passenger Hub is a travel management application for tracking passenger information and travel statuses." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "ASIA TOURS AND TRAVEL" },
+      { name: "twitter:description", content: "Passenger Hub is a travel management application for tracking passenger information and travel statuses." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/qOyCu4HoHOUZ6podTkawyCuD4wB3/social-images/social-1778501361157-Blue___White_Simple_Travel_Agency_Logo.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/qOyCu4HoHOUZ6podTkawyCuD4wB3/social-images/social-1778501361157-Blue___White_Simple_Travel_Agency_Logo.webp" },
     ],
     links: [
       {
