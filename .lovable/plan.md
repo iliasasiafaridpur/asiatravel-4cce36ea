@@ -1,83 +1,103 @@
 ## লক্ষ্য
-আপনার সফটওয়্যার টিকে একটি সম্পূর্ণ স্মার্ট ট্রাভেল এজেন্সি ম্যানেজমেন্ট সিস্টেমে আপগ্রেড করা — ২ জন ইউজার (Manager + Md sir), সম্পূর্ণ অডিট ট্রেইল, অটো-লেজার, আধুনিক ড্যাশবোর্ড।
+আপনার ৪টি বড় চাওয়া একসাথে সমাধান করব — কোনটাই অর্ধেক রাখব না।
 
 ---
 
-## ১) ইউজার ও অডিট ট্রেইল (Who did what)
+## ১) Passport OCR (পাসপোর্টের ছবি তুলে অটো-ফিল)
 
-- **প্রোফাইল টেবিল** — `profiles (user_id, full_name, role)` যেখানে আপনি ও Md sir-এর নাম রাখা হবে। লগইন-এর পর App জানবে কোন ইউজার লগইন আছে।
-- প্রতিটি মূল টেবিলে (tickets, bmet_cards, saudi_visas, kuwait_visas, agency_ledger, vendor_ledger) যোগ হবে:
-  - `created_by uuid` — কে এন্ট্রি করেছে
-  - `received_by uuid` — কে টাকা রিসিভ করেছে (received > 0 হলে)
-  - `entry_by` কলামটি অটো-পূর্ণ হবে লগইন ইউজারের নাম দিয়ে
-- নতুন টেবিল **`cash_transfers`** — Manager → Md sir হ্যান্ড ক্যাশ / ব্যাংক / অন্যান্য খরচের রেকর্ড: তারিখ, from_user, to_user, amount, method (Hand Cash / Bank / Other), purpose, remarks
-- নতুন পেজ `/cash-transfers` — এন্ট্রি ও রিপোর্ট
+**যেভাবে কাজ করবে:**
+- যেকোনো এন্ট্রি ফর্মে (Tickets / BMET / Saudi / Kuwait) উপরে একটা **📷 "পাসপোর্ট স্ক্যান"** বাটন থাকবে
+- মোবাইলে ক্যামেরা সরাসরি খুলবে, ছবি তুলবেন → Lovable AI (Gemini Vision) সেটা পড়বে
+- অটো-ফিল হবে: **নাম (passenger_name), পাসপোর্ট নাম্বার, জন্ম তারিখ, ইস্যু/মেয়াদ তারিখ, জাতীয়তা**
+- ভুল হলে আপনি edit করতে পারবেন — তারপর Save
 
-## ২) অটো-লেজার সিস্টেম
-
-- Tickets / BMET / Saudi / Kuwait — যেকোনো এন্ট্রিতে `agency_sold` থাকলে সেটা স্বয়ংক্রিয়ভাবে `agency_ledger`-এ যোগ হবে (DB ট্রিগার দিয়ে)। পরে আপডেটে লেজার সিঙ্ক হবে।
-- একইভাবে `vendor_bought` থাকলে `vendor_ledger`-এ অটো এন্ট্রি।
-- নতুন `agents` যোগ করলে — `agency_ledger`-এ একটি opening row তৈরি হবে যেন তার নামে হিসাব খোলা থাকে। একইভাবে `vendors` → `vendor_ledger`।
-- Agency / Vendor পেজে balance summary দেখাবে (কত পাওনা, কত পরিশোধিত)।
-
-## ৩) আধুনিক ড্যাশবোর্ড (রঙিন, রিয়েল-টাইম)
-
-- সম্পূর্ণ নতুন ড্যাশবোর্ড — সব মডিউলের ডেটা টানবে (এখন শুধু passengers টেবিল টানে — সেজন্যই হালনাগাদ হয় না)
-- **Stat Cards** (গ্রেডিয়েন্ট): মোট টিকিট, BMET, Saudi, Kuwait, মোট বিক্রি, মোট রিসিভ, মোট বাকি, মোট লাভ
-- **চার্টস**: মাসিক বিক্রি vs রিসিভ (Area chart), সার্ভিস-ভিত্তিক pie, ইউজার-ভিত্তিক রিসিভ bar chart, সর্বশেষ ৭ দিনের এন্ট্রি
-- **Realtime** — Supabase realtime subscribe, কেউ নতুন এন্ট্রি দিলে সাথে সাথে ড্যাশবোর্ড আপডেট
-- **Quick Actions** — সরাসরি Action Board / Day Book বাটন
-- React Query auto-refetch প্রতি ৩০ সেকেন্ডে + window focus-এ
-
-## ৪) Action Board ৩-সেকশন ফর্ম
-
-বর্তমানে Action Board সব ফিল্ড একসাথে দেখায়। এটাকে Edit Dialog-এর মতো ৩ ভাগে দেখাব:
-- ১. Passenger Details & Price
-- ২. Sub Agency / Reference
-- ৩. Vendor Information
-
-`ModulePage`-এর `FormSections` কম্পোনেন্ট রিইউজ করব যেন এক জায়গায় চেঞ্জ → সব জায়গায় কাজ করে।
-
-## ৫) UX ছোট উন্নতি
-
-- লগআউট বাটনে ইউজারের নাম দেখাবে ("Manager", "Md Sir")
-- Day Book-এ "Entered By" ও "Received By" কলাম
-- প্রতিটি ledger row-এ ইউজার ব্যাজ
+**টেক:** `supabase/functions/passport-ocr` edge function, Gemini 2.5 Flash (free tier-এ চলবে), MRZ + visual zone দুটোই পড়বে।
 
 ---
 
-## টেকনিক্যাল বিবরণ
+## ২) PWA (মোবাইলে ইনস্টলযোগ্য, অফলাইনে আংশিক চলবে)
 
-**DB মাইগ্রেশন:**
-1. `profiles` টেবিল + auto-create trigger on auth.users insert
-2. `cash_transfers` টেবিল
-3. ৬টি মূল টেবিলে `created_by`, `received_by` (uuid, nullable) যোগ
-4. ট্রিগার: `sync_agency_ledger()` ও `sync_vendor_ledger()` — INSERT/UPDATE on tickets/bmet/saudi/kuwait
-5. ট্রিগার: `agents` INSERT → opening agency_ledger row; `vendors` INSERT → opening vendor_ledger row
-6. RLS — সবাইকে read/write দেওয়া হবে (যেহেতু office sharing model)
-
-**ফ্রন্টএন্ড:**
-- `src/hooks/useCurrentUser.ts` — লগইন ইউজার + profile
-- `src/components/Dashboard.tsx` — সম্পূর্ণ পুনর্লিখন
-- `src/components/ActionBoard.tsx` ও `src/routes/action-board.tsx` — ৩-সেকশন ফর্ম (FormSections রিইউজ)
-- `src/routes/cash-transfers.tsx` — নতুন পেজ
-- `src/lib/modules.ts` — `cash_transfers` মডিউল যোগ
-- `src/components/AppSidebar.tsx` — Cash Transfer লিঙ্ক
-- `src/components/ModulePage.tsx` — submit-এ created_by/received_by সেট
-
-**Realtime:** Dashboard mount-এ ৬টি টেবিলে subscribe → invalidate queries।
+- Manifest + icon + Add-to-Home-Screen prompt
+- Service Worker (production-only, dev-এ disabled — যাতে Lovable preview ঠিক থাকে)
+- লগইন স্ক্রিনে "📲 হোম স্ক্রিনে যোগ করুন" বাটন
+- আইকন আমি generate করে দেব (Asia Travel লোগো স্টাইলে)
+- মোবাইলে সব পেজ আরও touch-friendly করব (বড় বাটন, sticky save bar)
 
 ---
 
-## প্রথমবার Admin তৈরি (আপনার করণীয়)
+## ৩) সহজ এন্ট্রি + Auto-Ledger (Agency / Vendor)
 
-মাইগ্রেশন approve করার পর আমি কোড deploy করব। তারপর:
-1. Lovable Cloud → Users → Add User
-   - Email: `01XXXXXXXXX@asiatravel.local` (আপনার ফোন)
-   - Password + Auto-Confirm ✅
-2. একই ভাবে Md sir-এর জন্য আরেকটা
-3. Cloud → SQL → প্রতিটি user-এর `profiles` row-এ `full_name` ('Manager' / 'Md Sir') ও `role` সেট করব (আমি instructions দেব)
+**বর্তমান সমস্যা:** ফর্ম বড়, অগোছালো; agency/vendor লিখলেও খাতায় ঠিকমতো যায় না বলে মনে হচ্ছে।
+
+**নতুন সিস্টেম:**
+- প্রতিটা এন্ট্রি ফর্মকে **Wizard স্টাইল 3 ধাপে** ভাঙব:
+  1. **যাত্রী তথ্য** (পাসপোর্ট OCR বাটন এখানে)
+  2. **বিক্রয় (Agency)** — কোন এজেন্সিতে বিক্রি, কত টাকা, কত পেলেন
+  3. **ক্রয় (Vendor)** — কোন vendor থেকে নিয়েছেন, কত খরচ, কত দিয়েছেন
+- Agency/Vendor dropdown-এ **"+ নতুন যোগ করুন"** inline option (পেজ ছাড়তে হবে না)
+- **DB ট্রিগার আগে থেকেই বানানো আছে** (`sync_agency_ledger`, `sync_vendor_ledger`) — শুধু verify করব যে ঠিকমতো ফায়ার হচ্ছে এবং ledger পেজে balance ঠিক দেখাচ্ছে
+- প্রতিটা agency/vendor এর কার্ডে **পাওনা / প্রদেয় ব্যালেন্স** badge
 
 ---
 
-**Approve করলে আমি প্রথমে DB মাইগ্রেশন submit করব, তারপর সব কোড একসাথে আপডেট করব।**
+## ৪) BMET কার্ড — সহজ এন্ট্রি, ট্র্যাকিং ও আপডেট
+
+**নতুন BMET পেজ:**
+- **3 status filter tab** উপরে: 🟡 Pending | 🔵 Vendor-এ পাঠানো | 🟢 Delivered
+- প্রতিটা card-এ: যাত্রীর নাম, পাসপোর্ট, বর্তমান stage, কত দিন pending
+- One-click stage update (Pending → Sent → Received → Delivered) — tap করলে সাথে সাথে date বসবে
+- বাকি টাকার alert badge
+
+---
+
+## ৫) ⭐ Smart Accounts — Manager Cash Drawer System
+
+এটাই সবচেয়ে গুরুত্বপূর্ণ। নতুন concept:
+
+**মূল ধারণা:** প্রতিটা ইউজারের একটা **"Cash Drawer" (টাকার বাক্স)** আছে।
+
+```
+Manager-এর Cash Drawer:
+  + আজ রিসিভ:        ৳ 25,000   (৫টা এন্ট্রি থেকে অটো)
+  + পূর্বের ব্যালেন্স:  ৳  3,000
+  - Md Sir-কে দিলেন:  ৳ 20,000   (Cash Transfer)
+  - অফিস খরচ:          ৳   500
+  ─────────────────────────────
+  = বর্তমান হাতে:     ৳  7,500  ← এই মুহূর্তে আপনার কাছে এত টাকা আছে
+```
+
+**যেভাবে কাজ করবে:**
+1. আপনি (Manager) যখন কোনো সার্ভিসে `received_amount` এন্ট্রি দেবেন → অটো আপনার drawer-এ + হবে (received_by = আপনি)
+2. দিন শেষে **"Hand Over to Md Sir"** বাটন চাপলে → একটা ডায়লগ আসবে আজ মোট কত রিসিভ করেছেন, কত হ্যান্ডওভার করছেন → সেভ করলে drawer থেকে − হবে
+3. Md Sir-এর drawer-এ + হবে অটো
+4. **নতুন পেজ `/cash-drawer`** — দুই ইউজারের live balance, daily closing, history
+
+**নতুন টেবিল:** `cash_expenses` (অফিস খরচ tracking — কে কখন কী খাতে কত খরচ করল)
+
+**Day Closing Report:** প্রতিদিন রাতে এক ক্লিকে আজকের সব রিসিভ + সব খরচ + হ্যান্ডওভার + closing balance — PDF/print ready।
+
+---
+
+## কাজের ক্রম
+
+আমি একসাথে সব করব এই sequence-এ:
+1. DB মাইগ্রেশন: `cash_expenses` টেবিল + `daily_closings` টেবিল + drawer balance view
+2. Edge function: `passport-ocr` (Lovable AI)
+3. ফ্রন্টএন্ড:
+   - PassportScanner কম্পোনেন্ট (camera + OCR)
+   - 3-step Wizard ফর্ম (ModulePage refactor)
+   - Cash Drawer পেজ + Hand Over dialog
+   - BMET কার্ড নতুন UI (status tabs)
+   - Inline "+ Add" agency/vendor
+4. PWA: manifest, icons, service worker (prod-only guard সহ)
+5. Mobile polish: bottom nav, sticky save bar, বড় touch target
+
+---
+
+## আপনার করণীয় (কিছুই না — শুধু approve)
+
+সব কোড ও মাইগ্রেশন আমি লিখব। শুধু একটাই জিনিস confirm করুন:
+
+**প্রশ্ন:** Cash Drawer-এ "অফিস খরচ" এন্ট্রির categories কী কী রাখব? (যেমন: Transport, Stationery, Bill, Food, Other)
+
+আপনি Approve করলে আমি কাজ শুরু করব।
