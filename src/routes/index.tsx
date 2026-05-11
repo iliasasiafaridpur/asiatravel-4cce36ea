@@ -14,7 +14,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { CalendarIcon, Plane, IdCard, Globe2, StickyNote, Users, Truck, ClipboardList, TrendingUp, TrendingDown, Wallet, FileText } from "lucide-react";
+import { CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList, TrendingUp, TrendingDown, Wallet, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
