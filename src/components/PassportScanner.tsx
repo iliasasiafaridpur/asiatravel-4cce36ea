@@ -1,0 +1,112 @@
+import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Camera, Loader2, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface PassportFields {
+  passenger_name?: string;
+  passport?: string;
+  date_of_birth?: string;
+  issue_date?: string;
+  expiry_date?: string;
+  gender?: string;
+  nationality?: string;
+  country_code?: string;
+  mrz_raw?: string;
+}
+
+interface Props {
+  onResult: (fields: PassportFields) => void;
+  compact?: boolean;
+}
+
+const FUNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/passport-ocr`;
+
+async function fileToDataUrl(file: File): Promise<string> {
+  // Compress if huge: draw to canvas, max width 1600
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = URL.createObjectURL(file);
+  });
+  const max = 1600;
+  const scale = Math.min(1, max / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+export function PassportScanner({ onResult, compact }: Props) {
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const handleFile = async (file: File | null) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const resp = await fetch(FUNC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || `HTTP ${resp.status}`);
+      const fields: PassportFields = json.fields ?? {};
+      if (!fields.passenger_name && !fields.passport) {
+        toast.error("পাসপোর্ট পড়া যায়নি — পরিষ্কার ছবি দিয়ে আবার চেষ্টা করুন");
+      } else {
+        toast.success(`তথ্য পাওয়া গেছে: ${fields.passenger_name ?? ""}`);
+        onResult(fields);
+      }
+    } catch (e) {
+      toast.error("OCR সমস্যা: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+      if (cameraRef.current) cameraRef.current.value = "";
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className={`flex gap-2 ${compact ? "" : "p-3 rounded-md border bg-muted/30"}`}>
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+      />
+      <Button
+        type="button"
+        size={compact ? "sm" : "default"}
+        onClick={() => cameraRef.current?.click()}
+        disabled={busy}
+        className="gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+        {busy ? "পড়ছি..." : "পাসপোর্ট স্ক্যান"}
+      </Button>
+      <Button type="button" size={compact ? "sm" : "default"} variant="outline" onClick={() => fileRef.current?.click()} disabled={busy} className="gap-1.5">
+        <Upload className="h-4 w-4" /> ছবি আপলোড
+      </Button>
+    </div>
+  );
+}
