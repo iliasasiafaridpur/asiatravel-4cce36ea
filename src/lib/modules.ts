@@ -181,7 +181,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "status", label: "Status", type: "select", options: STATUS_VISA, showInList: true, section: "passenger" },
       { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
       { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
-      { name: "received", label: "Received", type: "number", showInList: true, section: "agency" },
+      { name: "received", label: "Received Amount", type: "number", showInList: true, section: "agency" },
       { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
