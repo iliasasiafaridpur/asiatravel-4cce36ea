@@ -28,6 +28,7 @@ import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
+import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 
 type Row = Record<string, unknown> & { id: string };
 
