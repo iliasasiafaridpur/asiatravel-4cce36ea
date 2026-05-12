@@ -12,6 +12,7 @@ import {
   Globe2,
   ArrowRightLeft,
   Wallet,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import {
   Sidebar,
