@@ -16,11 +16,11 @@ import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as DayBookRouteImport } from './routes/day-book'
-import { Route as CashTransfersRouteImport } from './routes/cash-transfers'
 import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
 import { Route as ActionBoardRouteImport } from './routes/action-board'
+import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 
 const VendorsRoute = VendorsRouteImport.update({
@@ -58,11 +58,6 @@ const DayBookRoute = DayBookRouteImport.update({
   path: '/day-book',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CashTransfersRoute = CashTransfersRouteImport.update({
-  id: '/cash-transfers',
-  path: '/cash-transfers',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BmetRoute = BmetRouteImport.update({
   id: '/bmet',
   path: '/bmet',
@@ -83,6 +78,11 @@ const ActionBoardRoute = ActionBoardRouteImport.update({
   path: '/action-board',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,11 +91,11 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/cash-transfers': typeof CashTransfersRoute
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -106,11 +106,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/cash-transfers': typeof CashTransfersRoute
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -122,11 +122,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/cash-transfers': typeof CashTransfersRoute
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -139,11 +139,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accounts'
     | '/action-board'
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
-    | '/cash-transfers'
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
@@ -154,11 +154,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounts'
     | '/action-board'
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
-    | '/cash-transfers'
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
@@ -169,11 +169,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accounts'
     | '/action-board'
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
-    | '/cash-transfers'
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
@@ -185,11 +185,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRoute
   ActionBoardRoute: typeof ActionBoardRoute
   AgencyLedgerRoute: typeof AgencyLedgerRoute
   AgentsRoute: typeof AgentsRoute
   BmetRoute: typeof BmetRoute
-  CashTransfersRoute: typeof CashTransfersRoute
   DayBookRoute: typeof DayBookRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
@@ -250,13 +250,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DayBookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cash-transfers': {
-      id: '/cash-transfers'
-      path: '/cash-transfers'
-      fullPath: '/cash-transfers'
-      preLoaderRoute: typeof CashTransfersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/bmet': {
       id: '/bmet'
       path: '/bmet'
@@ -285,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActionBoardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -297,11 +297,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountsRoute: AccountsRoute,
   ActionBoardRoute: ActionBoardRoute,
   AgencyLedgerRoute: AgencyLedgerRoute,
   AgentsRoute: AgentsRoute,
   BmetRoute: BmetRoute,
-  CashTransfersRoute: CashTransfersRoute,
   DayBookRoute: DayBookRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,

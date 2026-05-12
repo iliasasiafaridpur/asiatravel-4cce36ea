@@ -75,6 +75,18 @@ export function ModulePage({ module: mod }: Props) {
 
   useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [mod.key]);
 
+  // Realtime: auto-refresh on any change to this table
+  useEffect(() => {
+    const ch = supabase
+      .channel(`rt_${mod.table}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
+        void load();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mod.table]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
@@ -89,7 +101,12 @@ export function ModulePage({ module: mod }: Props) {
 
   const startCreate = () => {
     setEditing(null);
-    setForm(emptyForm(mod));
+    const f = emptyForm(mod);
+    // Auto-fill "Entry By" with current user's name
+    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+      f.entry_by = displayName(profile, user);
+    }
+    setForm(f);
     setOpenForm(true);
   };
 
@@ -319,11 +336,9 @@ export function FormSections({ mod, form, setForm }: {
   const applyOcr = (fields: PassportFields) => {
     setForm((s) => {
       const next = { ...s };
+      // Only apply name + passport — nothing else.
       if (fields.passenger_name) next.passenger_name = fields.passenger_name;
       if (fields.passport) next.passport = fields.passport.toUpperCase();
-      if (fields.country_code && mod.fields.some((f) => f.name === "country_name")) {
-        next.country_name = fields.country_code;
-      }
       return next;
     });
   };
@@ -384,11 +399,22 @@ function FormField({ field, value, onChange }: {
       ) : (
         <Input
           type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-          value={field.type === "number" ? (value as number) ?? 0 : strVal}
+          inputMode={field.type === "number" ? "decimal" : undefined}
+          value={
+            field.type === "number"
+              ? (value === 0 || value === null || value === undefined || value === "" ? "" : String(value))
+              : strVal
+          }
+          placeholder={field.type === "number" ? "0" : undefined}
           onChange={(e) => {
-            if (field.type === "number") onChange(Number(e.target.value));
-            else onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
+            if (field.type === "number") {
+              const v = e.target.value;
+              onChange(v === "" ? 0 : Number(v));
+            } else {
+              onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
+            }
           }}
+          onFocus={(e) => { if (field.type === "number" && e.target.value === "0") e.target.select(); }}
           onBlur={(e) => {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
