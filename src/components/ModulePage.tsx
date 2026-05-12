@@ -336,11 +336,9 @@ export function FormSections({ mod, form, setForm }: {
   const applyOcr = (fields: PassportFields) => {
     setForm((s) => {
       const next = { ...s };
+      // Only apply name + passport — nothing else.
       if (fields.passenger_name) next.passenger_name = fields.passenger_name;
       if (fields.passport) next.passport = fields.passport.toUpperCase();
-      if (fields.country_code && mod.fields.some((f) => f.name === "country_name")) {
-        next.country_name = fields.country_code;
-      }
       return next;
     });
   };
