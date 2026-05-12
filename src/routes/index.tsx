@@ -298,7 +298,7 @@ function DashboardPage() {
           <Link to="/action-board">
             <Button size="sm" variant="secondary" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
           </Link>
-          <Link to="/cash-transfers">
+          <Link to="/accounts">
             <Button size="sm" variant="secondary" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Cash</Button>
           </Link>
         </div>
@@ -382,11 +382,11 @@ function DashboardPage() {
             </Link>
           );
         })}
-        <Link to="/cash-transfers">
+        <Link to="/accounts">
           <Card className="hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Cash Transfer</p>
+                <p className="text-xs text-muted-foreground">Accounts</p>
                 <p className="text-xl font-bold mt-0.5">৳ {cashSummary.total.toLocaleString()}</p>
               </div>
               <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-amber-500/15 text-amber-600">
@@ -486,8 +486,8 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="Cash Transfer Methods">
-          {cashSummary.byMethod.length === 0 ? <Empty loading={isLoading} text="কোনো Cash Transfer নেই" /> : (
+        <ChartCard title="Accounts Methods">
+          {cashSummary.byMethod.length === 0 ? <Empty loading={isLoading} text="কোনো Accounts নেই" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={cashSummary.byMethod} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
@@ -531,10 +531,10 @@ function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">সাম্প্রতিক Cash Transfer</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">সাম্প্রতিক Accounts</CardTitle></CardHeader>
           <CardContent>
             {cashSummary.recent.length === 0 ? (
-              <p className="text-sm text-muted-foreground">কোনো Cash Transfer নেই</p>
+              <p className="text-sm text-muted-foreground">কোনো Accounts নেই</p>
             ) : (
               <ul className="divide-y divide-border">
                 {cashSummary.recent.map((c) => (
