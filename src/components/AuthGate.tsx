@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { speakWelcome } from "@/lib/voice";
 
 // Phone number-কে synthetic email-এ রূপান্তর (SMS provider লাগে না)
 // উদাহরণ: "01712345678" -> "01712345678@asiatravel.local"
