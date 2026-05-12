@@ -30,12 +30,14 @@ interface Acct {
 }
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; }
+interface Recv { id: string; entry_date: string; service: string; ref_id: string; passenger: string; amount: number; }
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
   const [acct, setAcct] = useState<Acct | null>(null);
   const [handovers, setHandovers] = useState<Hand[]>([]);
   const [expenses, setExpenses] = useState<Exp[]>([]);
+  const [received, setReceived] = useState<Recv[]>([]);
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: 0, method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: 0, remarks: "" });
   const reloadingRef = useRef(false);
@@ -48,15 +50,26 @@ function AccountsPage() {
       return;
     }
     reloadingRef.current = true;
-    const [a, h, e] = await Promise.all([
+    const [a, h, e, t, b, sv, kv] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(100),
-      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(100),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("tickets").select("id,ticket_id,entry_date,passenger_name,received").eq("received_by", user.id).gt("received", 0).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("bmet_cards").select("id,bmet_id,entry_date,passenger_name,received_amount").eq("received_by", user.id).gt("received_amount", 0).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("saudi_visas").select("id,saudi_id,entry_date,passenger_name,received_amount").eq("received_by", user.id).gt("received_amount", 0).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("kuwait_visas").select("id,kuwait_id,entry_date,passenger_name,received").eq("received_by", user.id).gt("received", 0).order("entry_date", { ascending: false }).limit(200),
     ]);
     const arr = (a.data as unknown) as Acct[] | null;
     setAcct(arr?.[0] ?? null);
     setHandovers(((h.data as unknown) as Hand[]) ?? []);
     setExpenses(((e.data as unknown) as Exp[]) ?? []);
+    const merged: Recv[] = [
+      ...(((t.data as unknown) as Array<{id:string;ticket_id:string;entry_date:string;passenger_name:string;received:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "AIR TICKET", ref_id: r.ticket_id, passenger: r.passenger_name, amount: Number(r.received) })),
+      ...(((b.data as unknown) as Array<{id:string;bmet_id:string;entry_date:string;passenger_name:string;received_amount:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "BMET", ref_id: r.bmet_id, passenger: r.passenger_name, amount: Number(r.received_amount) })),
+      ...(((sv.data as unknown) as Array<{id:string;saudi_id:string;entry_date:string;passenger_name:string;received_amount:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "Saudi Visa", ref_id: r.saudi_id, passenger: r.passenger_name, amount: Number(r.received_amount) })),
+      ...(((kv.data as unknown) as Array<{id:string;kuwait_id:string;entry_date:string;passenger_name:string;received:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "Kuwait Visa", ref_id: r.kuwait_id, passenger: r.passenger_name, amount: Number(r.received) })),
+    ].sort((x, y) => y.entry_date.localeCompare(x.entry_date));
+    setReceived(merged);
     reloadingRef.current = false;
     if (queuedRef.current) {
       queuedRef.current = false;
@@ -193,6 +206,30 @@ function AccountsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Received Ledger - spreadsheet style */}
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">📥 Received Ledger ({received.length}) — যাত্রী থেকে প্রাপ্ত</CardTitle></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Service</TableHead><TableHead>Ref ID</TableHead><TableHead>Passenger</TableHead><TableHead className="text-right">Received (৳)</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {received.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">কোনো Received এন্ট্রি নেই — Service এ Received Amount দিলে এখানে স্বয়ংক্রিয়ভাবে আসবে</TableCell></TableRow>
+                  : received.map((r) => (
+                    <TableRow key={`${r.service}-${r.id}`}>
+                      <TableCell className="whitespace-nowrap">{formatDate(r.entry_date)}</TableCell>
+                      <TableCell><Badge variant="secondary">{r.service}</Badge></TableCell>
+                      <TableCell className="font-mono text-xs">{r.ref_id}</TableCell>
+                      <TableCell className="font-medium">{r.passenger}</TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold text-emerald-600">৳ {r.amount.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-base">Hand-over History ({handovers.length})</CardTitle></CardHeader>
