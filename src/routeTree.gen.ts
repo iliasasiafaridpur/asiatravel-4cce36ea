@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as VendorLedgerRouteImport } from './routes/vendor-ledger'
 import { Route as TicketsRouteImport } from './routes/tickets'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
@@ -36,6 +37,11 @@ const VendorLedgerRoute = VendorLedgerRouteImport.update({
 const TicketsRoute = TicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SaudiVisaRoute = SaudiVisaRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/saudi-visa': typeof SaudiVisaRoute
+  '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/saudi-visa': typeof SaudiVisaRoute
+  '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/saudi-visa': typeof SaudiVisaRoute
+  '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/kuwait-visa'
     | '/saudi-visa'
+    | '/settings'
     | '/tickets'
     | '/vendor-ledger'
     | '/vendors'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/kuwait-visa'
     | '/saudi-visa'
+    | '/settings'
     | '/tickets'
     | '/vendor-ledger'
     | '/vendors'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/kuwait-visa'
     | '/saudi-visa'
+    | '/settings'
     | '/tickets'
     | '/vendor-ledger'
     | '/vendors'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
   SaudiVisaRoute: typeof SaudiVisaRoute
+  SettingsRoute: typeof SettingsRoute
   TicketsRoute: typeof TicketsRoute
   VendorLedgerRoute: typeof VendorLedgerRoute
   VendorsRoute: typeof VendorsRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/tickets'
       fullPath: '/tickets'
       preLoaderRoute: typeof TicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/saudi-visa': {
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
   SaudiVisaRoute: SaudiVisaRoute,
+  SettingsRoute: SettingsRoute,
   TicketsRoute: TicketsRoute,
   VendorLedgerRoute: VendorLedgerRoute,
   VendorsRoute: VendorsRoute,

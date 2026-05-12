@@ -12,6 +12,7 @@ import {
   Globe2,
   ArrowRightLeft,
   Wallet,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,6 +48,9 @@ const NAV = [
     { to: "/agents", title: "Agent List", icon: UserCog },
     { to: "/vendors", title: "Vendor List", icon: Truck },
     { to: "/invoice", title: "Invoice", icon: FileText },
+  ]},
+  { group: "System", items: [
+    { to: "/settings", title: "Settings", icon: SettingsIcon },
   ]},
 ];
 
