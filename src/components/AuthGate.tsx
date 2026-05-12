@@ -53,8 +53,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           .then(({ data }) => {
             const name = (data as { full_name?: string } | null)?.full_name ?? "";
             speakWelcome(name);
-          })
-          .catch(() => speakWelcome());
+          }, () => speakWelcome());
       }
     });
 
