@@ -49,6 +49,9 @@ const NAV = [
     { to: "/vendors", title: "Vendor List", icon: Truck },
     { to: "/invoice", title: "Invoice", icon: FileText },
   ]},
+  { group: "System", items: [
+    { to: "/settings", title: "Settings", icon: SettingsIcon },
+  ]},
 ];
 
 export function AppSidebar() {
