@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, type Field, type ModuleSchema, type Section } from "@/lib/modules";
@@ -60,27 +60,41 @@ export function ModulePage({ module: mod }: Props) {
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  const loadingRef = useRef(false);
+  const reloadQueuedRef = useRef(false);
+  const hasLoadedRef = useRef(false);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async (showSpinner = !hasLoadedRef.current) => {
+    if (loadingRef.current) {
+      reloadQueuedRef.current = true;
+      return;
+    }
+    loadingRef.current = true;
+    if (showSpinner) setLoading(true);
     const { data, error } = await supabase
       .from(mod.table as never)
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(250);
     if (error) toast.error("লোড করতে সমস্যা: " + error.message);
-    setRows(((data as unknown) as Row[]) ?? []);
+    else setRows(((data as unknown) as Row[]) ?? []);
+    loadingRef.current = false;
+    hasLoadedRef.current = true;
     setLoading(false);
-  };
+    if (reloadQueuedRef.current) {
+      reloadQueuedRef.current = false;
+      window.setTimeout(() => void load(false), 250);
+    }
+  }, [mod.table]);
 
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [mod.key]);
+  useEffect(() => { void load(true); }, [load, mod.key]);
 
   // Realtime: auto-refresh on any change to this table
   useEffect(() => {
     const ch = supabase
       .channel(`rt_${mod.table}`)
       .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
-        void load();
+        void load(false);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };

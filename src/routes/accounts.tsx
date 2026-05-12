@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -38,19 +38,31 @@ function AccountsPage() {
   const [expenses, setExpenses] = useState<Exp[]>([]);
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: 0, method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: 0, remarks: "" });
+  const reloadingRef = useRef(false);
+  const queuedRef = useRef(false);
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     if (!user?.id) return;
+    if (reloadingRef.current) {
+      queuedRef.current = true;
+      return;
+    }
+    reloadingRef.current = true;
     const [a, h, e] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
-      supabase.from("cash_handovers").select("*").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(200),
-      supabase.from("cash_expenses").select("*").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(100),
+      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(100),
     ]);
     const arr = (a.data as unknown) as Acct[] | null;
     setAcct(arr?.[0] ?? null);
     setHandovers(((h.data as unknown) as Hand[]) ?? []);
     setExpenses(((e.data as unknown) as Exp[]) ?? []);
-  };
+    reloadingRef.current = false;
+    if (queuedRef.current) {
+      queuedRef.current = false;
+      window.setTimeout(() => void reload(), 250);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     void reload();
@@ -63,8 +75,7 @@ function AccountsPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "kuwait_visas" }, () => void reload())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, reload]);
 
   const saveHandover = async () => {
     if (!user?.id) return toast.error("লগ-ইন করুন");
