@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -420,7 +420,7 @@ function AccountsPage() {
   );
 }
 
-function Stat({ label, value, icon, highlight }: { label: string; value: number; icon: React.ReactNode; highlight?: boolean }) {
+function Stat({ label, value, icon, highlight }: { label: string; value: number; icon: ReactNode; highlight?: boolean }) {
   return (
     <div className={`rounded-xl border bg-card p-4 shadow-sm ${highlight ? "ring-2 ring-primary/30" : ""}`}>
       <div className="flex items-center justify-between gap-2 text-muted-foreground">
@@ -437,7 +437,7 @@ function MoneyCell({ value, tone }: { value: number; tone: "success" | "warning"
   return <TableCell className={`text-right tabular-nums font-semibold whitespace-nowrap ${toneClass}`}>৳ {Number(value).toLocaleString()}</TableCell>;
 }
 
-function EntryCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function EntryCard({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return <Card><CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-3">{children}</CardContent></Card>;
 }
 
