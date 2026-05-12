@@ -162,6 +162,8 @@ export function ModulePage({ module: mod }: Props) {
 
     const isEdit = !!editing;
     const editId = editing?.id;
+    const finalId = !isEdit ? await generateNextId(mod) : undefined;
+    if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
 
     // Close immediately for snappy UX
     setOpenForm(false);
@@ -183,11 +185,9 @@ export function ModulePage({ module: mod }: Props) {
           if (error) throw error;
           toast.success("আপডেট হয়েছে");
         } else {
-          const newId = await generateNextId(mod);
-          (payload as Record<string, unknown>)[mod.idColumn] = newId;
           const { error } = await supabase.from(mod.table as never).insert(payload as never);
           if (error) throw error;
-          toast.success(`✓ যোগ হয়েছে: ${newId}`);
+          toast.success(`✓ যোগ হয়েছে: ${finalId}`);
         }
         void load();
       } catch (e) {
