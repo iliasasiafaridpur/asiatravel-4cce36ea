@@ -110,6 +110,7 @@ export type Database = {
           country_name: string | null
           created_at: string
           created_by: string | null
+          current_stage: string | null
           delivery_date: string | null
           entry_by: string | null
           entry_date: string
@@ -122,7 +123,10 @@ export type Database = {
           received_by: string | null
           received_date: string | null
           sold_price: number | null
+          stage_history: Json
+          stage_updated_at: string | null
           status: string
+          submitted_date: string | null
           updated_at: string
           vendor_bought: string | null
           vendor_sent_date: string | null
@@ -135,6 +139,7 @@ export type Database = {
           country_name?: string | null
           created_at?: string
           created_by?: string | null
+          current_stage?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -147,7 +152,10 @@ export type Database = {
           received_by?: string | null
           received_date?: string | null
           sold_price?: number | null
+          stage_history?: Json
+          stage_updated_at?: string | null
           status?: string
+          submitted_date?: string | null
           updated_at?: string
           vendor_bought?: string | null
           vendor_sent_date?: string | null
@@ -160,6 +168,7 @@ export type Database = {
           country_name?: string | null
           created_at?: string
           created_by?: string | null
+          current_stage?: string | null
           delivery_date?: string | null
           entry_by?: string | null
           entry_date?: string
@@ -172,7 +181,10 @@ export type Database = {
           received_by?: string | null
           received_date?: string | null
           sold_price?: number | null
+          stage_history?: Json
+          stage_updated_at?: string | null
           status?: string
+          submitted_date?: string | null
           updated_at?: string
           vendor_bought?: string | null
           vendor_sent_date?: string | null
@@ -461,21 +473,30 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          designation: string | null
           full_name: string
+          is_active: boolean
+          mobile: string | null
           role: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          designation?: string | null
           full_name?: string
+          is_active?: boolean
+          mobile?: string | null
           role?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          designation?: string | null
           full_name?: string
+          is_active?: boolean
+          mobile?: string | null
           role?: string
           updated_at?: string
           user_id?: string
