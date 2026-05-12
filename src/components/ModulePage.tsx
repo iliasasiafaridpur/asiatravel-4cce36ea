@@ -61,6 +61,7 @@ export function ModulePage({ module: mod }: Props) {
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -89,18 +90,25 @@ export function ModulePage({ module: mod }: Props) {
     }
     loadingRef.current = true;
     if (showSpinner) setLoading(true);
-    const { data, error } = await supabase
-      .from(mod.table as never)
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(250);
-    if (error) {
-      // Network error — keep cached rows, don't toast on every retry
-      if (!hasLoadedRef.current) toast.error("লোড করতে সমস্যা: " + error.message);
-    } else {
+    try {
+      const result = await Promise.race([
+        supabase
+          .from(mod.table as never)
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(250),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 12000)),
+      ]);
+      const { data, error } = result as { data: unknown; error: { message: string } | null };
+      if (error) throw error;
       const list = ((data as unknown) as Row[]) ?? [];
       setRows(list);
+      setLoadError(null);
       try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* quota */ }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "ডাটা লোড করা যায়নি";
+      setLoadError(msg);
+      if (!hasLoadedRef.current) toast.error("লোড করতে সমস্যা: " + msg);
     }
     loadingRef.current = false;
     hasLoadedRef.current = true;
