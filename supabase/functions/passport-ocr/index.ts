@@ -42,21 +42,12 @@ Deno.serve(async (req) => {
       type: "function",
       function: {
         name: "passport_fields",
-        description: "Structured passport fields extracted from the photo.",
+        description: "Passenger name and passport number only.",
         parameters: {
           type: "object",
           properties: {
             passenger_name: { type: "string" },
             passport: { type: "string" },
-            date_of_birth: { type: "string" },
-            issue_date: { type: "string" },
-            expiry_date: { type: "string" },
-            gender: { type: "string" },
-            nationality: { type: "string" },
-            country_code: { type: "string" },
-            place_of_birth: { type: "string" },
-            mrz_raw: { type: "string" },
-            confidence: { type: "string", description: "low | medium | high" },
           },
           required: ["passenger_name", "passport"],
           additionalProperties: false,
