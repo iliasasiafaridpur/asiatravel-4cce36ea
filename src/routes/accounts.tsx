@@ -50,15 +50,26 @@ function AccountsPage() {
       return;
     }
     reloadingRef.current = true;
-    const [a, h, e] = await Promise.all([
+    const [a, h, e, t, b, sv, kv] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(100),
-      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(100),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("tickets").select("id,ticket_id,entry_date,passenger_name,received").eq("received_by", user.id).gt("received", 0).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("bmet_cards").select("id,bmet_id,entry_date,passenger_name,received_amount").eq("received_by", user.id).gt("received_amount", 0).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("saudi_visas").select("id,saudi_id,entry_date,passenger_name,received_amount").eq("received_by", user.id).gt("received_amount", 0).order("entry_date", { ascending: false }).limit(200),
+      supabase.from("kuwait_visas").select("id,kuwait_id,entry_date,passenger_name,received").eq("received_by", user.id).gt("received", 0).order("entry_date", { ascending: false }).limit(200),
     ]);
     const arr = (a.data as unknown) as Acct[] | null;
     setAcct(arr?.[0] ?? null);
     setHandovers(((h.data as unknown) as Hand[]) ?? []);
     setExpenses(((e.data as unknown) as Exp[]) ?? []);
+    const merged: Recv[] = [
+      ...(((t.data as unknown) as Array<{id:string;ticket_id:string;entry_date:string;passenger_name:string;received:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "AIR TICKET", ref_id: r.ticket_id, passenger: r.passenger_name, amount: Number(r.received) })),
+      ...(((b.data as unknown) as Array<{id:string;bmet_id:string;entry_date:string;passenger_name:string;received_amount:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "BMET", ref_id: r.bmet_id, passenger: r.passenger_name, amount: Number(r.received_amount) })),
+      ...(((sv.data as unknown) as Array<{id:string;saudi_id:string;entry_date:string;passenger_name:string;received_amount:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "Saudi Visa", ref_id: r.saudi_id, passenger: r.passenger_name, amount: Number(r.received_amount) })),
+      ...(((kv.data as unknown) as Array<{id:string;kuwait_id:string;entry_date:string;passenger_name:string;received:number}>) ?? []).map((r) => ({ id: r.id, entry_date: r.entry_date, service: "Kuwait Visa", ref_id: r.kuwait_id, passenger: r.passenger_name, amount: Number(r.received) })),
+    ].sort((x, y) => y.entry_date.localeCompare(x.entry_date));
+    setReceived(merged);
     reloadingRef.current = false;
     if (queuedRef.current) {
       queuedRef.current = false;
