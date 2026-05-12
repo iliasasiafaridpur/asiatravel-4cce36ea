@@ -14,17 +14,14 @@ interface Body {
 }
 
 const SYSTEM = `You are an expert at reading machine-readable passports.
-You will receive a photo of a passport's data page. Extract the fields below
-from BOTH the visual zone and the MRZ (bottom two lines) and return them via
-the provided tool. If a field is not legible, return an empty string.
+You will receive a photo of a passport's data page. Extract ONLY the two fields
+below from the visual zone and the MRZ (bottom two lines). Do NOT extract or
+return any other field — no country, no dates, no gender, no nationality.
 
 Rules:
-- passenger_name: Given names + Surname in normal English order, Title Case (e.g. "Mohammad Rahim Uddin"). Strip "<<" markers.
-- passport: alphanumeric only, uppercase, no spaces.
-- date_of_birth, issue_date, expiry_date: ISO format YYYY-MM-DD.
-- gender: "M" or "F".
-- nationality / country_code: 3-letter ISO code (e.g. BGD, IND, PAK).
-- mrz_raw: the two MRZ lines as you see them, joined with '\\n'.`;
+- passenger_name: Given names + Surname in normal English order, Title Case
+  (e.g. "Mohammad Rahim Uddin"). Strip "<<" markers.
+- passport: alphanumeric only, uppercase, no spaces.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
