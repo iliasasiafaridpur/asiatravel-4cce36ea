@@ -207,6 +207,30 @@ function AccountsPage() {
         </Card>
       </div>
 
+      {/* Received Ledger - spreadsheet style */}
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">📥 Received Ledger ({received.length}) — যাত্রী থেকে প্রাপ্ত</CardTitle></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Service</TableHead><TableHead>Ref ID</TableHead><TableHead>Passenger</TableHead><TableHead className="text-right">Received (৳)</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {received.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">কোনো Received এন্ট্রি নেই — Service এ Received Amount দিলে এখানে স্বয়ংক্রিয়ভাবে আসবে</TableCell></TableRow>
+                  : received.map((r) => (
+                    <TableRow key={`${r.service}-${r.id}`}>
+                      <TableCell className="whitespace-nowrap">{formatDate(r.entry_date)}</TableCell>
+                      <TableCell><Badge variant="secondary">{r.service}</Badge></TableCell>
+                      <TableCell className="font-mono text-xs">{r.ref_id}</TableCell>
+                      <TableCell className="font-medium">{r.passenger}</TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold text-emerald-600">৳ {r.amount.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-base">Hand-over History ({handovers.length})</CardTitle></CardHeader>
         <CardContent>
