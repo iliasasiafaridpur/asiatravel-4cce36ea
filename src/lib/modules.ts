@@ -2,7 +2,7 @@
 
 export type FieldType = "text" | "number" | "date" | "select" | "textarea" | "boolean";
 export type FormatKind = "name" | "passport" | "mobile";
-export type LookupKind = "country" | "airline" | "sub_agency" | "vendor";
+export type LookupKind = "country" | "airline" | "sub_agency" | "vendor" | "route" | "service_item";
 export type Section = "passenger" | "agency" | "vendor";
 
 export interface Field {
@@ -35,6 +35,7 @@ export interface ModuleSchema {
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
 const STATUS_VISA = ["Pending", "Applied", "Medical", "Finger", "MOFA", "Visa Issued", "Delivered", "Cancelled"];
 const STATUS_BMET = ["File Process", "Card Ready", "Ready for Delivery", "Delivered"];
+const BMET_STAGES = ["Submitted", "Under Process", "Fingerprint Done", "Approved", "Card Ready", "Delivered"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
@@ -92,6 +93,8 @@ export const MODULES: ModuleSchema[] = [
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "country_name", label: "Country", type: "text", showInList: true, lookup: "country", section: "passenger" },
       { name: "attested_date", label: "Attested Date", type: "date", section: "passenger" },
+      { name: "submitted_date", label: "Submitted Date (কাজ জমা)", type: "date", showInList: true, section: "passenger" },
+      { name: "current_stage", label: "Current Stage", type: "select", options: BMET_STAGES, showInList: true, section: "passenger", defaultEmpty: true },
       { name: "sold_price", label: "PRICE", type: "number", showInList: true, section: "passenger" },
       { name: "status", label: "Status", type: "select", options: STATUS_BMET, showInList: true, section: "passenger", defaultEmpty: true },
       { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },

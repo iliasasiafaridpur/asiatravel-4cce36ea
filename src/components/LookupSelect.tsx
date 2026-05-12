@@ -7,13 +7,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export type LookupKind = "country" | "airline" | "sub_agency" | "vendor";
+export type LookupKind = "country" | "airline" | "sub_agency" | "vendor" | "route" | "service_item";
 
 const LABELS: Record<LookupKind, string> = {
   country: "দেশ",
   airline: "এয়ারলাইন্স",
   sub_agency: "Sub Agency / Reference",
   vendor: "Vendor",
+  route: "Route / Airport",
+  service_item: "Service Item",
 };
 
 interface Props {
