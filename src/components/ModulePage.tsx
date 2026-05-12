@@ -101,7 +101,12 @@ export function ModulePage({ module: mod }: Props) {
 
   const startCreate = () => {
     setEditing(null);
-    setForm(emptyForm(mod));
+    const f = emptyForm(mod);
+    // Auto-fill "Entry By" with current user's name
+    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+      f.entry_by = displayName(profile, user);
+    }
+    setForm(f);
     setOpenForm(true);
   };
 
