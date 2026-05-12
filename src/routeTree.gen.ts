@@ -16,7 +16,6 @@ import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as DayBookRouteImport } from './routes/day-book'
-import { Route as CashTransfersRouteImport } from './routes/cash-transfers'
 import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
@@ -58,11 +57,6 @@ const DayBookRoute = DayBookRouteImport.update({
   path: '/day-book',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CashTransfersRoute = CashTransfersRouteImport.update({
-  id: '/cash-transfers',
-  path: '/cash-transfers',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BmetRoute = BmetRouteImport.update({
   id: '/bmet',
   path: '/bmet',
@@ -95,7 +89,6 @@ export interface FileRoutesByFullPath {
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/cash-transfers': typeof CashTransfersRoute
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -110,7 +103,6 @@ export interface FileRoutesByTo {
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/cash-transfers': typeof CashTransfersRoute
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -126,7 +118,6 @@ export interface FileRoutesById {
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/cash-transfers': typeof CashTransfersRoute
   '/day-book': typeof DayBookRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -143,7 +134,6 @@ export interface FileRouteTypes {
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
-    | '/cash-transfers'
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
@@ -158,7 +148,6 @@ export interface FileRouteTypes {
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
-    | '/cash-transfers'
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
@@ -173,7 +162,6 @@ export interface FileRouteTypes {
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
-    | '/cash-transfers'
     | '/day-book'
     | '/invoice'
     | '/kuwait-visa'
@@ -189,7 +177,6 @@ export interface RootRouteChildren {
   AgencyLedgerRoute: typeof AgencyLedgerRoute
   AgentsRoute: typeof AgentsRoute
   BmetRoute: typeof BmetRoute
-  CashTransfersRoute: typeof CashTransfersRoute
   DayBookRoute: typeof DayBookRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
@@ -250,13 +237,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DayBookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cash-transfers': {
-      id: '/cash-transfers'
-      path: '/cash-transfers'
-      fullPath: '/cash-transfers'
-      preLoaderRoute: typeof CashTransfersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/bmet': {
       id: '/bmet'
       path: '/bmet'
@@ -301,7 +281,6 @@ const rootRouteChildren: RootRouteChildren = {
   AgencyLedgerRoute: AgencyLedgerRoute,
   AgentsRoute: AgentsRoute,
   BmetRoute: BmetRoute,
-  CashTransfersRoute: CashTransfersRoute,
   DayBookRoute: DayBookRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
@@ -313,3 +292,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
