@@ -75,6 +75,18 @@ export function ModulePage({ module: mod }: Props) {
 
   useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [mod.key]);
 
+  // Realtime: auto-refresh on any change to this table
+  useEffect(() => {
+    const ch = supabase
+      .channel(`rt_${mod.table}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
+        void load();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mod.table]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
