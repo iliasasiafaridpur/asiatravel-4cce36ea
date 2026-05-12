@@ -35,7 +35,6 @@ export interface ModuleSchema {
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
 const STATUS_VISA = ["Pending", "Applied", "Medical", "Finger", "MOFA", "Visa Issued", "Delivered", "Cancelled"];
 const STATUS_BMET = ["File Process", "Card Ready", "Ready for Delivery", "Delivered"];
-const BMET_STAGES = ["Submitted", "Under Process", "Fingerprint Done", "Approved", "Card Ready", "Delivered"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
@@ -59,6 +58,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "airline", label: "Airline", type: "text", showInList: true, lookup: "airline", section: "passenger" },
+      { name: "trip_road", label: "TRIP ROAD", type: "text", showInList: true, lookup: "route", section: "passenger" },
       { name: "flight_date", label: "Flight Date", type: "date", showInList: true, section: "passenger" },
       { name: "sold_price", label: "Price", type: "number", showInList: true, section: "passenger" },
       // 2) Sub Agency / Reference & price
@@ -90,24 +90,22 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
       { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
       { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
-      { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
+      { name: "mobile", label: "Mobile", type: "text", showInList: true, format: "mobile", section: "passenger" },
       { name: "country_name", label: "Country", type: "text", showInList: true, lookup: "country", section: "passenger" },
-      { name: "attested_date", label: "Attested Date", type: "date", section: "passenger" },
-      { name: "submitted_date", label: "Submitted Date (কাজ জমা)", type: "date", showInList: true, section: "passenger" },
-      { name: "current_stage", label: "Current Stage", type: "select", options: BMET_STAGES, showInList: true, section: "passenger", defaultEmpty: true },
+      { name: "attested_date", label: "Attested Date", type: "date", showInList: true, section: "passenger" },
       { name: "sold_price", label: "PRICE", type: "number", showInList: true, section: "passenger" },
       { name: "status", label: "Status", type: "select", options: STATUS_BMET, showInList: true, section: "passenger", defaultEmpty: true },
-      { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
+      { name: "delivery_date", label: "Delivery Date", type: "date", showInList: true, section: "passenger" },
       // 2) Sub Agency / Reference & price
-      { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
+      { name: "agency_sold", label: "Sub Agency / Reference", type: "text", showInList: true, lookup: "sub_agency", section: "agency" },
       { name: "received_amount", label: "Received Amount", type: "number", showInList: true, section: "agency" },
       // 3) Vendor information
-      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
-      { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
-      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", section: "vendor" },
-      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor" },
-      { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
-      { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
+      { name: "vendor_bought", label: "Vendor", type: "text", showInList: true, lookup: "vendor", section: "vendor" },
+      { name: "cost_price", label: "Cost Price", type: "number", showInList: true, section: "vendor" },
+      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", showInList: true, section: "vendor" },
+      { name: "received_date", label: "Received Date From Vendor", type: "date", showInList: true, section: "vendor" },
+      { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
+      { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
     ],
     computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
     deriveStatus: (r) => {

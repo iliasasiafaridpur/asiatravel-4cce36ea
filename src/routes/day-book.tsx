@@ -61,7 +61,7 @@ function DayBookPage() {
             passenger: String(r.passenger_name ?? r.agent_name ?? r.vendor_name ?? "—"),
             agent: String(r.agency_sold ?? r.agent_name ?? ""),
             vendor: String(r.vendor_bought ?? r.vendor_name ?? ""),
-            status: String(r.status ?? r.current_stage ?? ""),
+            status: String(r.status ?? ""),
             receivedBy: rb ? (pm[rb] ?? "User") : "",
             amount: sold, received: recv,
           });

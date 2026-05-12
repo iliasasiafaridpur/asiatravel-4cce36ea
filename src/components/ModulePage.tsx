@@ -61,6 +61,7 @@ export function ModulePage({ module: mod }: Props) {
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -89,18 +90,25 @@ export function ModulePage({ module: mod }: Props) {
     }
     loadingRef.current = true;
     if (showSpinner) setLoading(true);
-    const { data, error } = await supabase
-      .from(mod.table as never)
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(250);
-    if (error) {
-      // Network error — keep cached rows, don't toast on every retry
-      if (!hasLoadedRef.current) toast.error("লোড করতে সমস্যা: " + error.message);
-    } else {
+    try {
+      const result = await Promise.race([
+        supabase
+          .from(mod.table as never)
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(250),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 12000)),
+      ]);
+      const { data, error } = result as { data: unknown; error: { message: string } | null };
+      if (error) throw error;
       const list = ((data as unknown) as Row[]) ?? [];
       setRows(list);
+      setLoadError(null);
       try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* quota */ }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "ডাটা লোড করা যায়নি";
+      setLoadError(msg);
+      if (!hasLoadedRef.current) toast.error("লোড করতে সমস্যা: " + msg);
     }
     loadingRef.current = false;
     hasLoadedRef.current = true;
@@ -152,6 +160,9 @@ export function ModulePage({ module: mod }: Props) {
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
+    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+      f.entry_by = displayName(profile, user);
+    }
     setForm(f);
     setOpenForm(true);
   };
@@ -177,7 +188,7 @@ export function ModulePage({ module: mod }: Props) {
       if (!editing) (payload as Record<string, unknown>).created_by = user.id;
       if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
     }
-    if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+    if (hasField("entry_by")) (payload as Record<string, unknown>).entry_by = me;
 
     if (mod.deriveStatus && hasField("status")) {
       const derived = mod.deriveStatus(payload);
@@ -306,6 +317,15 @@ export function ModulePage({ module: mod }: Props) {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                ) : loadError ? (
+                  <TableRow>
+                    <TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center py-8">
+                      <div className="space-y-2">
+                        <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => (
@@ -426,6 +446,7 @@ function FormField({ field, value, onChange }: {
 }) {
   const span = field.type === "textarea" ? "sm:col-span-2" : "";
   const strVal = (value as string) ?? "";
+  const isEntryBy = field.name === "entry_by";
   return (
     <div className={`space-y-1.5 ${span}`}>
       <Label>{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
@@ -468,6 +489,8 @@ function FormField({ field, value, onChange }: {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
           required={field.required}
+          readOnly={isEntryBy}
+          className={isEntryBy ? "bg-muted text-muted-foreground" : undefined}
         />
       )}
     </div>
