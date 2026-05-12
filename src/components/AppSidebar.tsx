@@ -13,6 +13,7 @@ import {
   ArrowRightLeft,
   Wallet,
   Settings as SettingsIcon,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,6 +51,7 @@ const NAV = [
     { to: "/invoice", title: "Invoice", icon: FileText },
   ]},
   { group: "System", items: [
+    { to: "/users", title: "User Management", icon: ShieldCheck },
     { to: "/settings", title: "Settings", icon: SettingsIcon },
   ]},
 ];
