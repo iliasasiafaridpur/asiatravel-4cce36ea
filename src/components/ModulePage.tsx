@@ -399,11 +399,22 @@ function FormField({ field, value, onChange }: {
       ) : (
         <Input
           type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-          value={field.type === "number" ? (value as number) ?? 0 : strVal}
+          inputMode={field.type === "number" ? "decimal" : undefined}
+          value={
+            field.type === "number"
+              ? (value === 0 || value === null || value === undefined || value === "" ? "" : String(value))
+              : strVal
+          }
+          placeholder={field.type === "number" ? "0" : undefined}
           onChange={(e) => {
-            if (field.type === "number") onChange(Number(e.target.value));
-            else onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
+            if (field.type === "number") {
+              const v = e.target.value;
+              onChange(v === "" ? 0 : Number(v));
+            } else {
+              onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
+            }
           }}
+          onFocus={(e) => { if (field.type === "number" && e.target.value === "0") e.target.select(); }}
           onBlur={(e) => {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
