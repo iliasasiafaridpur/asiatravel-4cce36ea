@@ -77,15 +77,16 @@ const DASHBOARD_SELECTS: Record<string, string> = {
 
 function withTimeout<T>(promise: PromiseLike<T>, ms = 6500): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error("Request timed out")), ms);
+    const timer = globalThis.setTimeout(() => reject(new Error("Request timed out")), ms);
     promise.then(
-      (value) => { window.clearTimeout(timer); resolve(value); },
-      (error) => { window.clearTimeout(timer); reject(error); },
+      (value) => { globalThis.clearTimeout(timer); resolve(value); },
+      (error) => { globalThis.clearTimeout(timer); reject(error); },
     );
   });
 }
 
 function readDashboardCache(): Row[] | undefined {
+  if (typeof window === "undefined") return undefined;
   try {
     const raw = localStorage.getItem(DASHBOARD_CACHE_KEY);
     const rows = raw ? JSON.parse(raw) : undefined;
