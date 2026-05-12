@@ -131,14 +131,14 @@ function DashboardPage() {
   });
 
   const { data: cashTransfers = [] } = useQuery({
-    queryKey: ["dashboard", "cash_transfers"],
+    queryKey: ["dashboard", "cash_handovers"],
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data } = await supabase.from("cash_transfers")
-        .select("id,entry_date,from_user,to_user,from_name,to_name,amount,method")
+      const { data } = await supabase.from("cash_handovers")
+        .select("id,entry_date,from_user,from_name,to_name,amount,method")
         .order("entry_date", { ascending: false });
       return (data ?? []) as Array<{
-        id: string; entry_date: string; from_user: string | null; to_user: string | null;
+        id: string; entry_date: string; from_user: string | null;
         from_name: string | null; to_name: string | null; amount: number; method: string;
       }>;
     },
