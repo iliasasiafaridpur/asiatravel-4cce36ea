@@ -37,6 +37,7 @@ function AccountsPage() {
   const [acct, setAcct] = useState<Acct | null>(null);
   const [handovers, setHandovers] = useState<Hand[]>([]);
   const [expenses, setExpenses] = useState<Exp[]>([]);
+  const [received, setReceived] = useState<Recv[]>([]);
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: 0, method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: 0, remarks: "" });
   const reloadingRef = useRef(false);
