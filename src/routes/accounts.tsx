@@ -233,10 +233,9 @@ function AccountsPage() {
     setReceived((prev) => [temp, ...prev]);
     setRForm({ ...rForm, ref_id: "", passenger_name: "", amount: 0, remarks: "" });
 
-    const { data: idData, error: idErr } = await supabase.rpc("next_module_id" as never, { _prefix: "RCV", _table: "payment_receipts", _column: "receipt_id" } as never);
-    if (idErr) { toast.error(idErr.message); return void reload(true); }
+    const receiptId = `RCV-${new Date().toISOString().slice(2, 7).replace("-", "")}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const { error } = await supabase.from("payment_receipts").insert({
-      receipt_id: idData as unknown as string,
+      receipt_id: receiptId,
       entry_date: rForm.entry_date,
       service_type: rForm.service_type,
       ref_id: rForm.ref_id || null,
