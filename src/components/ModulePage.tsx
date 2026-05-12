@@ -50,6 +50,12 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
   return f;
 }
 
+function selectColumns(mod: ModuleSchema): string {
+  const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
+  mod.fields.forEach((field) => columns.add(field.name));
+  return Array.from(columns).join(",");
+}
+
 export function ModulePage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
   const [rows, setRows] = useState<Row[]>([]);
@@ -65,7 +71,8 @@ export function ModulePage({ module: mod }: Props) {
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
-  const cacheKey = `cache_v1_${mod.table}`;
+  const cacheKey = `cache_v2_${mod.table}`;
+  const columns = useMemo(() => selectColumns(mod), [mod]);
 
   // Hydrate from localStorage cache instantly (offline-first)
   useEffect(() => {
@@ -73,8 +80,9 @@ export function ModulePage({ module: mod }: Props) {
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
         const cached = JSON.parse(raw) as Row[];
-        if (Array.isArray(cached) && cached.length) {
+        if (Array.isArray(cached)) {
           setRows(cached);
+          setLoadError(null);
           setLoading(false);
           hasLoadedRef.current = true;
         }
@@ -94,10 +102,10 @@ export function ModulePage({ module: mod }: Props) {
       const result = await Promise.race([
         supabase
           .from(mod.table as never)
-          .select("*")
+          .select(columns)
           .order("created_at", { ascending: false })
           .limit(250),
-        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 12000)),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 6500)),
       ]);
       const { data, error } = result as { data: unknown; error: { message: string } | null };
       if (error) throw error;
@@ -117,7 +125,7 @@ export function ModulePage({ module: mod }: Props) {
       reloadQueuedRef.current = false;
       window.setTimeout(() => void load(false), 250);
     }
-  }, [mod.table, cacheKey]);
+  }, [mod.table, cacheKey, columns]);
 
   useEffect(() => { void load(true); }, [load, mod.key]);
 

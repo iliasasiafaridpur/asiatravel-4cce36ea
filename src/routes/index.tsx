@@ -67,6 +67,34 @@ type Row = {
 
 type Range = "all" | "today" | "month" | "year" | "custom";
 const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(m.key));
+const DASHBOARD_CACHE_KEY = "dashboard_entries_v2";
+const DASHBOARD_SELECTS: Record<string, string> = {
+  tickets: "ticket_id,passenger_name,status,airline,sold_price,received,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  bmet_cards: "bmet_id,passenger_name,status,country_name,sold_price,received_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  saudi_visas: "saudi_id,passenger_name,status,sold_price,received_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  kuwait_visas: "kuwait_id,passenger_name,status,sold_price,received,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+};
+
+function withTimeout<T>(promise: PromiseLike<T>, ms = 6500): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = globalThis.setTimeout(() => reject(new Error("Request timed out")), ms);
+    promise.then(
+      (value) => { globalThis.clearTimeout(timer); resolve(value); },
+      (error) => { globalThis.clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
+function readDashboardCache(): Row[] | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = localStorage.getItem(DASHBOARD_CACHE_KEY);
+    const rows = raw ? JSON.parse(raw) : undefined;
+    return Array.isArray(rows) ? rows : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function DashboardPage() {
   const qc = useQueryClient();
@@ -98,12 +126,22 @@ function DashboardPage() {
   // === Main data query (realtime refetch only; no continuous polling loop) ===
   const { data: rows = [], isLoading } = useQuery<Row[]>({
     queryKey: ["dashboard", "entries"],
+    placeholderData: () => readDashboardCache(),
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
+    retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const all: Row[] = [];
-      await Promise.all(TARGET_MODULES.map(async (m) => {
-        const { data, error } = await supabase.from(m.table as never).select("*").order("created_at", { ascending: false }).limit(250);
-        if (error) { console.error(`[dashboard] ${m.table}`, error); return; }
+      const results = await Promise.allSettled(TARGET_MODULES.map(async (m) => {
+        const { data, error } = await withTimeout(
+          supabase
+            .from(m.table as never)
+            .select(DASHBOARD_SELECTS[m.table] ?? "*")
+            .order("created_at", { ascending: false })
+            .limit(100),
+        );
+        if (error) throw error;
         for (const r of (data as unknown as Record<string, unknown>[] | null) ?? []) {
           all.push({
             module: m.key, moduleLabel: m.label,
@@ -123,6 +161,10 @@ function DashboardPage() {
           });
         }
       }));
+      results.forEach((result, index) => {
+        if (result.status === "rejected") console.warn(`[dashboard] ${TARGET_MODULES[index].table}`, result.reason);
+      });
+      try { localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(all)); } catch { /* ignore cache quota */ }
       return all;
     },
   });
