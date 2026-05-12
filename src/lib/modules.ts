@@ -2,7 +2,7 @@
 
 export type FieldType = "text" | "number" | "date" | "select" | "textarea" | "boolean";
 export type FormatKind = "name" | "passport" | "mobile";
-export type LookupKind = "country" | "airline" | "sub_agency" | "vendor";
+export type LookupKind = "country" | "airline" | "sub_agency" | "vendor" | "route" | "service_item";
 export type Section = "passenger" | "agency" | "vendor";
 
 export interface Field {
