@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -74,30 +74,35 @@ function DashboardPage() {
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [country, setCountry] = useState<string>("all");
+  const refreshTimerRef = useRef<number | null>(null);
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
   useEffect(() => {
     const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
-    const channels = tables.map((t) =>
-      supabase.channel(`dash_${t}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: t }, () => {
-          qc.invalidateQueries({ queryKey: ["dashboard"] });
-        })
-        .subscribe()
-    );
-    return () => { channels.forEach((c) => supabase.removeChannel(c)); };
+    const refresh = () => {
+      if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = window.setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ["dashboard"] });
+      }, 300);
+    };
+    const channel = tables.reduce(
+      (ch, t) => ch.on("postgres_changes", { event: "*", schema: "public", table: t }, refresh),
+      supabase.channel("dash_rt")
+    ).subscribe();
+    return () => {
+      if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
+      supabase.removeChannel(channel);
+    };
   }, [qc]);
 
-  // === Main data query (auto-refetch every 30s + on focus) ===
+  // === Main data query (realtime refetch only; no continuous polling loop) ===
   const { data: rows = [], isLoading } = useQuery<Row[]>({
     queryKey: ["dashboard", "entries"],
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const all: Row[] = [];
       await Promise.all(TARGET_MODULES.map(async (m) => {
-        // Use '*' so we don't fail when a column doesn't exist on a particular table
-        const { data, error } = await supabase.from(m.table as never).select("*").limit(1000);
+        const { data, error } = await supabase.from(m.table as never).select("*").order("created_at", { ascending: false }).limit(250);
         if (error) { console.error(`[dashboard] ${m.table}`, error); return; }
         for (const r of (data as unknown as Record<string, unknown>[] | null) ?? []) {
           all.push({
@@ -132,11 +137,12 @@ function DashboardPage() {
 
   const { data: cashTransfers = [] } = useQuery({
     queryKey: ["dashboard", "cash_handovers"],
-    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("cash_handovers")
         .select("id,entry_date,from_user,from_name,to_name,amount,method")
-        .order("entry_date", { ascending: false });
+        .order("entry_date", { ascending: false })
+        .limit(100);
       return (data ?? []) as Array<{
         id: string; entry_date: string; from_user: string | null;
         from_name: string | null; to_name: string | null; amount: number; method: string;

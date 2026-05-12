@@ -21,15 +21,37 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     setMounted(true);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-    });
+
+    const fallback = window.setTimeout(() => {
+      if (!active) return;
+      setLoading(false);
+    }, 2500);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      window.clearTimeout(fallback);
       setSession(session);
       setLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      window.clearTimeout(fallback);
+      setSession(null);
+      setLoading(false);
     });
-    return () => subscription.unsubscribe();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (!active) return;
+      setSession(s);
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+      window.clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // SSR এবং প্রথম client render — দুটোই একই markup দেয় (hydration safe)
