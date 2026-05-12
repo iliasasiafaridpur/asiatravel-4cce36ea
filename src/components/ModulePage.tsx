@@ -160,6 +160,9 @@ export function ModulePage({ module: mod }: Props) {
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
+    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+      f.entry_by = displayName(profile, user);
+    }
     setForm(f);
     setOpenForm(true);
   };
@@ -185,7 +188,7 @@ export function ModulePage({ module: mod }: Props) {
       if (!editing) (payload as Record<string, unknown>).created_by = user.id;
       if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
     }
-    if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+    if (hasField("entry_by")) (payload as Record<string, unknown>).entry_by = me;
 
     if (mod.deriveStatus && hasField("status")) {
       const derived = mod.deriveStatus(payload);
