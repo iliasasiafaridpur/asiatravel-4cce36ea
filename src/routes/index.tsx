@@ -126,7 +126,7 @@ function DashboardPage() {
   // === Main data query (realtime refetch only; no continuous polling loop) ===
   const { data: rows = [], isLoading } = useQuery<Row[]>({
     queryKey: ["dashboard", "entries"],
-    initialData: readDashboardCache,
+    placeholderData: () => readDashboardCache(),
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     retry: 1,
