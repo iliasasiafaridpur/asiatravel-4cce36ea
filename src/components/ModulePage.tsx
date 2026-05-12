@@ -63,6 +63,23 @@ export function ModulePage({ module: mod }: Props) {
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
+  const cacheKey = `cache_v1_${mod.table}`;
+
+  // Hydrate from localStorage cache instantly (offline-first)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const cached = JSON.parse(raw) as Row[];
+        if (Array.isArray(cached) && cached.length) {
+          setRows(cached);
+          setLoading(false);
+          hasLoadedRef.current = true;
+        }
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mod.table]);
 
   const load = useCallback(async (showSpinner = !hasLoadedRef.current) => {
     if (loadingRef.current) {
@@ -76,8 +93,14 @@ export function ModulePage({ module: mod }: Props) {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(250);
-    if (error) toast.error("লোড করতে সমস্যা: " + error.message);
-    else setRows(((data as unknown) as Row[]) ?? []);
+    if (error) {
+      // Network error — keep cached rows, don't toast on every retry
+      if (!hasLoadedRef.current) toast.error("লোড করতে সমস্যা: " + error.message);
+    } else {
+      const list = ((data as unknown) as Row[]) ?? [];
+      setRows(list);
+      try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* quota */ }
+    }
     loadingRef.current = false;
     hasLoadedRef.current = true;
     setLoading(false);
@@ -85,7 +108,7 @@ export function ModulePage({ module: mod }: Props) {
       reloadQueuedRef.current = false;
       window.setTimeout(() => void load(false), 250);
     }
-  }, [mod.table]);
+  }, [mod.table, cacheKey]);
 
   useEffect(() => { void load(true); }, [load, mod.key]);
 
