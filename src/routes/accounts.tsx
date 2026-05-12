@@ -30,6 +30,7 @@ interface Acct {
 }
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; }
+interface Recv { id: string; entry_date: string; service: string; ref_id: string; passenger: string; amount: number; }
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
