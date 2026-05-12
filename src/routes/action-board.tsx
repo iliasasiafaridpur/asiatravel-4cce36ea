@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,7 @@ function emptyForm(modKey: string): Record<string, unknown> {
     if (field.type === "number") f[field.name] = 0;
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
-    else if (field.type === "select") f[field.name] = field.options?.[0] ?? "";
+    else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
     else f[field.name] = "";
   }
   return f;
@@ -38,6 +38,7 @@ function ActionBoardPage() {
   const [category, setCategory] = useState(SERVICE_CATEGORIES[0].key);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(SERVICE_CATEGORIES[0].key));
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const mod = moduleByKey(category)!;
 
@@ -47,7 +48,14 @@ function ActionBoardPage() {
   };
 
   const save = async () => {
+    if (savingRef.current) return toast.info("আগের সেভটি শেষ হচ্ছে, একটু অপেক্ষা করুন");
+    savingRef.current = true;
     setSaving(true);
+    const timeout = window.setTimeout(() => {
+      savingRef.current = false;
+      setSaving(false);
+      toast.error("সেভ হতে বেশি সময় নিচ্ছে। ইন্টারনেট চেক করে আবার চেষ্টা করুন।");
+    }, 12000);
     try {
       const payload: Record<string, unknown> = {};
       const hasField = (n: string) => mod.fields.some((f) => f.name === n);
@@ -78,11 +86,15 @@ function ActionBoardPage() {
       payload[mod.idColumn] = newId;
       const { error } = await supabase.from(mod.table as never).insert(payload as never);
       if (error) throw error;
+      window.clearTimeout(timeout);
       toast.success(`Saved: ${newId}`);
       setForm(emptyForm(category));
     } catch (e) {
+      window.clearTimeout(timeout);
       toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
     } finally {
+      window.clearTimeout(timeout);
+      savingRef.current = false;
       setSaving(false);
     }
   };
