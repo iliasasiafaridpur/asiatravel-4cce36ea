@@ -11,6 +11,7 @@ import { Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { speakModuleEntry, speakReceived } from "@/lib/voice";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
@@ -94,6 +95,8 @@ function ActionBoardPage() {
       if (error) throw error;
       window.clearTimeout(timeout);
       toast.success(`Saved: ${newId}`);
+      speakModuleEntry(mod.key);
+      if (recvAmount > 0) speakReceived(recvAmount);
       setForm(emptyForm(category));
     } catch (e) {
       window.clearTimeout(timeout);

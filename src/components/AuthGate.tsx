@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { speakWelcome } from "@/lib/voice";
 
 // Phone number-কে synthetic email-এ রূপান্তর (SMS provider লাগে না)
 // উদাহরণ: "01712345678" -> "01712345678@asiatravel.local"
@@ -41,10 +42,19 @@ export function AuthGate({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!active) return;
       setSession(s);
       setLoading(false);
+      if (event === "SIGNED_IN" && s?.user) {
+        const uid = s.user.id;
+        // Try to fetch profile name for a personalized welcome
+        supabase.from("profiles").select("full_name").eq("user_id", uid).maybeSingle()
+          .then(({ data }) => {
+            const name = (data as { full_name?: string } | null)?.full_name ?? "";
+            speakWelcome(name);
+          }, () => speakWelcome());
+      }
     });
 
     return () => {

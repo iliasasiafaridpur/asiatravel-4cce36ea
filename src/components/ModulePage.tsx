@@ -28,6 +28,7 @@ import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
+import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -207,10 +208,21 @@ export function ModulePage({ module: mod }: Props) {
           const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editId);
           if (error) throw error;
           toast.success("আপডেট হয়েছে");
+          // Voice: delivery status transition
+          const prevStatus = String(editing?.status ?? "");
+          const newStatus = String((payload as Record<string, unknown>).status ?? "");
+          if (newStatus && newStatus !== prevStatus && /deliver/i.test(newStatus)) {
+            speakDelivery(String((payload as Record<string, unknown>).passenger_name ?? ""));
+          }
+          if (recvAmount > 0 && Number(editing?.received ?? editing?.received_amount ?? editing?.paid_amount ?? 0) !== recvAmount) {
+            speakReceived(recvAmount);
+          }
         } else {
           const { error } = await supabase.from(mod.table as never).insert(payload as never);
           if (error) throw error;
           toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+          speakModuleEntry(mod.key);
+          if (recvAmount > 0) speakReceived(recvAmount);
         }
         void load();
       } catch (e) {
