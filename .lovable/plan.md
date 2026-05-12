@@ -1,103 +1,123 @@
-## লক্ষ্য
-আপনার ৪টি বড় চাওয়া একসাথে সমাধান করব — কোনটাই অর্ধেক রাখব না।
+
+## কাজের পরিকল্পনা — বড় আপগ্রেড (৭টি অংশ)
+
+কাজটি বড় হওয়ায় ৭টি ধাপে ভাগ করেছি। সবগুলো একই সাথে বাস্তবায়ন করব।
 
 ---
 
-## ১) Passport OCR (পাসপোর্টের ছবি তুলে অটো-ফিল)
-
-**যেভাবে কাজ করবে:**
-- যেকোনো এন্ট্রি ফর্মে (Tickets / BMET / Saudi / Kuwait) উপরে একটা **📷 "পাসপোর্ট স্ক্যান"** বাটন থাকবে
-- মোবাইলে ক্যামেরা সরাসরি খুলবে, ছবি তুলবেন → Lovable AI (Gemini Vision) সেটা পড়বে
-- অটো-ফিল হবে: **নাম (passenger_name), পাসপোর্ট নাম্বার, জন্ম তারিখ, ইস্যু/মেয়াদ তারিখ, জাতীয়তা**
-- ভুল হলে আপনি edit করতে পারবেন — তারপর Save
-
-**টেক:** `supabase/functions/passport-ocr` edge function, Gemini 2.5 Flash (free tier-এ চলবে), MRZ + visual zone দুটোই পড়বে।
+### ১) Sound System সরানো (Settings রাখা হবে)
+- `src/lib/voice.ts` থেকে সব speak কলগুলো no-op করে দেব
+- `ModulePage.tsx`, `AuthGate.tsx`, `action-board.tsx` থেকে voice কল সরাব
+- `Settings` পেইজ থেকে Sound section সরিয়ে শুধু **Profile**, **Password**, **Maintenance** রাখব
 
 ---
 
-## ২) PWA (মোবাইলে ইনস্টলযোগ্য, অফলাইনে আংশিক চলবে)
+### ২) Login + Sign-Up + Admin User Activation
 
-- Manifest + icon + Add-to-Home-Screen prompt
-- Service Worker (production-only, dev-এ disabled — যাতে Lovable preview ঠিক থাকে)
-- লগইন স্ক্রিনে "📲 হোম স্ক্রিনে যোগ করুন" বাটন
-- আইকন আমি generate করে দেব (Asia Travel লোগো স্টাইলে)
-- মোবাইলে সব পেজ আরও touch-friendly করব (বড় বাটন, sticky save bar)
+**Sign-Up Page (নতুন):** Full Name, Mobile Number, পদবি (Designation), Email, Password
+- নতুন user signup করলে **`is_active = false`** স্ট্যাটাসে থাকবে
+- লগইন এর সময় চেক হবে — inactive হলে message: "Admin activation প্রয়োজন"
 
----
+**Profiles টেবিলে নতুন কলাম:**
+- `mobile` (text)
+- `designation` (text)
+- `is_active` (boolean, default false)
+- প্রথম user যিনি signup করবেন তিনি auto admin + active হবেন (trigger দিয়ে)
 
-## ৩) সহজ এন্ট্রি + Auto-Ledger (Agency / Vendor)
-
-**বর্তমান সমস্যা:** ফর্ম বড়, অগোছালো; agency/vendor লিখলেও খাতায় ঠিকমতো যায় না বলে মনে হচ্ছে।
-
-**নতুন সিস্টেম:**
-- প্রতিটা এন্ট্রি ফর্মকে **Wizard স্টাইল 3 ধাপে** ভাঙব:
-  1. **যাত্রী তথ্য** (পাসপোর্ট OCR বাটন এখানে)
-  2. **বিক্রয় (Agency)** — কোন এজেন্সিতে বিক্রি, কত টাকা, কত পেলেন
-  3. **ক্রয় (Vendor)** — কোন vendor থেকে নিয়েছেন, কত খরচ, কত দিয়েছেন
-- Agency/Vendor dropdown-এ **"+ নতুন যোগ করুন"** inline option (পেজ ছাড়তে হবে না)
-- **DB ট্রিগার আগে থেকেই বানানো আছে** (`sync_agency_ledger`, `sync_vendor_ledger`) — শুধু verify করব যে ঠিকমতো ফায়ার হচ্ছে এবং ledger পেজে balance ঠিক দেখাচ্ছে
-- প্রতিটা agency/vendor এর কার্ডে **পাওনা / প্রদেয় ব্যালেন্স** badge
+**Admin → User Management পেইজ (নতুন `/users` route):**
+- সব user list, Active toggle, Role assign (admin/staff)
+- শুধু admin দেখতে/edit করতে পারবে
 
 ---
 
-## ৪) BMET কার্ড — সহজ এন্ট্রি, ট্র্যাকিং ও আপডেট
+### ৩) Invoice আপগ্রেড
 
-**নতুন BMET পেজ:**
-- **3 status filter tab** উপরে: 🟡 Pending | 🔵 Vendor-এ পাঠানো | 🟢 Delivered
-- প্রতিটা card-এ: যাত্রীর নাম, পাসপোর্ট, বর্তমান stage, কত দিন pending
-- One-click stage update (Pending → Sent → Received → Delivered) — tap করলে সাথে সাথে date বসবে
-- বাকি টাকার alert badge
+**Lookups টেবিল ব্যবহার করে dropdown:**
+- `airline` (Salam Air, Biman, Emirates ইত্যাদি)
+- `route` / `airport` (DAC, JED, RUH, KWI, DXB ইত্যাদি — From/To)
+- `service_item` (AIR TICKET, BMET, SAUDI VISA, KUWAIT VISA, MEDICAL, ATTESTATION ইত্যাদি)
+
+প্রতিটি dropdown এর পাশে **+ Add** ও **🗑 Delete** বাটন থাকবে — instant lookup add/remove।
+
+**Item editor পরিবর্তন:**
+- "Description" → **Service Item dropdown**
+- নতুন কলাম: **From (dropdown)** → **To (dropdown)**, **Airline (dropdown)**
+- Passenger name আর item description এ আসবে না
+- "Status" / "Class" (Economy/Pending) ফিল্ড সরানো হবে
+
+**Header ফন্ট বড় করা:**
+- Travel name: text-2xl → **text-3xl/4xl bold**
+- Address + Phone: text-xs → **text-sm/base**
 
 ---
 
-## ৫) ⭐ Smart Accounts — Manager Cash Drawer System
+### ৪) Day Book আপগ্রেড — Advanced Filter
 
-এটাই সবচেয়ে গুরুত্বপূর্ণ। নতুন concept:
+`/day-book` পেইজে নতুন filter bar:
+- **Date Range** — Start Date + End Date (দুটো আলাদা)
+- **Service Type** dropdown (All / Tickets / BMET / Saudi / Kuwait)
+- **Agent** dropdown
+- **Vendor** dropdown
+- **Received By (User)** dropdown
+- **Status** dropdown
+- "Reset" + "Apply" বাটন
+- Summary cards (Total sales, received, due) filter অনুযায়ী আপডেট হবে
 
-**মূল ধারণা:** প্রতিটা ইউজারের একটা **"Cash Drawer" (টাকার বাক্স)** আছে।
+---
 
+### ৫) Service Entry Detail View — সম্পূর্ণ তথ্য
+
+বর্তমানে list এ সব column দেখায় না। সমাধান:
+- প্রতিটা module list row এ ক্লিক করলে **Detail Dialog** খুলবে
+- entry form এর **সব ফিল্ড** দেখাবে (read-only) + Edit/Delete বাটন
+- ModulePage এ একটি universal `<EntryDetailDialog>` কম্পোনেন্ট
+
+---
+
+### ৬) BMET Tracking System
+
+`bmet_cards` টেবিলে নতুন কলাম:
+- `submitted_date` (কাজ কবে জমা দেওয়া হয়েছে)
+- `current_stage` (text: 'Submitted', 'Under Process', 'Fingerprint Done', 'Approved', 'Card Ready', 'Delivered')
+- `stage_updated_at` (timestamp)
+- `stage_history` (jsonb — প্রতিটা stage change এর log)
+
+BMET form এ:
+- **Tracking section** যোগ করব — Stage timeline দেখাবে
+- Stage update করলে history তে save হবে (কে, কখন)
+
+---
+
+### ৭) Payment Receiver Tracking
+
+ইতোমধ্যে `payment_receipts` টেবিলে `received_by` + `received_by_name` আছে।
+
+উন্নতি:
+- প্রতিটা service module এর list এ **"Received By"** column যোগ করব
+- Day Book এ filter হিসেবে আসবে (#৪ এ যুক্ত)
+- Accounts page এ user-wise breakdown ইতিমধ্যে আছে — শুধু link/view যোগ করব
+
+---
+
+### Database Migration সারাংশ
 ```
-Manager-এর Cash Drawer:
-  + আজ রিসিভ:        ৳ 25,000   (৫টা এন্ট্রি থেকে অটো)
-  + পূর্বের ব্যালেন্স:  ৳  3,000
-  - Md Sir-কে দিলেন:  ৳ 20,000   (Cash Transfer)
-  - অফিস খরচ:          ৳   500
-  ─────────────────────────────
-  = বর্তমান হাতে:     ৳  7,500  ← এই মুহূর্তে আপনার কাছে এত টাকা আছে
+profiles: + mobile, + designation, + is_active
+bmet_cards: + submitted_date, + current_stage, + stage_updated_at, + stage_history
++ trigger: প্রথম signup auto admin+active
++ trigger: BMET stage change history log
++ lookup kinds: airline, route, service_item (existing lookups টেবিলেই)
 ```
 
-**যেভাবে কাজ করবে:**
-1. আপনি (Manager) যখন কোনো সার্ভিসে `received_amount` এন্ট্রি দেবেন → অটো আপনার drawer-এ + হবে (received_by = আপনি)
-2. দিন শেষে **"Hand Over to Md Sir"** বাটন চাপলে → একটা ডায়লগ আসবে আজ মোট কত রিসিভ করেছেন, কত হ্যান্ডওভার করছেন → সেভ করলে drawer থেকে − হবে
-3. Md Sir-এর drawer-এ + হবে অটো
-4. **নতুন পেজ `/cash-drawer`** — দুই ইউজারের live balance, daily closing, history
+---
 
-**নতুন টেবিল:** `cash_expenses` (অফিস খরচ tracking — কে কখন কী খাতে কত খরচ করল)
-
-**Day Closing Report:** প্রতিদিন রাতে এক ক্লিকে আজকের সব রিসিভ + সব খরচ + হ্যান্ডওভার + closing balance — PDF/print ready।
+### ফাইল পরিবর্তন (আনুমানিক)
+- Edit: `voice.ts`, `AuthGate.tsx`, `ModulePage.tsx`, `action-board.tsx`, `settings.tsx`, `invoice.tsx`, `day-book.tsx`, `AppSidebar.tsx`, `accounts.tsx`
+- New: `routes/signup.tsx`, `routes/users.tsx` (admin), `components/EntryDetailDialog.tsx`, `components/LookupManager.tsx`, `components/BmetTracking.tsx`
+- Migration: ১টি বড় SQL migration
 
 ---
 
-## কাজের ক্রম
+### সতর্কতা
+এটি একটি বড় কাজ — সব একসাথে করলে ১৫-২০টি ফাইল পরিবর্তন হবে। build/test এর পর কিছু polish লাগতে পারে।
 
-আমি একসাথে সব করব এই sequence-এ:
-1. DB মাইগ্রেশন: `cash_expenses` টেবিল + `daily_closings` টেবিল + drawer balance view
-2. Edge function: `passport-ocr` (Lovable AI)
-3. ফ্রন্টএন্ড:
-   - PassportScanner কম্পোনেন্ট (camera + OCR)
-   - 3-step Wizard ফর্ম (ModulePage refactor)
-   - Cash Drawer পেজ + Hand Over dialog
-   - BMET কার্ড নতুন UI (status tabs)
-   - Inline "+ Add" agency/vendor
-4. PWA: manifest, icons, service worker (prod-only guard সহ)
-5. Mobile polish: bottom nav, sticky save bar, বড় touch target
-
----
-
-## আপনার করণীয় (কিছুই না — শুধু approve)
-
-সব কোড ও মাইগ্রেশন আমি লিখব। শুধু একটাই জিনিস confirm করুন:
-
-**প্রশ্ন:** Cash Drawer-এ "অফিস খরচ" এন্ট্রির categories কী কী রাখব? (যেমন: Transport, Stationery, Bill, Food, Other)
-
-আপনি Approve করলে আমি কাজ শুরু করব।
+**অনুমোদন দিলে শুরু করব। কোনো অংশ বাদ/পরিবর্তন চাইলে এখনই বলুন।**
