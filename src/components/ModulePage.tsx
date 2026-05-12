@@ -317,6 +317,15 @@ export function ModulePage({ module: mod }: Props) {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                ) : loadError ? (
+                  <TableRow>
+                    <TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center py-8">
+                      <div className="space-y-2">
+                        <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => (
@@ -437,6 +446,7 @@ function FormField({ field, value, onChange }: {
 }) {
   const span = field.type === "textarea" ? "sm:col-span-2" : "";
   const strVal = (value as string) ?? "";
+  const isEntryBy = field.name === "entry_by";
   return (
     <div className={`space-y-1.5 ${span}`}>
       <Label>{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
@@ -479,6 +489,8 @@ function FormField({ field, value, onChange }: {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
           required={field.required}
+          readOnly={isEntryBy}
+          className={isEntryBy ? "bg-muted text-muted-foreground" : undefined}
         />
       )}
     </div>
