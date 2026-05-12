@@ -67,6 +67,8 @@ function ActionBoardPage() {
         else payload[f.name] = v ?? null;
         if (f.required && !payload[f.name]) {
           toast.error(`${f.label} দিন`);
+          window.clearTimeout(timeout);
+          savingRef.current = false;
           setSaving(false);
           return;
         }
@@ -81,6 +83,10 @@ function ActionBoardPage() {
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
       if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+      if (mod.deriveStatus && hasField("status")) {
+        const derived = mod.deriveStatus(payload);
+        if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
+      }
 
       const newId = await generateNextId(mod);
       payload[mod.idColumn] = newId;
