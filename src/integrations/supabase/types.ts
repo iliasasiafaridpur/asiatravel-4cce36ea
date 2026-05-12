@@ -398,6 +398,66 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_receipts: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          id: string
+          method: string
+          passenger_name: string
+          receipt_id: string
+          received_by: string
+          received_by_name: string | null
+          ref_id: string | null
+          remarks: string | null
+          service_row_id: string | null
+          service_table: string | null
+          service_type: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          method?: string
+          passenger_name?: string
+          receipt_id: string
+          received_by: string
+          received_by_name?: string | null
+          ref_id?: string | null
+          remarks?: string | null
+          service_row_id?: string | null
+          service_table?: string | null
+          service_type: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          method?: string
+          passenger_name?: string
+          receipt_id?: string
+          received_by?: string
+          received_by_name?: string | null
+          ref_id?: string | null
+          remarks?: string | null
+          service_row_id?: string | null
+          service_table?: string | null
+          service_type?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -605,6 +665,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vendor_ledger: {
         Row: {
           created_at: string
@@ -697,6 +778,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_accounts_overview: {
+        Args: never
+        Returns: {
+          current_balance: number
+          full_name: string
+          total_expenses: number
+          total_handed_over: number
+          total_received: number
+          user_id: string
+        }[]
+      }
       get_agent_balances: {
         Args: never
         Returns: {
@@ -740,6 +832,13 @@ export type Database = {
           vendor_name: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       next_module_id: {
         Args: { _column: string; _prefix: string; _table: string }
         Returns: string
@@ -751,7 +850,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -878,6 +977,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
