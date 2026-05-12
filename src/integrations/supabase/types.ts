@@ -224,7 +224,7 @@ export type Database = {
         }
         Relationships: []
       }
-      cash_transfers: {
+      cash_handovers: {
         Row: {
           amount: number
           created_at: string
@@ -232,13 +232,11 @@ export type Database = {
           entry_date: string
           from_name: string | null
           from_user: string | null
+          handover_id: string
           id: string
           method: string
-          purpose: string | null
           remarks: string | null
-          to_name: string | null
-          to_user: string | null
-          transfer_id: string
+          to_name: string
           updated_at: string
         }
         Insert: {
@@ -248,13 +246,11 @@ export type Database = {
           entry_date?: string
           from_name?: string | null
           from_user?: string | null
+          handover_id: string
           id?: string
           method?: string
-          purpose?: string | null
           remarks?: string | null
-          to_name?: string | null
-          to_user?: string | null
-          transfer_id: string
+          to_name?: string
           updated_at?: string
         }
         Update: {
@@ -264,13 +260,11 @@ export type Database = {
           entry_date?: string
           from_name?: string | null
           from_user?: string | null
+          handover_id?: string
           id?: string
           method?: string
-          purpose?: string | null
           remarks?: string | null
-          to_name?: string | null
-          to_user?: string | null
-          transfer_id?: string
+          to_name?: string
           updated_at?: string
         }
         Relationships: []
@@ -703,6 +697,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_agent_balances: {
+        Args: never
+        Returns: {
+          agent_name: string
+          balance_due: number
+          total_bill: number
+          total_received: number
+        }[]
+      }
       get_cash_drawer: {
         Args: { _user_id: string }
         Returns: {
@@ -714,6 +717,27 @@ export type Database = {
           total_received_in: number
           total_received_today: number
           user_id: string
+        }[]
+      }
+      get_user_account: {
+        Args: { _user_id: string }
+        Returns: {
+          current_balance: number
+          full_name: string
+          total_expenses: number
+          total_handed_over: number
+          total_received: number
+          total_received_today: number
+          user_id: string
+        }[]
+      }
+      get_vendor_balances: {
+        Args: never
+        Returns: {
+          balance_due: number
+          total_paid: number
+          total_payable: number
+          vendor_name: string
         }[]
       }
       next_module_id: {
