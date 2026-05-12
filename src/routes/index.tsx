@@ -77,7 +77,7 @@ function DashboardPage() {
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
   useEffect(() => {
-    const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "cash_transfers", "agency_ledger", "vendor_ledger"];
+    const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
     const channels = tables.map((t) =>
       supabase.channel(`dash_${t}`)
         .on("postgres_changes", { event: "*", schema: "public", table: t }, () => {
