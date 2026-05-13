@@ -118,17 +118,10 @@ function ActionBoardPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Action Board</h1>
-          <p className="text-sm text-muted-foreground">যেকোনো সার্ভিসের জন্য দ্রুত এন্ট্রি — নিচে Service Category সিলেক্ট করুন</p>
-        </div>
-        <Button onClick={() => setDueOpen(true)} variant="outline" className="gap-2 self-start sm:self-auto">
-          <Wallet className="h-4 w-4" /> Due Receive
-        </Button>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Action Board</h1>
+        <p className="text-sm text-muted-foreground">যেকোনো সার্ভিসের জন্য দ্রুত এন্ট্রি — নিচে Service Category সিলেক্ট করুন</p>
       </div>
-
-      <DueReceiveDialog open={dueOpen} onOpenChange={setDueOpen} />
 
       <Card>
         <CardHeader className="pb-3">
