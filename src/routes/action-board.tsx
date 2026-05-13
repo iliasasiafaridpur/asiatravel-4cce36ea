@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Search } from "lucide-react";
+import { Save, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { speakModuleEntry, speakReceived } from "@/lib/voice";
+import { DueReceiveDialog } from "@/components/DueReceiveDialog";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/action-board")({
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-function emptyForm(modKey: string): Record<string, unknown> {
+function emptyForm(modKey: string, entryBy = ""): Record<string, unknown> {
   const mod = moduleByKey(modKey)!;
   const f: Record<string, unknown> = {};
   for (const field of mod.fields) {
@@ -28,6 +29,7 @@ function emptyForm(modKey: string): Record<string, unknown> {
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
+    else if (field.name === "entry_by") f[field.name] = entryBy;
     else f[field.name] = "";
   }
   return f;
