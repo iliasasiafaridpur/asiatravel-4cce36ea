@@ -239,6 +239,12 @@ function DayBookPage() {
                         {(r.amount - r.received).toLocaleString()}
                       </span>
                     </TableCell>
+                    <TableCell>
+                      <ConfirmDeleteButton
+                        onConfirm={() => handleDelete(r)}
+                        description={`${r.module} — ${r.id} (${r.passenger}) ডিলেট করলে এই ক্লায়েন্টের সকল হিসাব (Day Book, My Accounts, Ledger) থেকেও মুছে যাবে। নিশ্চিত?`}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
