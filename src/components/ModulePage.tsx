@@ -187,7 +187,7 @@ export function ModulePage({ module: mod }: Props) {
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
-    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+    if (mod.fields.some((fld) => fld.name === "entry_by") && (!f.entry_by || f.entry_by === "User")) {
       f.entry_by = displayName(profile, user);
     }
     setForm(f);
