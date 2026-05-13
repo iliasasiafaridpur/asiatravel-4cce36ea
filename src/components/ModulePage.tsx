@@ -24,11 +24,20 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
+import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+
+// মডিউল কী → DueReceiveDialog এর serviceKey মিল
+const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
+  tickets: "tickets",
+  bmet: "bmet",
+  "saudi-visa": "saudi-visa",
+  "kuwait-visa": "kuwait-visa",
+};
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -67,6 +76,7 @@ export function ModulePage({ module: mod }: Props) {
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
@@ -367,9 +377,22 @@ export function ModulePage({ module: mod }: Props) {
                     {listCols.map((c) => {
                       if (c.kind === "computed") {
                         const v = c.comp.compute(r);
+                        // Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
+                        const isDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
                         return (
                           <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
-                            <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                            {isDue ? (
+                              <button
+                                type="button"
+                                onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
+                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                                title="Due Receive"
+                              >
+                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                            )}
                           </TableCell>
                         );
                       }
@@ -414,6 +437,12 @@ export function ModulePage({ module: mod }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <DueReceiveDialog
+        open={!!duePreselect}
+        onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
+        preselect={duePreselect}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate, statusBadgeClass } from "@/lib/modules";
+import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +98,8 @@ function readDashboardCache(): Row[] | undefined {
 }
 
 function DashboardPage() {
+  const { user, profile } = useCurrentUser();
+  const meName = displayName(profile, user);
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>("month");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
@@ -345,9 +348,6 @@ function DashboardPage() {
         <div className="flex gap-2">
           <Link to="/action-board">
             <Button size="sm" variant="secondary" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
-          </Link>
-          <Link to="/accounts">
-            <Button size="sm" variant="secondary" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Cash</Button>
           </Link>
         </div>
       </div>

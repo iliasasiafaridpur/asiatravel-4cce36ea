@@ -7,12 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Search, Wallet } from "lucide-react";
+import { Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { speakModuleEntry, speakReceived } from "@/lib/voice";
-import { DueReceiveDialog } from "@/components/DueReceiveDialog";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
@@ -42,7 +41,7 @@ function ActionBoardPage() {
   const [category, setCategory] = useState(SERVICE_CATEGORIES[0].key);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(SERVICE_CATEGORIES[0].key));
   const [saving, setSaving] = useState(false);
-  const [dueOpen, setDueOpen] = useState(false);
+  
   const savingRef = useRef(false);
 
   const mod = moduleByKey(category)!;
@@ -119,17 +118,10 @@ function ActionBoardPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Action Board</h1>
-          <p className="text-sm text-muted-foreground">যেকোনো সার্ভিসের জন্য দ্রুত এন্ট্রি — নিচে Service Category সিলেক্ট করুন</p>
-        </div>
-        <Button onClick={() => setDueOpen(true)} variant="outline" className="gap-2 self-start sm:self-auto">
-          <Wallet className="h-4 w-4" /> Due Receive
-        </Button>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Action Board</h1>
+        <p className="text-sm text-muted-foreground">যেকোনো সার্ভিসের জন্য দ্রুত এন্ট্রি — নিচে Service Category সিলেক্ট করুন</p>
       </div>
-
-      <DueReceiveDialog open={dueOpen} onOpenChange={setDueOpen} />
 
       <Card>
         <CardHeader className="pb-3">
