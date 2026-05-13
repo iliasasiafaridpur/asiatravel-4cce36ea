@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDownLeft, ArrowUpRight, Download, Plus, Receipt, RefreshCw, Trash2, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Download, FileText, Plus, Receipt, RefreshCw, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 
@@ -25,6 +25,9 @@ const EXPENSE_CATEGORIES = ["Office", "Transport", "Food", "Stationery", "Bill",
 const SERVICES = ["AIR TICKET", "BMET", "Saudi Visa", "Kuwait Visa", "Other"];
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => `${new Date().toISOString().slice(0, 8)}01`;
+const yearStart = () => `${new Date().getFullYear()}-01-01`;
+
+type Preset = "today" | "month" | "year" | "all" | "custom";
 
 interface Acct {
   user_id: string;
@@ -35,8 +38,8 @@ interface Acct {
   total_expenses: number;
   current_balance: number;
 }
-interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; }
-interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; }
+interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_name: string | null; from_user: string | null; }
+interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by_name: string | null; spent_by: string | null; }
 interface Recv {
   id: string;
   receipt_id: string;
@@ -49,7 +52,12 @@ interface Recv {
   source: string;
   remarks: string | null;
   received_by_name: string | null;
+  received_by: string | null;
 }
+interface TicketLite { ticket_id: string; trip_road: string | null; sold_price: number | null; }
+interface BmetLite   { bmet_id: string;   country_name: string | null; sold_price: number | null; }
+interface SaudiLite  { saudi_id: string;  sold_price: number | null; }
+interface KuwaitLite { kuwait_id: string; sold_price: number | null; }
 
 type CachePayload = {
   acct: Acct | null;
@@ -57,7 +65,38 @@ type CachePayload = {
   handovers: Hand[];
   expenses: Exp[];
   received: Recv[];
+  tickets: TicketLite[];
+  bmet: BmetLite[];
+  saudi: SaudiLite[];
+  kuwait: KuwaitLite[];
 };
+
+function presetRange(p: Preset): { from: string; to: string } | null {
+  if (p === "today") { const d = today(); return { from: d, to: d }; }
+  if (p === "month") return { from: monthStart(), to: today() };
+  if (p === "year") return { from: yearStart(), to: today() };
+  if (p === "all") return { from: "1970-01-01", to: "2999-12-31" };
+  return null;
+}
+
+function PresetBar({ value, onChange }: { value: Preset; onChange: (p: Preset) => void }) {
+  const opts: { key: Preset; label: string }[] = [
+    { key: "today", label: "আজ" },
+    { key: "month", label: "এই মাস" },
+    { key: "year", label: "এই বছর" },
+    { key: "all", label: "সব" },
+    { key: "custom", label: "নির্দিষ্ট" },
+  ];
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {opts.map((o) => (
+        <Button key={o.key} size="sm" variant={value === o.key ? "default" : "outline"} onClick={() => onChange(o.key)} className="h-8 text-xs">
+          {o.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
@@ -66,16 +105,43 @@ function AccountsPage() {
   const [handovers, setHandovers] = useState<Hand[]>([]);
   const [expenses, setExpenses] = useState<Exp[]>([]);
   const [received, setReceived] = useState<Recv[]>([]);
-  const [dateFrom, setDateFrom] = useState(monthStart());
-  const [dateTo, setDateTo] = useState(today());
+  const [tickets, setTickets] = useState<TicketLite[]>([]);
+  const [bmet, setBmet] = useState<BmetLite[]>([]);
+  const [saudi, setSaudi] = useState<SaudiLite[]>([]);
+  const [kuwait, setKuwait] = useState<KuwaitLite[]>([]);
+
+  // Per-section filter state
+  const [recvPreset, setRecvPreset] = useState<Preset>("month");
+  const [recvFrom, setRecvFrom] = useState(monthStart());
+  const [recvTo, setRecvTo] = useState(today());
   const [serviceFilter, setServiceFilter] = useState("all");
+
+  const [handPreset, setHandPreset] = useState<Preset>("month");
+  const [handFrom, setHandFrom] = useState(monthStart());
+  const [handTo, setHandTo] = useState(today());
+
+  const [expPreset, setExpPreset] = useState<Preset>("month");
+  const [expFrom, setExpFrom] = useState(monthStart());
+  const [expTo, setExpTo] = useState(today());
+
+  const [repPreset, setRepPreset] = useState<Preset>("month");
+  const [repFrom, setRepFrom] = useState(monthStart());
+  const [repTo, setRepTo] = useState(today());
+
   const [syncing, setSyncing] = useState(false);
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: 0, method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: 0, remarks: "" });
   const [rForm, setRForm] = useState({ entry_date: today(), service_type: "AIR TICKET", ref_id: "", passenger_name: "", amount: 0, method: "Cash", remarks: "" });
   const reloadingRef = useRef(false);
   const queuedRef = useRef(false);
-  const cacheKey = user?.id ? `accounts_cache_v2_${user.id}` : "accounts_cache_v2_guest";
+  const cacheKey = user?.id ? `accounts_cache_v3_${user.id}` : "accounts_cache_v3_guest";
+
+  // Apply preset → date range
+  const applyPreset = (p: Preset, setFrom: (s: string) => void, setTo: (s: string) => void, setP: (p: Preset) => void) => {
+    setP(p);
+    const r = presetRange(p);
+    if (r) { setFrom(r.from); setTo(r.to); }
+  };
 
   useEffect(() => {
     try {
@@ -87,6 +153,10 @@ function AccountsPage() {
       setHandovers(cached.handovers ?? []);
       setExpenses(cached.expenses ?? []);
       setReceived(cached.received ?? []);
+      setTickets(cached.tickets ?? []);
+      setBmet(cached.bmet ?? []);
+      setSaudi(cached.saudi ?? []);
+      setKuwait(cached.kuwait ?? []);
     } catch { /* ignore cache */ }
   }, [cacheKey]);
 
@@ -96,22 +166,23 @@ function AccountsPage() {
 
   const reload = useCallback(async (quiet = false) => {
     if (!user?.id) return;
-    if (reloadingRef.current) {
-      queuedRef.current = true;
-      return;
-    }
+    if (reloadingRef.current) { queuedRef.current = true; return; }
     reloadingRef.current = true;
     if (!quiet) setSyncing(true);
 
-    const [a, ov, h, e, r] = await Promise.all([
+    const [a, ov, h, e, r, tk, bm, sv, kv] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
       supabase.rpc("get_accounts_overview" as never),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(300),
-      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(300),
-      supabase.from("payment_receipts").select("id,receipt_id,entry_date,service_type,ref_id,passenger_name,amount,method,source,remarks,received_by_name").order("entry_date", { ascending: false }).limit(500),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks,from_name,from_user").order("entry_date", { ascending: false }).limit(500),
+      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks,spent_by_name,spent_by").order("entry_date", { ascending: false }).limit(500),
+      supabase.from("payment_receipts").select("id,receipt_id,entry_date,service_type,ref_id,passenger_name,amount,method,source,remarks,received_by_name,received_by").order("entry_date", { ascending: false }).limit(1000),
+      supabase.from("tickets").select("ticket_id,trip_road,sold_price").limit(2000),
+      supabase.from("bmet_cards").select("bmet_id,country_name,sold_price").limit(2000),
+      supabase.from("saudi_visas").select("saudi_id,sold_price").limit(2000),
+      supabase.from("kuwait_visas").select("kuwait_id,sold_price").limit(2000),
     ]);
 
-    const firstError = a.error || ov.error || h.error || e.error || r.error;
+    const firstError = a.error || ov.error || h.error || e.error || r.error || tk.error || bm.error || sv.error || kv.error;
     if (firstError) {
       if (!quiet) toast.error("Accounts sync সমস্যা: " + firstError.message);
     } else {
@@ -121,12 +192,20 @@ function AccountsPage() {
         handovers: ((h.data as unknown) as Hand[]) ?? [],
         expenses: ((e.data as unknown) as Exp[]) ?? [],
         received: ((r.data as unknown) as Recv[]) ?? [],
+        tickets: ((tk.data as unknown) as TicketLite[]) ?? [],
+        bmet: ((bm.data as unknown) as BmetLite[]) ?? [],
+        saudi: ((sv.data as unknown) as SaudiLite[]) ?? [],
+        kuwait: ((kv.data as unknown) as KuwaitLite[]) ?? [],
       };
       setAcct(next.acct);
       setOverview(next.overview);
       setHandovers(next.handovers);
       setExpenses(next.expenses);
       setReceived(next.received);
+      setTickets(next.tickets);
+      setBmet(next.bmet);
+      setSaudi(next.saudi);
+      setKuwait(next.kuwait);
       persistCache(next);
     }
 
@@ -140,7 +219,7 @@ function AccountsPage() {
 
   useEffect(() => {
     void reload(true);
-    const ch = supabase.channel("acct_rt_v2")
+    const ch = supabase.channel("acct_rt_v3")
       .on("postgres_changes", { event: "*", schema: "public", table: "payment_receipts" }, () => void reload(true))
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, () => void reload(true))
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => void reload(true))
@@ -148,27 +227,152 @@ function AccountsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, reload]);
 
+  // Lookup maps for enrichment (Country / Route / Sold price)
+  const ticketMap = useMemo(() => new Map(tickets.map((t) => [t.ticket_id, t])), [tickets]);
+  const bmetMap   = useMemo(() => new Map(bmet.map((b) => [b.bmet_id, b])), [bmet]);
+  const saudiMap  = useMemo(() => new Map(saudi.map((s) => [s.saudi_id, s])), [saudi]);
+  const kuwaitMap = useMemo(() => new Map(kuwait.map((k) => [k.kuwait_id, k])), [kuwait]);
+
+  const enrichRecv = useCallback((r: Recv) => {
+    let extra = "";
+    let soldPrice: number | null = null;
+    const id = r.ref_id ?? "";
+    if (r.service_type === "AIR TICKET") {
+      const t = ticketMap.get(id);
+      extra = t?.trip_road ?? "—";
+      soldPrice = t?.sold_price ?? null;
+    } else if (r.service_type === "BMET") {
+      const b = bmetMap.get(id);
+      extra = b?.country_name ?? "—";
+      soldPrice = b?.sold_price ?? null;
+    } else if (r.service_type === "Saudi Visa") {
+      const s = saudiMap.get(id);
+      extra = "Saudi";
+      soldPrice = s?.sold_price ?? null;
+    } else if (r.service_type === "Kuwait Visa") {
+      const k = kuwaitMap.get(id);
+      extra = "Kuwait";
+      soldPrice = k?.sold_price ?? null;
+    } else {
+      extra = "—";
+    }
+    return { extra, soldPrice };
+  }, [ticketMap, bmetMap, saudiMap, kuwaitMap]);
+
+  // Filtered datasets per section
   const filteredReceived = useMemo(() => received.filter((r) => {
-    if (dateFrom && r.entry_date < dateFrom) return false;
-    if (dateTo && r.entry_date > dateTo) return false;
+    if (recvFrom && r.entry_date < recvFrom) return false;
+    if (recvTo && r.entry_date > recvTo) return false;
     if (serviceFilter !== "all" && r.service_type !== serviceFilter) return false;
     return true;
-  }), [dateFrom, dateTo, received, serviceFilter]);
+  }), [recvFrom, recvTo, received, serviceFilter]);
+
+  const myHandovers = useMemo(() => handovers.filter((h) => h.from_user === user?.id), [handovers, user?.id]);
+  const myExpenses  = useMemo(() => expenses.filter((e) => e.spent_by === user?.id), [expenses, user?.id]);
+
+  const filteredHandovers = useMemo(() => myHandovers.filter((h) =>
+    (!handFrom || h.entry_date >= handFrom) && (!handTo || h.entry_date <= handTo)
+  ), [myHandovers, handFrom, handTo]);
+
+  const filteredExpenses = useMemo(() => myExpenses.filter((e) =>
+    (!expFrom || e.entry_date >= expFrom) && (!expTo || e.entry_date <= expTo)
+  ), [myExpenses, expFrom, expTo]);
 
   const runningReceived = useMemo(() => {
     let total = 0;
     return [...filteredReceived].reverse().map((r) => {
       total += Number(r.amount) || 0;
-      return { ...r, running: total };
+      const { extra, soldPrice } = enrichRecv(r);
+      return { ...r, running: total, extra, soldPrice };
     }).reverse();
-  }, [filteredReceived]);
+  }, [filteredReceived, enrichRecv]);
 
   const filteredTotal = filteredReceived.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const handTotal = filteredHandovers.reduce((sum, h) => sum + Number(h.amount || 0), 0);
+  const expTotal  = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  // ---- Daily Report (combined আয়/ব্যায় ledger, all staff) ----
+  type ReportRow = {
+    serial: number;
+    date: string;
+    name: string;          // passenger / to / purpose
+    service: string;       // service or category
+    extra: string;         // country / route
+    sold: number;          // মূল্য
+    received: number;      // জমা
+    due: number;           // বাকি
+    incomeRunning: number; // মোট আয়
+    expenseDesc: string;   // খরচ বিবরণ
+    expenseAmt: number;    // খরচ পরিমান
+    expenseRunning: number;// মোট খরচ
+    balance: number;       // সর্বশেষ ব্যালেন্স
+    user: string;          // user name
+    kind: "received" | "handover" | "expense";
+  };
+
+  const reportRows = useMemo<ReportRow[]>(() => {
+    type Item = { date: string; kind: ReportRow["kind"]; row: Recv | Hand | Exp };
+    const items: Item[] = [];
+    received.forEach((r) => {
+      if (recpMatch(r.entry_date, repFrom, repTo)) items.push({ date: r.entry_date, kind: "received", row: r });
+    });
+    handovers.forEach((h) => {
+      if (recpMatch(h.entry_date, repFrom, repTo)) items.push({ date: h.entry_date, kind: "handover", row: h });
+    });
+    expenses.forEach((e) => {
+      if (recpMatch(e.entry_date, repFrom, repTo)) items.push({ date: e.entry_date, kind: "expense", row: e });
+    });
+    items.sort((a, b) => a.date.localeCompare(b.date));
+
+    let income = 0, expenseRun = 0, serial = 0;
+    return items.map((it) => {
+      serial += 1;
+      if (it.kind === "received") {
+        const r = it.row as Recv;
+        const { extra, soldPrice } = enrichRecv(r);
+        const sold = soldPrice ?? Number(r.amount);
+        const received = Number(r.amount);
+        income += received;
+        return {
+          serial, date: r.entry_date, name: r.passenger_name, service: r.service_type, extra,
+          sold, received, due: Math.max(sold - received, 0),
+          incomeRunning: income, expenseDesc: "", expenseAmt: 0, expenseRunning: expenseRun,
+          balance: income - expenseRun, user: r.received_by_name ?? "—", kind: "received",
+        };
+      }
+      if (it.kind === "handover") {
+        const h = it.row as Hand;
+        expenseRun += Number(h.amount);
+        return {
+          serial, date: h.entry_date, name: h.to_name, service: "HANDOVER", extra: h.method,
+          sold: 0, received: 0, due: 0,
+          incomeRunning: income, expenseDesc: `Cash Handover → ${h.to_name}`, expenseAmt: Number(h.amount),
+          expenseRunning: expenseRun, balance: income - expenseRun,
+          user: h.from_name ?? "—", kind: "handover",
+        };
+      }
+      const e = it.row as Exp;
+      expenseRun += Number(e.amount);
+      return {
+        serial, date: e.entry_date, name: e.purpose ?? e.category, service: "EXPENSE", extra: e.category,
+        sold: 0, received: 0, due: 0,
+        incomeRunning: income, expenseDesc: e.purpose ?? e.category, expenseAmt: Number(e.amount),
+        expenseRunning: expenseRun, balance: income - expenseRun,
+        user: e.spent_by_name ?? "—", kind: "expense",
+      };
+    });
+  }, [received, handovers, expenses, repFrom, repTo, enrichRecv]);
+
+  const reportTotals = useMemo(() => {
+    const inc = reportRows.reduce((s, r) => s + r.received, 0);
+    const exp = reportRows.reduce((s, r) => s + r.expenseAmt, 0);
+    return { inc, exp, bal: inc - exp };
+  }, [reportRows]);
 
   const saveHandover = async () => {
     if (!user?.id) return toast.error("লগ-ইন করুন");
     if (hForm.amount <= 0) return toast.error("টাকার পরিমাণ দিন");
-    const temp: Hand = { id: `tmp-${Date.now()}`, handover_id: "Saving...", ...hForm, remarks: hForm.remarks || null };
+    const temp: Hand = { id: `tmp-${Date.now()}`, handover_id: "Saving...", ...hForm, remarks: hForm.remarks || null, from_name: displayName(profile, user), from_user: user.id };
     setHandovers((prev) => [temp, ...prev]);
     setHForm({ ...hForm, amount: 0, remarks: "" });
 
@@ -192,7 +396,7 @@ function AccountsPage() {
   const saveExpense = async () => {
     if (!user?.id) return toast.error("লগ-ইন করুন");
     if (eForm.amount <= 0) return toast.error("টাকার পরিমাণ দিন");
-    const temp: Exp = { id: `tmp-${Date.now()}`, expense_id: "Saving...", ...eForm, purpose: eForm.purpose || null, remarks: eForm.remarks || null };
+    const temp: Exp = { id: `tmp-${Date.now()}`, expense_id: "Saving...", ...eForm, purpose: eForm.purpose || null, remarks: eForm.remarks || null, spent_by_name: displayName(profile, user), spent_by: user.id };
     setExpenses((prev) => [temp, ...prev]);
     setEForm({ ...eForm, amount: 0, purpose: "", remarks: "" });
 
@@ -229,6 +433,7 @@ function AccountsPage() {
       source: "manual",
       remarks: rForm.remarks || null,
       received_by_name: displayName(profile, user),
+      received_by: user.id,
     };
     setReceived((prev) => [temp, ...prev]);
     setRForm({ ...rForm, ref_id: "", passenger_name: "", amount: 0, remarks: "" });
@@ -271,16 +476,15 @@ function AccountsPage() {
   };
 
   const exportCsv = () => {
-    const header = ["Date", "Receipt ID", "Service", "Ref ID", "Passenger", "Method", "Amount", "Running Total", "Source"];
-    const lines = runningReceived.map((r) => [r.entry_date, r.receipt_id, r.service_type, r.ref_id ?? "", r.passenger_name, r.method, r.amount, r.running, r.source]);
-    const csv = [header, ...lines].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `received-ledger-${dateFrom}-to-${dateTo}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const header = ["Date", "Receipt ID", "Service", "Country/Route", "Ref ID", "Passenger", "Method", "Sold", "Received", "Running Total", "User", "Source"];
+    const lines = runningReceived.map((r) => [r.entry_date, r.receipt_id, r.service_type, r.extra, r.ref_id ?? "", r.passenger_name, r.method, r.soldPrice ?? "", r.amount, r.running, r.received_by_name ?? "", r.source]);
+    downloadCsv(`received-ledger-${recvFrom}-to-${recvTo}.csv`, header, lines);
+  };
+
+  const exportReportCsv = () => {
+    const header = ["ক্রঃনং", "তারিখ", "নাম", "সার্ভিস বিবরণ", "Country/Route", "মূল্য", "জমা পরিমান", "বাকি", "মোট আয়", "খরচ বিবরণ", "খরচ পরিমান", "মোট খরচ", "সর্বশেষ ব্যালেন্স", "User"];
+    const lines = reportRows.map((r) => [r.serial, r.date, r.name, r.service, r.extra, r.sold || "", r.received || "", r.due || "", r.incomeRunning, r.expenseDesc, r.expenseAmt || "", r.expenseRunning, r.balance, r.user]);
+    downloadCsv(`daily-report-${repFrom}-to-${repTo}.csv`, header, lines);
   };
 
   return (
@@ -327,35 +531,42 @@ function AccountsPage() {
       )}
 
       <Tabs defaultValue="received" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="received">Received</TabsTrigger>
           <TabsTrigger value="add">Add</TabsTrigger>
           <TabsTrigger value="handover">Hand-over</TabsTrigger>
           <TabsTrigger value="expense">Expense</TabsTrigger>
+          <TabsTrigger value="report"><FileText className="h-3.5 w-3.5 mr-1" /> Report</TabsTrigger>
         </TabsList>
 
+        {/* RECEIVED */}
         <TabsContent value="received" className="space-y-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Received Ledger ({filteredReceived.length}) — Total ৳ {filteredTotal.toLocaleString()}</CardTitle></CardHeader>
+            <CardHeader className="pb-2 space-y-2">
+              <CardTitle className="text-base">Received Ledger ({filteredReceived.length}) — Total ৳ {filteredTotal.toLocaleString()}</CardTitle>
+              <PresetBar value={recvPreset} onChange={(p) => applyPreset(p, setRecvFrom, setRecvTo, setRecvPreset)} />
+            </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                <div><Label>From</Label><Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></div>
-                <div><Label>To</Label><Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></div>
+                <div><Label>From</Label><Input type="date" value={recvFrom} onChange={(e) => { setRecvFrom(e.target.value); setRecvPreset("custom"); }} /></div>
+                <div><Label>To</Label><Input type="date" value={recvTo} onChange={(e) => { setRecvTo(e.target.value); setRecvPreset("custom"); }} /></div>
                 <div className="col-span-2 md:col-span-2"><Label>Service</Label><Select value={serviceFilter} onValueChange={setServiceFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Service</SelectItem>{SERVICES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
                 <div className="col-span-2 md:col-span-1 flex items-end"><Button variant="outline" onClick={exportCsv} className="w-full gap-1.5"><Download className="h-4 w-4" /> Export</Button></div>
               </div>
               <div className="overflow-x-auto rounded-md border">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Receipt</TableHead><TableHead>Service</TableHead><TableHead>Ref</TableHead><TableHead>Passenger</TableHead><TableHead>Method</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Running</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Receipt</TableHead><TableHead>Service</TableHead><TableHead>Country/Route</TableHead><TableHead>Ref</TableHead><TableHead>Passenger</TableHead><TableHead>User</TableHead><TableHead>Method</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Running</TableHead><TableHead></TableHead></TableRow></TableHeader>
                   <TableBody>
-                    {runningReceived.length === 0 ? <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Service page-এ Received Amount দিলে এখানে auto আসবে; partial হলে Add tab থেকে manual entry দিন</TableCell></TableRow>
+                    {runningReceived.length === 0 ? <TableRow><TableCell colSpan={11} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো received entry নেই</TableCell></TableRow>
                       : runningReceived.map((r) => (
                         <TableRow key={`${r.source}-${r.id}`}>
                           <TableCell className="whitespace-nowrap">{formatDate(r.entry_date)}</TableCell>
                           <TableCell className="font-mono text-xs whitespace-nowrap">{r.receipt_id}</TableCell>
                           <TableCell><Badge variant="secondary">{r.service_type}</Badge></TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{r.extra}</TableCell>
                           <TableCell className="font-mono text-xs whitespace-nowrap">{r.ref_id ?? "—"}</TableCell>
-                          <TableCell className="font-medium min-w-36">{r.passenger_name}</TableCell>
+                          <TableCell className="font-medium min-w-32">{r.passenger_name}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{r.received_by_name ?? "—"}</TableCell>
                           <TableCell><Badge variant="outline">{r.method}</Badge></TableCell>
                           <MoneyCell value={r.amount} tone="success" />
                           <MoneyCell value={r.running} tone="primary" />
@@ -369,6 +580,7 @@ function AccountsPage() {
           </Card>
         </TabsContent>
 
+        {/* ADD */}
         <TabsContent value="add">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Plus className="h-4 w-4" /> Partial / Manual Received Entry</CardTitle></CardHeader>
@@ -387,6 +599,7 @@ function AccountsPage() {
           </Card>
         </TabsContent>
 
+        {/* HANDOVER */}
         <TabsContent value="handover" className="space-y-4">
           <EntryCard title="কর্তৃপক্ষকে Cash Hand-over" icon={<ArrowUpRight className="h-4 w-4" />}>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -398,9 +611,22 @@ function AccountsPage() {
             <div><Label>Remarks</Label><Textarea rows={2} value={hForm.remarks} onChange={(e) => setHForm({ ...hForm, remarks: e.target.value })} /></div>
             <Button onClick={saveHandover} className="w-full gap-1.5"><Plus className="h-4 w-4" /> Hand-over সেভ</Button>
           </EntryCard>
-          <HistoryTable kind="handover" handovers={handovers} onDelete={delHand} />
+          <Card>
+            <CardHeader className="pb-2 space-y-2">
+              <CardTitle className="text-base">Hand-over History ({filteredHandovers.length}) — ৳ {handTotal.toLocaleString()}</CardTitle>
+              <PresetBar value={handPreset} onChange={(p) => applyPreset(p, setHandFrom, setHandTo, setHandPreset)} />
+              <div className="grid grid-cols-2 gap-2">
+                <Input type="date" value={handFrom} onChange={(e) => { setHandFrom(e.target.value); setHandPreset("custom"); }} />
+                <Input type="date" value={handTo} onChange={(e) => { setHandTo(e.target.value); setHandPreset("custom"); }} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <HistoryTableInner kind="handover" handovers={filteredHandovers} onDelete={delHand} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
+        {/* EXPENSE */}
         <TabsContent value="expense" className="space-y-4">
           <EntryCard title="খরচ এন্ট্রি" icon={<Receipt className="h-4 w-4" />}>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -412,11 +638,103 @@ function AccountsPage() {
             <div><Label>Remarks</Label><Textarea rows={2} value={eForm.remarks} onChange={(e) => setEForm({ ...eForm, remarks: e.target.value })} /></div>
             <Button onClick={saveExpense} className="w-full gap-1.5"><Plus className="h-4 w-4" /> খরচ সেভ</Button>
           </EntryCard>
-          <HistoryTable kind="expense" expenses={expenses} onDelete={delExp} />
+          <Card>
+            <CardHeader className="pb-2 space-y-2">
+              <CardTitle className="text-base">Expense History ({filteredExpenses.length}) — ৳ {expTotal.toLocaleString()}</CardTitle>
+              <PresetBar value={expPreset} onChange={(p) => applyPreset(p, setExpFrom, setExpTo, setExpPreset)} />
+              <div className="grid grid-cols-2 gap-2">
+                <Input type="date" value={expFrom} onChange={(e) => { setExpFrom(e.target.value); setExpPreset("custom"); }} />
+                <Input type="date" value={expTo} onChange={(e) => { setExpTo(e.target.value); setExpPreset("custom"); }} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <HistoryTableInner kind="expense" expenses={filteredExpenses} onDelete={delExp} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* REPORT */}
+        <TabsContent value="report" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2 space-y-2">
+              <CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> দৈনিক আয় ব্যায়ের হিসাব</CardTitle>
+              <PresetBar value={repPreset} onChange={(p) => applyPreset(p, setRepFrom, setRepTo, setRepPreset)} />
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <Input type="date" value={repFrom} onChange={(e) => { setRepFrom(e.target.value); setRepPreset("custom"); }} />
+                <Input type="date" value={repTo} onChange={(e) => { setRepTo(e.target.value); setRepPreset("custom"); }} />
+                <Button variant="outline" onClick={exportReportCsv} className="gap-1.5"><Download className="h-4 w-4" /> CSV Export</Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <MiniStat label="মোট আয়" value={reportTotals.inc} tone="success" />
+                <MiniStat label="মোট খরচ" value={reportTotals.exp} tone="destructive" />
+                <MiniStat label="ব্যালেন্স" value={reportTotals.bal} tone="primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ক্রঃ</TableHead>
+                      <TableHead>তারিখ</TableHead>
+                      <TableHead>নাম</TableHead>
+                      <TableHead>সার্ভিস</TableHead>
+                      <TableHead>Country/Route</TableHead>
+                      <TableHead className="text-right">মূল্য</TableHead>
+                      <TableHead className="text-right">জমা</TableHead>
+                      <TableHead className="text-right">বাকি</TableHead>
+                      <TableHead className="text-right bg-success/5">মোট আয়</TableHead>
+                      <TableHead>খরচ বিবরণ</TableHead>
+                      <TableHead className="text-right">খরচ</TableHead>
+                      <TableHead className="text-right bg-destructive/5">মোট খরচ</TableHead>
+                      <TableHead className="text-right bg-primary/5">ব্যালেন্স</TableHead>
+                      <TableHead>User</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportRows.length === 0 ? <TableRow><TableCell colSpan={14} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো এন্ট্রি নেই</TableCell></TableRow>
+                      : reportRows.map((r) => (
+                        <TableRow key={`${r.kind}-${r.serial}`} className={r.kind === "received" ? "" : r.kind === "handover" ? "bg-warning/5" : "bg-destructive/5"}>
+                          <TableCell className="text-xs">{r.serial}</TableCell>
+                          <TableCell className="whitespace-nowrap text-xs">{formatDate(r.date)}</TableCell>
+                          <TableCell className="font-medium text-xs min-w-28">{r.name}</TableCell>
+                          <TableCell><Badge variant="secondary" className="text-[10px]">{r.service}</Badge></TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{r.extra}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs">{r.sold ? r.sold.toLocaleString() : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs text-success">{r.received ? r.received.toLocaleString() : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs text-warning">{r.due ? r.due.toLocaleString() : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs font-semibold bg-success/5">{r.incomeRunning.toLocaleString()}</TableCell>
+                          <TableCell className="text-xs min-w-28">{r.expenseDesc || "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs text-destructive">{r.expenseAmt ? r.expenseAmt.toLocaleString() : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs font-semibold bg-destructive/5">{r.expenseRunning.toLocaleString()}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs font-bold bg-primary/5 text-primary">{r.balance.toLocaleString()}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{r.user}</TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
+}
+
+function recpMatch(date: string, from: string, to: string) {
+  return (!from || date >= from) && (!to || date <= to);
+}
+
+function downloadCsv(filename: string, header: (string | number)[], lines: (string | number)[][]) {
+  const csv = [header, ...lines].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function Stat({ label, value, icon, highlight }: { label: string; value: number; icon: ReactNode; highlight?: boolean }) {
@@ -431,6 +749,16 @@ function Stat({ label, value, icon, highlight }: { label: string; value: number;
   );
 }
 
+function MiniStat({ label, value, tone }: { label: string; value: number; tone: "success" | "destructive" | "primary" }) {
+  const cls = tone === "success" ? "text-success" : tone === "destructive" ? "text-destructive" : "text-primary";
+  return (
+    <div className="rounded-md border bg-muted/30 p-2">
+      <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
+      <p className={`text-base font-bold tabular-nums ${cls}`}>৳ {value.toLocaleString()}</p>
+    </div>
+  );
+}
+
 function MoneyCell({ value, tone }: { value: number; tone: "success" | "warning" | "destructive" | "primary" }) {
   const toneClass = tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : tone === "destructive" ? "text-destructive" : "text-primary";
   return <TableCell className={`text-right tabular-nums font-semibold whitespace-nowrap ${toneClass}`}>৳ {Number(value).toLocaleString()}</TableCell>;
@@ -440,37 +768,32 @@ function EntryCard({ title, icon, children }: { title: string; icon: ReactNode; 
   return <Card><CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-3">{children}</CardContent></Card>;
 }
 
-function HistoryTable(props: { kind: "handover"; handovers: Hand[]; onDelete: (id: string) => void } | { kind: "expense"; expenses: Exp[]; onDelete: (id: string) => void }) {
+function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelete: (id: string) => void } | { kind: "expense"; expenses: Exp[]; onDelete: (id: string) => void }) {
   const isHand = props.kind === "handover";
   const rows = isHand ? props.handovers : props.expenses;
   return (
-    <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-base">{isHand ? "Hand-over" : "Expense"} History ({rows.length})</CardTitle></CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>ID</TableHead><TableHead>{isHand ? "To" : "Category"}</TableHead><TableHead>{isHand ? "Method" : "Purpose"}</TableHead><TableHead className="text-right">Amount</TableHead><TableHead></TableHead></TableRow></TableHeader>
-            <TableBody>
-              {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
-                : rows.map((row) => {
-                  const id = isHand ? (row as Hand).handover_id : (row as Exp).expense_id;
-                  const label = isHand ? (row as Hand).to_name : (row as Exp).category;
-                  const desc = isHand ? (row as Hand).method : ((row as Exp).purpose ?? "—");
-                  return (
-                    <TableRow key={row.id}>
-                      <TableCell className="whitespace-nowrap">{formatDate(row.entry_date)}</TableCell>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">{id}</TableCell>
-                      <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
-                      <TableCell className="text-xs min-w-28">{desc}</TableCell>
-                      <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
-                      <TableCell><Button variant="ghost" size="icon" onClick={() => props.onDelete(row.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="overflow-x-auto rounded-md border">
+      <Table>
+        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>ID</TableHead><TableHead>{isHand ? "To" : "Category"}</TableHead><TableHead>{isHand ? "Method" : "Purpose"}</TableHead><TableHead className="text-right">Amount</TableHead><TableHead></TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+            : rows.map((row) => {
+              const id = isHand ? (row as Hand).handover_id : (row as Exp).expense_id;
+              const label = isHand ? (row as Hand).to_name : (row as Exp).category;
+              const desc = isHand ? (row as Hand).method : ((row as Exp).purpose ?? "—");
+              return (
+                <TableRow key={row.id}>
+                  <TableCell className="whitespace-nowrap">{formatDate(row.entry_date)}</TableCell>
+                  <TableCell className="font-mono text-xs whitespace-nowrap">{id}</TableCell>
+                  <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
+                  <TableCell className="text-xs min-w-28">{desc}</TableCell>
+                  <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
+                  <TableCell><Button variant="ghost" size="icon" onClick={() => props.onDelete(row.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                </TableRow>
+              );
+            })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
