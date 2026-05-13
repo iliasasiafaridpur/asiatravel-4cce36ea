@@ -437,6 +437,12 @@ export function ModulePage({ module: mod }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <DueReceiveDialog
+        open={!!duePreselect}
+        onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
+        preselect={duePreselect}
+      />
     </div>
   );
 }
