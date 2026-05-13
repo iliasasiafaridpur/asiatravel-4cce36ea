@@ -47,6 +47,15 @@ interface Props {
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    const o = e as Record<string, unknown>;
+    return String(o.message ?? o.details ?? o.hint ?? JSON.stringify(o));
+  }
+  return String(e);
+}
+
 function emptyForm(mod: ModuleSchema): Record<string, unknown> {
   const f: Record<string, unknown> = {};
   for (const field of mod.fields) {
@@ -206,7 +215,7 @@ export function ModulePage({ module: mod }: Props) {
       if (!editing) (payload as Record<string, unknown>).created_by = user.id;
       if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
     }
-    if (hasField("entry_by")) (payload as Record<string, unknown>).entry_by = me;
+    if (hasField("entry_by") && (!payload.entry_by || payload.entry_by === "User")) (payload as Record<string, unknown>).entry_by = me;
 
     if (mod.deriveStatus && hasField("status")) {
       const derived = mod.deriveStatus(payload);
@@ -255,7 +264,7 @@ export function ModulePage({ module: mod }: Props) {
         }
         void load();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const msg = errMsg(e);
         toast.error("সমস্যা: " + msg);
         void load();
       }
