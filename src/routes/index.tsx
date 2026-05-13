@@ -98,6 +98,8 @@ function readDashboardCache(): Row[] | undefined {
 }
 
 function DashboardPage() {
+  const { user, profile } = useCurrentUser();
+  const meName = displayName(profile, user);
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>("month");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
