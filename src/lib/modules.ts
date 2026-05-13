@@ -73,9 +73,13 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
+    listOrder: [
+      "entry_date", "passenger_name", "passport", "airline", "trip_road", "flight_date",
+      "agency_sold", "sold_price", "received", "due", "profit",
+    ],
     computed: [
-      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
       { name: "due", label: "Due", compute: DUE("sold_price", "received") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
     ],
   },
   {
