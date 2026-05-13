@@ -14,16 +14,25 @@ import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate } from "@/lib/modules";
 
-// সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে
+// সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
-  { key: "tickets",    table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket" },
-  { key: "bmet",       table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card" },
-  { key: "saudi-visa", table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa" },
-  { key: "kuwait-visa",table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa" },
+  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route" },
+  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country" },
+  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type" },
+  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No" },
 ] as const;
 
+type Service = typeof SERVICES[number];
+
+export interface DueReceivePreselect {
+  /** key of SERVICES entry — e.g. "tickets" / "bmet" / "saudi-visa" / "kuwait-visa" */
+  serviceKey: Service["key"];
+  /** uuid of the service row */
+  rowId: string;
+}
+
 interface DueRow {
-  service: typeof SERVICES[number];
+  service: Service;
   id: string;          // uuid
   refId: string;       // human id
   passenger: string;
@@ -33,6 +42,7 @@ interface DueRow {
   received: number;
   due: number;
   entryDate: string;
+  extra: string;       // country / road / etc.
 }
 
 interface ReceiptRow {
@@ -45,7 +55,25 @@ interface ReceiptRow {
   received_by_name: string | null;
 }
 
-export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+// Friendly error message extractor — Supabase errors are plain objects, not Error instances.
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    const o = e as Record<string, unknown>;
+    return String(o.message ?? o.details ?? o.hint ?? JSON.stringify(o));
+  }
+  return String(e);
+}
+
+export function DueReceiveDialog({
+  open,
+  onOpenChange,
+  preselect,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  preselect?: DueReceivePreselect | null;
+}) {
   const { user, profile } = useCurrentUser();
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<DueRow[]>([]);
@@ -63,9 +91,51 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
   const [history, setHistory] = useState<ReceiptRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // সব সার্ভিস টেবিল থেকে due > 0 রেকর্ড লোড
+  // Helper — fetch a single row by id from a given service
+  const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
+    const { data, error } = await supabase
+      .from(s.table as never)
+      .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}`)
+      .eq("id", rowId)
+      .maybeSingle();
+    if (error || !data) return null;
+    const r = data as unknown as Record<string, unknown>;
+    const sold = Number(r.sold_price ?? 0);
+    const recv = Number(r[s.recvCol] ?? 0);
+    return {
+      service: s,
+      id: String(r.id),
+      refId: String(r[s.idCol] ?? ""),
+      passenger: String(r.passenger_name ?? ""),
+      passport: String(r.passport ?? ""),
+      mobile: String(r.mobile ?? ""),
+      sold, received: recv, due: sold - recv,
+      entryDate: String(r.entry_date ?? ""),
+      extra: String(r[s.extraCol] ?? ""),
+    };
+  };
+
+  // Pre-select path: open straight onto a known row (called from due-cell click).
   useEffect(() => {
-    if (!open) return;
+    if (!open || !preselect) return;
+    let cancelled = false;
+    (async () => {
+      const s = SERVICES.find((x) => x.key === preselect.serviceKey);
+      if (!s) return;
+      const row = await fetchOne(s, preselect.rowId);
+      if (cancelled || !row) return;
+      setSelected(row);
+      setTab("pay");
+      setAmount(String(row.due));
+      setMethod("Cash");
+      setRemarks("");
+    })();
+    return () => { cancelled = true; };
+  }, [open, preselect?.serviceKey, preselect?.rowId]);
+
+  // Browse path: load all due > 0 rows when no preselect.
+  useEffect(() => {
+    if (!open || preselect) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -74,7 +144,7 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
         for (const s of SERVICES) {
           const { data, error } = await supabase
             .from(s.table as never)
-            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date`)
+            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}`)
             .order("created_at", { ascending: false })
             .limit(500);
           if (error) continue;
@@ -92,6 +162,7 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
               mobile: String(r.mobile ?? ""),
               sold, received: recv, due,
               entryDate: String(r.entry_date ?? ""),
+              extra: String(r[s.extraCol] ?? ""),
             });
           }
         }
@@ -101,7 +172,7 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
       }
     })();
     return () => { cancelled = true; };
-  }, [open]);
+  }, [open, preselect]);
 
   // search filter
   const filtered = useMemo(() => {
@@ -140,6 +211,14 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
     setRemarks("");
   };
 
+  const handleClose = (v: boolean) => {
+    onOpenChange(v);
+    if (!v) {
+      setSelected(null);
+      setSearch("");
+    }
+  };
+
   const submitPayment = async () => {
     if (!selected) return;
     const amt = Number(amount);
@@ -161,7 +240,7 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
         .eq("id", selected.id);
       if (e1) throw e1;
 
-      // 2) insert payment_receipts entry (history)
+      // 2) insert payment_receipts entry (history) — multiple allowed per row
       const receiptId = await generateNextId({
         key: "_rcpt", label: "", short: "", table: "payment_receipts",
         idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
@@ -193,21 +272,22 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
       );
       const updated: DueRow = { ...selected, received: newRecv, due: selected.sold - newRecv };
       if (updated.due <= 0) {
-        setSelected(null);
+        // ফুল পেমেন্ট — ডায়লগ বন্ধ
+        handleClose(false);
       } else {
         setSelected(updated);
         setTab("history");
         setAmount("");
       }
     } catch (e) {
-      toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
+      toast.error("সমস্যা: " + errMsg(e));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setSelected(null); }}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -241,6 +321,7 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono text-xs text-primary">{r.refId}</span>
                         <span className="text-xs px-1.5 py-0.5 rounded border bg-muted/40">{r.service.type}</span>
+                        {r.extra && <span className="text-xs px-1.5 py-0.5 rounded border bg-primary/10">{r.extra}</span>}
                       </div>
                       <p className="font-semibold truncate">{r.passenger}</p>
                       <p className="text-xs text-muted-foreground truncate">
@@ -259,17 +340,23 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
           </div>
         ) : (
           <div className="space-y-3">
-            <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1">
-              <ArrowLeft className="h-4 w-4" /> ফিরে যান
-            </Button>
+            {!preselect && (
+              <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1">
+                <ArrowLeft className="h-4 w-4" /> ফিরে যান
+              </Button>
+            )}
 
             <Card>
               <CardContent className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                 <div><p className="text-xs text-muted-foreground">ID</p><p className="font-mono text-xs">{selected.refId}</p></div>
                 <div><p className="text-xs text-muted-foreground">Service</p><p>{selected.service.type}</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{selected.service.extraLabel}</p>
+                  <p className="truncate">{selected.extra || "—"}</p>
+                </div>
                 <div><p className="text-xs text-muted-foreground">Sold</p><p className="tabular-nums">{selected.sold.toLocaleString()}</p></div>
                 <div><p className="text-xs text-muted-foreground">Received</p><p className="tabular-nums text-emerald-600">{selected.received.toLocaleString()}</p></div>
-                <div className="col-span-2 sm:col-span-4 pt-1 border-t">
+                <div className="col-span-2 sm:col-span-3 pt-1 border-t sm:border-t-0 sm:border-l sm:pl-3">
                   <p className="text-xs text-muted-foreground">Outstanding Due</p>
                   <p className="text-2xl font-bold text-rose-500 tabular-nums">{selected.due.toLocaleString()}</p>
                 </div>
@@ -310,7 +397,7 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
                   <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1.5" placeholder="মন্তব্য (ঐচ্ছিক)" />
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setSelected(null)}>বাতিল</Button>
+                  <Button variant="outline" onClick={() => handleClose(false)}>বাতিল</Button>
                   <Button onClick={submitPayment} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
                     <Wallet className="h-4 w-4" /> {saving ? "সেভ হচ্ছে…" : "Receive Payment"}
                   </Button>
