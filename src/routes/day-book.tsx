@@ -215,13 +215,14 @@ function DayBookPage() {
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="text-right">Received</TableHead>
                   <TableHead className="text-right">Due</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
                 ) : filtered.map((r, i) => (
                   <TableRow key={i}>
                     <TableCell className="whitespace-nowrap">{formatDate(r.date)}</TableCell>
