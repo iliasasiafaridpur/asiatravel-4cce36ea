@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, type Field, type ModuleSchema, type Section } from "@/lib/modules";
 import { LookupSelect } from "@/components/LookupSelect";
-import { applyFormat, capitalizeWords, formatError } from "@/lib/format";
+import { applyFormat, capitalizeWords } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -255,7 +255,8 @@ export function ModulePage({ module: mod }: Props) {
         }
         void load();
       } catch (e) {
-        toast.error("সমস্যা: " + formatError(e));
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.error("সমস্যা: " + msg);
         void load();
       }
     })();
@@ -427,16 +428,12 @@ export function ModulePage({ module: mod }: Props) {
       <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
-            <AlertDialogDescription>
-              এই এন্ট্রি ({String(deleteRow?.[mod.idColumn] ?? "")}) delete করলে এর সাথে সংশ্লিষ্ট
-              <strong> Agency Ledger, Vendor Ledger ও Payment Receipt</strong> সব জায়গা থেকে স্বয়ংক্রিয়ভাবে মুছে যাবে।
-              এটি ফেরানো যাবে না।
-            </AlertDialogDescription>
+            <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">হ্যাঁ, Delete করো</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">ডিলিট</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

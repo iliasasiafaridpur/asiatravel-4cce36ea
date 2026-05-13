@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { speakModuleEntry, speakReceived } from "@/lib/voice";
-import { formatError } from "@/lib/format";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
@@ -109,7 +108,7 @@ function ActionBoardPage() {
       setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);
-      toast.error("সমস্যা: " + formatError(e));
+      toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       window.clearTimeout(timeout);
       savingRef.current = false;
