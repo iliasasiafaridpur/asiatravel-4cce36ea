@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDownLeft, ArrowUpRight, Download, FileText, Plus, Receipt, RefreshCw, Trash2, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Download, FileText, Plus, Receipt, RefreshCw, Wallet } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 
