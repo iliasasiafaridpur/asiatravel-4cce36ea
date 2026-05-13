@@ -451,20 +451,6 @@ function DashboardPage() {
             </Link>
           );
         })}
-        <Link to="/accounts">
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">{myAccount?.full_name ?? meName}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Current Balance</p>
-                <p className="text-xl font-bold mt-0.5">৳ {Number(myAccount?.current_balance ?? 0).toLocaleString()}</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary/15 text-primary">
-                <ArrowRightLeft className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
       </div>
 
       {/* Trend + Pie */}
