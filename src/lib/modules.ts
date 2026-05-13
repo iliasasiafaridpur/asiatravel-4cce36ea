@@ -58,7 +58,6 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
       { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
       { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
-      { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
       { name: "mobile", label: "Mobile", type: "text", showInList: true, format: "mobile", section: "passenger" },
       { name: "airline", label: "Airline", type: "text", showInList: true, lookup: "airline", section: "passenger" },
       { name: "trip_road", label: "TRIP ROAD", type: "text", showInList: true, lookup: "route", section: "passenger" },
