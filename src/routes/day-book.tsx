@@ -18,7 +18,7 @@ export const Route = createFileRoute("/day-book")({
 });
 
 interface Entry {
-  module: string; moduleKey: string; id: string; date: string;
+  module: string; moduleKey: string; id: string; rowId: string; table: string; date: string;
   passenger: string; agent: string; vendor: string;
   status: string; receivedBy: string;
   amount: number; received: number;
