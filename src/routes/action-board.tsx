@@ -106,7 +106,7 @@ function ActionBoardPage() {
       toast.success(`Saved: ${newId}`);
       speakModuleEntry(mod.key);
       if (recvAmount > 0) speakReceived(recvAmount);
-      setForm(emptyForm(category));
+      setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);
       toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
