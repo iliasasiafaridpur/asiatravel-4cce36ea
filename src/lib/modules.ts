@@ -113,7 +113,16 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
+    listOrder: [
+      "entry_date", "passenger_name", "passport", "mobile", "country_name", "attested_date",
+      "agency_sold", "vendor_bought", "vendor_sent_date", "received_date",
+      "status", "delivery_date", "sold_price", "cost_price", "received_amount",
+      "due", "profit", "notes", "entry_by",
+    ],
+    computed: [
+      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
+    ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
       if (r.delivery_date) return "Delivered";
