@@ -436,7 +436,7 @@ export function ModulePage({ module: mod }: Props) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">ডিলিট</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">হ্যাঁ, Delete করো</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
