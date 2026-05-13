@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, type Field, type ModuleSchema, type Section } from "@/lib/modules";
 import { LookupSelect } from "@/components/LookupSelect";
-import { applyFormat, capitalizeWords } from "@/lib/format";
+import { applyFormat, capitalizeWords, formatError } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -255,8 +255,7 @@ export function ModulePage({ module: mod }: Props) {
         }
         void load();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        toast.error("সমস্যা: " + msg);
+        toast.error("সমস্যা: " + formatError(e));
         void load();
       }
     })();

@@ -18,6 +18,21 @@ export function maskMobile(s: string): string {
   return digits.slice(0, 5) + "-" + digits.slice(5);
 }
 
+// Supabase errors are plain objects with `message`, `details`, `hint`, `code`.
+// `String(error)` on them yields "[object Object]" — use this helper instead.
+export function formatError(e: unknown): string {
+  if (!e) return "Unknown error";
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  if (typeof e === "object") {
+    const o = e as Record<string, unknown>;
+    const parts = [o.message, o.details, o.hint].filter(Boolean) as string[];
+    if (parts.length) return parts.join(" — ");
+    try { return JSON.stringify(o); } catch { return "Unknown error"; }
+  }
+  return String(e);
+}
+
 export function applyFormat(format: string | undefined, value: string): string {
   switch (format) {
     case "passport":
