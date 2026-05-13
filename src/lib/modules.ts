@@ -28,6 +28,8 @@ export interface ModuleSchema {
   monthlyId?: boolean;
   statuses?: string[];
   fields: Field[];
+  /** Optional explicit ordering for list columns. Mix field names and computed names. */
+  listOrder?: string[];
   computed?: { name: string; label: string; compute: (row: Record<string, unknown>) => number }[];
   deriveStatus?: (row: Record<string, unknown>) => string | undefined;
 }
