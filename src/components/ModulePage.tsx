@@ -76,6 +76,7 @@ export function ModulePage({ module: mod }: Props) {
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
