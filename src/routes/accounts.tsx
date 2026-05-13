@@ -459,21 +459,19 @@ function AccountsPage() {
   };
 
   const delHand = async (id: string) => {
-    if (id.startsWith("tmp-") || !confirm("Delete?")) return;
+    if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("cash_handovers").delete().eq("id", id);
-    if (error) toast.error(error.message); else void reload(true);
+    if (error) toast.error(error.message); else { toast.success("✓ ডিলেট হয়েছে"); void reload(true); }
   };
   const delExp = async (id: string) => {
-    if (id.startsWith("tmp-") || !confirm("Delete?")) return;
+    if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
-    if (error) toast.error(error.message); else void reload(true);
+    if (error) toast.error(error.message); else { toast.success("✓ ডিলেট হয়েছে"); void reload(true); }
   };
   const delReceipt = async (r: Recv) => {
     if (r.id.startsWith("tmp-")) return;
-    if (r.source !== "manual") return toast.error("Service form থেকে আসা entry service page থেকে edit করুন");
-    if (!confirm("Delete received entry?")) return;
     const { error } = await supabase.from("payment_receipts").delete().eq("id", r.id);
-    if (error) toast.error(error.message); else void reload(true);
+    if (error) toast.error(error.message); else { toast.success("✓ ডিলেট হয়েছে"); void reload(true); }
   };
 
   const exportCsv = () => {
