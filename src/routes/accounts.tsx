@@ -569,7 +569,7 @@ function AccountsPage() {
                           <TableCell><Badge variant="outline">{r.method}</Badge></TableCell>
                           <MoneyCell value={r.amount} tone="success" />
                           <MoneyCell value={r.running} tone="primary" />
-                          <TableCell>{r.source === "manual" && <Button variant="ghost" size="icon" onClick={() => void delReceipt(r)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}</TableCell>
+                          <TableCell><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
