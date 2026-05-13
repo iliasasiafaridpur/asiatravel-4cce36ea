@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDownLeft, ArrowUpRight, Download, FileText, Plus, Receipt, RefreshCw, Trash2, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Download, FileText, Plus, Receipt, RefreshCw, Wallet } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 
@@ -458,21 +459,19 @@ function AccountsPage() {
   };
 
   const delHand = async (id: string) => {
-    if (id.startsWith("tmp-") || !confirm("Delete?")) return;
+    if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("cash_handovers").delete().eq("id", id);
-    if (error) toast.error(error.message); else void reload(true);
+    if (error) toast.error(error.message); else { toast.success("✓ ডিলেট হয়েছে"); void reload(true); }
   };
   const delExp = async (id: string) => {
-    if (id.startsWith("tmp-") || !confirm("Delete?")) return;
+    if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
-    if (error) toast.error(error.message); else void reload(true);
+    if (error) toast.error(error.message); else { toast.success("✓ ডিলেট হয়েছে"); void reload(true); }
   };
   const delReceipt = async (r: Recv) => {
     if (r.id.startsWith("tmp-")) return;
-    if (r.source !== "manual") return toast.error("Service form থেকে আসা entry service page থেকে edit করুন");
-    if (!confirm("Delete received entry?")) return;
     const { error } = await supabase.from("payment_receipts").delete().eq("id", r.id);
-    if (error) toast.error(error.message); else void reload(true);
+    if (error) toast.error(error.message); else { toast.success("✓ ডিলেট হয়েছে"); void reload(true); }
   };
 
   const exportCsv = () => {
@@ -570,7 +569,7 @@ function AccountsPage() {
                           <TableCell><Badge variant="outline">{r.method}</Badge></TableCell>
                           <MoneyCell value={r.amount} tone="success" />
                           <MoneyCell value={r.running} tone="primary" />
-                          <TableCell>{r.source === "manual" && <Button variant="ghost" size="icon" onClick={() => void delReceipt(r)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}</TableCell>
+                          <TableCell><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -788,7 +787,7 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
                   <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
                   <TableCell className="text-xs min-w-28">{desc}</TableCell>
                   <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
-                  <TableCell><Button variant="ghost" size="icon" onClick={() => props.onDelete(row.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                  <TableCell><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                 </TableRow>
               );
             })}

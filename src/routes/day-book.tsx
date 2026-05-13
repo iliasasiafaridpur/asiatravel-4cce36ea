@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, RotateCcw } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/day-book")({
   head: () => ({ meta: [{ title: "Day Book — সব এন্ট্রি" }] }),
@@ -16,7 +18,7 @@ export const Route = createFileRoute("/day-book")({
 });
 
 interface Entry {
-  module: string; moduleKey: string; id: string; date: string;
+  module: string; moduleKey: string; id: string; rowId: string; table: string; date: string;
   passenger: string; agent: string; vendor: string;
   status: string; receivedBy: string;
   amount: number; received: number;
@@ -57,6 +59,8 @@ function DayBookPage() {
           all.push({
             module: m.label, moduleKey: m.key,
             id: String(r[m.idColumn] ?? ""),
+            rowId: String(r.id ?? ""),
+            table: m.table,
             date: String(r.entry_date ?? r.created_at ?? ""),
             passenger: String(r.passenger_name ?? r.agent_name ?? r.vendor_name ?? "—"),
             agent: String(r.agency_sold ?? r.agent_name ?? ""),
@@ -111,6 +115,14 @@ function DayBookPage() {
   };
 
   const moduleLabel = (k: string) => MODULES.find((m) => m.key === k)?.label ?? k;
+
+  const handleDelete = async (entry: Entry) => {
+    if (!entry.rowId) return;
+    const { error } = await supabase.from(entry.table as never).delete().eq("id", entry.rowId);
+    if (error) { toast.error(error.message); return; }
+    setRows((prev) => prev.filter((r) => !(r.table === entry.table && r.rowId === entry.rowId)));
+    toast.success("✓ ডিলেট সম্পন্ন — সংশ্লিষ্ট হিসাবও সরে গেছে");
+  };
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -203,13 +215,14 @@ function DayBookPage() {
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="text-right">Received</TableHead>
                   <TableHead className="text-right">Due</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
                 ) : filtered.map((r, i) => (
                   <TableRow key={i}>
                     <TableCell className="whitespace-nowrap">{formatDate(r.date)}</TableCell>
@@ -225,6 +238,12 @@ function DayBookPage() {
                       <span className={r.amount - r.received > 0 ? "text-rose-500" : "text-emerald-600"}>
                         {(r.amount - r.received).toLocaleString()}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <ConfirmDeleteButton
+                        onConfirm={() => handleDelete(r)}
+                        description={`${r.module} — ${r.id} (${r.passenger}) ডিলেট করলে এই ক্লায়েন্টের সকল হিসাব (Day Book, My Accounts, Ledger) থেকেও মুছে যাবে। নিশ্চিত?`}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
