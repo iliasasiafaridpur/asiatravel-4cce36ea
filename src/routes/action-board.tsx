@@ -41,7 +41,7 @@ function ActionBoardPage() {
   const [category, setCategory] = useState(SERVICE_CATEGORIES[0].key);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(SERVICE_CATEGORIES[0].key));
   const [saving, setSaving] = useState(false);
-  const [dueOpen, setDueOpen] = useState(false);
+  
   const savingRef = useRef(false);
 
   const mod = moduleByKey(category)!;
