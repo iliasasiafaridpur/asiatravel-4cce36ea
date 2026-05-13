@@ -260,7 +260,26 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
-  const listFields = mod.fields.filter((f) => f.showInList);
+  // Build the ordered list-column descriptors. Honors mod.listOrder if present;
+  // accepts both field names and computed-column names so we can interleave Due/Profit.
+  type ListCol =
+    | { kind: "field"; field: Field }
+    | { kind: "computed"; comp: NonNullable<ModuleSchema["computed"]>[number] };
+  const listCols: ListCol[] = useMemo(() => {
+    if (mod.listOrder && mod.listOrder.length) {
+      const out: ListCol[] = [];
+      for (const name of mod.listOrder) {
+        const f = mod.fields.find((x) => x.name === name);
+        if (f) { out.push({ kind: "field", field: f }); continue; }
+        const c = mod.computed?.find((x) => x.name === name);
+        if (c) out.push({ kind: "computed", comp: c });
+      }
+      return out;
+    }
+    const fs: ListCol[] = mod.fields.filter((f) => f.showInList).map((field) => ({ kind: "field" as const, field }));
+    const cs: ListCol[] = (mod.computed ?? []).map((comp) => ({ kind: "computed" as const, comp }));
+    return [...fs, ...cs];
+  }, [mod]);
 
   return (
     <div className="space-y-4">
