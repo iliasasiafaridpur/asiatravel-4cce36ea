@@ -343,8 +343,6 @@ export function DueReceiveDialog({ open, onOpenChange }: { open: boolean; onOpen
           </div>
         )}
 
-        {/* unused but suppress lint */}
-        {moduleByKey ? null : null}
       </DialogContent>
     </Dialog>
   );
