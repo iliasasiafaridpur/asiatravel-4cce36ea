@@ -255,7 +255,6 @@ export function ModulePage({ module: mod }: Props) {
         }
         void load();
       } catch (e) {
-        const { formatError } = await import("@/lib/format");
         toast.error("সমস্যা: " + formatError(e));
         void load();
       }
