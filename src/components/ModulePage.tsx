@@ -427,12 +427,16 @@ export function ModulePage({ module: mod }: Props) {
       <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
-            <AlertDialogDescription>এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।</AlertDialogDescription>
+            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+            <AlertDialogDescription>
+              এই এন্ট্রি ({String(deleteRow?.[mod.idColumn] ?? "")}) delete করলে এর সাথে সংশ্লিষ্ট
+              <strong> Agency Ledger, Vendor Ledger ও Payment Receipt</strong> সব জায়গা থেকে স্বয়ংক্রিয়ভাবে মুছে যাবে।
+              এটি ফেরানো যাবে না।
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">ডিলিট</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">হ্যাঁ, Delete করো</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
