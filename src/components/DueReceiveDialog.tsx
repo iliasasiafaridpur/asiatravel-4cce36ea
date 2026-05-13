@@ -12,7 +12,7 @@ import { Search, Wallet, History, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
-import { moduleByKey, formatDate } from "@/lib/modules";
+import { formatDate } from "@/lib/modules";
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে
 const SERVICES = [
