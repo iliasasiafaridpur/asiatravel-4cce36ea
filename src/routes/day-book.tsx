@@ -59,6 +59,8 @@ function DayBookPage() {
           all.push({
             module: m.label, moduleKey: m.key,
             id: String(r[m.idColumn] ?? ""),
+            rowId: String(r.id ?? ""),
+            table: m.table,
             date: String(r.entry_date ?? r.created_at ?? ""),
             passenger: String(r.passenger_name ?? r.agent_name ?? r.vendor_name ?? "—"),
             agent: String(r.agency_sold ?? r.agent_name ?? ""),
