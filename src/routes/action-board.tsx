@@ -7,12 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Search, Wallet } from "lucide-react";
+import { Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { speakModuleEntry, speakReceived } from "@/lib/voice";
-import { DueReceiveDialog } from "@/components/DueReceiveDialog";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
