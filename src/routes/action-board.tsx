@@ -38,16 +38,23 @@ function emptyForm(modKey: string, entryBy = ""): Record<string, unknown> {
 function ActionBoardPage() {
   const navigate = useNavigate();
   const { user, profile } = useCurrentUser();
+  const me = displayName(profile, user);
   const [category, setCategory] = useState(SERVICE_CATEGORIES[0].key);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(SERVICE_CATEGORIES[0].key));
   const [saving, setSaving] = useState(false);
+  const [dueOpen, setDueOpen] = useState(false);
   const savingRef = useRef(false);
 
   const mod = moduleByKey(category)!;
 
+  // Keep entry_by in sync once the user/profile resolves
+  useEffect(() => {
+    setForm((prev) => (prev.entry_by ? prev : { ...prev, entry_by: me }));
+  }, [me]);
+
   const onCategoryChange = (v: string) => {
     setCategory(v);
-    setForm(emptyForm(v));
+    setForm(emptyForm(v, me));
   };
 
   const save = async () => {
