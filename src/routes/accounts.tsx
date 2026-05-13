@@ -787,7 +787,7 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
                   <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
                   <TableCell className="text-xs min-w-28">{desc}</TableCell>
                   <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
-                  <TableCell><Button variant="ghost" size="icon" onClick={() => props.onDelete(row.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                  <TableCell><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                 </TableRow>
               );
             })}
