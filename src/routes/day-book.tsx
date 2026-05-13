@@ -116,6 +116,14 @@ function DayBookPage() {
 
   const moduleLabel = (k: string) => MODULES.find((m) => m.key === k)?.label ?? k;
 
+  const handleDelete = async (entry: Entry) => {
+    if (!entry.rowId) return;
+    const { error } = await supabase.from(entry.table as never).delete().eq("id", entry.rowId);
+    if (error) { toast.error(error.message); return; }
+    setRows((prev) => prev.filter((r) => !(r.table === entry.table && r.rowId === entry.rowId)));
+    toast.success("✓ ডিলেট সম্পন্ন — সংশ্লিষ্ট হিসাবও সরে গেছে");
+  };
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       <div>
