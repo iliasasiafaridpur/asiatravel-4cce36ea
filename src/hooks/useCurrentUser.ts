@@ -52,6 +52,9 @@ export function useCurrentUser(): CurrentUser {
 /** Convenience: get a friendly display name. */
 export function displayName(p: Profile | null, u: User | null): string {
   if (p?.full_name) return p.full_name;
+  const meta = (u?.user_metadata ?? {}) as Record<string, unknown>;
+  const metaName = meta.full_name ?? meta.name ?? meta.display_name ?? meta.mobile;
+  if (metaName) return String(metaName);
   if (u?.email) return u.email.split("@")[0];
   return "User";
 }

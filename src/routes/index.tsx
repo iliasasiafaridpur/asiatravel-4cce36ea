@@ -195,6 +195,17 @@ function DashboardPage() {
     },
   });
 
+  const { data: myAccount } = useQuery({
+    queryKey: ["dashboard", "my_account", user?.id],
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_user_account" as never, { _user_id: user!.id } as never);
+      if (error) throw error;
+      return (((data as unknown) as Array<{ full_name: string; current_balance: number }> | null)?.[0] ?? null);
+    },
+  });
+
   const profileName = (uid?: string | null) =>
     profiles.find((p) => p.user_id === uid)?.full_name ?? null;
 
@@ -434,10 +445,11 @@ function DashboardPage() {
           <Card className="hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Accounts</p>
-                <p className="text-xl font-bold mt-0.5">৳ {cashSummary.total.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{myAccount?.full_name ?? meName}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Current Balance</p>
+                <p className="text-xl font-bold mt-0.5">৳ {Number(myAccount?.current_balance ?? 0).toLocaleString()}</p>
               </div>
-              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-amber-500/15 text-amber-600">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary/15 text-primary">
                 <ArrowRightLeft className="h-5 w-5" />
               </div>
             </CardContent>
