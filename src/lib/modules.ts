@@ -28,6 +28,8 @@ export interface ModuleSchema {
   monthlyId?: boolean;
   statuses?: string[];
   fields: Field[];
+  /** Optional explicit ordering for list columns. Mix field names and computed names. */
+  listOrder?: string[];
   computed?: { name: string; label: string; compute: (row: Record<string, unknown>) => number }[];
   deriveStatus?: (row: Record<string, unknown>) => string | undefined;
 }
@@ -71,9 +73,13 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
+    listOrder: [
+      "entry_date", "passenger_name", "passport", "airline", "trip_road", "flight_date",
+      "agency_sold", "sold_price", "received", "due", "profit",
+    ],
     computed: [
-      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
       { name: "due", label: "Due", compute: DUE("sold_price", "received") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
     ],
   },
   {
@@ -107,7 +113,16 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
+    listOrder: [
+      "entry_date", "passenger_name", "passport", "mobile", "country_name", "attested_date",
+      "agency_sold", "vendor_bought", "vendor_sent_date", "received_date",
+      "status", "delivery_date", "sold_price", "cost_price", "received_amount",
+      "due", "profit", "notes", "entry_by",
+    ],
+    computed: [
+      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
+    ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
       if (r.delivery_date) return "Delivered";

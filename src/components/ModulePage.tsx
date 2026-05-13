@@ -260,7 +260,26 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
-  const listFields = mod.fields.filter((f) => f.showInList);
+  // Build the ordered list-column descriptors. Honors mod.listOrder if present;
+  // accepts both field names and computed-column names so we can interleave Due/Profit.
+  type ListCol =
+    | { kind: "field"; field: Field }
+    | { kind: "computed"; comp: NonNullable<ModuleSchema["computed"]>[number] };
+  const listCols: ListCol[] = useMemo(() => {
+    if (mod.listOrder && mod.listOrder.length) {
+      const out: ListCol[] = [];
+      for (const name of mod.listOrder) {
+        const f = mod.fields.find((x) => x.name === name);
+        if (f) { out.push({ kind: "field", field: f }); continue; }
+        const c = mod.computed?.find((x) => x.name === name);
+        if (c) out.push({ kind: "computed", comp: c });
+      }
+      return out;
+    }
+    const fs: ListCol[] = mod.fields.filter((f) => f.showInList).map((field) => ({ kind: "field" as const, field }));
+    const cs: ListCol[] = (mod.computed ?? []).map((comp) => ({ kind: "computed" as const, comp }));
+    return [...fs, ...cs];
+  }, [mod]);
 
   return (
     <div className="space-y-4">
@@ -317,17 +336,23 @@ export function ModulePage({ module: mod }: Props) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="whitespace-nowrap">{mod.idColumn}</TableHead>
-                  {listFields.map((f) => <TableHead key={f.name} className="whitespace-nowrap">{f.label}</TableHead>)}
-                  {mod.computed?.map((c) => <TableHead key={c.name} className="whitespace-nowrap text-right">{c.label}</TableHead>)}
+                  {listCols.map((c) => (
+                    <TableHead
+                      key={c.kind === "field" ? c.field.name : c.comp.name}
+                      className={`whitespace-nowrap ${c.kind === "computed" ? "text-right" : ""}`}
+                    >
+                      {c.kind === "field" ? c.field.label : c.comp.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={listCols.length + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
                 ) : loadError ? (
                   <TableRow>
-                    <TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center py-8">
+                    <TableCell colSpan={listCols.length + 2} className="text-center py-8">
                       <div className="space-y-2">
                         <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
                         <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
@@ -335,30 +360,31 @@ export function ModulePage({ module: mod }: Props) {
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={listFields.length + (mod.computed?.length ?? 0) + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={listCols.length + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
-                    {listFields.map((f) => (
-                      <TableCell key={f.name} className="whitespace-nowrap">
-                        {f.name === "status" && mod.statuses ? (
-                          <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
-                        ) : f.type === "date" ? (
-                          formatDate(r[f.name] as string | null)
-                        ) : f.type === "number" ? (
-                          <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
-                        ) : (
-                          String(r[f.name] ?? "")
-                        )}
-                      </TableCell>
-                    ))}
-                    {mod.computed?.map((c) => {
-                      const v = c.compute(r);
+                    {listCols.map((c) => {
+                      if (c.kind === "computed") {
+                        const v = c.comp.compute(r);
+                        return (
+                          <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
+                            <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                          </TableCell>
+                        );
+                      }
+                      const f = c.field;
                       return (
-                        <TableCell key={c.name} className="text-right tabular-nums whitespace-nowrap">
-                          <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>
-                            {v.toLocaleString()}
-                          </span>
+                        <TableCell key={f.name} className="whitespace-nowrap">
+                          {f.name === "status" && mod.statuses ? (
+                            <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                          ) : f.type === "date" ? (
+                            formatDate(r[f.name] as string | null)
+                          ) : f.type === "number" ? (
+                            <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
+                          ) : (
+                            String(r[f.name] ?? "")
+                          )}
                         </TableCell>
                       );
                     })}

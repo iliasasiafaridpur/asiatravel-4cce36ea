@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Search } from "lucide-react";
+import { Save, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { speakModuleEntry, speakReceived } from "@/lib/voice";
+import { DueReceiveDialog } from "@/components/DueReceiveDialog";
 
 export const Route = createFileRoute("/action-board")({
   head: () => ({ meta: [{ title: "Action Board — নতুন এন্ট্রি" }] }),
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/action-board")({
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-function emptyForm(modKey: string): Record<string, unknown> {
+function emptyForm(modKey: string, entryBy = ""): Record<string, unknown> {
   const mod = moduleByKey(modKey)!;
   const f: Record<string, unknown> = {};
   for (const field of mod.fields) {
@@ -28,6 +29,7 @@ function emptyForm(modKey: string): Record<string, unknown> {
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
+    else if (field.name === "entry_by") f[field.name] = entryBy;
     else f[field.name] = "";
   }
   return f;
@@ -36,16 +38,23 @@ function emptyForm(modKey: string): Record<string, unknown> {
 function ActionBoardPage() {
   const navigate = useNavigate();
   const { user, profile } = useCurrentUser();
+  const me = displayName(profile, user);
   const [category, setCategory] = useState(SERVICE_CATEGORIES[0].key);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(SERVICE_CATEGORIES[0].key));
   const [saving, setSaving] = useState(false);
+  const [dueOpen, setDueOpen] = useState(false);
   const savingRef = useRef(false);
 
   const mod = moduleByKey(category)!;
 
+  // Keep entry_by in sync once the user/profile resolves
+  useEffect(() => {
+    setForm((prev) => (prev.entry_by ? prev : { ...prev, entry_by: me }));
+  }, [me]);
+
   const onCategoryChange = (v: string) => {
     setCategory(v);
-    setForm(emptyForm(v));
+    setForm(emptyForm(v, me));
   };
 
   const save = async () => {
@@ -97,7 +106,7 @@ function ActionBoardPage() {
       toast.success(`Saved: ${newId}`);
       speakModuleEntry(mod.key);
       if (recvAmount > 0) speakReceived(recvAmount);
-      setForm(emptyForm(category));
+      setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);
       toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
@@ -110,10 +119,17 @@ function ActionBoardPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Action Board</h1>
-        <p className="text-sm text-muted-foreground">যেকোনো সার্ভিসের জন্য দ্রুত এন্ট্রি — নিচে Service Category সিলেক্ট করুন</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Action Board</h1>
+          <p className="text-sm text-muted-foreground">যেকোনো সার্ভিসের জন্য দ্রুত এন্ট্রি — নিচে Service Category সিলেক্ট করুন</p>
+        </div>
+        <Button onClick={() => setDueOpen(true)} variant="outline" className="gap-2 self-start sm:self-auto">
+          <Wallet className="h-4 w-4" /> Due Receive
+        </Button>
       </div>
+
+      <DueReceiveDialog open={dueOpen} onOpenChange={setDueOpen} />
 
       <Card>
         <CardHeader className="pb-3">
