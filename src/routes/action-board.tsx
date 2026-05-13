@@ -108,7 +108,7 @@ function ActionBoardPage() {
       setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);
-      toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
+      toast.error("সমস্যা: " + formatError(e));
     } finally {
       window.clearTimeout(timeout);
       savingRef.current = false;
