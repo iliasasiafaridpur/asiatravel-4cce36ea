@@ -346,9 +346,6 @@ function DashboardPage() {
           <Link to="/action-board">
             <Button size="sm" variant="secondary" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
           </Link>
-          <Link to="/accounts">
-            <Button size="sm" variant="secondary" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Cash</Button>
-          </Link>
         </div>
       </div>
 
