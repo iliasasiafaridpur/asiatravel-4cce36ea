@@ -24,11 +24,20 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
+import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+
+// মডিউল কী → DueReceiveDialog এর serviceKey মিল
+const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
+  tickets: "tickets",
+  bmet: "bmet",
+  "saudi-visa": "saudi-visa",
+  "kuwait-visa": "kuwait-visa",
+};
 
 type Row = Record<string, unknown> & { id: string };
 
