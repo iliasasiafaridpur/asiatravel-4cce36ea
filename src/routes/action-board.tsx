@@ -20,6 +20,15 @@ export const Route = createFileRoute("/action-board")({
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    const o = e as Record<string, unknown>;
+    return String(o.message ?? o.details ?? o.hint ?? JSON.stringify(o));
+  }
+  return String(e);
+}
+
 function emptyForm(modKey: string, entryBy = ""): Record<string, unknown> {
   const mod = moduleByKey(modKey)!;
   const f: Record<string, unknown> = {};
@@ -48,7 +57,7 @@ function ActionBoardPage() {
 
   // Keep entry_by in sync once the user/profile resolves
   useEffect(() => {
-    setForm((prev) => (prev.entry_by ? prev : { ...prev, entry_by: me }));
+    setForm((prev) => (prev.entry_by && prev.entry_by !== "User" ? prev : { ...prev, entry_by: me }));
   }, [me]);
 
   const onCategoryChange = (v: string) => {
@@ -91,7 +100,7 @@ function ActionBoardPage() {
         (payload as Record<string, unknown>).created_by = user.id;
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
-      if (hasField("entry_by") && !payload.entry_by) (payload as Record<string, unknown>).entry_by = me;
+      if (hasField("entry_by") && (!payload.entry_by || payload.entry_by === "User")) (payload as Record<string, unknown>).entry_by = me;
       if (mod.deriveStatus && hasField("status")) {
         const derived = mod.deriveStatus(payload);
         if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
@@ -108,7 +117,7 @@ function ActionBoardPage() {
       setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);
-      toast.error("সমস্যা: " + (e instanceof Error ? e.message : String(e)));
+      toast.error("সমস্যা: " + errMsg(e));
     } finally {
       window.clearTimeout(timeout);
       savingRef.current = false;
