@@ -255,8 +255,8 @@ export function ModulePage({ module: mod }: Props) {
         }
         void load();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        toast.error("সমস্যা: " + msg);
+        const { formatError } = await import("@/lib/format");
+        toast.error("সমস্যা: " + formatError(e));
         void load();
       }
     })();
