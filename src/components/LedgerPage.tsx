@@ -89,7 +89,10 @@ export function LedgerPage({ module: mod }: Props) {
   const [payDate, setPayDate] = useState<string>(todayIso());
   const [payAmount, setPayAmount] = useState<string>("");
   const [payRemarks, setPayRemarks] = useState<string>("");
+  const [payMethod, setPayMethod] = useState<string>("Cash");
   const [paySaving, setPaySaving] = useState(false);
+
+  const PAYMENT_METHODS = ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Other"];
   const loadingRef = useRef(false);
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
