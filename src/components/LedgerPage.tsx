@@ -20,15 +20,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
-} from "@/components/ui/command";
-import {
   Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Eye, CreditCard,
-  CalendarRange, ChevronsUpDown, Check, FileSpreadsheet, Printer,
-  TrendingUp, TrendingDown, Receipt,
+  FileSpreadsheet, Printer, Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -87,8 +80,6 @@ export function LedgerPage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [viewRow, setViewRow] = useState<Row | null>(null);
-  const [datePopover, setDatePopover] = useState(false);
-  const [agentPopover, setAgentPopover] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [payTarget, setPayTarget] = useState<string>("");
   const [payDue, setPayDue] = useState<number>(0);
@@ -444,17 +435,13 @@ export function LedgerPage({ module: mod }: Props) {
     setSearch(""); setGroupFilter("all"); setDueOnly(false); setStartDate(""); setEndDate("");
   };
 
-  const dateLabel = startDate || endDate
-    ? `${startDate || "শুরু"} → ${endDate || "শেষ"}`
-    : "Date Range";
-
   return (
     <div className="space-y-4 print:space-y-2">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-start sm:justify-between print:hidden">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between print:hidden">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
-          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি · দেখানো হচ্ছে {filtered.length}</p>
+          <h1 className="text-2xl font-bold">{mod.label}</h1>
+          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button onClick={startCreate} className="gap-1.5">
@@ -474,122 +461,69 @@ export function LedgerPage({ module: mod }: Props) {
         </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 print:grid-cols-3">
-        <Card className="border-border/60">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">{billLabel}</span>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="mt-2 text-2xl font-bold tabular-nums">৳ {totals.bill.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-emerald-500/40 bg-emerald-500/5">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-400 font-semibold">{paidLabel}</span>
-              <TrendingDown className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">৳ {totals.paid.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card className={cn("border-rose-500/50", totals.due > 0 ? "bg-rose-500/10" : "bg-muted/20")}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-rose-600 dark:text-rose-400 font-semibold">Total Due</span>
-              <Wallet className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div className={cn("mt-2 text-3xl font-extrabold tabular-nums", totals.due > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
-              ৳ {totals.due.toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filter bar */}
+      {/* Filter bar — ModulePage-style grid */}
       <Card className="print:hidden">
-        <CardContent className="p-3">
-          <div className="flex flex-col lg:flex-row gap-2 lg:items-center">
-            <div className="relative flex-1 min-w-0">
+        <CardContent className="p-3 sm:p-4">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Start Date</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-base" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">End Date</Label>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-base" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{groupLabel}</Label>
+                <Select value={groupFilter} onValueChange={setGroupFilter}>
+                  <SelectTrigger className="h-10 text-base"><SelectValue placeholder={`সব ${groupLabel}`} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব {groupLabel}</SelectItem>
+                    {groupOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 flex flex-col">
+                <Label className="text-sm font-medium opacity-0 hidden sm:block">.</Label>
+                <div className="flex gap-2">
+                  <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-10 gap-1.5 flex-1">
+                    <Wallet className="h-4 w-4" /> শুধু Due
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetFilters} className="h-10 gap-1.5" title="Reset">
+                    <RotateCcw className="h-4 w-4" /> Reset
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="খুঁজুন..."
-                className="pl-9 h-10"
+                placeholder="খুঁজুন... (নাম, পাসপোর্ট, ID যেকোনো ফিল্ড)"
+                className="pl-9 h-11 text-base"
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Date range popover */}
-            <Popover open={datePopover} onOpenChange={setDatePopover}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-10 gap-1.5 justify-start lg:w-auto w-full font-normal">
-                  <CalendarRange className="h-4 w-4" />
-                  <span className="truncate">{dateLabel}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-3" align="start">
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Start Date</Label>
-                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">End Date</Label>
-                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9" />
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    <Button size="sm" variant="secondary" onClick={() => {
-                      const d = new Date(); d.setDate(d.getDate() - 6);
-                      setStartDate(d.toISOString().slice(0, 10)); setEndDate(todayIso());
-                    }}>7 দিন</Button>
-                    <Button size="sm" variant="secondary" onClick={() => {
-                      const d = new Date(); setStartDate(new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10)); setEndDate(todayIso());
-                    }}>এই মাস</Button>
-                    <Button size="sm" variant="ghost" onClick={() => { setStartDate(""); setEndDate(""); }}>Clear</Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Searchable group dropdown */}
-            <Popover open={agentPopover} onOpenChange={setAgentPopover}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className="h-10 gap-1.5 justify-between lg:w-56 w-full font-normal">
-                  <span className="truncate">{groupFilter === "all" ? `সব ${groupLabel}` : groupFilter}</span>
-                  <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-0" align="start">
-                <Command>
-                  <CommandInput placeholder={`${groupLabel} খুঁজুন...`} />
-                  <CommandList>
-                    <CommandEmpty>পাওয়া যায়নি</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem onSelect={() => { setGroupFilter("all"); setAgentPopover(false); }}>
-                        <Check className={cn("mr-2 h-4 w-4", groupFilter === "all" ? "opacity-100" : "opacity-0")} />
-                        সব {groupLabel}
-                      </CommandItem>
-                      {groupOptions.map((o) => (
-                        <CommandItem key={o} value={o} onSelect={() => { setGroupFilter(o); setAgentPopover(false); }}>
-                          <Check className={cn("mr-2 h-4 w-4", groupFilter === o ? "opacity-100" : "opacity-0")} />
-                          {o}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            <div className="flex gap-1.5">
-              <Button variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-10 gap-1.5">
-                <Wallet className="h-4 w-4" /> শুধু Due
-              </Button>
-              <Button variant="outline" size="icon" onClick={resetFilters} className="h-10 w-10" title="Reset">
-                <RotateCcw className="h-4 w-4" />
-              </Button>
+      {/* Summary — ModulePage-style plain boxes */}
+      <Card>
+        <CardContent className="p-3 sm:p-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{billLabel}</div>
+              <div className="mt-1 text-lg font-bold tabular-nums">{totals.bill.toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{paidLabel}</div>
+              <div className="mt-1 text-lg font-bold tabular-nums">{totals.paid.toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Due</div>
+              <div className={`mt-1 text-lg font-bold tabular-nums ${totals.due > 0 ? "text-rose-500" : ""}`}>{totals.due.toLocaleString()}</div>
             </div>
           </div>
         </CardContent>
@@ -599,32 +533,32 @@ export function LedgerPage({ module: mod }: Props) {
       {groupSummary.length > 0 && (
         <Card className="print:hidden">
           <CardContent className="p-3 sm:p-4">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2">
               <h3 className="text-sm font-semibold">{groupLabel} অনুযায়ী Due সারাংশ ({groupSummary.length})</h3>
             </div>
-            <div className="overflow-x-auto rounded-md border border-border/60">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{groupLabel}</TableHead>
-                    <TableHead className="text-right">{billLabel}</TableHead>
-                    <TableHead className="text-right">{paidLabel}</TableHead>
-                    <TableHead className="text-right">Due</TableHead>
+                    <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Due</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {groupSummary.map((g) => (
                     <TableRow key={g.key}>
-                      <TableCell className="font-medium py-3">{g.key}</TableCell>
+                      <TableCell className="font-medium">{g.key}</TableCell>
                       <TableCell className="text-right tabular-nums">{g.bill.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{g.paid.toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums">{g.paid.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         {g.due > 0 ? (
                           <button
                             type="button"
                             onClick={() => openPayment(g.key, g.due)}
                             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums"
-                            title="পেমেন্ট পরিশোধ"
+                            title="পেমেন্ট"
                           >
                             {g.due.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                           </button>
@@ -641,7 +575,7 @@ export function LedgerPage({ module: mod }: Props) {
         </Card>
       )}
 
-      {/* Main ledger table */}
+      {/* Main ledger table — flat traditional columns */}
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3 print:hidden">
@@ -655,27 +589,32 @@ export function LedgerPage({ module: mod }: Props) {
               </Button>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-md border border-border/60">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Ref</TableHead>
-                  <TableHead className="whitespace-nowrap">{groupLabel} / Passenger</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Financials</TableHead>
+                  <TableHead className="whitespace-nowrap">ID</TableHead>
+                  <TableHead className="whitespace-nowrap">Date</TableHead>
+                  <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
+                  <TableHead className="whitespace-nowrap">Passenger</TableHead>
+                  <TableHead className="whitespace-nowrap">Service</TableHead>
+                  <TableHead className="whitespace-nowrap">Country / Route</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Balance Due</TableHead>
                   <TableHead className="text-right whitespace-nowrap print:hidden">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
                   let cr = String(r.country_route ?? "");
-                  const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
                   const isTicket = svcUpper.includes("TICKET");
                   const isBmet = svcUpper.includes("BMET");
@@ -686,49 +625,32 @@ export function LedgerPage({ module: mod }: Props) {
                     else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
                     else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
                   }
-                  const crLabel = isBmet || isVisa ? "Country" : isTicket ? "Route" : "";
-                  const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
-                  const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   return (
                     <TableRow key={r.id}>
-                      <TableCell className="py-3.5 align-top min-w-[140px]">
-                        <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
-                        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap mt-0.5">{String(r[mod.idColumn] ?? "")}</div>
-                        {(() => { const cb = String(r.created_by ?? ""); const nm = cb ? profilesMap[cb] : ""; return nm ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-0.5">by {nm}</div> : null; })()}
+                      <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(r.entry_date as string | null)}</TableCell>
+                      <TableCell className="whitespace-nowrap font-medium">{String(r[groupField] ?? "")}</TableCell>
+                      <TableCell className="min-w-[140px]">{passenger || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{service}</TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{cr}</TableCell>
+                      <TableCell className="text-right tabular-nums">{Number(r[billCol] ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums">{Number(r[paidCol] ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        {bal > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                            className="font-semibold tabular-nums text-rose-500 hover:underline"
+                          >
+                            {bal.toLocaleString()}
+                          </button>
+                        ) : bal === 0 ? (
+                          <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400">Paid</Badge>
+                        ) : (
+                          <span className="tabular-nums text-amber-500">{bal.toLocaleString()}</span>
+                        )}
                       </TableCell>
-                      <TableCell className="py-3.5 align-top min-w-[200px]">
-                        <div className="font-semibold leading-tight">{String(r[groupField] ?? "—")}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{passenger || "—"}</div>
-                        <div className="text-[11px] text-muted-foreground/80 mt-0.5 flex flex-wrap items-center gap-x-1.5">
-                          {service && <span>{service}</span>}
-                          {service && cr && <span className="opacity-50">·</span>}
-                          {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
-                          {flightDate && <><span className="opacity-50">·</span><span>Flight: {flightDate}</span></>}
-                        </div>
-                        {remarks && <div className="text-[11px] text-muted-foreground/70 mt-0.5 italic truncate max-w-[260px]">{remarks}</div>}
-                      </TableCell>
-                      <TableCell className="text-right py-3.5 align-top min-w-[180px]">
-                        <div className="font-bold tabular-nums">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
-                        <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
-                          {paidLabel}: {Number(r[paidCol] ?? 0).toLocaleString()}
-                        </div>
-                        <div className="mt-0.5">
-                          {bal > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
-                              className="text-xs font-semibold tabular-nums text-rose-500 hover:underline"
-                            >
-                              Due: {bal.toLocaleString()}
-                            </button>
-                          ) : bal === 0 ? (
-                            <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]">Paid</Badge>
-                          ) : (
-                            <span className="text-xs tabular-nums text-amber-500">Advance: {Math.abs(bal).toLocaleString()}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right py-3.5 align-top print:hidden">
+                      <TableCell className="text-right print:hidden">
                         <div className="flex justify-end gap-0.5">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewRow(r)} title="View">
                             <Eye className="h-3.5 w-3.5" />
