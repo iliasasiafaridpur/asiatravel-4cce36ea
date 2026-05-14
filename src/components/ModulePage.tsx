@@ -321,6 +321,20 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
+  // Ledger group-due click → open new entry pre-filled with that group's name + payment = due amount
+  const startGroupPayment = (groupKey: string, dueAmount: number) => {
+    if (!mod.groupBy) return;
+    setEditing(null);
+    const f = emptyForm(mod);
+    f[mod.groupBy.field] = groupKey;
+    // payment column varies by ledger
+    if (mod.fields.some((x) => x.name === "paid_amount")) f.paid_amount = dueAmount;
+    if (mod.fields.some((x) => x.name === "received_amount")) f.received_amount = dueAmount;
+    if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
+    setForm(f);
+    setOpenForm(true);
+  };
+
   // Build the ordered list-column descriptors. Honors mod.listOrder if present;
   // accepts both field names and computed-column names so we can interleave Due/Profit.
   type ListCol =
@@ -369,62 +383,9 @@ export function ModulePage({ module: mod }: Props) {
         </Dialog>
       </div>
 
-      {summary && (
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="grid grid-cols-3 gap-3">
-              {summary.map((s) => (
-                <div key={s.name} className="rounded-md border bg-muted/30 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
-                  <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
-                    {s.total.toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {groupSummary && groupSummary.length > 0 && (
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="mb-2">
-              <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ ({groupSummary.length})</h3>
-            </div>
-            {true && (
-              <div className="overflow-x-auto rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="whitespace-nowrap">{mod.groupBy!.label}</TableHead>
-                      {mod.groupBy!.metrics.map((m) => (
-                        <TableHead key={m.name} className="text-right whitespace-nowrap">{m.label}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {groupSummary.map((g) => (
-                      <TableRow key={g.key}>
-                        <TableCell className="font-medium">{g.key}</TableCell>
-                        {mod.groupBy!.metrics.map((m) => (
-                          <TableCell key={m.name} className={`text-right tabular-nums ${m.name === "balance" && (g.vals[m.name] ?? 0) > 0 ? "text-rose-500 font-semibold" : ""}`}>
-                            {(g.vals[m.name] ?? 0).toLocaleString()}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="mb-4 space-y-3">
+          <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {hasDateFilter && (
                 <>
@@ -501,7 +462,77 @@ export function ModulePage({ module: mod }: Props) {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
 
+      {summary && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="grid grid-cols-3 gap-3">
+              {summary.map((s) => (
+                <div key={s.name} className="rounded-md border bg-muted/30 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
+                  <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
+                    {s.total.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {groupSummary && groupSummary.length > 0 && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ ({groupSummary.length})</h3>
+            </div>
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">{mod.groupBy!.label}</TableHead>
+                    {mod.groupBy!.metrics.map((m) => (
+                      <TableHead key={m.name} className="text-right whitespace-nowrap">{m.label}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupSummary.map((g) => (
+                    <TableRow key={g.key}>
+                      <TableCell className="font-medium">{g.key}</TableCell>
+                      {mod.groupBy!.metrics.map((m) => {
+                        const val = g.vals[m.name] ?? 0;
+                        const isDueClickable = m.name === "balance" && val > 0;
+                        return (
+                          <TableCell key={m.name} className={`text-right tabular-nums ${m.name === "balance" && val > 0 ? "text-rose-500 font-semibold" : ""}`}>
+                            {isDueClickable ? (
+                              <button
+                                type="button"
+                                onClick={() => startGroupPayment(g.key, val)}
+                                className="inline-flex items-center gap-1 hover:underline"
+                                title="পেমেন্ট পরিশোধ"
+                              >
+                                {val.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              val.toLocaleString()
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="p-3 sm:p-4">
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
@@ -538,10 +569,8 @@ export function ModulePage({ module: mod }: Props) {
                     {listCols.map((c) => {
                       if (c.kind === "computed") {
                         const v = c.comp.compute(r);
-                        // Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
+                        // Service Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
                         const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
-                        // Ledger Balance Due হলে — ক্লিক করলে Edit dialog (Payment update)
-                        const isLedgerDue = c.comp.name === "balance" && v > 0;
                         return (
                           <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
                             {isServiceDue ? (
@@ -553,17 +582,8 @@ export function ModulePage({ module: mod }: Props) {
                               >
                                 {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                               </button>
-                            ) : isLedgerDue ? (
-                              <button
-                                type="button"
-                                onClick={() => startEdit(r)}
-                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
-                                title="Payment আপডেট করুন"
-                              >
-                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
-                              </button>
                             ) : (
-                              <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                              <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
                             )}
                           </TableCell>
                         );
