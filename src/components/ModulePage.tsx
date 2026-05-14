@@ -24,7 +24,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Plane, IdCard, Globe2, Layers, TrendingUp, TrendingDown, Receipt as ReceiptIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { StatCard, type StatTone } from "@/components/StatCard";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
@@ -38,6 +40,24 @@ const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
   "saudi-visa": "saudi-visa",
   "kuwait-visa": "kuwait-visa",
 };
+
+// মডিউল-ভিত্তিক হেডার আইকন
+const MODULE_ICON: Record<string, LucideIcon> = {
+  tickets: Plane,
+  bmet: IdCard,
+  "saudi-visa": Globe2,
+  "kuwait-visa": Globe2,
+};
+
+// summary field → tone + icon mapping
+function summaryStyle(name: string): { tone: StatTone; icon: LucideIcon } {
+  if (name === "balance" || name === "due") return { tone: "danger", icon: Wallet };
+  if (name === "profit") return { tone: "success", icon: TrendingUp };
+  if (name === "cost_price" || name === "cost") return { tone: "warning", icon: TrendingDown };
+  if (/received|paid/i.test(name)) return { tone: "info", icon: ReceiptIcon };
+  if (/sold|price|bill|payable/i.test(name)) return { tone: "primary", icon: Layers };
+  return { tone: "neutral", icon: Layers };
+}
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -554,13 +574,21 @@ export function ModulePage({ module: mod }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{mod.label}</h1>
-          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}>
+            {(() => { const Ico = MODULE_ICON[mod.key] ?? Layers; return <Ico className="h-5 w-5" />; })()}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="gap-1 font-normal"><Layers className="h-3 w-3" /> মোট {rows.length}</Badge>
+              {filtered.length !== rows.length && <Badge variant="outline" className="gap-1 font-normal"><Search className="h-3 w-3" /> ফিল্টার: {filtered.length}</Badge>}
+            </p>
+          </div>
         </div>
         <Dialog open={openForm} onOpenChange={setOpenForm}>
           <DialogTrigger asChild>
-            <Button onClick={startCreate} className="gap-1.5">
+            <Button onClick={startCreate} className="gap-1.5 h-10">
               <Plus className="h-4 w-4" /> নতুন এন্ট্রি
             </Button>
           </DialogTrigger>
@@ -660,21 +688,15 @@ export function ModulePage({ module: mod }: Props) {
         </CardContent>
       </Card>
 
-      {summary && (
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="grid grid-cols-3 gap-3">
-              {summary.map((s) => (
-                <div key={s.name} className="rounded-md border bg-muted/30 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
-                  <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
-                    {s.total.toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {summary && summary.length > 0 && (
+        <div className={`grid gap-2.5 sm:gap-3 grid-cols-2 ${summary.length >= 4 ? "lg:grid-cols-4" : summary.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+          {summary.map((s) => {
+            const st = summaryStyle(s.name);
+            return (
+              <StatCard key={s.name} label={s.label} value={s.total} icon={st.icon} tone={st.tone} format="currency" />
+            );
+          })}
+        </div>
       )}
 
       {groupSummary && groupSummary.length > 0 && (
