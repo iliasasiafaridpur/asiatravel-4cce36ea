@@ -46,8 +46,6 @@ const NAV = [
     { to: "/accounts", title: "My Accounts", icon: Wallet },
   ]},
   { group: "তালিকা", items: [
-    { to: "/agents", title: "Agent List", icon: UserCog },
-    { to: "/vendors", title: "Vendor List", icon: Truck },
     { to: "/invoice", title: "Invoice", icon: FileText },
   ]},
   { group: "System", items: [
