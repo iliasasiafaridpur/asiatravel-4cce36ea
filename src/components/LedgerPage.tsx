@@ -636,9 +636,9 @@ export function LedgerPage({ module: mod }: Props) {
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="py-3.5 align-top min-w-[140px]">
-                        <div className="font-mono text-xs font-semibold">{String(r[mod.idColumn] ?? "")}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{formatDate(r.entry_date as string | null)}</div>
-                        {(() => { const cb = String(r.created_by ?? ""); const nm = cb ? profilesMap[cb] : ""; return nm ? <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {nm}</div> : null; })()}
+                        <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
+                        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap mt-0.5">{String(r[mod.idColumn] ?? "")}</div>
+                        {(() => { const cb = String(r.created_by ?? ""); const nm = cb ? profilesMap[cb] : ""; return nm ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-0.5">by {nm}</div> : null; })()}
                       </TableCell>
                       <TableCell className="py-3.5 align-top min-w-[200px]">
                         <div className="font-semibold leading-tight">{String(r[groupField] ?? "—")}</div>
