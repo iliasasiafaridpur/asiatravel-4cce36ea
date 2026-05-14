@@ -83,6 +83,8 @@ function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [preset, setPreset] = useState<Preset>("month");
+  const [sinceZero, setSinceZero] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
   // Dialog forms
