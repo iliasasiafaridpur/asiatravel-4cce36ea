@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 
 function phoneToEmail(phone: string) {
   const clean = phone.replace(/[^0-9]/g, "");
