@@ -80,6 +80,9 @@ export function ModulePage({ module: mod }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
+  const [dueOnly, setDueOnly] = useState(false);
+  const [showGroup, setShowGroup] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
@@ -92,6 +95,7 @@ export function ModulePage({ module: mod }: Props) {
   const hasLoadedRef = useRef(false);
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
+  const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
 
   // Hydrate from localStorage cache instantly (offline-first)
   useEffect(() => {
