@@ -317,6 +317,51 @@ export function LedgerPage({ module: mod }: Props) {
       if (user?.id) payload.created_by = user.id;
       const { error } = await supabase.from(mod.table as never).insert(payload as never);
       if (error) throw error;
+
+      // Mirror to My Accounts so the cash drawer & reports stay in sync.
+      if (user?.id) {
+        if (isAgency) {
+          // Agency receive — money in to the user
+          const rid = await generateNextId({
+            key: "_rcpt", label: "", short: "", table: "payment_receipts",
+            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+          });
+          const { error: e2 } = await supabase.from("payment_receipts").insert({
+            receipt_id: rid,
+            entry_date: payDate,
+            service_type: "Agency Receive",
+            ref_id: finalId,
+            passenger_name: payTarget,
+            amount: amt,
+            method: payMethod,
+            source: "agency_ledger",
+            remarks: payRemarks || null,
+            received_by: user.id,
+            received_by_name: me,
+            created_by: user.id,
+          } as never);
+          if (e2) console.warn("payment_receipts mirror failed:", e2);
+        } else {
+          // Vendor pay — money out from the user
+          const eid = await generateNextId({
+            key: "_exp", label: "", short: "", table: "cash_expenses",
+            idColumn: "expense_id", idPrefix: "EXP", monthlyId: true, fields: [],
+          });
+          const { error: e2 } = await supabase.from("cash_expenses").insert({
+            expense_id: eid,
+            entry_date: payDate,
+            category: "Vendor Payment",
+            purpose: `Vendor: ${payTarget}`,
+            amount: amt,
+            remarks: `${payMethod}${payRemarks ? " · " + payRemarks : ""} · Ref: ${finalId}`,
+            spent_by: user.id,
+            spent_by_name: me,
+            created_by: user.id,
+          } as never);
+          if (e2) console.warn("cash_expenses mirror failed:", e2);
+        }
+      }
+
       toast.success(`✓ ${payTitle} সংরক্ষিত: ${amt.toLocaleString()}`);
       setPayOpen(false);
       void load();
