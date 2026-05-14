@@ -82,7 +82,7 @@ export function ModulePage({ module: mod }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
   const [dueOnly, setDueOnly] = useState(false);
-  const [showGroup, setShowGroup] = useState(false);
+  const [showGroup, setShowGroup] = useState(true);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
@@ -384,13 +384,10 @@ export function ModulePage({ module: mod }: Props) {
       {groupSummary && groupSummary.length > 0 && (
         <Card>
           <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ</h3>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setShowGroup((v) => !v)}>
-                {showGroup ? "লুকান" : `দেখুন (${groupSummary.length})`}
-              </Button>
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ ({groupSummary.length})</h3>
             </div>
-            {showGroup && (
+            {true && (
               <div className="overflow-x-auto rounded-md border">
                 <Table>
                   <TableHeader>
