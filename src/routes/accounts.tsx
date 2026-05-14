@@ -460,49 +460,125 @@ ${node.innerHTML}
         </TabsList>
 
         {/* Timeline */}
-        <TabsContent value="timeline" className="mt-3">
+        <TabsContent value="timeline" className="mt-3 space-y-3">
+          {/* Timeline header strip with count + print */}
+          <div className="flex items-center justify-between gap-2 px-1">
+            <div className="text-xs text-muted-foreground">
+              {sinceZero ? <span className="text-primary font-medium">০ ব্যালেন্স থেকে এখন পর্যন্ত</span> : "বর্তমান ফিল্টার"} · মোট <b className="text-foreground">{timeline.length}</b> এন্ট্রি
+              {sinceZero && lastZeroIdx >= 0 && fullAsc[lastZeroIdx] && (
+                <span> · শুরু: {formatDate(fullAsc[lastZeroIdx].date)}</span>
+              )}
+            </div>
+            <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
+              <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+            </Button>
+          </div>
+
           <Card><CardContent className="p-0">
             {loading ? <EmptyRow>লোড হচ্ছে...</EmptyRow>
               : timeline.length === 0 ? <EmptyRow>এই সময়সীমার মধ্যে কোনো এন্ট্রি নেই</EmptyRow>
               : <div className="divide-y">
                 {timeline.map((it) => {
                   const isIn = it.kind === "received";
-                  const amt = Number(isIn ? (it.row as Recv).amount : it.kind === "handover" ? (it.row as Hand).amount : (it.row as Exp).amount);
-                  const tone = isIn ? "text-emerald-600" : it.kind === "handover" ? "text-sky-600" : "text-amber-600";
-                  const Icon = isIn ? ArrowDownLeft : it.kind === "handover" ? Send : Receipt;
-                  const title = isIn ? (it.row as Recv).passenger_name : it.kind === "handover" ? `জমা → ${(it.row as Hand).to_name}` : ((it.row as Exp).purpose || (it.row as Exp).category);
-                  const sub = isIn ? (it.row as Recv).service_type
-                    : it.kind === "handover" ? (it.row as Hand).method
-                    : (it.row as Exp).category;
-                  const refId = isIn ? (it.row as Recv).receipt_id
-                    : it.kind === "handover" ? (it.row as Hand).handover_id
-                    : (it.row as Exp).expense_id;
+                  const isHand = it.kind === "handover";
+                  const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
+                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
+                  const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
+                  const Icon = isIn ? ArrowDownLeft : isHand ? Send : Receipt;
+                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
+                  const method = isIn ? r.method : isHand ? h.method : null;
+                  const category = isIn ? r.service_type : isHand ? null : e.category;
+                  const remarks = isIn ? r.remarks : isHand ? h.remarks : e.remarks;
+                  const extraRef = isIn && r.ref_id ? r.ref_id : null;
+                  const source = isIn ? r.source : null;
+
                   return (
                     <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="flex items-start gap-3 p-3 hover:bg-muted/30 transition-colors">
-                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center bg-card border ${tone}`}>
+                      <div className={`shrink-0 h-10 w-10 rounded-full grid place-items-center border ${bgTone} ${tone}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="font-semibold text-sm leading-tight truncate">{title}</p>
-                          <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
-                            {isIn ? "+" : "−"} {fmt(amt)}
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm leading-tight truncate">{title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
+                              <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
+                              <span className="font-mono">{refId}</span>
+                              <span>·</span>
+                              <span className="flex items-center gap-0.5"><CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}</span>
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
+                              {isIn ? "+" : "−"} {fmt(amt)}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap mt-0.5">
+                              ব্যাল: <b className="text-foreground">{fmt(it.running)}</b>
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {sub} · {formatDate(it.date)} · <span className="font-mono">{refId}</span>
-                          </p>
-                          <p className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
-                            ব্যাল: {fmt(it.running)}
-                          </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                          {category && <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{category}</span>}
+                          {method && <span className="flex items-center gap-1"><Banknote className="h-3 w-3" />{method}</span>}
+                          {extraRef && <span>Ref: <span className="font-mono">{extraRef}</span></span>}
+                          {source && source !== "manual" && <span className="px-1.5 py-px rounded bg-muted/60 text-[10px]">{source}</span>}
                         </div>
+                        {remarks && (
+                          <p className="text-[11px] text-muted-foreground/90 mt-1 flex items-start gap-1">
+                            <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
+                            <span className="break-words">{remarks}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>}
           </CardContent></Card>
+
+          {/* Hidden printable HTML table */}
+          <div ref={printRef} className="hidden">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>তারিখ</th><th>ধরন</th><th>ID</th><th>বিবরণ</th>
+                  <th>ক্যাটাগরি/মাধ্যম</th><th>মন্তব্য</th>
+                  <th class="num">আয়</th><th class="num">খরচ/জমা</th><th class="num">ব্যালেন্স</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...timeline].reverse().map((it, i) => {
+                  const isIn = it.kind === "received";
+                  const isHand = it.kind === "handover";
+                  const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
+                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
+                  const cm = isIn ? `${r.service_type}${r.method ? " · " + r.method : ""}` : isHand ? h.method : e.category;
+                  const remarks = (isIn ? r.remarks : isHand ? h.remarks : e.remarks) || (isIn && r.ref_id ? `Ref ${r.ref_id}` : "");
+                  const cls = isIn ? "in" : isHand ? "hand" : "out";
+                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  return (
+                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
+                      <td>{i + 1}</td>
+                      <td>{formatDate(it.date)}</td>
+                      <td className={cls}>{kindLabel}</td>
+                      <td><span style={{ fontFamily: "monospace" }}>{refId}</span></td>
+                      <td>{title}</td>
+                      <td>{cm}</td>
+                      <td>{remarks}</td>
+                      <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
+                      <td className={`num ${isHand ? "hand" : "out"}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
+                      <td className="num">{fmt(it.running)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
 
         {/* Income */}
