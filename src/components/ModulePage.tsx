@@ -387,8 +387,8 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
-              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="font-medium whitespace-nowrap"><span className="opacity-60 text-xs">Date:</span> {formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap"><span className="opacity-70 not-italic">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">By: {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -433,8 +433,8 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
-              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="font-medium whitespace-nowrap"><span className="opacity-60 text-xs">Date:</span> {formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap"><span className="opacity-70 not-italic">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">By: {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -483,8 +483,8 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
-              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="font-medium whitespace-nowrap"><span className="opacity-60 text-xs">Date:</span> {formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap"><span className="opacity-70 not-italic">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
