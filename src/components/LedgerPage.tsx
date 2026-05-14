@@ -224,7 +224,7 @@ export function LedgerPage({ module: mod }: Props) {
     if (q) xs = xs.filter((r) => Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q)));
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, startDate, endDate, search]);
+  }, [rows, groupFilter, dueOnly, startDate, endDate, search, dueByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0, paid = 0;
