@@ -101,8 +101,23 @@ export function LedgerPage({ module: mod }: Props) {
   const paidCol = isAgency ? "received_amount" : "paid_amount";
   const billLabel = isAgency ? "Total Bill" : "Total Payable";
   const paidLabel = isAgency ? "Total Received" : "Total Paid";
+  const payTitle = isAgency ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি";
+  const payAmountLabel = isAgency ? "Received Amount" : "Paid Amount";
+  const groupFieldLabel = isAgency ? "Agent Name" : "Vendor Name";
 
-  // Hydrate cache
+  // Form schema with country_route lookup switching based on selected service_type.
+  const formMod = useMemo<ModuleSchema>(() => {
+    const svc = String(form.service_type ?? "").toUpperCase();
+    const isBmet = svc.includes("BMET");
+    const lookupKind = isBmet ? "country" : "route";
+    const newLabel = isBmet ? "Country" : svc.includes("VISA") ? "Country" : "Route";
+    const fields: Field[] = mod.fields.map((f) =>
+      f.name === "country_route"
+        ? { ...f, label: newLabel, lookup: lookupKind }
+        : f,
+    );
+    return { ...mod, fields };
+  }, [mod, form.service_type]);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(cacheKey);
