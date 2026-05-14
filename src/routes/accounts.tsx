@@ -702,8 +702,8 @@ function AccountsPage() {
                       : reportRows.map((r) => (
                         <TableRow key={`${r.kind}-${r.serial}`} className={r.kind === "received" ? "" : r.kind === "handover" ? "bg-warning/5" : "bg-destructive/5"}>
                           <TableCell className="text-xs align-top py-3 min-w-[80px]">
-                            <div>{r.serial}</div>
-                            {r.user && r.user !== "—" && <div className="text-[10px] text-muted-foreground/80 mt-1">By: {r.user}</div>}
+                            <div className="font-medium">{r.serial}</div>
+                            {r.user && r.user !== "—" && <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {r.user}</div>}
                           </TableCell>
                           <TableCell className="py-3 align-top min-w-[240px]">
                             <div className="flex items-center gap-2">
