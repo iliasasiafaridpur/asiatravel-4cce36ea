@@ -180,23 +180,15 @@ export function LookupSelect({ kind, value, onChange, defaults }: Props) {
             <DialogTitle>{label} ম্যানেজ করুন</DialogTitle>
           </DialogHeader>
           <div className="max-h-80 overflow-y-auto divide-y">
-            {(defaults ?? []).length > 0 && (
-              <div className="py-2">
-                <div className="text-xs text-muted-foreground mb-1">ডিফল্ট (ডিলিট করা যাবে না)</div>
-                {(defaults ?? []).map((o) => (
-                  <div key={o} className="flex items-center justify-between py-1.5">
-                    <span className="text-sm">{o}</span>
-                    <span className="text-xs text-muted-foreground">ডিফল্ট</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {dbOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">কাস্টম অপশন নেই</div>
-            ) : dbOptions.map((o) => (
+            {manageList.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">কোনো অপশন নেই</div>
+            ) : manageList.map((o) => (
               <div key={o} className="flex items-center justify-between py-2">
-                <span className="text-sm">{o}</span>
-                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)}>
+                <span className="text-sm">
+                  {o}
+                  {isDefault(o) && <span className="ml-2 text-xs text-muted-foreground">(ডিফল্ট)</span>}
+                </span>
+                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)} title="ডিলিট">
                   <Trash2 className="h-4 w-4 text-rose-500" />
                 </Button>
               </div>
