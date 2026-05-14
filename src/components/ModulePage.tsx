@@ -356,6 +356,201 @@ export function ModulePage({ module: mod }: Props) {
     return [...fs, ...cs];
   }, [mod]);
 
+  // Stacked-row mode: condense many columns into a few "primary + secondary lines" cells.
+  type StackedCol = { key: string; header: string; align?: "right"; className?: string; render: (r: Row) => React.ReactNode };
+  const stackedCols: StackedCol[] | null = useMemo(() => {
+    const fmt = (n: unknown) => Number(n ?? 0).toLocaleString();
+    const subLine = (label: string, val: React.ReactNode) => (
+      <div className="text-xs text-muted-foreground leading-tight">
+        <span className="opacity-60">{label}:</span> {val}
+      </div>
+    );
+    const dueBtn = (r: Row, due: number) => {
+      const svc = DUE_SERVICE_KEY[mod.key];
+      if (due > 0 && svc) {
+        return (
+          <button
+            type="button"
+            onClick={() => setDuePreselect({ serviceKey: svc, rowId: r.id })}
+            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+            title="Due Receive"
+          >
+            Due: {fmt(due)} <Wallet className="h-3 w-3" />
+          </button>
+        );
+      }
+      return <span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span>;
+    };
+
+    switch (mod.key) {
+      case "tickets":
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[140px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+            </div>
+          )},
+          { key: "trip", header: "Trip", render: (r) => (
+            <div className="min-w-[140px]">
+              <div className="font-medium">{[r.airline, r.trip_road].filter(Boolean).join(" · ") || "—"}</div>
+              {r.flight_date ? subLine("✈ Flight", formatDate(r.flight_date as string)) : null}
+              {r.pnr ? subLine("PNR", String(r.pnr)) : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r.received ?? 0);
+            const cost = Number(r.cost_price ?? 0);
+            const due = sold - recv;
+            const profit = sold - cost;
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs">{dueBtn(r, due)}</div>
+                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+              </div>
+            );
+          }},
+        ];
+      case "bmet":
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[150px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.country_name ? subLine("🌍", String(r.country_name)) : null}
+            </div>
+          )},
+          { key: "process", header: "Process Dates", render: (r) => (
+            <div className="text-xs">
+              {r.attested_date ? subLine("Attested", formatDate(r.attested_date as string)) : null}
+              {r.vendor_sent_date ? subLine("V.Sent", formatDate(r.vendor_sent_date as string)) : null}
+              {r.received_date ? subLine("Recv", formatDate(r.received_date as string)) : null}
+              {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r.received_amount ?? 0);
+            const cost = Number(r.cost_price ?? 0);
+            const due = sold - recv;
+            const profit = sold - cost;
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs">{dueBtn(r, due)}</div>
+                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+              </div>
+            );
+          }},
+        ];
+      case "saudi-visa":
+      case "kuwait-visa": {
+        const recvField = mod.key === "saudi-visa" ? "received_amount" : "received";
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[150px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+            </div>
+          )},
+          { key: "visa", header: "Visa Info", render: (r) => (
+            <div>
+              <div className="font-medium">{String(r.visa_type ?? r.visa_no ?? "—")}</div>
+              {r.visa_no && r.visa_type ? subLine("No", String(r.visa_no)) : null}
+              {r.sponsor_name ? subLine("Sponsor", String(r.sponsor_name)) : null}
+              {r.medical_status ? subLine("Medical", String(r.medical_status)) : null}
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r[recvField] ?? 0);
+            const cost = Number(r.cost_price ?? 0);
+            const due = sold - recv;
+            const profit = sold - cost;
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs">{dueBtn(r, due)}</div>
+                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+              </div>
+            );
+          }},
+        ];
+      }
+      case "agents":
+      case "vendors":
+        return [
+          { key: "name", header: "Name", render: (r) => (
+            <div>
+              <div className="font-medium">{String(r.name ?? "—")}</div>
+              <div className="text-[11px] font-mono text-muted-foreground">{String(r[mod.idColumn] ?? "")}</div>
+            </div>
+          )},
+          { key: "contact", header: "Contact", render: (r) => (
+            <div>
+              {r.phone ? <div className="text-sm">📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.address ? subLine("📍", String(r.address)) : null}
+            </div>
+          )},
+          { key: "notes", header: "Notes", render: (r) => (
+            <div className="text-xs text-muted-foreground max-w-[260px] whitespace-pre-wrap">{String(r.notes ?? "")}</div>
+          )},
+        ];
+      default:
+        return null;
+    }
+  }, [mod]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -537,80 +732,99 @@ export function ModulePage({ module: mod }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">{mod.idColumn}</TableHead>
-                  {listCols.map((c) => (
-                    <TableHead
-                      key={c.kind === "field" ? c.field.name : c.comp.name}
-                      className={`whitespace-nowrap ${c.kind === "computed" ? "text-right" : ""}`}
-                    >
-                      {c.kind === "field" ? c.field.label : c.comp.label}
-                    </TableHead>
-                  ))}
+                  {stackedCols ? (
+                    stackedCols.map((c) => (
+                      <TableHead key={c.key} className={`whitespace-nowrap ${c.align === "right" ? "text-right" : ""}`}>{c.header}</TableHead>
+                    ))
+                  ) : (
+                    <>
+                      <TableHead className="whitespace-nowrap">{mod.idColumn}</TableHead>
+                      {listCols.map((c) => (
+                        <TableHead
+                          key={c.kind === "field" ? c.field.name : c.comp.name}
+                          className={`whitespace-nowrap ${c.kind === "computed" ? "text-right" : ""}`}
+                        >
+                          {c.kind === "field" ? c.field.label : c.comp.label}
+                        </TableHead>
+                      ))}
+                    </>
+                  )}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={listCols.length + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
-                ) : loadError ? (
-                  <TableRow>
-                    <TableCell colSpan={listCols.length + 2} className="text-center py-8">
-                      <div className="space-y-2">
-                        <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={listCols.length + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
-                ) : filtered.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
-                    {listCols.map((c) => {
-                      if (c.kind === "computed") {
-                        const v = c.comp.compute(r);
-                        // Service Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
-                        const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
-                        return (
-                          <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
-                            {isServiceDue ? (
-                              <button
-                                type="button"
-                                onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
-                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
-                                title="Due Receive"
-                              >
-                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
-                              </button>
-                            ) : (
-                              <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
-                            )}
+                {(() => {
+                  const colSpan = (stackedCols ? stackedCols.length : listCols.length + 1) + 1;
+                  if (loading) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>);
+                  if (loadError) return (
+                    <TableRow>
+                      <TableCell colSpan={colSpan} className="text-center py-8">
+                        <div className="space-y-2">
+                          <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
+                          <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                  if (filtered.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
+                  return filtered.map((r) => (
+                    <TableRow key={r.id} className="align-top">
+                      {stackedCols ? (
+                        stackedCols.map((c) => (
+                          <TableCell key={c.key} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>
+                            {c.render(r)}
                           </TableCell>
-                        );
-                      }
-                      const f = c.field;
-                      return (
-                        <TableCell key={f.name} className="whitespace-nowrap">
-                          {f.name === "status" && mod.statuses ? (
-                            <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
-                          ) : f.type === "date" ? (
-                            formatDate(r[f.name] as string | null)
-                          ) : f.type === "number" ? (
-                            <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
-                          ) : (
-                            String(r[f.name] ?? "")
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteRow(r)}><Trash2 className="h-3.5 w-3.5 text-rose-500" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        ))
+                      ) : (
+                        <>
+                          <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
+                          {listCols.map((c) => {
+                            if (c.kind === "computed") {
+                              const v = c.comp.compute(r);
+                              const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                              return (
+                                <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
+                                  {isServiceDue ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
+                                      className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                                      title="Due Receive"
+                                    >
+                                      {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
+                                    </button>
+                                  ) : (
+                                    <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                                  )}
+                                </TableCell>
+                              );
+                            }
+                            const f = c.field;
+                            return (
+                              <TableCell key={f.name} className="whitespace-nowrap">
+                                {f.name === "status" && mod.statuses ? (
+                                  <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                                ) : f.type === "date" ? (
+                                  formatDate(r[f.name] as string | null)
+                                ) : f.type === "number" ? (
+                                  <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
+                                ) : (
+                                  String(r[f.name] ?? "")
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </>
+                      )}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteRow(r)}><Trash2 className="h-3.5 w-3.5 text-rose-500" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ));
+                })()}
               </TableBody>
             </Table>
           </div>
