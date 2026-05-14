@@ -531,6 +531,8 @@ export function ModulePage({ module: mod }: Props) {
         </Card>
       )}
 
+      <Card>
+        <CardContent className="p-3 sm:p-4">
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
