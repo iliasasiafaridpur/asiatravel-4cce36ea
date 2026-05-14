@@ -805,9 +805,9 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
               return (
                 <TableRow key={row.id}>
                   <TableCell className="py-3 align-top min-w-[140px]">
-                    <div className="font-mono text-xs font-semibold">{id}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(row.entry_date)}</div>
-                    {byName && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {byName}</div>}
+                    <div className="font-medium whitespace-nowrap">{formatDate(row.entry_date)}</div>
+                    <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap mt-0.5">{id}</div>
+                    {byName && <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-0.5">by {byName}</div>}
                   </TableCell>
                   <TableCell className="py-3 align-top min-w-[200px]">
                     <div className="font-semibold leading-tight">{label}</div>
