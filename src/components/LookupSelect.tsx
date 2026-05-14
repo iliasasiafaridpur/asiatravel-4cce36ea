@@ -60,7 +60,7 @@ async function loadKind(kind: string): Promise<string[]> {
   return vs;
 }
 
-export function LookupSelect({ kind, value, onChange, defaults }: Props) {
+export function LookupSelect({ kind, value, onChange, defaults, compact }: Props) {
   const [options, setOptions] = useState<string[]>(cache[kind] ?? []);
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
