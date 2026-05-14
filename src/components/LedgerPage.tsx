@@ -751,20 +751,14 @@ export function LedgerPage({ module: mod }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Payment Method <span className="text-rose-500">*</span></Label>
-              <div className="flex flex-wrap gap-1.5">
-                {PAYMENT_METHODS.map((m) => (
-                  <Button
-                    key={m}
-                    type="button"
-                    variant={payMethod === m ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPayMethod(m)}
-                    className="h-8 text-xs"
-                  >
-                    {m}
-                  </Button>
-                ))}
-              </div>
+              <Select value={payMethod} onValueChange={setPayMethod}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="-- Method --" /></SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Remarks</Label>
