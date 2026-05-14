@@ -213,15 +213,15 @@ function AccountsPage() {
     void reload(true);
   };
 
-  const deleteHand = async (id: string) => {
+  const deleteHand = async (id: string): Promise<void> => {
     const { error } = await supabase.from("cash_handovers").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
-  const deleteExp = async (id: string) => {
+  const deleteExp = async (id: string): Promise<void> => {
     const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
