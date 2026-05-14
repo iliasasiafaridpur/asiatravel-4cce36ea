@@ -6,7 +6,6 @@ import {
   IdCard,
   Users,
   Truck,
-  BookOpen,
   FileText,
   UserCog,
   Globe2,
@@ -31,7 +30,6 @@ const NAV = [
   { group: "মেইন", items: [
     { to: "/", title: "Dashboard", icon: LayoutDashboard },
     { to: "/action-board", title: "Action Board", icon: ClipboardList },
-    { to: "/day-book", title: "Day Book", icon: BookOpen },
   ]},
   { group: "Services", items: [
     { to: "/tickets", title: "AIR TICKET", icon: Plane },
