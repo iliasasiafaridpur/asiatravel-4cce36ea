@@ -71,6 +71,9 @@ export function LedgerPage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
   const [rows, setRows] = useState<Row[]>([]);
   const [ticketFlightMap, setTicketFlightMap] = useState<Map<string, string>>(new Map());
+  const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
+  const [bmetCountryMap, setBmetCountryMap] = useState<Map<string, string>>(new Map());
+  const [visaCountryMap, setVisaCountryMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
