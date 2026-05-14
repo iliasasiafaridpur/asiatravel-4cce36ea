@@ -627,7 +627,7 @@ export function LedgerPage({ module: mod }: Props) {
           <DialogHeader>
             <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
           </DialogHeader>
-          <FormSections mod={mod} form={form} setForm={setForm} />
+          <FormSections mod={formMod} form={form} setForm={setForm} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
             <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
