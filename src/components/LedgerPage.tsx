@@ -28,12 +28,11 @@ import {
 import {
   Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Eye, CreditCard,
   CalendarRange, ChevronsUpDown, Check, FileSpreadsheet, Printer,
-  TrendingUp, Receipt, Users as UsersIcon, Truck, Layers,
+  TrendingUp, TrendingDown, Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { FormSections } from "@/components/ModulePage";
-import { StatCard } from "@/components/StatCard";
 import { cn } from "@/lib/utils";
 
 type Row = Record<string, unknown> & { id: string };
@@ -453,23 +452,15 @@ export function LedgerPage({ module: mod }: Props) {
     <div className="space-y-4 print:space-y-2">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-start sm:justify-between print:hidden">
-        <div className="flex items-start gap-3">
-          <div className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}>
-            {mod.key === "vendor-ledger" ? <Truck className="h-5 w-5" /> : <UsersIcon className="h-5 w-5" />}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
-              <Badge variant="secondary" className="gap-1 font-normal"><Layers className="h-3 w-3" /> মোট {rows.length}</Badge>
-              {filtered.length !== rows.length && <Badge variant="outline" className="gap-1 font-normal"><Search className="h-3 w-3" /> দেখানো হচ্ছে {filtered.length}</Badge>}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
+          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি · দেখানো হচ্ছে {filtered.length}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button onClick={startCreate} className="gap-1.5 h-10">
+          <Button onClick={startCreate} className="gap-1.5">
             <Plus className="h-4 w-4" /> নতুন এন্ট্রি
           </Button>
-          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5 h-10">
+          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5">
             <Receipt className="h-4 w-4" /> {payTitle}
           </Button>
         </div>
@@ -483,11 +474,37 @@ export function LedgerPage({ module: mod }: Props) {
         </p>
       </div>
 
-      {/* KPI Cards — gradient stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 print:grid-cols-3">
-        <StatCard label={billLabel} value={totals.bill} icon={TrendingUp} tone="primary" format="currency" />
-        <StatCard label={paidLabel} value={totals.paid} icon={Receipt} tone="success" format="currency" />
-        <StatCard label="Total Due" value={totals.due} icon={Wallet} tone={totals.due > 0 ? "danger" : "neutral"} format="currency" />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 print:grid-cols-3">
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">{billLabel}</span>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="mt-2 text-2xl font-bold tabular-nums">৳ {totals.bill.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-emerald-500/40 bg-emerald-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-400 font-semibold">{paidLabel}</span>
+              <TrendingDown className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">৳ {totals.paid.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card className={cn("border-rose-500/50", totals.due > 0 ? "bg-rose-500/10" : "bg-muted/20")}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wide text-rose-600 dark:text-rose-400 font-semibold">Total Due</span>
+              <Wallet className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div className={cn("mt-2 text-3xl font-extrabold tabular-nums", totals.due > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
+              ৳ {totals.due.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filter bar */}

@@ -84,7 +84,7 @@ function AccountsPage() {
   const [syncing, setSyncing] = useState(false);
   const [preset, setPreset] = useState<Preset>("month");
   const [sinceZero, setSinceZero] = useState(false);
-  
+  const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
   // Dialog forms
@@ -294,7 +294,8 @@ function AccountsPage() {
 
   // Print timeline
   const handlePrint = () => {
-    if (timeline.length === 0) return;
+    const node = printRef.current;
+    if (!node) return;
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
     const periodLabel = sinceZero
@@ -308,119 +309,30 @@ function AccountsPage() {
       },
       { inAmt: 0, outAmt: 0 },
     );
-// Build print rows matching the 3-column UI structure
-const asc = [...timeline].reverse();
-const rowsHtml = asc.map((it, i) => {
-  const isIn = it.kind === "received";
-  const isHand = it.kind === "handover";
-  const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
-  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
-  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
-  const cls = isIn ? "in" : isHand ? "hand" : "out";
-
-  const name = isIn ? (r.passenger_name || "—") : isHand ? (h.to_name || "প্রাপক") : (e.purpose || e.category || "খরচ");
-  const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-  const servicePrimary = isIn ? (r.service_type || "Service") : isHand ? "জমা / Handover" : (e.category || "খরচ");
-  const sec: string[] = [];
-  if (isIn && svc) {
-    if (r.service_table === "tickets") {
-      if (svc.route) sec.push(svc.route);
-      if (svc.airline) sec.push(svc.airline);
-      if (svc.flight_date) sec.push(`✈ ${formatDate(svc.flight_date)}`);
-    } else if (svc.country) sec.push(svc.country);
-    if (svc.vendor) sec.push(`Vendor: ${svc.vendor}`);
-  }
-  if (isIn && r.method) sec.push(`💳 ${r.method}`);
-  if (isHand && h.method) sec.push(`💳 ${h.method}`);
-  const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number" ? svc.sold - svc.received_total : null;
-  const remarks = (isIn ? r.remarks : isHand ? h.remarks : e.remarks) || "";
-
-  const escape = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
-
-  return `<tr>
-    <td class="idx">${i + 1}</td>
-    <td>
-      <div class="primary">${escape(name)}</div>
-      <div class="meta-row"><span class="badge ${cls}">${kindLabel}</span> · ${formatDate(it.date)}</div>
-    </td>
-    <td>
-      <div class="primary">${escape(servicePrimary)}</div>
-      ${sec.length ? `<div class="sec">${escape(sec.join(" · "))}</div>` : ""}
-      ${isIn && r.ref_id ? `<div class="sec">Ref: <span class="mono">${escape(r.ref_id)}</span></div>` : ""}
-      ${dueLeft !== null && dueLeft > 0.005 ? `<div class="due">বাকি: ${fmt(dueLeft)}</div>` : ""}
-      <div class="refid">${escape(refId || "")}</div>
-      ${remarks ? `<div class="remarks">📝 ${escape(remarks)}</div>` : ""}
-    </td>
-    <td class="num">
-      <div class="amt ${cls}">${isIn ? "+" : "−"} ${fmt(amt)}</div>
-      <div class="bal-lbl">ব্যালেন্স</div>
-      <div class="bal">${fmt(it.running)}</div>
-    </td>
-  </tr>`;
-}).join("");
-
-w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আমার হিসাব — Timeline</title>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আমার হিসাব — Timeline</title>
 <style>
-  *{box-sizing:border-box}
-  body{font-family:'Noto Sans Bengali','SolaimanLipi',system-ui,sans-serif;padding:20px;color:#0f172a;background:#fff}
-  .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:12px}
-  h1{margin:0;font-size:20px;letter-spacing:-0.01em}
-  .sub{color:#475569;font-size:11px;margin-top:2px}
-  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-  .summary .card{padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc}
-  .summary .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.04em}
-  .summary .val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
-  .summary .bal .val{color:#1e40af}
-  .summary .in .val{color:#059669}
-  .summary .out .val{color:#b45309}
-  .summary .hand .val{color:#0284c7}
-  table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed}
-  col.c1{width:40px}col.c2{width:30%}col.c3{width:auto}col.c4{width:130px}
-  th{background:#f1f5f9;font-weight:600;text-align:left;padding:6px 8px;border-bottom:1.5px solid #cbd5e1;font-size:10.5px;text-transform:uppercase;letter-spacing:0.03em;color:#334155}
-  td{border-bottom:1px solid #e5e7eb;padding:7px 8px;vertical-align:top;word-wrap:break-word}
-  td.idx{text-align:center;color:#94a3b8;font-variant-numeric:tabular-nums;font-size:10px}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
+  h1{margin:0 0 4px;font-size:20px}
+  .meta{color:#555;font-size:12px;margin-bottom:14px}
+  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:12px}
+  .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#f5f5f5;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .primary{font-weight:600;font-size:12px;line-height:1.3}
-  .sec{font-size:10.5px;color:#475569;margin-top:2px;line-height:1.35}
-  .meta-row{font-size:10px;color:#64748b;margin-top:3px}
-  .refid{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:#94a3b8;margin-top:3px}
-  .remarks{font-size:10px;color:#475569;margin-top:3px;font-style:italic}
-  .due{font-size:10.5px;color:#dc2626;font-weight:600;margin-top:2px}
-  .mono{font-family:ui-monospace,Menlo,monospace}
-  .badge{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:9.5px;font-weight:600;border:1px solid}
-  .badge.in{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
-  .badge.hand{background:#eff6ff;color:#0369a1;border-color:#bae6fd}
-  .badge.out{background:#fffbeb;color:#b45309;border-color:#fde68a}
-  .amt{font-weight:700;font-size:12.5px}
-  .amt.in{color:#059669}.amt.hand{color:#0284c7}.amt.out{color:#b45309}
-  .bal-lbl{font-size:9px;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em}
-  .bal{font-size:11.5px;font-weight:700;color:#0f172a;margin-top:1px}
-  tr{page-break-inside:avoid}
-  thead{display:table-header-group}
-  .footer-note{margin-top:14px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:10px;color:#64748b;display:flex;justify-content:space-between}
-  @media print{body{padding:10px}.summary{margin-bottom:10px}}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}
+  tfoot td{font-weight:700;background:#fafafa}
+  @media print{body{padding:8px}}
 </style></head><body>
-<div class="head">
-  <div>
-    <h1>আমার হিসাব — Timeline</h1>
-    <div class="sub">${displayName(profile, user)} · ${formatDate(today())} · সময়: <b>${periodLabel}</b> · মোট <b>${timeline.length}</b> এন্ট্রি${sinceZero && lastZeroIdx >= 0 && fullAsc[lastZeroIdx] ? ` · শুরু: ${formatDate(fullAsc[lastZeroIdx].date)}` : ""}</div>
-  </div>
-  <div class="sub">প্রিন্ট: ${new Date().toLocaleString("bn-BD")}</div>
-</div>
+<h1>আমার হিসাব — Timeline</h1>
+<div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
 <div class="summary">
-  <div class="card bal"><div class="lbl">হাতে আছে</div><div class="val">${fmt(balance)}</div></div>
-  <div class="card in"><div class="lbl">আয়</div><div class="val">+ ${fmt(totals.inAmt)}</div></div>
-  <div class="card hand"><div class="lbl">জমা</div><div class="val">${fmt(timeline.filter(t=>t.kind==="handover").reduce((s,t)=>s+Number((t.row as {amount:number}).amount||0),0))}</div></div>
-  <div class="card out"><div class="lbl">খরচ</div><div class="val">${fmt(timeline.filter(t=>t.kind==="expense").reduce((s,t)=>s+Number((t.row as {amount:number}).amount||0),0))}</div></div>
+  <div>হাতে আছে: <b>${fmt(balance)}</b></div>
+  <div class="in">আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
+  <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
 </div>
-<table>
-  <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
-  <thead><tr><th>#</th><th>নাম</th><th>সার্ভিস ও বিবরণ</th><th class="num">পরিমাণ / ব্যালেন্স</th></tr></thead>
-  <tbody>${rowsHtml}</tbody>
-</table>
-<div class="footer-note"><span>Travel Manager · আমার হিসাব রিপোর্ট</span><span>স্বাক্ষর: ____________________</span></div>
-<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),400)}</script>
+${node.innerHTML}
+<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
     w.document.close();
   };
@@ -703,6 +615,46 @@ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আম
               </div>}
           </CardContent></Card>
 
+          {/* Hidden printable HTML table */}
+          <div ref={printRef} className="hidden">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>তারিখ</th><th>ধরন</th><th>ID</th><th>বিবরণ</th>
+                  <th>ক্যাটাগরি/মাধ্যম</th><th>মন্তব্য</th>
+                  <th className="num">আয়</th><th className="num">খরচ/জমা</th><th className="num">ব্যালেন্স</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...timeline].reverse().map((it, i) => {
+                  const isIn = it.kind === "received";
+                  const isHand = it.kind === "handover";
+                  const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
+                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
+                  const cm = isIn ? `${r.service_type}${r.method ? " · " + r.method : ""}` : isHand ? h.method : e.category;
+                  const remarks = (isIn ? r.remarks : isHand ? h.remarks : e.remarks) || (isIn && r.ref_id ? `Ref ${r.ref_id}` : "");
+                  const cls = isIn ? "in" : isHand ? "hand" : "out";
+                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  return (
+                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
+                      <td>{i + 1}</td>
+                      <td>{formatDate(it.date)}</td>
+                      <td className={cls}>{kindLabel}</td>
+                      <td><span style={{ fontFamily: "monospace" }}>{refId}</span></td>
+                      <td>{title}</td>
+                      <td>{cm}</td>
+                      <td>{remarks}</td>
+                      <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
+                      <td className={`num ${isHand ? "hand" : "out"}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
+                      <td className="num">{fmt(it.running)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
 
         {/* Income */}
