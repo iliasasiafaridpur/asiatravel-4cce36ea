@@ -688,40 +688,37 @@ function AccountsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ক্রঃ</TableHead>
-                      <TableHead>তারিখ</TableHead>
-                      <TableHead>নাম</TableHead>
-                      <TableHead>সার্ভিস</TableHead>
-                      <TableHead>Country/Route</TableHead>
-                      <TableHead className="text-right">মূল্য</TableHead>
-                      <TableHead className="text-right">জমা</TableHead>
-                      <TableHead className="text-right">বাকি</TableHead>
-                      <TableHead className="text-right bg-success/5">মোট আয়</TableHead>
-                      <TableHead>খরচ বিবরণ</TableHead>
-                      <TableHead className="text-right">খরচ</TableHead>
-                      <TableHead className="text-right bg-destructive/5">মোট খরচ</TableHead>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>বিবরণ</TableHead>
+                      <TableHead className="text-right bg-success/5">আয় (জমা / মোট)</TableHead>
+                      <TableHead className="text-right bg-destructive/5">খরচ (এই / মোট)</TableHead>
                       <TableHead className="text-right bg-primary/5">ব্যালেন্স</TableHead>
-                      <TableHead>User</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {reportRows.length === 0 ? <TableRow><TableCell colSpan={14} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো এন্ট্রি নেই</TableCell></TableRow>
+                    {reportRows.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো এন্ট্রি নেই</TableCell></TableRow>
                       : reportRows.map((r) => (
                         <TableRow key={`${r.kind}-${r.serial}`} className={r.kind === "received" ? "" : r.kind === "handover" ? "bg-warning/5" : "bg-destructive/5"}>
-                          <TableCell className="text-xs">{r.serial}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{formatDate(r.date)}</TableCell>
-                          <TableCell className="font-medium text-xs min-w-28">{r.name}</TableCell>
-                          <TableCell><Badge variant="secondary" className="text-[10px]">{r.service}</Badge></TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.extra}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs">{r.sold ? r.sold.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs text-success">{r.received ? r.received.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs text-warning">{r.due ? r.due.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs font-semibold bg-success/5">{r.incomeRunning.toLocaleString()}</TableCell>
-                          <TableCell className="text-xs min-w-28">{r.expenseDesc || "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs text-destructive">{r.expenseAmt ? r.expenseAmt.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs font-semibold bg-destructive/5">{r.expenseRunning.toLocaleString()}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs font-bold bg-primary/5 text-primary">{r.balance.toLocaleString()}</TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.user}</TableCell>
+                          <TableCell className="text-xs align-top py-3">{r.serial}</TableCell>
+                          <TableCell className="py-3 align-top min-w-[240px]">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold leading-tight">{r.name}</span>
+                              <Badge variant="secondary" className="text-[10px]">{r.service}</Badge>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.date)}{r.extra ? ` · ${r.extra}` : ""}</div>
+                            {r.expenseDesc && <div className="text-[11px] text-muted-foreground/80 italic mt-0.5">{r.expenseDesc}</div>}
+                            <div className="text-[11px] text-muted-foreground/70 mt-0.5">User: {r.user}</div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 align-top tabular-nums bg-success/5 min-w-[140px]">
+                            {r.received ? <div className="text-success font-semibold text-xs">+{r.received.toLocaleString()}</div> : <div className="text-muted-foreground/40 text-xs">—</div>}
+                            {r.sold > 0 && r.due > 0 && <div className="text-[11px] text-warning mt-0.5">বাকি: {r.due.toLocaleString()}</div>}
+                            <div className="text-[11px] font-semibold mt-0.5">∑ {r.incomeRunning.toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 align-top tabular-nums bg-destructive/5 min-w-[140px]">
+                            {r.expenseAmt ? <div className="text-destructive font-semibold text-xs">-{r.expenseAmt.toLocaleString()}</div> : <div className="text-muted-foreground/40 text-xs">—</div>}
+                            <div className="text-[11px] font-semibold mt-0.5">∑ {r.expenseRunning.toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 align-top tabular-nums font-bold bg-primary/5 text-primary min-w-[120px]">{r.balance.toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
