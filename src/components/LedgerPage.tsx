@@ -596,8 +596,12 @@ export function LedgerPage({ module: mod }: Props) {
                   const cr = String(r.country_route ?? "");
                   const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
+                  const isTicket = svcUpper.includes("TICKET");
                   const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
-                    ? "Country" : svcUpper.includes("TICKET") ? "Route" : "";
+                    ? "Country" : isTicket ? "Route" : "";
+                  const srcId = String(r.source_id ?? "");
+                  const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
+                  const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="py-3.5 align-top min-w-[140px]">
@@ -611,6 +615,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {service && <span>{service}</span>}
                           {service && cr && <span className="opacity-50">·</span>}
                           {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
+                          {flightDate && <><span className="opacity-50">·</span><span>Flight: {flightDate}</span></>}
                         </div>
                         {remarks && <div className="text-[11px] text-muted-foreground/70 mt-0.5 italic truncate max-w-[260px]">{remarks}</div>}
                       </TableCell>
