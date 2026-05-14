@@ -67,6 +67,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
   const [bmetCountryMap, setBmetCountryMap] = useState<Map<string, string>>(new Map());
   const [visaCountryMap, setVisaCountryMap] = useState<Map<string, string>>(new Map());
+  const [sourceInfoMap, setSourceInfoMap] = useState<Map<string, { passport?: string; mobile?: string }>>(new Map());
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -155,28 +156,38 @@ export function LedgerPage({ module: mod }: Props) {
   useEffect(() => {
     (async () => {
       const [tk, bm, kv, sv] = await Promise.all([
-        supabase.from("tickets").select("id,flight_date,trip_road").limit(2000),
-        supabase.from("bmet_cards").select("id,country_name").limit(2000),
-        supabase.from("kuwait_visas").select("id").limit(2000),
-        supabase.from("saudi_visas").select("id").limit(2000),
+        supabase.from("tickets").select("id,flight_date,trip_road,passport,mobile").limit(2000),
+        supabase.from("bmet_cards").select("id,country_name,passport,mobile").limit(2000),
+        supabase.from("kuwait_visas").select("id,passport,mobile").limit(2000),
+        supabase.from("saudi_visas").select("id,passport,mobile").limit(2000),
       ]);
       const fm = new Map<string, string>();
       const rm = new Map<string, string>();
-      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null }[]) ?? [])) {
+      const info = new Map<string, { passport?: string; mobile?: string }>();
+      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
         if (t.flight_date) fm.set(t.id, t.flight_date);
         if (t.trip_road) rm.set(t.id, t.trip_road);
+        if (t.passport || t.mobile) info.set(t.id, { passport: t.passport ?? undefined, mobile: t.mobile ?? undefined });
       }
       const cm = new Map<string, string>();
-      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null }[]) ?? [])) {
+      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
         if (b.country_name) cm.set(b.id, b.country_name);
+        if (b.passport || b.mobile) info.set(b.id, { passport: b.passport ?? undefined, mobile: b.mobile ?? undefined });
       }
       const vm = new Map<string, string>();
-      for (const v of (((kv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Kuwait");
-      for (const v of (((sv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Saudi Arabia");
+      for (const v of (((kv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+        vm.set(v.id, "Kuwait");
+        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+      }
+      for (const v of (((sv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+        vm.set(v.id, "Saudi Arabia");
+        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+      }
       setTicketFlightMap(fm);
       setTicketRouteMap(rm);
       setBmetCountryMap(cm);
       setVisaCountryMap(vm);
+      setSourceInfoMap(info);
       const { data: profs } = await supabase.from("profiles").select("user_id,full_name");
       const pm: Record<string, string> = {};
       for (const p of (profs as { user_id: string; full_name: string }[] | null) ?? []) pm[p.user_id] = p.full_name;
