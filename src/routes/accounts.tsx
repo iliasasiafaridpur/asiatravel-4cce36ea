@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, RotateCcw, Tag, MessageSquare,
 } from "lucide-react";
 
 export const Route = createFileRoute("/accounts")({
@@ -83,6 +83,8 @@ function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [preset, setPreset] = useState<Preset>("month");
+  const [sinceZero, setSinceZero] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
   // Dialog forms
@@ -141,27 +143,42 @@ function AccountsPage() {
   const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
 
-  // Timeline: merge & sort by date desc, compute running balance asc
+  // Build full chronological timeline (all data) with running balance from 0
   type TLItem =
     | { kind: "received"; date: string; row: Recv }
     | { kind: "handover"; date: string; row: Hand }
     | { kind: "expense";  date: string; row: Exp };
 
-  const timeline = useMemo<(TLItem & { running: number })[]>(() => {
-    const items: TLItem[] = [
-      ...fRecv.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r })),
-      ...fHand.map((h) => ({ kind: "handover" as const, date: h.entry_date, row: h })),
-      ...fExp.map((e) => ({ kind: "expense"  as const, date: e.entry_date, row: e })),
+  const fullAsc = useMemo<(TLItem & { running: number; created: string })[]>(() => {
+    const items: (TLItem & { created: string })[] = [
+      ...received.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r, created: (r as Recv & { created_at?: string }).created_at ?? r.entry_date })),
+      ...handovers.map((h) => ({ kind: "handover" as const, date: h.entry_date, row: h, created: (h as Hand & { created_at?: string }).created_at ?? h.entry_date })),
+      ...expenses.map((e) => ({ kind: "expense"  as const, date: e.entry_date, row: e, created: (e as Exp & { created_at?: string }).created_at ?? e.entry_date })),
     ];
-    items.sort((a, b) => a.date.localeCompare(b.date));
+    items.sort((a, b) => (a.date === b.date ? a.created.localeCompare(b.created) : a.date.localeCompare(b.date)));
     let bal = 0;
-    const withRun = items.map((it) => {
+    return items.map((it) => {
       if (it.kind === "received") bal += Number(it.row.amount);
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
     });
-    return withRun.reverse();
-  }, [fRecv, fHand, fExp]);
+  }, [received, handovers, expenses]);
+
+  // Find last index where running balance was 0 (cycle start)
+  const lastZeroIdx = useMemo(() => {
+    let idx = -1;
+    for (let i = 0; i < fullAsc.length; i++) {
+      if (Math.abs(fullAsc[i].running) < 0.005) idx = i;
+    }
+    return idx;
+  }, [fullAsc]);
+
+  const timeline = useMemo<(TLItem & { running: number })[]>(() => {
+    const slice = sinceZero
+      ? fullAsc.slice(lastZeroIdx + 1)
+      : fullAsc.filter((it) => inRange(it.date));
+    return [...slice].reverse();
+  }, [fullAsc, sinceZero, lastZeroIdx, inRange]);
 
   // Save handover
   const saveHandover = async () => {
@@ -228,6 +245,51 @@ function AccountsPage() {
 
   const balance = acct?.current_balance ?? (periodIncome - periodHand - periodExp);
 
+  // Print timeline
+  const handlePrint = () => {
+    const node = printRef.current;
+    if (!node) return;
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
+    const periodLabel = sinceZero
+      ? "০ ব্যালেন্স থেকে এখন পর্যন্ত"
+      : preset === "today" ? "আজ" : preset === "month" ? "এই মাস" : preset === "year" ? "এই বছর" : "সব সময়";
+    const totals = timeline.reduce(
+      (acc, it) => {
+        const amt = Number((it.row as { amount: number }).amount || 0);
+        if (it.kind === "received") acc.inAmt += amt; else acc.outAmt += amt;
+        return acc;
+      },
+      { inAmt: 0, outAmt: 0 },
+    );
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আমার হিসাব — Timeline</title>
+<style>
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
+  h1{margin:0 0 4px;font-size:20px}
+  .meta{color:#555;font-size:12px;margin-bottom:14px}
+  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:12px}
+  .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#f5f5f5;font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}
+  tfoot td{font-weight:700;background:#fafafa}
+  @media print{body{padding:8px}}
+</style></head><body>
+<h1>আমার হিসাব — Timeline</h1>
+<div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
+<div class="summary">
+  <div>হাতে আছে: <b>${fmt(balance)}</b></div>
+  <div class="in">আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
+  <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
+</div>
+${node.innerHTML}
+<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
+</body></html>`);
+    w.document.close();
+  };
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-8">
       {/* Header */}
@@ -259,12 +321,21 @@ function AccountsPage() {
       {/* Action Bar */}
       <Card className="overflow-hidden">
         <CardContent className="p-3 flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {(["today", "month", "year", "all"] as Preset[]).map((p) => (
-              <Button key={p} size="sm" variant={preset === p ? "default" : "outline"} onClick={() => setPreset(p)} className="h-8 text-xs">
+              <Button key={p} size="sm" variant={!sinceZero && preset === p ? "default" : "outline"} onClick={() => { setSinceZero(false); setPreset(p); }} className="h-8 text-xs">
                 {p === "today" ? "আজ" : p === "month" ? "এই মাস" : p === "year" ? "এই বছর" : "সব"}
               </Button>
             ))}
+            <Button
+              size="sm"
+              variant={sinceZero ? "default" : "outline"}
+              onClick={() => setSinceZero((v) => !v)}
+              className="h-8 text-xs gap-1"
+              title="হাতে ০ ব্যালেন্স হওয়ার পর থেকে এখন পর্যন্ত"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> ০ থেকে এখন
+            </Button>
           </div>
           <div className="flex gap-2">
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
@@ -389,49 +460,125 @@ function AccountsPage() {
         </TabsList>
 
         {/* Timeline */}
-        <TabsContent value="timeline" className="mt-3">
+        <TabsContent value="timeline" className="mt-3 space-y-3">
+          {/* Timeline header strip with count + print */}
+          <div className="flex items-center justify-between gap-2 px-1">
+            <div className="text-xs text-muted-foreground">
+              {sinceZero ? <span className="text-primary font-medium">০ ব্যালেন্স থেকে এখন পর্যন্ত</span> : "বর্তমান ফিল্টার"} · মোট <b className="text-foreground">{timeline.length}</b> এন্ট্রি
+              {sinceZero && lastZeroIdx >= 0 && fullAsc[lastZeroIdx] && (
+                <span> · শুরু: {formatDate(fullAsc[lastZeroIdx].date)}</span>
+              )}
+            </div>
+            <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
+              <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+            </Button>
+          </div>
+
           <Card><CardContent className="p-0">
             {loading ? <EmptyRow>লোড হচ্ছে...</EmptyRow>
               : timeline.length === 0 ? <EmptyRow>এই সময়সীমার মধ্যে কোনো এন্ট্রি নেই</EmptyRow>
               : <div className="divide-y">
                 {timeline.map((it) => {
                   const isIn = it.kind === "received";
-                  const amt = Number(isIn ? (it.row as Recv).amount : it.kind === "handover" ? (it.row as Hand).amount : (it.row as Exp).amount);
-                  const tone = isIn ? "text-emerald-600" : it.kind === "handover" ? "text-sky-600" : "text-amber-600";
-                  const Icon = isIn ? ArrowDownLeft : it.kind === "handover" ? Send : Receipt;
-                  const title = isIn ? (it.row as Recv).passenger_name : it.kind === "handover" ? `জমা → ${(it.row as Hand).to_name}` : ((it.row as Exp).purpose || (it.row as Exp).category);
-                  const sub = isIn ? (it.row as Recv).service_type
-                    : it.kind === "handover" ? (it.row as Hand).method
-                    : (it.row as Exp).category;
-                  const refId = isIn ? (it.row as Recv).receipt_id
-                    : it.kind === "handover" ? (it.row as Hand).handover_id
-                    : (it.row as Exp).expense_id;
+                  const isHand = it.kind === "handover";
+                  const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
+                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
+                  const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
+                  const Icon = isIn ? ArrowDownLeft : isHand ? Send : Receipt;
+                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
+                  const method = isIn ? r.method : isHand ? h.method : null;
+                  const category = isIn ? r.service_type : isHand ? null : e.category;
+                  const remarks = isIn ? r.remarks : isHand ? h.remarks : e.remarks;
+                  const extraRef = isIn && r.ref_id ? r.ref_id : null;
+                  const source = isIn ? r.source : null;
+
                   return (
                     <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="flex items-start gap-3 p-3 hover:bg-muted/30 transition-colors">
-                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center bg-card border ${tone}`}>
+                      <div className={`shrink-0 h-10 w-10 rounded-full grid place-items-center border ${bgTone} ${tone}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="font-semibold text-sm leading-tight truncate">{title}</p>
-                          <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
-                            {isIn ? "+" : "−"} {fmt(amt)}
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm leading-tight truncate">{title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
+                              <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
+                              <span className="font-mono">{refId}</span>
+                              <span>·</span>
+                              <span className="flex items-center gap-0.5"><CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}</span>
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
+                              {isIn ? "+" : "−"} {fmt(amt)}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap mt-0.5">
+                              ব্যাল: <b className="text-foreground">{fmt(it.running)}</b>
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {sub} · {formatDate(it.date)} · <span className="font-mono">{refId}</span>
-                          </p>
-                          <p className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
-                            ব্যাল: {fmt(it.running)}
-                          </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                          {category && <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{category}</span>}
+                          {method && <span className="flex items-center gap-1"><Banknote className="h-3 w-3" />{method}</span>}
+                          {extraRef && <span>Ref: <span className="font-mono">{extraRef}</span></span>}
+                          {source && source !== "manual" && <span className="px-1.5 py-px rounded bg-muted/60 text-[10px]">{source}</span>}
                         </div>
+                        {remarks && (
+                          <p className="text-[11px] text-muted-foreground/90 mt-1 flex items-start gap-1">
+                            <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
+                            <span className="break-words">{remarks}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>}
           </CardContent></Card>
+
+          {/* Hidden printable HTML table */}
+          <div ref={printRef} className="hidden">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>তারিখ</th><th>ধরন</th><th>ID</th><th>বিবরণ</th>
+                  <th>ক্যাটাগরি/মাধ্যম</th><th>মন্তব্য</th>
+                  <th className="num">আয়</th><th className="num">খরচ/জমা</th><th className="num">ব্যালেন্স</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...timeline].reverse().map((it, i) => {
+                  const isIn = it.kind === "received";
+                  const isHand = it.kind === "handover";
+                  const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
+                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
+                  const cm = isIn ? `${r.service_type}${r.method ? " · " + r.method : ""}` : isHand ? h.method : e.category;
+                  const remarks = (isIn ? r.remarks : isHand ? h.remarks : e.remarks) || (isIn && r.ref_id ? `Ref ${r.ref_id}` : "");
+                  const cls = isIn ? "in" : isHand ? "hand" : "out";
+                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  return (
+                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
+                      <td>{i + 1}</td>
+                      <td>{formatDate(it.date)}</td>
+                      <td className={cls}>{kindLabel}</td>
+                      <td><span style={{ fontFamily: "monospace" }}>{refId}</span></td>
+                      <td>{title}</td>
+                      <td>{cm}</td>
+                      <td>{remarks}</td>
+                      <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
+                      <td className={`num ${isHand ? "hand" : "out"}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
+                      <td className="num">{fmt(it.running)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
 
         {/* Income */}
