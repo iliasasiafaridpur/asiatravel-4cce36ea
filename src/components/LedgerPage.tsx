@@ -593,28 +593,25 @@ export function LedgerPage({ module: mod }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">ID</TableHead>
-                  <TableHead className="whitespace-nowrap">Date</TableHead>
-                  <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
+                  <TableHead className="whitespace-nowrap">Date / ID</TableHead>
                   <TableHead className="whitespace-nowrap">Passenger</TableHead>
                   <TableHead className="whitespace-nowrap">Service</TableHead>
-                  <TableHead className="whitespace-nowrap">Country / Route</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Balance Due</TableHead>
+                  <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
                   <TableHead className="text-right whitespace-nowrap print:hidden">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
                   let cr = String(r.country_route ?? "");
+                  const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
                   const isTicket = svcUpper.includes("TICKET");
                   const isBmet = svcUpper.includes("BMET");
@@ -625,32 +622,51 @@ export function LedgerPage({ module: mod }: Props) {
                     else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
                     else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
                   }
+                  const crLabel = isBmet || isVisa ? "🌍" : isTicket ? "✈" : "•";
+                  const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
+                  const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
+                  const cb = String(r.created_by ?? "");
+                  const byName = cb ? profilesMap[cb] : "";
                   return (
                     <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(r.entry_date as string | null)}</TableCell>
-                      <TableCell className="whitespace-nowrap font-medium">{String(r[groupField] ?? "")}</TableCell>
-                      <TableCell className="min-w-[140px]">{passenger || "—"}</TableCell>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{service}</TableCell>
-                      <TableCell className="whitespace-nowrap text-muted-foreground">{cr}</TableCell>
-                      <TableCell className="text-right tabular-nums">{Number(r[billCol] ?? 0).toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums">{Number(r[paidCol] ?? 0).toLocaleString()}</TableCell>
-                      <TableCell className="text-right">
-                        {bal > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
-                            className="font-semibold tabular-nums text-rose-500 hover:underline"
-                          >
-                            {bal.toLocaleString()}
-                          </button>
-                        ) : bal === 0 ? (
-                          <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400">Paid</Badge>
-                        ) : (
-                          <span className="tabular-nums text-amber-500">{bal.toLocaleString()}</span>
-                        )}
+                      <TableCell className="align-top py-3">
+                        <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
+                        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+                        {byName && <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {byName}</div>}
                       </TableCell>
-                      <TableCell className="text-right print:hidden">
+                      <TableCell className="align-top py-3 min-w-[140px]">
+                        <div className="font-medium">{passenger || "—"}</div>
+                        {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{remarks}</div>}
+                      </TableCell>
+                      <TableCell className="align-top py-3 min-w-[140px]">
+                        {service && <div className="text-sm font-medium">{service}</div>}
+                        {cr && <div className="text-xs text-muted-foreground leading-tight"><span className="opacity-60">{crLabel}</span> {cr}</div>}
+                        {flightDate && <div className="text-xs text-muted-foreground leading-tight"><span className="opacity-60">Flight:</span> {flightDate}</div>}
+                      </TableCell>
+                      <TableCell className="align-top py-3 min-w-[120px]">
+                        <div className="font-medium">{String(r[groupField] ?? "—")}</div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums whitespace-nowrap align-top py-3">
+                        <div className="font-semibold">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
+                        <div className="text-xs text-emerald-600">{isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}</div>
+                        <div className="text-xs">
+                          {bal > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                              title="পেমেন্ট"
+                            >
+                              Due: {bal.toLocaleString()} <Wallet className="h-3 w-3" />
+                            </button>
+                          ) : bal === 0 ? (
+                            <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]">Paid</Badge>
+                          ) : (
+                            <span className="text-amber-500">Adv: {Math.abs(bal).toLocaleString()}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right align-top py-3 print:hidden">
                         <div className="flex justify-end gap-0.5">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewRow(r)} title="View">
                             <Eye className="h-3.5 w-3.5" />
