@@ -250,11 +250,11 @@ function AccountsPage() {
       soldPrice = b?.sold_price ?? null;
     } else if (r.service_type === "Saudi Visa") {
       const s = saudiMap.get(id);
-      extra = "Saudi";
+      extra = "Country: Saudi Arabia";
       soldPrice = s?.sold_price ?? null;
     } else if (r.service_type === "Kuwait Visa") {
       const k = kuwaitMap.get(id);
-      extra = "Kuwait";
+      extra = "Country: Kuwait";
       soldPrice = k?.sold_price ?? null;
     } else {
       extra = "—";
