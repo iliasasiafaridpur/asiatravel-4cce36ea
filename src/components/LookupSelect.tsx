@@ -101,10 +101,27 @@ export function LookupSelect({ kind, value, onChange, defaults }: Props) {
     const { error } = await supabase.from("lookups").delete().eq("kind", kind).eq("value", v);
     if (error) { toast.error(error.message); return; }
     cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
+    // also track deletion of defaults so they don't reappear after reload
+    if ((defaults ?? []).includes(v)) {
+      const key = `lookup_hidden_defaults:${kind}`;
+      try {
+        const cur: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
+        if (!cur.includes(v)) localStorage.setItem(key, JSON.stringify([...cur, v]));
+      } catch { /* ignore */ }
+    }
     notify(kind);
     if (value === v) onChange("");
     toast.success("ডিলিট হয়েছে");
   };
+
+  // Filter out defaults the user has previously deleted
+  let effectiveDefaults = defaults ?? [];
+  try {
+    const hidden: string[] = JSON.parse(
+      (typeof window !== "undefined" ? localStorage.getItem(`lookup_hidden_defaults:${kind}`) : null) ?? "[]"
+    );
+    if (hidden.length) effectiveDefaults = effectiveDefaults.filter((d) => !hidden.includes(d));
+  } catch { /* ignore */ }
 
   // Merge defaults + DB options + current value (de-duped, preserve order: defaults first)
   const merged: string[] = [];
