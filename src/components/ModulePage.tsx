@@ -180,6 +180,8 @@ export function ModulePage({ module: mod }: Props) {
       if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
     }
     if (dueOnly) xs = xs.filter((r) => computeValue(r, "balance") > 0);
+    if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
+    if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
     if (q) {
       xs = xs.filter((r) =>
@@ -187,7 +189,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, computeValue]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue]);
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
