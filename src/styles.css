@@ -140,3 +140,12 @@
   }
   input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
+
+@media print {
+  body { background: white !important; color: black !important; }
+  aside, nav, [data-sidebar], header.app-header { display: none !important; }
+  .print\:hidden { display: none !important; }
+  main, .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  table { font-size: 11px; }
+  .border, .border-border\/60 { border-color: #999 !important; }
+}
