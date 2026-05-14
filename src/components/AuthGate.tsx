@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 
 function phoneToEmail(phone: string) {
   const clean = phone.replace(/[^0-9]/g, "");
@@ -199,18 +200,8 @@ function SignUpForm() {
 }
 
 export function LogoutButton() {
-  const [name, setName] = useState<string>("");
-  useEffect(() => {
-    let cancel = false;
-    const load = async (uid?: string) => {
-      if (!uid) { setName(""); return; }
-      const { data } = await supabase.from("profiles").select("full_name").eq("user_id", uid).maybeSingle();
-      if (!cancel) setName((data as { full_name?: string } | null)?.full_name ?? "");
-    };
-    supabase.auth.getSession().then(({ data: { session } }) => load(session?.user?.id));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => load(s?.user?.id));
-    return () => { cancel = true; subscription.unsubscribe(); };
-  }, []);
+  const { user, profile } = useCurrentUser();
+  const name = displayName(profile, user);
   return (
     <div className="flex items-center gap-1.5">
       {name && <span className="hidden sm:inline text-xs font-medium text-muted-foreground max-w-[120px] truncate">{name}</span>}
