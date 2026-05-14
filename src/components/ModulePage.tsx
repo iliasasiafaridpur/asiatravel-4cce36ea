@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Plane, IdCard, Globe2, Layers, TrendingUp, TrendingDown, Receipt as ReceiptIcon, Users as UsersIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Plane, IdCard, Globe2, Layers, TrendingUp, TrendingDown, Receipt as ReceiptIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { StatCard, type StatTone } from "@/components/StatCard";
 import { toast } from "sonner";
