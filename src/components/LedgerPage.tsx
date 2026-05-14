@@ -348,8 +348,8 @@ export function LedgerPage({ module: mod }: Props) {
           <Button onClick={startCreate} className="gap-1.5">
             <Plus className="h-4 w-4" /> নতুন এন্ট্রি
           </Button>
-          <Button onClick={() => { startCreate(); }} variant="secondary" className="gap-1.5">
-            <Receipt className="h-4 w-4" /> Receive Payment
+          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5">
+            <Receipt className="h-4 w-4" /> {payTitle}
           </Button>
         </div>
       </div>
