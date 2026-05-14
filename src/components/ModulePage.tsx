@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
@@ -82,6 +82,9 @@ export function ModulePage({ module: mod }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
   const [dueOnly, setDueOnly] = useState(false);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const hasDateFilter = useMemo(() => mod.fields.some((f) => f.name === "entry_date"), [mod]);
   const [showGroup, setShowGroup] = useState(true);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -177,6 +180,8 @@ export function ModulePage({ module: mod }: Props) {
       if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
     }
     if (dueOnly) xs = xs.filter((r) => computeValue(r, "balance") > 0);
+    if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
+    if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
     if (q) {
       xs = xs.filter((r) =>
@@ -184,7 +189,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, computeValue]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue]);
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
@@ -419,45 +424,82 @@ export function ModulePage({ module: mod }: Props) {
 
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="mb-4 space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {hasDateFilter && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Start Date</Label>
+                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-base" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">End Date</Label>
+                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-base" />
+                  </div>
+                </>
+              )}
+              {filterFields.map((f) => {
+                const opts = Array.from(new Set([
+                  ...(f.lookupDefaults ?? []),
+                  ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
+                ])).sort();
+                return (
+                  <div key={f.name} className="space-y-1.5">
+                    <Label className="text-sm font-medium">{f.label}</Label>
+                    <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
+                      <SelectTrigger className="h-10 text-base"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">সব {f.label}</SelectItem>
+                        {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+              {mod.statuses && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-10 text-base"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">সব Status</SelectItem>
+                      {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-1.5 flex flex-col">
+                <Label className="text-sm font-medium opacity-0 hidden sm:block">.</Label>
+                <div className="flex gap-2">
+                  {mod.computed?.some((c) => c.name === "balance") && (
+                    <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-10 gap-1.5 flex-1">
+                      <Wallet className="h-4 w-4" /> শুধু Due
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSearch(""); setStatusFilter("all"); setFieldFilters({});
+                      setDueOnly(false); setStartDate(""); setEndDate("");
+                    }}
+                    className="h-10 gap-1.5"
+                    title="Reset"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Reset
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="খুঁজুন... (নাম, পাসপোর্ট, ID যেকোনো ফিল্ড)"
-                className="pl-8"
+                className="pl-9 h-11 text-base"
               />
             </div>
-            {filterFields.map((f) => {
-              const opts = Array.from(new Set([
-                ...(f.lookupDefaults ?? []),
-                ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
-              ])).sort();
-              return (
-                <Select key={f.name} value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
-                  <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">সব {f.label}</SelectItem>
-                    {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              );
-            })}
-            {mod.computed?.some((c) => c.name === "balance") && (
-              <Button type="button" variant={dueOnly ? "default" : "outline"} size="sm" onClick={() => setDueOnly((v) => !v)} className="gap-1.5">
-                <Wallet className="h-4 w-4" /> শুধু Due
-              </Button>
-            )}
-            {mod.statuses && (
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সব Status</SelectItem>
-                  {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
           </div>
 
           <div className="overflow-x-auto rounded-md border">
