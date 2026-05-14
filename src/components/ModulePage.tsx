@@ -732,80 +732,99 @@ export function ModulePage({ module: mod }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">{mod.idColumn}</TableHead>
-                  {listCols.map((c) => (
-                    <TableHead
-                      key={c.kind === "field" ? c.field.name : c.comp.name}
-                      className={`whitespace-nowrap ${c.kind === "computed" ? "text-right" : ""}`}
-                    >
-                      {c.kind === "field" ? c.field.label : c.comp.label}
-                    </TableHead>
-                  ))}
+                  {stackedCols ? (
+                    stackedCols.map((c) => (
+                      <TableHead key={c.key} className={`whitespace-nowrap ${c.align === "right" ? "text-right" : ""}`}>{c.header}</TableHead>
+                    ))
+                  ) : (
+                    <>
+                      <TableHead className="whitespace-nowrap">{mod.idColumn}</TableHead>
+                      {listCols.map((c) => (
+                        <TableHead
+                          key={c.kind === "field" ? c.field.name : c.comp.name}
+                          className={`whitespace-nowrap ${c.kind === "computed" ? "text-right" : ""}`}
+                        >
+                          {c.kind === "field" ? c.field.label : c.comp.label}
+                        </TableHead>
+                      ))}
+                    </>
+                  )}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={listCols.length + 2} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
-                ) : loadError ? (
-                  <TableRow>
-                    <TableCell colSpan={listCols.length + 2} className="text-center py-8">
-                      <div className="space-y-2">
-                        <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={listCols.length + 2} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
-                ) : filtered.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
-                    {listCols.map((c) => {
-                      if (c.kind === "computed") {
-                        const v = c.comp.compute(r);
-                        // Service Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
-                        const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
-                        return (
-                          <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
-                            {isServiceDue ? (
-                              <button
-                                type="button"
-                                onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
-                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
-                                title="Due Receive"
-                              >
-                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
-                              </button>
-                            ) : (
-                              <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
-                            )}
+                {(() => {
+                  const colSpan = (stackedCols ? stackedCols.length : listCols.length + 1) + 1;
+                  if (loading) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>);
+                  if (loadError) return (
+                    <TableRow>
+                      <TableCell colSpan={colSpan} className="text-center py-8">
+                        <div className="space-y-2">
+                          <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
+                          <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                  if (filtered.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
+                  return filtered.map((r) => (
+                    <TableRow key={r.id} className="align-top">
+                      {stackedCols ? (
+                        stackedCols.map((c) => (
+                          <TableCell key={c.key} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>
+                            {c.render(r)}
                           </TableCell>
-                        );
-                      }
-                      const f = c.field;
-                      return (
-                        <TableCell key={f.name} className="whitespace-nowrap">
-                          {f.name === "status" && mod.statuses ? (
-                            <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
-                          ) : f.type === "date" ? (
-                            formatDate(r[f.name] as string | null)
-                          ) : f.type === "number" ? (
-                            <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
-                          ) : (
-                            String(r[f.name] ?? "")
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteRow(r)}><Trash2 className="h-3.5 w-3.5 text-rose-500" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        ))
+                      ) : (
+                        <>
+                          <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
+                          {listCols.map((c) => {
+                            if (c.kind === "computed") {
+                              const v = c.comp.compute(r);
+                              const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                              return (
+                                <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
+                                  {isServiceDue ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
+                                      className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                                      title="Due Receive"
+                                    >
+                                      {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
+                                    </button>
+                                  ) : (
+                                    <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                                  )}
+                                </TableCell>
+                              );
+                            }
+                            const f = c.field;
+                            return (
+                              <TableCell key={f.name} className="whitespace-nowrap">
+                                {f.name === "status" && mod.statuses ? (
+                                  <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                                ) : f.type === "date" ? (
+                                  formatDate(r[f.name] as string | null)
+                                ) : f.type === "number" ? (
+                                  <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
+                                ) : (
+                                  String(r[f.name] ?? "")
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </>
+                      )}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteRow(r)}><Trash2 className="h-3.5 w-3.5 text-rose-500" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ));
+                })()}
               </TableBody>
             </Table>
           </div>
