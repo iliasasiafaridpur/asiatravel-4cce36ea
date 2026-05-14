@@ -164,9 +164,19 @@ export function ModulePage({ module: mod }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mod.table]);
 
+  const computeValue = useCallback((r: Row, name: string): number => {
+    const c = mod.computed?.find((x) => x.name === name);
+    if (c) return c.compute(r);
+    return Number(r[name] ?? 0);
+  }, [mod]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
+    for (const [name, val] of Object.entries(fieldFilters)) {
+      if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
+    }
+    if (dueOnly) xs = xs.filter((r) => computeValue(r, "balance") > 0);
     const q = search.trim().toLowerCase();
     if (q) {
       xs = xs.filter((r) =>
@@ -174,7 +184,30 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, computeValue]);
+
+  const summary = useMemo(() => {
+    if (!mod.summaryFields) return null;
+    return mod.summaryFields.map((s) => ({
+      label: s.label,
+      name: s.name,
+      total: filtered.reduce((sum, r) => sum + computeValue(r, s.name), 0),
+    }));
+  }, [filtered, mod.summaryFields, computeValue]);
+
+  const groupSummary = useMemo(() => {
+    if (!mod.groupBy) return null;
+    const map = new Map<string, Record<string, number>>();
+    for (const r of filtered) {
+      const k = String(r[mod.groupBy.field] ?? "—") || "—";
+      const cur = map.get(k) ?? {};
+      for (const m of mod.groupBy.metrics) cur[m.name] = (cur[m.name] ?? 0) + computeValue(r, m.name);
+      map.set(k, cur);
+    }
+    return Array.from(map.entries())
+      .map(([key, vals]) => ({ key, vals }))
+      .sort((a, b) => (b.vals.balance ?? 0) - (a.vals.balance ?? 0));
+  }, [filtered, mod.groupBy, computeValue]);
 
   const startCreate = () => {
     setEditing(null);
