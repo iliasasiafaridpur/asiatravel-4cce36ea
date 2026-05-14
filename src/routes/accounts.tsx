@@ -554,22 +554,36 @@ function AccountsPage() {
               </div>
               <div className="overflow-x-auto rounded-md border">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Receipt</TableHead><TableHead>Service</TableHead><TableHead>Country/Route</TableHead><TableHead>Ref</TableHead><TableHead>Passenger</TableHead><TableHead>User</TableHead><TableHead>Method</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Running</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Ref</TableHead>
+                    <TableHead>Passenger / Service</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
-                    {runningReceived.length === 0 ? <TableRow><TableCell colSpan={11} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো received entry নেই</TableCell></TableRow>
+                    {runningReceived.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো received entry নেই</TableCell></TableRow>
                       : runningReceived.map((r) => (
                         <TableRow key={`${r.source}-${r.id}`}>
-                          <TableCell className="whitespace-nowrap">{formatDate(r.entry_date)}</TableCell>
-                          <TableCell className="font-mono text-xs whitespace-nowrap">{r.receipt_id}</TableCell>
-                          <TableCell><Badge variant="secondary">{r.service_type}</Badge></TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.extra}</TableCell>
-                          <TableCell className="font-mono text-xs whitespace-nowrap">{r.ref_id ?? "—"}</TableCell>
-                          <TableCell className="font-medium min-w-32">{r.passenger_name}</TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.received_by_name ?? "—"}</TableCell>
-                          <TableCell><Badge variant="outline">{r.method}</Badge></TableCell>
-                          <MoneyCell value={r.amount} tone="success" />
-                          <MoneyCell value={r.running} tone="primary" />
-                          <TableCell><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
+                          <TableCell className="py-3 align-top min-w-[140px]">
+                            <div className="font-mono text-xs font-semibold">{r.receipt_id}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.entry_date)}</div>
+                            {r.received_by_name && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.received_by_name}</div>}
+                          </TableCell>
+                          <TableCell className="py-3 align-top min-w-[200px]">
+                            <div className="font-semibold leading-tight">{r.passenger_name}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-1.5">
+                              <span>{r.service_type}</span>
+                              {r.extra && r.extra !== "—" && <><span className="opacity-50">·</span><span>{r.extra}</span></>}
+                            </div>
+                            {r.ref_id && <div className="text-[11px] text-muted-foreground/70 mt-0.5 font-mono">Ref: {r.ref_id}</div>}
+                          </TableCell>
+                          <TableCell className="py-3 align-top"><Badge variant="outline">{r.method}</Badge></TableCell>
+                          <TableCell className="text-right py-3 align-top min-w-[140px]">
+                            <div className="font-bold tabular-nums text-success">৳ {Number(r.amount).toLocaleString()}</div>
+                            <div className="text-[11px] tabular-nums text-primary mt-0.5">Total: {Number(r.running).toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
