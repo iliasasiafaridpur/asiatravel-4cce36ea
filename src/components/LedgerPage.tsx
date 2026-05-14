@@ -722,6 +722,7 @@ export function LedgerPage({ module: mod }: Props) {
               <Label className="text-xs">{groupFieldLabel} <span className="text-rose-500">*</span></Label>
               <LookupSelect
                 kind={isAgency ? "sub_agency" : "vendor"}
+                compact
                 value={payTarget}
                 onChange={(v) => {
                   setPayTarget(v);
