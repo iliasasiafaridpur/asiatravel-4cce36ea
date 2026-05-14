@@ -70,6 +70,7 @@ function errMsg(e: unknown): string {
 export function LedgerPage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
   const [rows, setRows] = useState<Row[]>([]);
+  const [ticketFlightMap, setTicketFlightMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
@@ -154,6 +155,18 @@ export function LedgerPage({ module: mod }: Props) {
   }, [mod.table, columns, cacheKey]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Load tickets for flight_date enrichment (ledger row's source_id → flight_date)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("tickets").select("id,flight_date").limit(2000);
+      const m = new Map<string, string>();
+      for (const t of (((data as unknown) as { id: string; flight_date: string | null }[]) ?? [])) {
+        if (t.flight_date) m.set(t.id, t.flight_date);
+      }
+      setTicketFlightMap(m);
+    })();
+  }, []);
 
   useEffect(() => {
     const ch = supabase
@@ -583,8 +596,12 @@ export function LedgerPage({ module: mod }: Props) {
                   const cr = String(r.country_route ?? "");
                   const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
+                  const isTicket = svcUpper.includes("TICKET");
                   const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
-                    ? "Country" : svcUpper.includes("TICKET") ? "Route" : "";
+                    ? "Country" : isTicket ? "Route" : "";
+                  const srcId = String(r.source_id ?? "");
+                  const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
+                  const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="py-3.5 align-top min-w-[140px]">
@@ -598,6 +615,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {service && <span>{service}</span>}
                           {service && cr && <span className="opacity-50">·</span>}
                           {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
+                          {flightDate && <><span className="opacity-50">·</span><span>Flight: {flightDate}</span></>}
                         </div>
                         {remarks && <div className="text-[11px] text-muted-foreground/70 mt-0.5 italic truncate max-w-[260px]">{remarks}</div>}
                       </TableCell>

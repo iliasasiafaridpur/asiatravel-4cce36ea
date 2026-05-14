@@ -22,6 +22,7 @@ interface Entry {
   passenger: string; agent: string; vendor: string;
   status: string; receivedBy: string;
   amount: number; received: number;
+  extra: string;
 }
 
 function DayBookPage() {
@@ -56,6 +57,15 @@ function DayBookPage() {
           const sold = Number(r.sold_price ?? r.total_bill ?? r.total_payable ?? 0);
           const recv = Number(r.received ?? r.received_amount ?? r.paid_amount ?? 0);
           const rb = String(r.received_by ?? "");
+          let extra = "";
+          if (m.key === "tickets") {
+            const route = String(r.trip_road ?? "");
+            const fd = r.flight_date ? formatDate(String(r.flight_date)) : "";
+            extra = [route && `Route: ${route}`, fd && `Flight: ${fd}`].filter(Boolean).join(" · ");
+          } else if (m.key === "bmet") {
+            const c = String(r.country_name ?? "");
+            if (c) extra = `Country: ${c}`;
+          }
           all.push({
             module: m.label, moduleKey: m.key,
             id: String(r[m.idColumn] ?? ""),
@@ -68,6 +78,7 @@ function DayBookPage() {
             status: String(r.status ?? ""),
             receivedBy: rb ? (pm[rb] ?? "User") : "",
             amount: sold, received: recv,
+            extra,
           });
         }
       }));
@@ -232,6 +243,7 @@ function DayBookPage() {
                       <TableCell className="py-3 align-top min-w-[200px]">
                         <div className="font-semibold leading-tight">{r.passenger}</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">{r.module}</div>
+                        {r.extra && <div className="text-[11px] text-muted-foreground/90 mt-0.5">{r.extra}</div>}
                         {(r.agent || r.vendor) && (
                           <div className="text-[11px] text-muted-foreground/80 mt-0.5">
                             {r.agent && <span>Agent: {r.agent}</span>}

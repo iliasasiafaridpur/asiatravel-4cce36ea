@@ -55,7 +55,7 @@ interface Recv {
   received_by_name: string | null;
   received_by: string | null;
 }
-interface TicketLite { ticket_id: string; trip_road: string | null; sold_price: number | null; }
+interface TicketLite { ticket_id: string; trip_road: string | null; flight_date: string | null; sold_price: number | null; }
 interface BmetLite   { bmet_id: string;   country_name: string | null; sold_price: number | null; }
 interface SaudiLite  { saudi_id: string;  sold_price: number | null; }
 interface KuwaitLite { kuwait_id: string; sold_price: number | null; }
@@ -177,7 +177,7 @@ function AccountsPage() {
       supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks,from_name,from_user").order("entry_date", { ascending: false }).limit(500),
       supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks,spent_by_name,spent_by").order("entry_date", { ascending: false }).limit(500),
       supabase.from("payment_receipts").select("id,receipt_id,entry_date,service_type,ref_id,passenger_name,amount,method,source,remarks,received_by_name,received_by").order("entry_date", { ascending: false }).limit(1000),
-      supabase.from("tickets").select("ticket_id,trip_road,sold_price").limit(2000),
+      supabase.from("tickets").select("ticket_id,trip_road,flight_date,sold_price").limit(2000),
       supabase.from("bmet_cards").select("bmet_id,country_name,sold_price").limit(2000),
       supabase.from("saudi_visas").select("saudi_id,sold_price").limit(2000),
       supabase.from("kuwait_visas").select("kuwait_id,sold_price").limit(2000),
@@ -240,11 +240,13 @@ function AccountsPage() {
     const id = r.ref_id ?? "";
     if (r.service_type === "AIR TICKET") {
       const t = ticketMap.get(id);
-      extra = t?.trip_road ?? "—";
+      const route = t?.trip_road ?? "";
+      const fd = t?.flight_date ? formatDate(t.flight_date) : "";
+      extra = [route && `Route: ${route}`, fd && `Flight: ${fd}`].filter(Boolean).join(" · ") || "—";
       soldPrice = t?.sold_price ?? null;
     } else if (r.service_type === "BMET") {
       const b = bmetMap.get(id);
-      extra = b?.country_name ?? "—";
+      extra = b?.country_name ? `Country: ${b.country_name}` : "—";
       soldPrice = b?.sold_price ?? null;
     } else if (r.service_type === "Saudi Visa") {
       const s = saudiMap.get(id);
