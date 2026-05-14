@@ -483,37 +483,11 @@ export function LedgerPage({ module: mod }: Props) {
         </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 print:grid-cols-3">
-        <Card className="border-border/60">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">{billLabel}</span>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="mt-2 text-2xl font-bold tabular-nums">৳ {totals.bill.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-emerald-500/40 bg-emerald-500/5">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-400 font-semibold">{paidLabel}</span>
-              <TrendingDown className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">৳ {totals.paid.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card className={cn("border-rose-500/50", totals.due > 0 ? "bg-rose-500/10" : "bg-muted/20")}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-rose-600 dark:text-rose-400 font-semibold">Total Due</span>
-              <Wallet className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div className={cn("mt-2 text-3xl font-extrabold tabular-nums", totals.due > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
-              ৳ {totals.due.toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards — gradient stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 print:grid-cols-3">
+        <StatCard label={billLabel} value={totals.bill} icon={TrendingUp} tone="primary" format="currency" />
+        <StatCard label={paidLabel} value={totals.paid} icon={Receipt} tone="success" format="currency" />
+        <StatCard label="Total Due" value={totals.due} icon={Wallet} tone={totals.due > 0 ? "danger" : "neutral"} format="currency" />
       </div>
 
       {/* Filter bar */}
