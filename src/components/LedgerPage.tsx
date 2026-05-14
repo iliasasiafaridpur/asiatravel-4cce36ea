@@ -159,15 +159,32 @@ export function LedgerPage({ module: mod }: Props) {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Load tickets for flight_date enrichment (ledger row's source_id → flight_date)
+  // Load source-table enrichment maps: tickets (route + flight_date), bmet (country), saudi/kuwait visas (sponsor/country)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("tickets").select("id,flight_date").limit(2000);
-      const m = new Map<string, string>();
-      for (const t of (((data as unknown) as { id: string; flight_date: string | null }[]) ?? [])) {
-        if (t.flight_date) m.set(t.id, t.flight_date);
+      const [tk, bm, kv, sv] = await Promise.all([
+        supabase.from("tickets").select("id,flight_date,trip_road").limit(2000),
+        supabase.from("bmet_cards").select("id,country_name").limit(2000),
+        supabase.from("kuwait_visas").select("id").limit(2000),
+        supabase.from("saudi_visas").select("id").limit(2000),
+      ]);
+      const fm = new Map<string, string>();
+      const rm = new Map<string, string>();
+      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null }[]) ?? [])) {
+        if (t.flight_date) fm.set(t.id, t.flight_date);
+        if (t.trip_road) rm.set(t.id, t.trip_road);
       }
-      setTicketFlightMap(m);
+      const cm = new Map<string, string>();
+      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null }[]) ?? [])) {
+        if (b.country_name) cm.set(b.id, b.country_name);
+      }
+      const vm = new Map<string, string>();
+      for (const v of (((kv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Kuwait");
+      for (const v of (((sv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Saudi Arabia");
+      setTicketFlightMap(fm);
+      setTicketRouteMap(rm);
+      setBmetCountryMap(cm);
+      setVisaCountryMap(vm);
     })();
   }, []);
 
