@@ -232,14 +232,29 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     fields: [
       { name: "entry_date", label: "Date", type: "date", showInList: true },
-      { name: "agent_name", label: "Agent Name", type: "text", required: true, showInList: true },
+      { name: "agent_name", label: "Agent Name", type: "text", required: true, showInList: true, lookup: "sub_agency", filterable: true },
       { name: "passenger_name", label: "Passenger", type: "text", showInList: true, format: "name" },
-      { name: "service_type", label: "Service Type", type: "text", showInList: true },
+      { name: "service_type", label: "Service Type", type: "text", showInList: true, lookup: "ledger_service_type", lookupDefaults: LEDGER_SERVICE_TYPES, filterable: true },
+      { name: "country_route", label: "Country / Route", type: "text", showInList: true, lookup: "route" },
       { name: "total_bill", label: "Total Bill", type: "number", showInList: true },
       { name: "received_amount", label: "Received", type: "number", showInList: true },
       { name: "remarks", label: "Remarks", type: "textarea" },
     ],
     computed: [{ name: "balance", label: "Balance Due", compute: DUE("total_bill", "received_amount") }],
+    summaryFields: [
+      { name: "total_bill", label: "মোট বিল" },
+      { name: "received_amount", label: "মোট Received" },
+      { name: "balance", label: "মোট Due" },
+    ],
+    groupBy: {
+      field: "agent_name",
+      label: "Agent",
+      metrics: [
+        { name: "total_bill", label: "Total Bill" },
+        { name: "received_amount", label: "Received" },
+        { name: "balance", label: "Due" },
+      ],
+    },
   },
   {
     key: "vendor-ledger",
@@ -251,14 +266,29 @@ export const MODULES: ModuleSchema[] = [
     monthlyId: true,
     fields: [
       { name: "entry_date", label: "Date", type: "date", showInList: true },
-      { name: "vendor_name", label: "Vendor Name", type: "text", required: true, showInList: true },
+      { name: "vendor_name", label: "Vendor Name", type: "text", required: true, showInList: true, lookup: "vendor", filterable: true },
       { name: "passenger_name", label: "Passenger", type: "text", showInList: true, format: "name" },
-      { name: "service_type", label: "Service Type", type: "text", showInList: true },
+      { name: "service_type", label: "Service Type", type: "text", showInList: true, lookup: "ledger_service_type", lookupDefaults: LEDGER_SERVICE_TYPES, filterable: true },
+      { name: "country_route", label: "Country / Route", type: "text", showInList: true, lookup: "route" },
       { name: "total_payable", label: "Total Payable", type: "number", showInList: true },
       { name: "paid_amount", label: "Paid", type: "number", showInList: true },
       { name: "remarks", label: "Remarks", type: "textarea" },
     ],
     computed: [{ name: "balance", label: "Balance Due", compute: DUE("total_payable", "paid_amount") }],
+    summaryFields: [
+      { name: "total_payable", label: "মোট Payable" },
+      { name: "paid_amount", label: "মোট Paid" },
+      { name: "balance", label: "মোট Due" },
+    ],
+    groupBy: {
+      field: "vendor_name",
+      label: "Vendor",
+      metrics: [
+        { name: "total_payable", label: "Payable" },
+        { name: "paid_amount", label: "Paid" },
+        { name: "balance", label: "Due" },
+      ],
+    },
   },
   {
     key: "agents",
