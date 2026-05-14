@@ -268,7 +268,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_date", label: "Date", type: "date", showInList: true },
       { name: "vendor_name", label: "Vendor Name", type: "text", required: true, showInList: true, lookup: "vendor", filterable: true },
       { name: "passenger_name", label: "Passenger", type: "text", showInList: true, format: "name" },
-      { name: "service_type", label: "Service Type", type: "text", showInList: true, lookup: "ledger_service_type", lookupDefaults: LEDGER_SERVICE_TYPES, filterable: true },
+      { name: "service_type", label: "Service Type", type: "text", showInList: true, lookup: "ledger_service_type", lookupDefaults: LEDGER_SERVICE_TYPES },
       { name: "country_route", label: "Country / Route", type: "text", showInList: true, lookup: "route" },
       { name: "total_payable", label: "Total Payable", type: "number", showInList: true },
       { name: "paid_amount", label: "Paid", type: "number", showInList: true },
