@@ -389,7 +389,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">By: {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -408,7 +408,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
-              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
+              {r.agency_sold ? <div className="text-sm"><span className="opacity-60 text-xs">Agency:</span> {String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
               {r.vendor_bought ? subLine("Vendor", String(r.vendor_bought)) : null}
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
             </div>
@@ -435,7 +435,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">By: {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -456,7 +456,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
-              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.agency_sold ? <div className="text-sm"><span className="opacity-60 text-xs">Agency:</span> {String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? subLine("Vendor", String(r.vendor_bought)) : null}
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
             </div>
@@ -505,7 +505,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
-              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.agency_sold ? <div className="text-sm"><span className="opacity-60 text-xs">Agency:</span> {String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? subLine("Vendor", String(r.vendor_bought)) : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
             </div>
@@ -538,7 +538,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className="text-sm">📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.phone ? <div className="text-sm"><span className="opacity-60">Mobile:</span> {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
               {r.address ? subLine("Address", String(r.address)) : null}
             </div>
           )},
