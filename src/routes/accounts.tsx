@@ -143,27 +143,42 @@ function AccountsPage() {
   const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
 
-  // Timeline: merge & sort by date desc, compute running balance asc
+  // Build full chronological timeline (all data) with running balance from 0
   type TLItem =
     | { kind: "received"; date: string; row: Recv }
     | { kind: "handover"; date: string; row: Hand }
     | { kind: "expense";  date: string; row: Exp };
 
-  const timeline = useMemo<(TLItem & { running: number })[]>(() => {
-    const items: TLItem[] = [
-      ...fRecv.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r })),
-      ...fHand.map((h) => ({ kind: "handover" as const, date: h.entry_date, row: h })),
-      ...fExp.map((e) => ({ kind: "expense"  as const, date: e.entry_date, row: e })),
+  const fullAsc = useMemo<(TLItem & { running: number; created: string })[]>(() => {
+    const items: (TLItem & { created: string })[] = [
+      ...received.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r, created: (r as Recv & { created_at?: string }).created_at ?? r.entry_date })),
+      ...handovers.map((h) => ({ kind: "handover" as const, date: h.entry_date, row: h, created: (h as Hand & { created_at?: string }).created_at ?? h.entry_date })),
+      ...expenses.map((e) => ({ kind: "expense"  as const, date: e.entry_date, row: e, created: (e as Exp & { created_at?: string }).created_at ?? e.entry_date })),
     ];
-    items.sort((a, b) => a.date.localeCompare(b.date));
+    items.sort((a, b) => (a.date === b.date ? a.created.localeCompare(b.created) : a.date.localeCompare(b.date)));
     let bal = 0;
-    const withRun = items.map((it) => {
+    return items.map((it) => {
       if (it.kind === "received") bal += Number(it.row.amount);
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
     });
-    return withRun.reverse();
-  }, [fRecv, fHand, fExp]);
+  }, [received, handovers, expenses]);
+
+  // Find last index where running balance was 0 (cycle start)
+  const lastZeroIdx = useMemo(() => {
+    let idx = -1;
+    for (let i = 0; i < fullAsc.length; i++) {
+      if (Math.abs(fullAsc[i].running) < 0.005) idx = i;
+    }
+    return idx;
+  }, [fullAsc]);
+
+  const timeline = useMemo<(TLItem & { running: number })[]>(() => {
+    const slice = sinceZero
+      ? fullAsc.slice(lastZeroIdx + 1)
+      : fullAsc.filter((it) => inRange(it.date));
+    return [...slice].reverse();
+  }, [fullAsc, sinceZero, lastZeroIdx, inRange]);
 
   // Save handover
   const saveHandover = async () => {
