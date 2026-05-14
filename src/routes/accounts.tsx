@@ -532,53 +532,82 @@ ${node.innerHTML}
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
-                  const Icon = isIn ? ArrowDownLeft : isHand ? Send : Receipt;
-                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
-                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "ব্যয়";
                   const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
-                  const method = isIn ? r.method : isHand ? h.method : null;
-                  const category = isIn ? r.service_type : isHand ? null : e.category;
-                  const remarks = isIn ? r.remarks : isHand ? h.remarks : e.remarks;
-                  const extraRef = isIn && r.ref_id ? r.ref_id : null;
-                  const source = isIn ? r.source : null;
+
+                  // Col 1: Name
+                  const name = isIn
+                    ? (r.passenger_name || "—")
+                    : isHand
+                    ? (h.to_name || "প্রাপক")
+                    : (e.purpose || e.category || "খরচ");
+
+                  // Col 2: Service primary + secondary lines
+                  const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
+                  const servicePrimary = isIn ? (r.service_type || "Service") : isHand ? "জমা / Handover" : (e.category || "খরচ");
+                  const secondaryBits: string[] = [];
+                  if (isIn && svc) {
+                    if (r.service_table === "tickets") {
+                      if (svc.route) secondaryBits.push(svc.route);
+                      if (svc.airline) secondaryBits.push(svc.airline);
+                      if (svc.flight_date) secondaryBits.push(`✈ ${formatDate(svc.flight_date)}`);
+                    } else if (svc.country) {
+                      secondaryBits.push(svc.country);
+                    }
+                    if (svc.vendor) secondaryBits.push(`Vendor: ${svc.vendor}`);
+                  }
+                  if (r.method && isIn) secondaryBits.push(`💳 ${r.method}`);
+                  if (isHand && h.method) secondaryBits.push(`💳 ${h.method}`);
+                  const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
+                    ? svc.sold - svc.received_total : null;
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="flex items-start gap-3 p-3 hover:bg-muted/30 transition-colors">
-                      <div className={`shrink-0 h-10 w-10 rounded-full grid place-items-center border ${bgTone} ${tone}`}>
-                        <Icon className="h-4 w-4" />
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.4fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
+                      {/* Col 1: Name */}
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[13px] leading-tight break-words">{name}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+                          <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
+                          <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
+                        </p>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm leading-tight truncate">{title}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
-                              <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
-                              <span className="font-mono">{refId}</span>
-                              <span>·</span>
-                              <span className="flex items-center gap-0.5"><CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}</span>
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
-                              {isIn ? "+" : "−"} {fmt(amt)}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap mt-0.5">
-                              ব্যাল: <b className="text-foreground">{fmt(it.running)}</b>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                          {category && <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{category}</span>}
-                          {method && <span className="flex items-center gap-1"><Banknote className="h-3 w-3" />{method}</span>}
-                          {extraRef && <span>Ref: <span className="font-mono">{extraRef}</span></span>}
-                          {source && source !== "manual" && <span className="px-1.5 py-px rounded bg-muted/60 text-[10px]">{source}</span>}
-                        </div>
-                        {remarks && (
-                          <p className="text-[11px] text-muted-foreground/90 mt-1 flex items-start gap-1">
-                            <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
-                            <span className="break-words">{remarks}</span>
+
+                      {/* Col 2: Service + secondary */}
+                      <div className="min-w-0">
+                        <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
+                        {secondaryBits.length > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                            {secondaryBits.join(" · ")}
                           </p>
                         )}
+                        {extraRefBlock(isIn, r)}
+                        {dueLeft !== null && dueLeft > 0.005 && (
+                          <p className="text-[10px] text-rose-600 mt-0.5 font-medium">
+                            বাকি: {fmt(dueLeft)}
+                          </p>
+                        )}
+                        <p className="text-[9px] text-muted-foreground/70 font-mono mt-0.5">{refId}</p>
+                        {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
+                          <p className="text-[10px] text-muted-foreground/90 mt-1 flex items-start gap-1">
+                            <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
+                            <span className="break-words">{isIn ? r.remarks : isHand ? h.remarks : e.remarks}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Col 3: Amount + Balance */}
+                      <div className="text-right shrink-0">
+                        <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
+                          {isIn ? "+" : "−"} {fmt(amt)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap mt-1">
+                          ব্যাল
+                        </p>
+                        <p className="text-[11px] tabular-nums whitespace-nowrap font-semibold text-foreground">
+                          {fmt(it.running)}
+                        </p>
                       </div>
                     </div>
                   );
