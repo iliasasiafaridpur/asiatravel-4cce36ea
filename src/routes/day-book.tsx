@@ -240,9 +240,9 @@ function DayBookPage() {
                   return (
                     <TableRow key={i}>
                       <TableCell className="py-3 align-top min-w-[140px]">
-                        <div className="font-mono text-xs font-semibold">{r.id}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.date)}</div>
-                        {r.receivedBy && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.receivedBy}</div>}
+                        <div className="font-medium whitespace-nowrap">{formatDate(r.date)}</div>
+                        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap mt-0.5">{r.id}</div>
+                        {r.receivedBy && <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-0.5">by {r.receivedBy}</div>}
                       </TableCell>
                       <TableCell className="py-3 align-top min-w-[200px]">
                         <div className="font-semibold leading-tight">{r.passenger}</div>
