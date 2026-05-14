@@ -551,7 +551,6 @@ export function LedgerPage({ module: mod }: Props) {
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
                   <TableHead className="whitespace-nowrap">Passenger / Service</TableHead>
-                  <TableHead className="whitespace-nowrap">Route</TableHead>
                   <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
                   <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Balance Due</TableHead>
@@ -560,23 +559,30 @@ export function LedgerPage({ module: mod }: Props) {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
+                  const cr = String(r.country_route ?? "");
+                  const svcUpper = service.toUpperCase();
+                  const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
+                    ? "Country" : svcUpper.includes("TICKET") ? "Route" : "";
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="font-mono text-xs whitespace-nowrap py-3.5">{String(r[mod.idColumn] ?? "")}</TableCell>
                       <TableCell className="whitespace-nowrap py-3.5">{formatDate(r.entry_date as string | null)}</TableCell>
                       <TableCell className="whitespace-nowrap py-3.5 font-medium">{String(r[groupField] ?? "")}</TableCell>
-                      <TableCell className="py-3.5 min-w-[160px]">
+                      <TableCell className="py-3.5 min-w-[180px]">
                         <div className="font-medium leading-tight">{passenger || "—"}</div>
-                        {service && <div className="text-xs text-muted-foreground mt-0.5">{service}</div>}
+                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                          {service && <span>{service}</span>}
+                          {service && cr && <span className="opacity-50">·</span>}
+                          {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
+                        </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap py-3.5 text-muted-foreground">{String(r.country_route ?? "")}</TableCell>
                       <TableCell className="text-right tabular-nums py-3.5">{Number(r[billCol] ?? 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums py-3.5 text-emerald-600 dark:text-emerald-400">{Number(r[paidCol] ?? 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right py-3.5">
@@ -594,7 +600,7 @@ export function LedgerPage({ module: mod }: Props) {
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
                           {bal > 0 && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => startQuickPay(r)} title="Quick Pay">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => openPayment(String(r[groupField] ?? ""), bal)} title="Quick Pay">
                               <CreditCard className="h-3.5 w-3.5" />
                             </Button>
                           )}
