@@ -582,7 +582,7 @@ ${node.innerHTML}
                             {secondaryBits.join(" · ")}
                           </p>
                         )}
-                        {extraRefBlock(isIn, r)}
+                        {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                         {dueLeft !== null && dueLeft > 0.005 && (
                           <p className="text-[10px] text-rose-600 mt-0.5 font-medium">
                             বাকি: {fmt(dueLeft)}
