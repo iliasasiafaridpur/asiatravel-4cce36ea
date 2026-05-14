@@ -523,7 +523,7 @@ function FormField({ field, value, onChange }: {
     <div className={`space-y-1.5 ${span}`}>
       <Label>{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
-        <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} />
+        <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
         <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={2} />
       ) : field.type === "select" ? (
