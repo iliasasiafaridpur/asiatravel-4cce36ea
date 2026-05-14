@@ -356,6 +356,201 @@ export function ModulePage({ module: mod }: Props) {
     return [...fs, ...cs];
   }, [mod]);
 
+  // Stacked-row mode: condense many columns into a few "primary + secondary lines" cells.
+  type StackedCol = { key: string; header: string; align?: "right"; className?: string; render: (r: Row) => React.ReactNode };
+  const stackedCols: StackedCol[] | null = useMemo(() => {
+    const fmt = (n: unknown) => Number(n ?? 0).toLocaleString();
+    const subLine = (label: string, val: React.ReactNode) => (
+      <div className="text-xs text-muted-foreground leading-tight">
+        <span className="opacity-60">{label}:</span> {val}
+      </div>
+    );
+    const dueBtn = (r: Row, due: number) => {
+      const svc = DUE_SERVICE_KEY[mod.key];
+      if (due > 0 && svc) {
+        return (
+          <button
+            type="button"
+            onClick={() => setDuePreselect({ serviceKey: svc, rowId: r.id })}
+            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+            title="Due Receive"
+          >
+            Due: {fmt(due)} <Wallet className="h-3 w-3" />
+          </button>
+        );
+      }
+      return <span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span>;
+    };
+
+    switch (mod.key) {
+      case "tickets":
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[140px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+            </div>
+          )},
+          { key: "trip", header: "Trip", render: (r) => (
+            <div className="min-w-[140px]">
+              <div className="font-medium">{[r.airline, r.trip_road].filter(Boolean).join(" · ") || "—"}</div>
+              {r.flight_date ? subLine("✈ Flight", formatDate(r.flight_date as string)) : null}
+              {r.pnr ? subLine("PNR", String(r.pnr)) : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r.received ?? 0);
+            const cost = Number(r.cost_price ?? 0);
+            const due = sold - recv;
+            const profit = sold - cost;
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs">{dueBtn(r, due)}</div>
+                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+              </div>
+            );
+          }},
+        ];
+      case "bmet":
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[150px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.country_name ? subLine("🌍", String(r.country_name)) : null}
+            </div>
+          )},
+          { key: "process", header: "Process Dates", render: (r) => (
+            <div className="text-xs">
+              {r.attested_date ? subLine("Attested", formatDate(r.attested_date as string)) : null}
+              {r.vendor_sent_date ? subLine("V.Sent", formatDate(r.vendor_sent_date as string)) : null}
+              {r.received_date ? subLine("Recv", formatDate(r.received_date as string)) : null}
+              {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r.received_amount ?? 0);
+            const cost = Number(r.cost_price ?? 0);
+            const due = sold - recv;
+            const profit = sold - cost;
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs">{dueBtn(r, due)}</div>
+                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+              </div>
+            );
+          }},
+        ];
+      case "saudi-visa":
+      case "kuwait-visa": {
+        const recvField = mod.key === "saudi-visa" ? "received_amount" : "received";
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[150px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+            </div>
+          )},
+          { key: "visa", header: "Visa Info", render: (r) => (
+            <div>
+              <div className="font-medium">{String(r.visa_type ?? r.visa_no ?? "—")}</div>
+              {r.visa_no && r.visa_type ? subLine("No", String(r.visa_no)) : null}
+              {r.sponsor_name ? subLine("Sponsor", String(r.sponsor_name)) : null}
+              {r.medical_status ? subLine("Medical", String(r.medical_status)) : null}
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r[recvField] ?? 0);
+            const cost = Number(r.cost_price ?? 0);
+            const due = sold - recv;
+            const profit = sold - cost;
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs">{dueBtn(r, due)}</div>
+                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+              </div>
+            );
+          }},
+        ];
+      }
+      case "agents":
+      case "vendors":
+        return [
+          { key: "name", header: "Name", render: (r) => (
+            <div>
+              <div className="font-medium">{String(r.name ?? "—")}</div>
+              <div className="text-[11px] font-mono text-muted-foreground">{String(r[mod.idColumn] ?? "")}</div>
+            </div>
+          )},
+          { key: "contact", header: "Contact", render: (r) => (
+            <div>
+              {r.phone ? <div className="text-sm">📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.address ? subLine("📍", String(r.address)) : null}
+            </div>
+          )},
+          { key: "notes", header: "Notes", render: (r) => (
+            <div className="text-xs text-muted-foreground max-w-[260px] whitespace-pre-wrap">{String(r.notes ?? "")}</div>
+          )},
+        ];
+      default:
+        return null;
+    }
+  }, [mod]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
