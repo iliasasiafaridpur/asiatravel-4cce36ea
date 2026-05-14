@@ -1,52 +1,65 @@
-## Scope
+# My Accounts — সম্পূর্ণ নতুন ডিজাইন
 
-Agency খাতা (`/agency-ledger`) এবং Vendor খাতা (`/vendor-ledger`) — দুটো পেজে আপনার দেওয়া ৪ ধাপের redesign। `ModulePage.tsx` shared হওয়ায় অন্য মডিউল (Tickets, BMET, Visa) এর UI অপরিবর্তিত থাকবে — শুধু ledger module-এর জন্য নতুন behavior চালু হবে (group-by + summaryFields যেগুলোতে আছে)।
+পুরনো `/day-book` ও `/accounts` দুইটি পেইজ ডিলেট করে একটি একক, আধুনিক, প্রফেশনাল **My Accounts** পেইজ তৈরি করব।
 
-## ধাপ ১ — Header + KPI cards
+## মূল উদ্দেশ্য
+1. বর্তমান ব্যবহারকারীর **আয়** (services থেকে received টাকা) দেখা
+2. **ব্যয়** (cash expense) দেখা ও যোগ করা
+3. দিন শেষে **কতৃপক্ষের কাছে জমা** (handover) দেওয়া
+4. **লাইভ ব্যালেন্স** (হাতে কত টাকা আছে) দেখা
 
-- উপরে title + "মোট N এন্ট্রি" এর পাশে quick action button উপরে-ডানে: `+ নতুন এন্ট্রি` এবং `+ Receive Payment` (DueReceiveDialog open)।
-- তার নিচে ৩টি modern KPI card (subtle border, dark-mode-friendly):
-  - **Total Bill / Total Payable** — neutral
-  - **Total Received / Total Paid** — emerald accent (border + icon)
-  - **Total Due** — bright rose accent (highlighted, larger number)
-- বর্তমান `summary` block-টি replace করে এই ৩-card grid বানাবো। Summary already computed from filtered rows — শুধু presentation change।
+## পেইজ স্ট্রাকচার
 
-## ধাপ ২ — Sleek single-line filter bar
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Hero Header: "আমার হিসাব"  +  আজকের তারিখ  +  Refresh    │
+├─────────────────────────────────────────────────────────────┤
+│  ৪টি Stat Card (gradient, large numbers):                  │
+│   💰 হাতে আছে    📥 মোট আয়    📤 মোট জমা    🧾 মোট খরচ   │
+│   (current bal)  (received)   (handover)    (expense)      │
+├─────────────────────────────────────────────────────────────┤
+│  Quick Action Bar (sticky):                                │
+│   [ + জমা দিন ]   [ + খরচ যোগ ]   Period: [আজ|মাস|বছর|সব]│
+├─────────────────────────────────────────────────────────────┤
+│  Tabs: [ Timeline ]  [ আয় ]  [ খরচ ]  [ জমা ]              │
+│                                                             │
+│  ▸ Timeline: তারিখ অনুযায়ী আয়/খরচ/জমা একসাথে               │
+│    (Stacked Row Content style — service, party, amount,    │
+│     running balance)                                        │
+│  ▸ আয়: payment_receipts (filtered by user)                 │
+│  ▸ খরচ: cash_expenses (filtered by user)                   │
+│  ▸ জমা: cash_handovers (filtered by user)                  │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- বর্তমান grid filter (Start Date, End Date আলাদা, Agent dropdown, Reset) replace হবে এক sticky horizontal bar দিয়ে:
-  - **বামে** — search input with leading 🔍 icon (full-width on mobile)
-  - **মাঝে** — Date Range Picker (single popover, shadcn Calendar `mode="range"`) → "Last 7 days / This month / Custom" presets
-  - **মাঝে** — Agent/Vendor searchable dropdown (Combobox using shadcn Command + Popover, type-to-filter)
-  - **ডানে** — শুধু Due toggle + Reset icon button
-- Mobile (360px) এ stack হবে; desktop এ এক লাইনে।
+## ডিজাইন ভাষা
+- **Stat Cards**: gradient background (`--gradient-hero`, `--gradient-primary`), বড় টাইপোগ্রাফি, আইকন সহ
+- **Stacked Row Content** (যেমন BMET/Saudi Visa-তে): প্রতিটি entry-তে date+id বামে, party+description মাঝে, amount+running ডানে — কোনো বড় টেবিল নয়, কার্ড-স্টাইল রো
+- **Quick Action Dialogs**: জমা/খরচ যোগ করার জন্য সুন্দর modal (Dialog) — পেইজে বড় ফর্ম থাকবে না
+- **Sticky filter bar** — টাইপ অনুযায়ী filter
+- **Empty states** ও **loading skeletons** সহ
+- সব semantic tokens (`bg-card`, `text-foreground`, `text-emerald-600` ইত্যাদি existing pattern অনুসরণ করে)
 
-## ধাপ ৩ — Modern ledger table
+## ডেটা সোর্স (existing tables)
+- `payment_receipts` (received_by = user.id) → আয়
+- `cash_expenses` (spent_by = user.id) → খরচ
+- `cash_handovers` (from_user = user.id) → জমা
+- `get_user_account` RPC → সরাসরি ব্যালেন্স summary
+- Realtime subscription → তিনটি table-এ `postgres_changes`
 
-- Row vertical padding বাড়ানো (`py-3.5` per cell), zebra rows subtle।
-- **Passenger column merge**: passenger name উপরে (font-medium), নিচে dimmed `text-xs text-muted-foreground` এ PNR/Ticket reference (যদি থাকে — agency_ledger-এ passenger ছাড়া reference নেই তাই শুধু passenger; ticket module-এ pnr merge হবে — কিন্তু আপনি ledger-এ asked, তাই ledger-এ passenger + service_type/country_route merge করবো secondary line হিসেবে)।
-- **Balance Due color rule**:
-  - `> 0` → light-red (`text-rose-400`) + clickable wallet icon (existing payment behavior preserved)
-  - `= 0` → green "Paid" badge
-- **Actions column**: clean icon-only buttons → 👁 View (read-only dialog showing all fields), 💳 Quick Pay (opens entry pre-filled with that row's agent + balance), ✏️ Edit, 🗑 Delete (kept)।
+## ফাইল পরিবর্তন
 
-## ধাপ ৪ — Export, print, typography
+1. **Delete**: `src/routes/day-book.tsx`
+2. **Rewrite from scratch**: `src/routes/accounts.tsx` (নতুন কম্পোনেন্ট, ক্লিন কোড, ~400 lines)
+3. **Update**: `src/components/AppSidebar.tsx`
+   - "Day Book" এন্ট্রি বাদ
+   - "My Accounts" সাইডবারে একই জায়গায় রাখা (icon: Wallet)
+4. **Check**: `src/lib/modules.ts` ও অন্য কোথাও `/day-book` লিঙ্ক থাকলে রিমুভ
 
-- Group-summary card ও main ledger table এর header-এর right corner-এ icon buttons:
-  - **Excel** — CSV/XLSX download of currently-filtered rows (using `xlsx` or simple CSV blob)
-  - **PDF** — jsPDF + autoTable with brand header
-  - **Print** — `window.print()` + dedicated print stylesheet (hide nav/sidebar, table only)
-- Numbers → `font-mono tabular-nums`; labels → existing Bengali stack; subtle border `border-border/60` between table sections for dark-mode separation।
+## কী **থাকবে না** (পুরনো accounts.tsx থেকে বাদ)
+- "Manual Receive" form — services already auto-create receipts; manual entry confusing
+- "Daily Report" giant table — Timeline tab এতেই ঢাকা
+- "Staff Overview" — admin-only, এই পেইজ user-centric
+- Day Book-এর সব service entries listing (ওটার জন্য আলাদা service pages আছে)
 
-## Technical notes
-
-- New file: `src/components/LedgerPage.tsx` — wraps `ModulePage` logic OR (cleaner) refactor: extract pure data hooks from `ModulePage` and create dedicated `LedgerView` component. To minimize risk, **option A**: keep `ModulePage` as-is, add `variant?: "ledger"` prop + conditional rendering blocks (KPI cards, sleek filter, action column, export). Routes `/agency-ledger` and `/vendor-ledger` will pass `variant="ledger"`.
-- New deps: `xlsx` (or skip for CSV), `jspdf` + `jspdf-autotable`. Confirm before installing — CSV+browser print works without deps if you prefer zero new packages।
-- New small components: `DateRangePicker.tsx`, `SearchableSelect.tsx` (Command+Popover combo)।
-- Print stylesheet additions to `src/styles.css` under `@media print`।
-- No DB / RLS / schema changes। Existing `summaryFields`, `groupBy`, `DueReceiveDialog` reused।
-
-## Open questions before build
-
-1. Quick Pay icon → existing entry form pre-fill (current behavior) ঠিক আছে, নাকি DueReceiveDialog open করবে?
-2. Export — XLSX দরকার, নাকি CSV যথেষ্ট? (XLSX = +1 dep, CSV = zero dep)
-3. PDF এ কোম্পানির logo/header text বসাবো? থাকলে কী লেখা?
+ফলে পেইজ হবে personal cash drawer + journal — exactly user যা চেয়েছেন।
