@@ -2,7 +2,7 @@
 
 export type FieldType = "text" | "number" | "date" | "select" | "textarea" | "boolean";
 export type FormatKind = "name" | "passport" | "mobile";
-export type LookupKind = "country" | "airline" | "sub_agency" | "vendor" | "route" | "service_item";
+export type LookupKind = string;
 export type Section = "passenger" | "agency" | "vendor";
 
 export interface Field {
@@ -14,6 +14,7 @@ export interface Field {
   showInList?: boolean;
   format?: FormatKind;     // input formatting
   lookup?: LookupKind;     // dynamic dropdown (overrides type)
+  lookupDefaults?: string[]; // built-in seed values for the lookup
   section?: Section;       // grouping in form
   defaultEmpty?: boolean;  // for selects: start empty instead of first option
 }
@@ -152,18 +153,18 @@ export const MODULES: ModuleSchema[] = [
       { name: "passenger_name", label: "Passenger Name", type: "text", required: true, showInList: true, format: "name", section: "passenger" },
       { name: "passport", label: "Passport", type: "text", showInList: true, format: "passport", section: "passenger" },
       { name: "mobile", label: "Mobile", type: "text", format: "mobile", section: "passenger" },
-      { name: "visa_type", label: "Visa Type", type: "text", showInList: true, section: "passenger" },
+      { name: "visa_type", label: "Visa Type", type: "text", showInList: true, section: "passenger", lookup: "visa_type", lookupDefaults: ["Work", "Hajj", "Umrah", "Visit", "Family"] },
       { name: "sponsor_name", label: "Sponsor", type: "text", section: "passenger" },
       { name: "visa_no", label: "Visa No", type: "text", section: "passenger" },
       { name: "id_no", label: "ID No", type: "text", section: "passenger" },
       { name: "mofa_no", label: "MOFA No", type: "text", section: "passenger" },
-      { name: "medical_status", label: "Medical Status", type: "text", section: "passenger" },
-      { name: "rl_no", label: "RL No", type: "text", section: "passenger" },
+      { name: "medical_status", label: "Medical Status", type: "text", section: "passenger", lookup: "medical_status", lookupDefaults: ["Pending", "Fit", "Unfit", "Re-check"] },
+      { name: "rl_no", label: "RL No", type: "text", section: "passenger", lookup: "rl_no", lookupDefaults: [] },
       { name: "bmet_training", label: "BMET Training", type: "boolean", section: "passenger" },
       { name: "bmet_finger", label: "BMET Finger", type: "boolean", section: "passenger" },
-      { name: "bmet_status", label: "BMET Status", type: "text", section: "passenger" },
+      { name: "bmet_status", label: "BMET Status", type: "text", section: "passenger", lookup: "bmet_status", lookupDefaults: STATUS_BMET },
       { name: "sold_price", label: "Sold Price", type: "number", showInList: true, section: "passenger" },
-      { name: "status", label: "Status", type: "select", options: STATUS_VISA, showInList: true, section: "passenger" },
+      { name: "status", label: "Status", type: "text", showInList: true, section: "passenger", lookup: "status_visa", lookupDefaults: STATUS_VISA },
       { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
       // 2) Sub Agency
       { name: "agency_sold", label: "Sub Agency / Reference", type: "text", lookup: "sub_agency", section: "agency" },
