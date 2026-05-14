@@ -80,6 +80,9 @@ export function ModulePage({ module: mod }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
+  const [dueOnly, setDueOnly] = useState(false);
+  const [showGroup, setShowGroup] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
@@ -92,6 +95,7 @@ export function ModulePage({ module: mod }: Props) {
   const hasLoadedRef = useRef(false);
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
+  const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
 
   // Hydrate from localStorage cache instantly (offline-first)
   useEffect(() => {
@@ -160,9 +164,19 @@ export function ModulePage({ module: mod }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mod.table]);
 
+  const computeValue = useCallback((r: Row, name: string): number => {
+    const c = mod.computed?.find((x) => x.name === name);
+    if (c) return c.compute(r);
+    return Number(r[name] ?? 0);
+  }, [mod]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
+    for (const [name, val] of Object.entries(fieldFilters)) {
+      if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
+    }
+    if (dueOnly) xs = xs.filter((r) => computeValue(r, "balance") > 0);
     const q = search.trim().toLowerCase();
     if (q) {
       xs = xs.filter((r) =>
@@ -170,7 +184,30 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, computeValue]);
+
+  const summary = useMemo(() => {
+    if (!mod.summaryFields) return null;
+    return mod.summaryFields.map((s) => ({
+      label: s.label,
+      name: s.name,
+      total: filtered.reduce((sum, r) => sum + computeValue(r, s.name), 0),
+    }));
+  }, [filtered, mod.summaryFields, computeValue]);
+
+  const groupSummary = useMemo(() => {
+    if (!mod.groupBy) return null;
+    const map = new Map<string, Record<string, number>>();
+    for (const r of filtered) {
+      const k = String(r[mod.groupBy.field] ?? "—") || "—";
+      const cur = map.get(k) ?? {};
+      for (const m of mod.groupBy.metrics) cur[m.name] = (cur[m.name] ?? 0) + computeValue(r, m.name);
+      map.set(k, cur);
+    }
+    return Array.from(map.entries())
+      .map(([key, vals]) => ({ key, vals }))
+      .sort((a, b) => (b.vals.balance ?? 0) - (a.vals.balance ?? 0));
+  }, [filtered, mod.groupBy, computeValue]);
 
   const startCreate = () => {
     setEditing(null);
@@ -327,10 +364,66 @@ export function ModulePage({ module: mod }: Props) {
         </Dialog>
       </div>
 
+      {summary && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="grid grid-cols-3 gap-3">
+              {summary.map((s) => (
+                <div key={s.name} className="rounded-md border bg-muted/30 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
+                  <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
+                    {s.total.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {groupSummary && groupSummary.length > 0 && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ</h3>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowGroup((v) => !v)}>
+                {showGroup ? "লুকান" : `দেখুন (${groupSummary.length})`}
+              </Button>
+            </div>
+            {showGroup && (
+              <div className="overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">{mod.groupBy!.label}</TableHead>
+                      {mod.groupBy!.metrics.map((m) => (
+                        <TableHead key={m.name} className="text-right whitespace-nowrap">{m.label}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groupSummary.map((g) => (
+                      <TableRow key={g.key}>
+                        <TableCell className="font-medium">{g.key}</TableCell>
+                        {mod.groupBy!.metrics.map((m) => (
+                          <TableCell key={m.name} className={`text-right tabular-nums ${m.name === "balance" && (g.vals[m.name] ?? 0) > 0 ? "text-rose-500 font-semibold" : ""}`}>
+                            {(g.vals[m.name] ?? 0).toLocaleString()}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row gap-2 mb-3">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-3">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
@@ -339,6 +432,26 @@ export function ModulePage({ module: mod }: Props) {
                 className="pl-8"
               />
             </div>
+            {filterFields.map((f) => {
+              const opts = Array.from(new Set([
+                ...(f.lookupDefaults ?? []),
+                ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
+              ])).sort();
+              return (
+                <Select key={f.name} value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
+                  <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব {f.label}</SelectItem>
+                    {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              );
+            })}
+            {mod.computed?.some((c) => c.name === "balance") && (
+              <Button type="button" variant={dueOnly ? "default" : "outline"} size="sm" onClick={() => setDueOnly((v) => !v)} className="gap-1.5">
+                <Wallet className="h-4 w-4" /> শুধু Due
+              </Button>
+            )}
             {mod.statuses && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
@@ -387,15 +500,26 @@ export function ModulePage({ module: mod }: Props) {
                       if (c.kind === "computed") {
                         const v = c.comp.compute(r);
                         // Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
-                        const isDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                        const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                        // Ledger Balance Due হলে — ক্লিক করলে Edit dialog (Payment update)
+                        const isLedgerDue = c.comp.name === "balance" && v > 0;
                         return (
                           <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
-                            {isDue ? (
+                            {isServiceDue ? (
                               <button
                                 type="button"
                                 onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
                                 className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                                 title="Due Receive"
+                              >
+                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
+                              </button>
+                            ) : isLedgerDue ? (
+                              <button
+                                type="button"
+                                onClick={() => startEdit(r)}
+                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                                title="Payment আপডেট করুন"
                               >
                                 {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                               </button>

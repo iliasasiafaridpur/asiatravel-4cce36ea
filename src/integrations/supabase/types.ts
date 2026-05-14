@@ -17,6 +17,7 @@ export type Database = {
       agency_ledger: {
         Row: {
           agent_name: string
+          country_route: string | null
           created_at: string
           created_by: string | null
           entry_date: string
@@ -34,6 +35,7 @@ export type Database = {
         }
         Insert: {
           agent_name: string
+          country_route?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
@@ -51,6 +53,7 @@ export type Database = {
         }
         Update: {
           agent_name?: string
+          country_route?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
@@ -700,6 +703,7 @@ export type Database = {
       }
       vendor_ledger: {
         Row: {
+          country_route: string | null
           created_at: string
           created_by: string | null
           entry_date: string
@@ -717,6 +721,7 @@ export type Database = {
           vendor_name: string
         }
         Insert: {
+          country_route?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
@@ -734,6 +739,7 @@ export type Database = {
           vendor_name: string
         }
         Update: {
+          country_route?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string

@@ -24,6 +24,7 @@ const LABELS: Record<string, string> = {
   status_bmet: "Status",
   status_delivery: "Status",
   status: "Status",
+  ledger_service_type: "Service Type",
 };
 
 interface Props {
