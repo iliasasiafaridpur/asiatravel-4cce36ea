@@ -123,15 +123,16 @@ export function LookupSelect({ kind, value, onChange, defaults }: Props) {
     if (hidden.length) effectiveDefaults = effectiveDefaults.filter((d) => !hidden.includes(d));
   } catch { /* ignore */ }
 
-  // Merge defaults + DB options + current value (de-duped, preserve order: defaults first)
+  // Merge effective defaults + DB options + current value (de-duped, defaults first)
   const merged: string[] = [];
   const seen = new Set<string>();
-  for (const v of (defaults ?? [])) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
+  for (const v of effectiveDefaults) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   for (const v of options) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   if (value && !seen.has(value)) merged.unshift(value);
 
-  // For Manage dialog: only show user-added (DB) values (defaults are protected)
-  const dbOptions = options.filter((o) => !(defaults ?? []).includes(o));
+  // For Manage dialog: show every visible option (both defaults and DB-added) with delete
+  const manageList = merged.filter((o) => o !== value || true); // all
+  const isDefault = (o: string) => effectiveDefaults.includes(o);
 
   return (
     <>
