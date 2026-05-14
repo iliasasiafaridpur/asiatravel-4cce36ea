@@ -724,8 +724,9 @@ export function LedgerPage({ module: mod }: Props) {
                 value={payTarget}
                 onChange={(v) => {
                   setPayTarget(v);
-                  const g = groupSummary.find((x) => x.key === v);
-                  if (g) { setPayDue(g.due); if (g.due > 0) setPayAmount(String(g.due)); }
+                  const due = dueForGroup(v);
+                  setPayDue(due);
+                  setPayAmount(String(due > 0 ? due : ""));
                 }}
               />
             </div>
@@ -744,6 +745,23 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-lg font-semibold tabular-nums"
                   autoFocus
                 />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Payment Method <span className="text-rose-500">*</span></Label>
+              <div className="flex flex-wrap gap-1.5">
+                {PAYMENT_METHODS.map((m) => (
+                  <Button
+                    key={m}
+                    type="button"
+                    variant={payMethod === m ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPayMethod(m)}
+                    className="h-8 text-xs"
+                  >
+                    {m}
+                  </Button>
+                ))}
               </div>
             </div>
             <div className="space-y-1.5">
