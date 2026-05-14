@@ -203,10 +203,21 @@ export function LedgerPage({ module: mod }: Props) {
 
   const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
 
+  // Net due per group across ALL rows — payments offset bills.
+  const dueByGroup = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      const k = String(r[groupField] ?? "");
+      m.set(k, (m.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
+    }
+    return m;
+  }, [rows, groupField, billCol, paidCol]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
-    if (dueOnly) xs = xs.filter((r) => balanceOf(r) > 0);
+    // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
+    if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
