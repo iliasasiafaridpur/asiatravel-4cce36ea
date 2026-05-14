@@ -219,24 +219,45 @@ export function LedgerPage({ module: mod }: Props) {
     setOpenForm(true);
   };
 
-  const startQuickPay = (r: Row) => {
-    setEditing(null);
-    const f = emptyForm(mod);
-    f[groupField] = r[groupField] ?? "";
-    f[paidCol] = balanceOf(r);
-    if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
-    setForm(f);
-    setOpenForm(true);
+  const openPayment = (groupKey: string, dueAmount: number) => {
+    setPayTarget(groupKey);
+    setPayDue(dueAmount);
+    setPayAmount(String(dueAmount > 0 ? dueAmount : ""));
+    setPayDate(todayIso());
+    setPayRemarks("");
+    setPayOpen(true);
   };
 
-  const startGroupPayment = (groupKey: string, dueAmount: number) => {
-    setEditing(null);
-    const f = emptyForm(mod);
-    f[groupField] = groupKey;
-    f[paidCol] = dueAmount;
-    if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
-    setForm(f);
-    setOpenForm(true);
+  const submitPayment = async () => {
+    const amt = Number(payAmount);
+    if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
+    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    setPaySaving(true);
+    try {
+      const me = displayName(profile, user);
+      const finalId = await generateNextId(mod);
+      const payload: Record<string, unknown> = {
+        [mod.idColumn]: finalId,
+        entry_date: payDate,
+        [groupField]: payTarget,
+        passenger_name: isAgency ? "পেমেন্ট গ্রহণ" : "পেমেন্ট পরিশোধ",
+        service_type: "PAYMENT",
+        country_route: "",
+        [billCol]: 0,
+        [paidCol]: amt,
+        remarks: `${payRemarks ? payRemarks + " · " : ""}Entry by: ${me}`,
+      };
+      if (user?.id) payload.created_by = user.id;
+      const { error } = await supabase.from(mod.table as never).insert(payload as never);
+      if (error) throw error;
+      toast.success(`✓ ${payTitle} সংরক্ষিত: ${amt.toLocaleString()}`);
+      setPayOpen(false);
+      void load();
+    } catch (e) {
+      toast.error("সমস্যা: " + errMsg(e));
+    } finally {
+      setPaySaving(false);
+    }
   };
 
   const submit = async () => {
