@@ -500,15 +500,26 @@ export function ModulePage({ module: mod }: Props) {
                       if (c.kind === "computed") {
                         const v = c.comp.compute(r);
                         // Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
-                        const isDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                        const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                        // Ledger Balance Due হলে — ক্লিক করলে Edit dialog (Payment update)
+                        const isLedgerDue = c.comp.name === "balance" && v > 0;
                         return (
                           <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
-                            {isDue ? (
+                            {isServiceDue ? (
                               <button
                                 type="button"
                                 onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
                                 className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                                 title="Due Receive"
+                              >
+                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
+                              </button>
+                            ) : isLedgerDue ? (
+                              <button
+                                type="button"
+                                onClick={() => startEdit(r)}
+                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                                title="Payment আপডেট করুন"
                               >
                                 {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                               </button>
