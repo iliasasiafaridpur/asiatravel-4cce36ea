@@ -568,21 +568,21 @@ function AccountsPage() {
                       : runningReceived.map((r) => (
                         <TableRow key={`${r.source}-${r.id}`}>
                           <TableCell className="py-3 align-top min-w-[140px]">
-                            <div className="font-mono text-xs font-semibold"><span className="opacity-70 font-sans font-normal">ID:</span> {r.receipt_id}</div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">Date:</span> {formatDate(r.entry_date)}</div>
+                            <div className="font-mono text-xs font-semibold">{r.receipt_id}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.entry_date)}</div>
                             {r.received_by_name && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.received_by_name}</div>}
                           </TableCell>
                           <TableCell className="py-3 align-top min-w-[200px]">
-                            <div className="font-semibold leading-tight"><span className="opacity-60 text-xs font-normal">Passenger:</span> {r.passenger_name}</div>
+                            <div className="font-semibold leading-tight">{r.passenger_name}</div>
                             <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-1.5">
-                              <span><span className="opacity-70">Service:</span> {r.service_type}</span>
+                              <span>{r.service_type}</span>
                               {r.extra && r.extra !== "—" && <><span className="opacity-50">·</span><span>{r.extra}</span></>}
                             </div>
-                            {r.ref_id && <div className="text-[11px] text-muted-foreground/70 mt-0.5 font-mono"><span className="opacity-70 font-sans">Ref:</span> {r.ref_id}</div>}
+                            {r.ref_id && <div className="text-[11px] text-muted-foreground/70 mt-0.5 font-mono">Ref: {r.ref_id}</div>}
                           </TableCell>
-                          <TableCell className="py-3 align-top"><span className="text-[11px] opacity-70 mr-1">Method:</span><Badge variant="outline">{r.method}</Badge></TableCell>
+                          <TableCell className="py-3 align-top"><Badge variant="outline">{r.method}</Badge></TableCell>
                           <TableCell className="text-right py-3 align-top min-w-[140px]">
-                            <div className="font-bold tabular-nums text-success"><span className="opacity-60 text-xs font-normal">Amount:</span> ৳ {Number(r.amount).toLocaleString()}</div>
+                            <div className="font-bold tabular-nums text-success">৳ {Number(r.amount).toLocaleString()}</div>
                             <div className="text-[11px] tabular-nums text-primary mt-0.5">Total: {Number(r.running).toLocaleString()}</div>
                           </TableCell>
                           <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
@@ -805,14 +805,14 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
               return (
                 <TableRow key={row.id}>
                   <TableCell className="py-3 align-top min-w-[140px]">
-                    <div className="font-mono text-xs font-semibold"><span className="opacity-70 font-sans font-normal">ID:</span> {id}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">Date:</span> {formatDate(row.entry_date)}</div>
+                    <div className="font-mono text-xs font-semibold">{id}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(row.entry_date)}</div>
                     {byName && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {byName}</div>}
                   </TableCell>
                   <TableCell className="py-3 align-top min-w-[200px]">
-                    <div className="font-semibold leading-tight"><span className="opacity-60 text-xs font-normal">{isHand ? "To" : "Category"}:</span> {label}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">{isHand ? "Method" : "Purpose"}:</span> {desc}</div>
-                    {remarks && <div className="text-[11px] text-muted-foreground/70 italic mt-0.5 truncate max-w-[260px]"><span className="opacity-70 not-italic">Remarks:</span> {remarks}</div>}
+                    <div className="font-semibold leading-tight">{label}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{desc}</div>
+                    {remarks && <div className="text-[11px] text-muted-foreground/70 italic mt-0.5 truncate max-w-[260px]">{remarks}</div>}
                   </TableCell>
                   <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
                   <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>

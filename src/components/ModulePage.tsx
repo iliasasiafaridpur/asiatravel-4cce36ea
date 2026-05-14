@@ -387,29 +387,29 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
-              <div className="font-medium whitespace-nowrap"><span className="opacity-60 text-xs">Date:</span> {formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap"><span className="opacity-70 not-italic">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">By: {String(r.entry_by)}</div> : null}
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[140px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
-              {r.passport ? subLine("Passport", String(r.passport)) : null}
-              {r.mobile ? subLine("Mobile", String(r.mobile)) : null}
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
             </div>
           )},
           { key: "trip", header: "Trip", render: (r) => (
             <div className="min-w-[140px]">
               <div className="font-medium">{[r.airline, r.trip_road].filter(Boolean).join(" · ") || "—"}</div>
-              {r.flight_date ? subLine("Flight", formatDate(r.flight_date as string)) : null}
+              {r.flight_date ? subLine("✈ Flight", formatDate(r.flight_date as string)) : null}
               {r.pnr ? subLine("PNR", String(r.pnr)) : null}
             </div>
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
-              {r.agency_sold ? <div className="text-sm"><span className="opacity-60 text-xs">Agency:</span> {String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
-              {r.vendor_bought ? subLine("Vendor", String(r.vendor_bought)) : null}
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
             </div>
           )},
@@ -433,31 +433,31 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
-              <div className="font-medium whitespace-nowrap"><span className="opacity-60 text-xs">Date:</span> {formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap"><span className="opacity-70 not-italic">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">By: {String(r.entry_by)}</div> : null}
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
-              {r.passport ? subLine("Passport", String(r.passport)) : null}
-              {r.mobile ? subLine("Mobile", String(r.mobile)) : null}
-              {r.country_name ? subLine("Country", String(r.country_name)) : null}
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
           )},
           { key: "process", header: "Process Dates", render: (r) => (
             <div className="text-xs">
               {r.attested_date ? subLine("Attested", formatDate(r.attested_date as string)) : null}
-              {r.vendor_sent_date ? subLine("Vendor Sent", formatDate(r.vendor_sent_date as string)) : null}
-              {r.received_date ? subLine("Received", formatDate(r.received_date as string)) : null}
+              {r.vendor_sent_date ? subLine("V.Sent", formatDate(r.vendor_sent_date as string)) : null}
+              {r.received_date ? subLine("Recv", formatDate(r.received_date as string)) : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
             </div>
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
-              {r.agency_sold ? <div className="text-sm"><span className="opacity-60 text-xs">Agency:</span> {String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
-              {r.vendor_bought ? subLine("Vendor", String(r.vendor_bought)) : null}
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
             </div>
           )},
@@ -483,21 +483,21 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
-              <div className="font-medium whitespace-nowrap"><span className="opacity-60 text-xs">Date:</span> {formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap"><span className="opacity-70 not-italic">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
-              {r.passport ? subLine("Passport", String(r.passport)) : null}
-              {r.mobile ? subLine("Mobile", String(r.mobile)) : null}
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? subLine("📱", String(r.mobile)) : null}
             </div>
           )},
           { key: "visa", header: "Visa Info", render: (r) => (
             <div>
               <div className="font-medium">{String(r.visa_type ?? r.visa_no ?? "—")}</div>
-              {r.visa_no && r.visa_type ? subLine("Visa No", String(r.visa_no)) : null}
+              {r.visa_no && r.visa_type ? subLine("No", String(r.visa_no)) : null}
               {r.sponsor_name ? subLine("Sponsor", String(r.sponsor_name)) : null}
               {r.medical_status ? subLine("Medical", String(r.medical_status)) : null}
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
@@ -505,8 +505,8 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
-              {r.agency_sold ? <div className="text-sm"><span className="opacity-60 text-xs">Agency:</span> {String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
-              {r.vendor_bought ? subLine("Vendor", String(r.vendor_bought)) : null}
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
             </div>
           )},
@@ -532,14 +532,14 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "name", header: "Name", render: (r) => (
             <div>
-              <div className="font-medium"><span className="opacity-60 text-xs">Name:</span> {String(r.name ?? "—")}</div>
-              <div className="text-[11px] font-mono text-muted-foreground"><span className="opacity-70">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
+              <div className="font-medium">{String(r.name ?? "—")}</div>
+              <div className="text-[11px] font-mono text-muted-foreground">{String(r[mod.idColumn] ?? "")}</div>
             </div>
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className="text-sm"><span className="opacity-60">Mobile:</span> {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
-              {r.address ? subLine("Address", String(r.address)) : null}
+              {r.phone ? <div className="text-sm">📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.address ? subLine("📍", String(r.address)) : null}
             </div>
           )},
           { key: "notes", header: "Notes", render: (r) => (

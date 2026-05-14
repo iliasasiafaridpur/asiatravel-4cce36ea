@@ -240,13 +240,13 @@ function DayBookPage() {
                   return (
                     <TableRow key={i}>
                       <TableCell className="py-3 align-top min-w-[140px]">
-                        <div className="font-mono text-xs font-semibold"><span className="opacity-70 font-sans font-normal">ID:</span> {r.id}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">Date:</span> {formatDate(r.date)}</div>
+                        <div className="font-mono text-xs font-semibold">{r.id}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.date)}</div>
                         {r.receivedBy && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.receivedBy}</div>}
                       </TableCell>
                       <TableCell className="py-3 align-top min-w-[200px]">
-                        <div className="font-semibold leading-tight"><span className="opacity-60 text-xs font-normal">Passenger:</span> {r.passenger}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">Service:</span> {r.module}</div>
+                        <div className="font-semibold leading-tight">{r.passenger}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{r.module}</div>
                         {r.extra && <div className="text-[11px] text-muted-foreground/90 mt-0.5">{r.extra}</div>}
                         {(r.agent || r.vendor) && (
                           <div className="text-[11px] text-muted-foreground/80 mt-0.5">
@@ -256,10 +256,10 @@ function DayBookPage() {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="py-3 align-top whitespace-nowrap"><span className="text-[11px] opacity-70">Status:</span> {r.status || "—"}</TableCell>
+                      <TableCell className="py-3 align-top whitespace-nowrap">{r.status || "—"}</TableCell>
                       <TableCell className="text-right py-3 align-top min-w-[160px]">
-                        <div className="font-bold tabular-nums"><span className="opacity-60 text-xs font-normal">Total:</span> ৳ {r.amount.toLocaleString()}</div>
-                        <div className="text-[11px] text-emerald-600 tabular-nums mt-0.5">Received: {r.received.toLocaleString()}</div>
+                        <div className="font-bold tabular-nums">৳ {r.amount.toLocaleString()}</div>
+                        <div className="text-[11px] text-emerald-600 tabular-nums mt-0.5">Recv: {r.received.toLocaleString()}</div>
                         <div className={`text-[11px] tabular-nums mt-0.5 font-semibold ${due > 0 ? "text-rose-500" : "text-muted-foreground"}`}>
                           Due: {due.toLocaleString()}
                         </div>
