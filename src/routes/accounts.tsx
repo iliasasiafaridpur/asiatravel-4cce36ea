@@ -554,22 +554,36 @@ function AccountsPage() {
               </div>
               <div className="overflow-x-auto rounded-md border">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Receipt</TableHead><TableHead>Service</TableHead><TableHead>Country/Route</TableHead><TableHead>Ref</TableHead><TableHead>Passenger</TableHead><TableHead>User</TableHead><TableHead>Method</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Running</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Ref</TableHead>
+                    <TableHead>Passenger / Service</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
-                    {runningReceived.length === 0 ? <TableRow><TableCell colSpan={11} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো received entry নেই</TableCell></TableRow>
+                    {runningReceived.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো received entry নেই</TableCell></TableRow>
                       : runningReceived.map((r) => (
                         <TableRow key={`${r.source}-${r.id}`}>
-                          <TableCell className="whitespace-nowrap">{formatDate(r.entry_date)}</TableCell>
-                          <TableCell className="font-mono text-xs whitespace-nowrap">{r.receipt_id}</TableCell>
-                          <TableCell><Badge variant="secondary">{r.service_type}</Badge></TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.extra}</TableCell>
-                          <TableCell className="font-mono text-xs whitespace-nowrap">{r.ref_id ?? "—"}</TableCell>
-                          <TableCell className="font-medium min-w-32">{r.passenger_name}</TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.received_by_name ?? "—"}</TableCell>
-                          <TableCell><Badge variant="outline">{r.method}</Badge></TableCell>
-                          <MoneyCell value={r.amount} tone="success" />
-                          <MoneyCell value={r.running} tone="primary" />
-                          <TableCell><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
+                          <TableCell className="py-3 align-top min-w-[140px]">
+                            <div className="font-mono text-xs font-semibold">{r.receipt_id}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.entry_date)}</div>
+                            {r.received_by_name && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.received_by_name}</div>}
+                          </TableCell>
+                          <TableCell className="py-3 align-top min-w-[200px]">
+                            <div className="font-semibold leading-tight">{r.passenger_name}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-1.5">
+                              <span>{r.service_type}</span>
+                              {r.extra && r.extra !== "—" && <><span className="opacity-50">·</span><span>{r.extra}</span></>}
+                            </div>
+                            {r.ref_id && <div className="text-[11px] text-muted-foreground/70 mt-0.5 font-mono">Ref: {r.ref_id}</div>}
+                          </TableCell>
+                          <TableCell className="py-3 align-top"><Badge variant="outline">{r.method}</Badge></TableCell>
+                          <TableCell className="text-right py-3 align-top min-w-[140px]">
+                            <div className="font-bold tabular-nums text-success">৳ {Number(r.amount).toLocaleString()}</div>
+                            <div className="text-[11px] tabular-nums text-primary mt-0.5">Total: {Number(r.running).toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => delReceipt(r)} description={`${r.service_type} — ${r.passenger_name} এর Received entry (৳${Number(r.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -674,40 +688,37 @@ function AccountsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ক্রঃ</TableHead>
-                      <TableHead>তারিখ</TableHead>
-                      <TableHead>নাম</TableHead>
-                      <TableHead>সার্ভিস</TableHead>
-                      <TableHead>Country/Route</TableHead>
-                      <TableHead className="text-right">মূল্য</TableHead>
-                      <TableHead className="text-right">জমা</TableHead>
-                      <TableHead className="text-right">বাকি</TableHead>
-                      <TableHead className="text-right bg-success/5">মোট আয়</TableHead>
-                      <TableHead>খরচ বিবরণ</TableHead>
-                      <TableHead className="text-right">খরচ</TableHead>
-                      <TableHead className="text-right bg-destructive/5">মোট খরচ</TableHead>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>বিবরণ</TableHead>
+                      <TableHead className="text-right bg-success/5">আয় (জমা / মোট)</TableHead>
+                      <TableHead className="text-right bg-destructive/5">খরচ (এই / মোট)</TableHead>
                       <TableHead className="text-right bg-primary/5">ব্যালেন্স</TableHead>
-                      <TableHead>User</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {reportRows.length === 0 ? <TableRow><TableCell colSpan={14} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো এন্ট্রি নেই</TableCell></TableRow>
+                    {reportRows.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো এন্ট্রি নেই</TableCell></TableRow>
                       : reportRows.map((r) => (
                         <TableRow key={`${r.kind}-${r.serial}`} className={r.kind === "received" ? "" : r.kind === "handover" ? "bg-warning/5" : "bg-destructive/5"}>
-                          <TableCell className="text-xs">{r.serial}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{formatDate(r.date)}</TableCell>
-                          <TableCell className="font-medium text-xs min-w-28">{r.name}</TableCell>
-                          <TableCell><Badge variant="secondary" className="text-[10px]">{r.service}</Badge></TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.extra}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs">{r.sold ? r.sold.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs text-success">{r.received ? r.received.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs text-warning">{r.due ? r.due.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs font-semibold bg-success/5">{r.incomeRunning.toLocaleString()}</TableCell>
-                          <TableCell className="text-xs min-w-28">{r.expenseDesc || "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs text-destructive">{r.expenseAmt ? r.expenseAmt.toLocaleString() : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs font-semibold bg-destructive/5">{r.expenseRunning.toLocaleString()}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs font-bold bg-primary/5 text-primary">{r.balance.toLocaleString()}</TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{r.user}</TableCell>
+                          <TableCell className="text-xs align-top py-3">{r.serial}</TableCell>
+                          <TableCell className="py-3 align-top min-w-[240px]">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold leading-tight">{r.name}</span>
+                              <Badge variant="secondary" className="text-[10px]">{r.service}</Badge>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.date)}{r.extra ? ` · ${r.extra}` : ""}</div>
+                            {r.expenseDesc && <div className="text-[11px] text-muted-foreground/80 italic mt-0.5">{r.expenseDesc}</div>}
+                            <div className="text-[11px] text-muted-foreground/70 mt-0.5">User: {r.user}</div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 align-top tabular-nums bg-success/5 min-w-[140px]">
+                            {r.received ? <div className="text-success font-semibold text-xs">+{r.received.toLocaleString()}</div> : <div className="text-muted-foreground/40 text-xs">—</div>}
+                            {r.sold > 0 && r.due > 0 && <div className="text-[11px] text-warning mt-0.5">বাকি: {r.due.toLocaleString()}</div>}
+                            <div className="text-[11px] font-semibold mt-0.5">∑ {r.incomeRunning.toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 align-top tabular-nums bg-destructive/5 min-w-[140px]">
+                            {r.expenseAmt ? <div className="text-destructive font-semibold text-xs">-{r.expenseAmt.toLocaleString()}</div> : <div className="text-muted-foreground/40 text-xs">—</div>}
+                            <div className="text-[11px] font-semibold mt-0.5">∑ {r.expenseRunning.toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 align-top tabular-nums font-bold bg-primary/5 text-primary min-w-[120px]">{r.balance.toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -773,21 +784,32 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
   return (
     <div className="overflow-x-auto rounded-md border">
       <Table>
-        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>ID</TableHead><TableHead>{isHand ? "To" : "Category"}</TableHead><TableHead>{isHand ? "Method" : "Purpose"}</TableHead><TableHead className="text-right">Amount</TableHead><TableHead></TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow>
+          <TableHead>Ref</TableHead>
+          <TableHead>{isHand ? "To / Method" : "Category / Purpose"}</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+          <TableHead></TableHead>
+        </TableRow></TableHeader>
         <TableBody>
-          {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+          {rows.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
             : rows.map((row) => {
               const id = isHand ? (row as Hand).handover_id : (row as Exp).expense_id;
               const label = isHand ? (row as Hand).to_name : (row as Exp).category;
               const desc = isHand ? (row as Hand).method : ((row as Exp).purpose ?? "—");
+              const remarks = (row as Hand | Exp).remarks ?? "";
               return (
                 <TableRow key={row.id}>
-                  <TableCell className="whitespace-nowrap">{formatDate(row.entry_date)}</TableCell>
-                  <TableCell className="font-mono text-xs whitespace-nowrap">{id}</TableCell>
-                  <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
-                  <TableCell className="text-xs min-w-28">{desc}</TableCell>
+                  <TableCell className="py-3 align-top min-w-[140px]">
+                    <div className="font-mono text-xs font-semibold">{id}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(row.entry_date)}</div>
+                  </TableCell>
+                  <TableCell className="py-3 align-top min-w-[200px]">
+                    <div className="font-semibold leading-tight">{label}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{desc}</div>
+                    {remarks && <div className="text-[11px] text-muted-foreground/70 italic mt-0.5 truncate max-w-[260px]">{remarks}</div>}
+                  </TableCell>
                   <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
-                  <TableCell><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
+                  <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                 </TableRow>
               );
             })}

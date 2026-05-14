@@ -565,54 +565,64 @@ export function LedgerPage({ module: mod }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">ID</TableHead>
-                  <TableHead className="whitespace-nowrap">Date</TableHead>
-                  <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
-                  <TableHead className="whitespace-nowrap">Passenger / Service</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Balance Due</TableHead>
+                  <TableHead className="whitespace-nowrap">Ref</TableHead>
+                  <TableHead className="whitespace-nowrap">{groupLabel} / Passenger</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Financials</TableHead>
                   <TableHead className="text-right whitespace-nowrap print:hidden">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
                   const cr = String(r.country_route ?? "");
+                  const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
                   const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
                     ? "Country" : svcUpper.includes("TICKET") ? "Route" : "";
                   return (
                     <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs whitespace-nowrap py-3.5">{String(r[mod.idColumn] ?? "")}</TableCell>
-                      <TableCell className="whitespace-nowrap py-3.5">{formatDate(r.entry_date as string | null)}</TableCell>
-                      <TableCell className="whitespace-nowrap py-3.5 font-medium">{String(r[groupField] ?? "")}</TableCell>
-                      <TableCell className="py-3.5 min-w-[180px]">
-                        <div className="font-medium leading-tight">{passenger || "—"}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      <TableCell className="py-3.5 align-top min-w-[140px]">
+                        <div className="font-mono text-xs font-semibold">{String(r[mod.idColumn] ?? "")}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{formatDate(r.entry_date as string | null)}</div>
+                      </TableCell>
+                      <TableCell className="py-3.5 align-top min-w-[200px]">
+                        <div className="font-semibold leading-tight">{String(r[groupField] ?? "—")}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{passenger || "—"}</div>
+                        <div className="text-[11px] text-muted-foreground/80 mt-0.5 flex flex-wrap items-center gap-x-1.5">
                           {service && <span>{service}</span>}
                           {service && cr && <span className="opacity-50">·</span>}
                           {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
                         </div>
+                        {remarks && <div className="text-[11px] text-muted-foreground/70 mt-0.5 italic truncate max-w-[260px]">{remarks}</div>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums py-3.5">{Number(r[billCol] ?? 0).toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums py-3.5 text-emerald-600 dark:text-emerald-400">{Number(r[paidCol] ?? 0).toLocaleString()}</TableCell>
-                      <TableCell className="text-right py-3.5">
-                        {bal > 0 ? (
-                          <span className="font-semibold tabular-nums text-rose-400">{bal.toLocaleString()}</span>
-                        ) : bal === 0 ? (
-                          <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400">Paid</Badge>
-                        ) : (
-                          <span className="tabular-nums text-amber-500">{bal.toLocaleString()}</span>
-                        )}
+                      <TableCell className="text-right py-3.5 align-top min-w-[180px]">
+                        <div className="font-bold tabular-nums">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
+                        <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          {paidLabel}: {Number(r[paidCol] ?? 0).toLocaleString()}
+                        </div>
+                        <div className="mt-0.5">
+                          {bal > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              className="text-xs font-semibold tabular-nums text-rose-500 hover:underline"
+                            >
+                              Due: {bal.toLocaleString()}
+                            </button>
+                          ) : bal === 0 ? (
+                            <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]">Paid</Badge>
+                          ) : (
+                            <span className="text-xs tabular-nums text-amber-500">Advance: {Math.abs(bal).toLocaleString()}</span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right py-3.5 print:hidden">
+                      <TableCell className="text-right py-3.5 align-top print:hidden">
                         <div className="flex justify-end gap-0.5">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewRow(r)} title="View">
                             <Eye className="h-3.5 w-3.5" />
