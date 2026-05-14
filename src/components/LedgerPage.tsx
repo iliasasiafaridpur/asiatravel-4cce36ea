@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, type ModuleSchema } from "@/lib/modules";
+import { formatDate, type ModuleSchema, type Field } from "@/lib/modules";
+import { LookupSelect } from "@/components/LookupSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +83,13 @@ export function LedgerPage({ module: mod }: Props) {
   const [viewRow, setViewRow] = useState<Row | null>(null);
   const [datePopover, setDatePopover] = useState(false);
   const [agentPopover, setAgentPopover] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [payTarget, setPayTarget] = useState<string>("");
+  const [payDue, setPayDue] = useState<number>(0);
+  const [payDate, setPayDate] = useState<string>(todayIso());
+  const [payAmount, setPayAmount] = useState<string>("");
+  const [payRemarks, setPayRemarks] = useState<string>("");
+  const [paySaving, setPaySaving] = useState(false);
   const loadingRef = useRef(false);
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
@@ -93,8 +101,23 @@ export function LedgerPage({ module: mod }: Props) {
   const paidCol = isAgency ? "received_amount" : "paid_amount";
   const billLabel = isAgency ? "Total Bill" : "Total Payable";
   const paidLabel = isAgency ? "Total Received" : "Total Paid";
+  const payTitle = isAgency ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি";
+  const payAmountLabel = isAgency ? "Received Amount" : "Paid Amount";
+  const groupFieldLabel = isAgency ? "Agent Name" : "Vendor Name";
 
-  // Hydrate cache
+  // Form schema with country_route lookup switching based on selected service_type.
+  const formMod = useMemo<ModuleSchema>(() => {
+    const svc = String(form.service_type ?? "").toUpperCase();
+    const isBmet = svc.includes("BMET");
+    const lookupKind = isBmet ? "country" : "route";
+    const newLabel = isBmet ? "Country" : svc.includes("VISA") ? "Country" : "Route";
+    const fields: Field[] = mod.fields.map((f) =>
+      f.name === "country_route"
+        ? { ...f, label: newLabel, lookup: lookupKind }
+        : f,
+    );
+    return { ...mod, fields };
+  }, [mod, form.service_type]);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(cacheKey);
@@ -196,24 +219,45 @@ export function LedgerPage({ module: mod }: Props) {
     setOpenForm(true);
   };
 
-  const startQuickPay = (r: Row) => {
-    setEditing(null);
-    const f = emptyForm(mod);
-    f[groupField] = r[groupField] ?? "";
-    f[paidCol] = balanceOf(r);
-    if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
-    setForm(f);
-    setOpenForm(true);
+  const openPayment = (groupKey: string, dueAmount: number) => {
+    setPayTarget(groupKey);
+    setPayDue(dueAmount);
+    setPayAmount(String(dueAmount > 0 ? dueAmount : ""));
+    setPayDate(todayIso());
+    setPayRemarks("");
+    setPayOpen(true);
   };
 
-  const startGroupPayment = (groupKey: string, dueAmount: number) => {
-    setEditing(null);
-    const f = emptyForm(mod);
-    f[groupField] = groupKey;
-    f[paidCol] = dueAmount;
-    if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
-    setForm(f);
-    setOpenForm(true);
+  const submitPayment = async () => {
+    const amt = Number(payAmount);
+    if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
+    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    setPaySaving(true);
+    try {
+      const me = displayName(profile, user);
+      const finalId = await generateNextId(mod);
+      const payload: Record<string, unknown> = {
+        [mod.idColumn]: finalId,
+        entry_date: payDate,
+        [groupField]: payTarget,
+        passenger_name: isAgency ? "পেমেন্ট গ্রহণ" : "পেমেন্ট পরিশোধ",
+        service_type: "PAYMENT",
+        country_route: "",
+        [billCol]: 0,
+        [paidCol]: amt,
+        remarks: `${payRemarks ? payRemarks + " · " : ""}Entry by: ${me}`,
+      };
+      if (user?.id) payload.created_by = user.id;
+      const { error } = await supabase.from(mod.table as never).insert(payload as never);
+      if (error) throw error;
+      toast.success(`✓ ${payTitle} সংরক্ষিত: ${amt.toLocaleString()}`);
+      setPayOpen(false);
+      void load();
+    } catch (e) {
+      toast.error("সমস্যা: " + errMsg(e));
+    } finally {
+      setPaySaving(false);
+    }
   };
 
   const submit = async () => {
@@ -304,8 +348,8 @@ export function LedgerPage({ module: mod }: Props) {
           <Button onClick={startCreate} className="gap-1.5">
             <Plus className="h-4 w-4" /> নতুন এন্ট্রি
           </Button>
-          <Button onClick={() => { startCreate(); }} variant="secondary" className="gap-1.5">
-            <Receipt className="h-4 w-4" /> Receive Payment
+          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5">
+            <Receipt className="h-4 w-4" /> {payTitle}
           </Button>
         </div>
       </div>
@@ -466,7 +510,7 @@ export function LedgerPage({ module: mod }: Props) {
                         {g.due > 0 ? (
                           <button
                             type="button"
-                            onClick={() => startGroupPayment(g.key, g.due)}
+                            onClick={() => openPayment(g.key, g.due)}
                             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums"
                             title="পেমেন্ট পরিশোধ"
                           >
@@ -507,7 +551,6 @@ export function LedgerPage({ module: mod }: Props) {
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
                   <TableHead className="whitespace-nowrap">Passenger / Service</TableHead>
-                  <TableHead className="whitespace-nowrap">Route</TableHead>
                   <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
                   <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Balance Due</TableHead>
@@ -516,23 +559,30 @@ export function LedgerPage({ module: mod }: Props) {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
                 ) : filtered.map((r) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
+                  const cr = String(r.country_route ?? "");
+                  const svcUpper = service.toUpperCase();
+                  const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
+                    ? "Country" : svcUpper.includes("TICKET") ? "Route" : "";
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="font-mono text-xs whitespace-nowrap py-3.5">{String(r[mod.idColumn] ?? "")}</TableCell>
                       <TableCell className="whitespace-nowrap py-3.5">{formatDate(r.entry_date as string | null)}</TableCell>
                       <TableCell className="whitespace-nowrap py-3.5 font-medium">{String(r[groupField] ?? "")}</TableCell>
-                      <TableCell className="py-3.5 min-w-[160px]">
+                      <TableCell className="py-3.5 min-w-[180px]">
                         <div className="font-medium leading-tight">{passenger || "—"}</div>
-                        {service && <div className="text-xs text-muted-foreground mt-0.5">{service}</div>}
+                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                          {service && <span>{service}</span>}
+                          {service && cr && <span className="opacity-50">·</span>}
+                          {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
+                        </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap py-3.5 text-muted-foreground">{String(r.country_route ?? "")}</TableCell>
                       <TableCell className="text-right tabular-nums py-3.5">{Number(r[billCol] ?? 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums py-3.5 text-emerald-600 dark:text-emerald-400">{Number(r[paidCol] ?? 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right py-3.5">
@@ -550,7 +600,7 @@ export function LedgerPage({ module: mod }: Props) {
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
                           {bal > 0 && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => startQuickPay(r)} title="Quick Pay">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => openPayment(String(r[groupField] ?? ""), bal)} title="Quick Pay">
                               <CreditCard className="h-3.5 w-3.5" />
                             </Button>
                           )}
@@ -577,7 +627,7 @@ export function LedgerPage({ module: mod }: Props) {
           <DialogHeader>
             <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
           </DialogHeader>
-          <FormSections mod={mod} form={form} setForm={setForm} />
+          <FormSections mod={formMod} form={form} setForm={setForm} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
             <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
@@ -630,6 +680,68 @@ export function LedgerPage({ module: mod }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Payment entry dialog (Receive / Pay) */}
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" /> {payTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date</Label>
+                <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} className="h-10" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Entry By</Label>
+                <Input value={displayName(profile, user)} readOnly className="h-10 bg-muted/40" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{groupFieldLabel} <span className="text-rose-500">*</span></Label>
+              <LookupSelect
+                kind={isAgency ? "sub_agency" : "vendor"}
+                value={payTarget}
+                onChange={(v) => {
+                  setPayTarget(v);
+                  const g = groupSummary.find((x) => x.key === v);
+                  if (g) { setPayDue(g.due); if (g.due > 0) setPayAmount(String(g.due)); }
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Total Outstanding</Label>
+                <Input value={payDue.toLocaleString()} readOnly className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">{payAmountLabel} <span className="text-rose-500">*</span></Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="h-10 text-lg font-semibold tabular-nums"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Remarks</Label>
+              <Input value={payRemarks} onChange={(e) => setPayRemarks(e.target.value)} placeholder="মন্তব্য (ঐচ্ছিক)" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayOpen(false)}>বাতিল</Button>
+            <Button onClick={submitPayment} disabled={paySaving} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+              <Wallet className="h-4 w-4" /> {paySaving ? "সেভ হচ্ছে..." : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
