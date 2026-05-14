@@ -89,7 +89,10 @@ export function LedgerPage({ module: mod }: Props) {
   const [payDate, setPayDate] = useState<string>(todayIso());
   const [payAmount, setPayAmount] = useState<string>("");
   const [payRemarks, setPayRemarks] = useState<string>("");
+  const [payMethod, setPayMethod] = useState<string>("Cash");
   const [paySaving, setPaySaving] = useState(false);
+
+  const PAYMENT_METHODS = ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Other"];
   const loadingRef = useRef(false);
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
@@ -219,12 +222,26 @@ export function LedgerPage({ module: mod }: Props) {
     setOpenForm(true);
   };
 
+  // Compute outstanding for any group key from ALL rows (not filtered).
+  const dueForGroup = useCallback((key: string) => {
+    if (!key) return 0;
+    let bill = 0, paid = 0;
+    for (const r of rows) {
+      if (String(r[groupField] ?? "") !== key) continue;
+      bill += Number(r[billCol] ?? 0);
+      paid += Number(r[paidCol] ?? 0);
+    }
+    return bill - paid;
+  }, [rows, groupField, billCol, paidCol]);
+
   const openPayment = (groupKey: string, dueAmount: number) => {
+    const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayTarget(groupKey);
-    setPayDue(dueAmount);
-    setPayAmount(String(dueAmount > 0 ? dueAmount : ""));
+    setPayDue(due);
+    setPayAmount(String(due > 0 ? due : ""));
     setPayDate(todayIso());
     setPayRemarks("");
+    setPayMethod("Cash");
     setPayOpen(true);
   };
 
@@ -245,7 +262,7 @@ export function LedgerPage({ module: mod }: Props) {
         country_route: "",
         [billCol]: 0,
         [paidCol]: amt,
-        remarks: `${payRemarks ? payRemarks + " · " : ""}Entry by: ${me}`,
+        remarks: `Method: ${payMethod}${payRemarks ? " · " + payRemarks : ""} · Entry by: ${me}`,
       };
       if (user?.id) payload.created_by = user.id;
       const { error } = await supabase.from(mod.table as never).insert(payload as never);
@@ -707,8 +724,9 @@ export function LedgerPage({ module: mod }: Props) {
                 value={payTarget}
                 onChange={(v) => {
                   setPayTarget(v);
-                  const g = groupSummary.find((x) => x.key === v);
-                  if (g) { setPayDue(g.due); if (g.due > 0) setPayAmount(String(g.due)); }
+                  const due = dueForGroup(v);
+                  setPayDue(due);
+                  setPayAmount(String(due > 0 ? due : ""));
                 }}
               />
             </div>
@@ -727,6 +745,23 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-lg font-semibold tabular-nums"
                   autoFocus
                 />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Payment Method <span className="text-rose-500">*</span></Label>
+              <div className="flex flex-wrap gap-1.5">
+                {PAYMENT_METHODS.map((m) => (
+                  <Button
+                    key={m}
+                    type="button"
+                    variant={payMethod === m ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPayMethod(m)}
+                    className="h-8 text-xs"
+                  >
+                    {m}
+                  </Button>
+                ))}
               </div>
             </div>
             <div className="space-y-1.5">
