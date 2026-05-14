@@ -203,17 +203,28 @@ export function LedgerPage({ module: mod }: Props) {
 
   const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
 
+  // Net due per group across ALL rows — payments offset bills.
+  const dueByGroup = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      const k = String(r[groupField] ?? "");
+      m.set(k, (m.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
+    }
+    return m;
+  }, [rows, groupField, billCol, paidCol]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
-    if (dueOnly) xs = xs.filter((r) => balanceOf(r) > 0);
+    // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
+    if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
     if (q) xs = xs.filter((r) => Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q)));
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, startDate, endDate, search]);
+  }, [rows, groupFilter, dueOnly, startDate, endDate, search, dueByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0, paid = 0;
@@ -306,6 +317,51 @@ export function LedgerPage({ module: mod }: Props) {
       if (user?.id) payload.created_by = user.id;
       const { error } = await supabase.from(mod.table as never).insert(payload as never);
       if (error) throw error;
+
+      // Mirror to My Accounts so the cash drawer & reports stay in sync.
+      if (user?.id) {
+        if (isAgency) {
+          // Agency receive — money in to the user
+          const rid = await generateNextId({
+            key: "_rcpt", label: "", short: "", table: "payment_receipts",
+            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+          });
+          const { error: e2 } = await supabase.from("payment_receipts").insert({
+            receipt_id: rid,
+            entry_date: payDate,
+            service_type: "Agency Receive",
+            ref_id: finalId,
+            passenger_name: payTarget,
+            amount: amt,
+            method: payMethod,
+            source: "agency_ledger",
+            remarks: payRemarks || null,
+            received_by: user.id,
+            received_by_name: me,
+            created_by: user.id,
+          } as never);
+          if (e2) console.warn("payment_receipts mirror failed:", e2);
+        } else {
+          // Vendor pay — money out from the user
+          const eid = await generateNextId({
+            key: "_exp", label: "", short: "", table: "cash_expenses",
+            idColumn: "expense_id", idPrefix: "EXP", monthlyId: true, fields: [],
+          });
+          const { error: e2 } = await supabase.from("cash_expenses").insert({
+            expense_id: eid,
+            entry_date: payDate,
+            category: "Vendor Payment",
+            purpose: `Vendor: ${payTarget}`,
+            amount: amt,
+            remarks: `${payMethod}${payRemarks ? " · " + payRemarks : ""} · Ref: ${finalId}`,
+            spent_by: user.id,
+            spent_by_name: me,
+            created_by: user.id,
+          } as never);
+          if (e2) console.warn("cash_expenses mirror failed:", e2);
+        }
+      }
+
       toast.success(`✓ ${payTitle} সংরক্ষিত: ${amt.toLocaleString()}`);
       setPayOpen(false);
       void load();
