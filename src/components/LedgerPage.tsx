@@ -680,6 +680,68 @@ export function LedgerPage({ module: mod }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Payment entry dialog (Receive / Pay) */}
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" /> {payTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date</Label>
+                <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} className="h-10" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Entry By</Label>
+                <Input value={displayName(profile, user)} readOnly className="h-10 bg-muted/40" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{groupFieldLabel} <span className="text-rose-500">*</span></Label>
+              <LookupSelect
+                kind={isAgency ? "sub_agency" : "vendor"}
+                value={payTarget}
+                onChange={(v) => {
+                  setPayTarget(v);
+                  const g = groupSummary.find((x) => x.key === v);
+                  if (g) { setPayDue(g.due); if (g.due > 0) setPayAmount(String(g.due)); }
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Total Outstanding</Label>
+                <Input value={payDue.toLocaleString()} readOnly className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">{payAmountLabel} <span className="text-rose-500">*</span></Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="h-10 text-lg font-semibold tabular-nums"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Remarks</Label>
+              <Input value={payRemarks} onChange={(e) => setPayRemarks(e.target.value)} placeholder="মন্তব্য (ঐচ্ছিক)" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayOpen(false)}>বাতিল</Button>
+            <Button onClick={submitPayment} disabled={paySaving} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+              <Wallet className="h-4 w-4" /> {paySaving ? "সেভ হচ্ছে..." : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
