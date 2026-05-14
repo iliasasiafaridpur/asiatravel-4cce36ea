@@ -453,15 +453,23 @@ export function LedgerPage({ module: mod }: Props) {
     <div className="space-y-4 print:space-y-2">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-start sm:justify-between print:hidden">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
-          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি · দেখানো হচ্ছে {filtered.length}</p>
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}>
+            {mod.key === "vendor-ledger" ? <Truck className="h-5 w-5" /> : <UsersIcon className="h-5 w-5" />}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
+              <Badge variant="secondary" className="gap-1 font-normal"><Layers className="h-3 w-3" /> মোট {rows.length}</Badge>
+              {filtered.length !== rows.length && <Badge variant="outline" className="gap-1 font-normal"><Search className="h-3 w-3" /> দেখানো হচ্ছে {filtered.length}</Badge>}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button onClick={startCreate} className="gap-1.5">
+          <Button onClick={startCreate} className="gap-1.5 h-10">
             <Plus className="h-4 w-4" /> নতুন এন্ট্রি
           </Button>
-          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5">
+          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5 h-10">
             <Receipt className="h-4 w-4" /> {payTitle}
           </Button>
         </div>
