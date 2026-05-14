@@ -65,6 +65,10 @@ function DayBookPage() {
           } else if (m.key === "bmet") {
             const c = String(r.country_name ?? "");
             if (c) extra = `Country: ${c}`;
+          } else if (m.key === "saudi-visa") {
+            extra = "Country: Saudi Arabia";
+          } else if (m.key === "kuwait-visa") {
+            extra = "Country: Kuwait";
           }
           all.push({
             module: m.label, moduleKey: m.key,
