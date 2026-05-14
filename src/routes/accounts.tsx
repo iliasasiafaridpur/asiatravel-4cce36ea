@@ -135,6 +135,53 @@ function AccountsPage() {
   const range = useMemo(() => presetRange(preset), [preset]);
   const inRange = useCallback((d: string) => d >= range.from && d <= range.to, [range]);
 
+  // Service detail map (for timeline secondary text & due display)
+  type SvcDetail = {
+    country?: string | null; route?: string | null; airline?: string | null;
+    flight_date?: string | null; vendor?: string | null;
+    sold?: number; received_total?: number;
+  };
+  const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
+
+  useEffect(() => {
+    const byTable: Record<string, Set<string>> = {};
+    for (const r of received) {
+      if (!r.service_row_id || !r.service_table) continue;
+      (byTable[r.service_table] ||= new Set()).add(r.service_row_id);
+    }
+    const tableConfigs: Record<string, { cols: string; map: (row: Record<string, unknown>) => SvcDetail }> = {
+      tickets: {
+        cols: "id,airline,trip_road,flight_date,vendor_bought,sold_price,received",
+        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+      },
+      bmet_cards: {
+        cols: "id,country_name,vendor_bought,sold_price,received_amount",
+        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+      },
+      saudi_visas: {
+        cols: "id,vendor_bought,sold_price,received_amount",
+        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+      },
+      kuwait_visas: {
+        cols: "id,vendor_bought,sold_price,received",
+        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+      },
+    };
+    let cancelled = false;
+    (async () => {
+      const out: Record<string, SvcDetail> = {};
+      await Promise.all(Object.entries(byTable).map(async ([table, ids]) => {
+        const cfg = tableConfigs[table]; if (!cfg || ids.size === 0) return;
+        const { data } = await supabase.from(table as never).select(cfg.cols).in("id", Array.from(ids));
+        for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+          out[String(row.id)] = cfg.map(row);
+        }
+      }));
+      if (!cancelled) setSvcMap(out);
+    })();
+    return () => { cancelled = true; };
+  }, [received]);
+
   const fRecv = useMemo(() => received.filter((r) => inRange(r.entry_date)), [received, inRange]);
   const fHand = useMemo(() => handovers.filter((h) => inRange(h.entry_date)), [handovers, inRange]);
   const fExp  = useMemo(() => expenses.filter((e) => inRange(e.entry_date)), [expenses, inRange]);
