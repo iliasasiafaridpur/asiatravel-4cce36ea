@@ -294,8 +294,7 @@ function AccountsPage() {
 
   // Print timeline
   const handlePrint = () => {
-    const node = printRef.current;
-    if (!node) return;
+    if (timeline.length === 0) return;
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
     const periodLabel = sinceZero
