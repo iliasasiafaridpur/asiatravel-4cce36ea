@@ -124,6 +124,7 @@ export function PassportScanner({ onResult, compact }: Props) {
   };
 
   return (
+    <>
     <div className={`flex gap-2 ${compact ? "" : "p-3 rounded-md border bg-muted/30"}`}>
       <input
         ref={cameraRef}
@@ -154,5 +155,17 @@ export function PassportScanner({ onResult, compact }: Props) {
         <Upload className="h-4 w-4" /> ছবি আপলোড
       </Button>
     </div>
+    <AlertDialog open={errorOpen} onOpenChange={setErrorOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>⚠️ পাসপোর্ট স্ক্যান ব্যর্থ</AlertDialogTitle>
+          <AlertDialogDescription className="whitespace-pre-line">{errorMsg}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction>বুঝলাম</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
