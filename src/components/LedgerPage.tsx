@@ -28,7 +28,7 @@ import {
 import {
   Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Eye, CreditCard,
   CalendarRange, ChevronsUpDown, Check, FileSpreadsheet, Printer,
-  TrendingUp, TrendingDown, Receipt, Users as UsersIcon, Truck, Layers,
+  TrendingUp, Receipt, Users as UsersIcon, Truck, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
