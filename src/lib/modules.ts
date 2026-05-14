@@ -42,6 +42,10 @@ export interface ModuleSchema {
   listOrder?: string[];
   computed?: { name: string; label: string; compute: (row: Record<string, unknown>) => number }[];
   deriveStatus?: (row: Record<string, unknown>) => string | undefined;
+  /** Sum these field/computed names across filtered rows for a totals card. */
+  summaryFields?: { name: string; label: string }[];
+  /** Group filtered rows by this field for "per agent / per vendor" outstanding view. */
+  groupBy?: { field: string; label: string; metrics: { name: string; label: string }[] };
 }
 
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
