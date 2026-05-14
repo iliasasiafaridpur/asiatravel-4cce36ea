@@ -435,10 +435,6 @@ export function LedgerPage({ module: mod }: Props) {
     setSearch(""); setGroupFilter("all"); setDueOnly(false); setStartDate(""); setEndDate("");
   };
 
-  const dateLabel = startDate || endDate
-    ? `${startDate || "শুরু"} → ${endDate || "শেষ"}`
-    : "Date Range";
-
   return (
     <div className="space-y-4 print:space-y-2">
       {/* Header */}
