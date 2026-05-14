@@ -82,6 +82,9 @@ export function ModulePage({ module: mod }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
   const [dueOnly, setDueOnly] = useState(false);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const hasDateFilter = useMemo(() => mod.fields.some((f) => f.name === "entry_date"), [mod]);
   const [showGroup, setShowGroup] = useState(true);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
