@@ -321,6 +321,20 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
+  // Ledger group-due click → open new entry pre-filled with that group's name + payment = due amount
+  const startGroupPayment = (groupKey: string, dueAmount: number) => {
+    if (!mod.groupBy) return;
+    setEditing(null);
+    const f = emptyForm(mod);
+    f[mod.groupBy.field] = groupKey;
+    // payment column varies by ledger
+    if (mod.fields.some((x) => x.name === "paid_amount")) f.paid_amount = dueAmount;
+    if (mod.fields.some((x) => x.name === "received_amount")) f.received_amount = dueAmount;
+    if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
+    setForm(f);
+    setOpenForm(true);
+  };
+
   // Build the ordered list-column descriptors. Honors mod.listOrder if present;
   // accepts both field names and computed-column names so we can interleave Due/Profit.
   type ListCol =
