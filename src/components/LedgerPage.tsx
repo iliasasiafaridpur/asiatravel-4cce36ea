@@ -80,8 +80,6 @@ export function LedgerPage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [viewRow, setViewRow] = useState<Row | null>(null);
-  const [datePopover, setDatePopover] = useState(false);
-  const [agentPopover, setAgentPopover] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [payTarget, setPayTarget] = useState<string>("");
   const [payDue, setPayDue] = useState<number>(0);
