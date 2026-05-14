@@ -70,6 +70,7 @@ function errMsg(e: unknown): string {
 export function LedgerPage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
   const [rows, setRows] = useState<Row[]>([]);
+  const [ticketFlightMap, setTicketFlightMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
@@ -154,6 +155,18 @@ export function LedgerPage({ module: mod }: Props) {
   }, [mod.table, columns, cacheKey]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Load tickets for flight_date enrichment (ledger row's source_id → flight_date)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("tickets").select("id,flight_date").limit(2000);
+      const m = new Map<string, string>();
+      for (const t of (((data as unknown) as { id: string; flight_date: string | null }[]) ?? [])) {
+        if (t.flight_date) m.set(t.id, t.flight_date);
+      }
+      setTicketFlightMap(m);
+    })();
+  }, []);
 
   useEffect(() => {
     const ch = supabase
