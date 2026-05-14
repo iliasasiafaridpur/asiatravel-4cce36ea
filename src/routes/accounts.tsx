@@ -787,21 +787,32 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
   return (
     <div className="overflow-x-auto rounded-md border">
       <Table>
-        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>ID</TableHead><TableHead>{isHand ? "To" : "Category"}</TableHead><TableHead>{isHand ? "Method" : "Purpose"}</TableHead><TableHead className="text-right">Amount</TableHead><TableHead></TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow>
+          <TableHead>Ref</TableHead>
+          <TableHead>{isHand ? "To / Method" : "Category / Purpose"}</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+          <TableHead></TableHead>
+        </TableRow></TableHeader>
         <TableBody>
-          {rows.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+          {rows.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
             : rows.map((row) => {
               const id = isHand ? (row as Hand).handover_id : (row as Exp).expense_id;
               const label = isHand ? (row as Hand).to_name : (row as Exp).category;
               const desc = isHand ? (row as Hand).method : ((row as Exp).purpose ?? "—");
+              const remarks = (row as Hand | Exp).remarks ?? "";
               return (
                 <TableRow key={row.id}>
-                  <TableCell className="whitespace-nowrap">{formatDate(row.entry_date)}</TableCell>
-                  <TableCell className="font-mono text-xs whitespace-nowrap">{id}</TableCell>
-                  <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
-                  <TableCell className="text-xs min-w-28">{desc}</TableCell>
+                  <TableCell className="py-3 align-top min-w-[140px]">
+                    <div className="font-mono text-xs font-semibold">{id}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(row.entry_date)}</div>
+                  </TableCell>
+                  <TableCell className="py-3 align-top min-w-[200px]">
+                    <div className="font-semibold leading-tight">{label}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{desc}</div>
+                    {remarks && <div className="text-[11px] text-muted-foreground/70 italic mt-0.5 truncate max-w-[260px]">{remarks}</div>}
+                  </TableCell>
                   <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
-                  <TableCell><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
+                  <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
                 </TableRow>
               );
             })}
