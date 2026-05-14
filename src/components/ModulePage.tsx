@@ -364,10 +364,66 @@ export function ModulePage({ module: mod }: Props) {
         </Dialog>
       </div>
 
+      {summary && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="grid grid-cols-3 gap-3">
+              {summary.map((s) => (
+                <div key={s.name} className="rounded-md border bg-muted/30 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
+                  <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
+                    {s.total.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {groupSummary && groupSummary.length > 0 && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ</h3>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowGroup((v) => !v)}>
+                {showGroup ? "লুকান" : `দেখুন (${groupSummary.length})`}
+              </Button>
+            </div>
+            {showGroup && (
+              <div className="overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">{mod.groupBy!.label}</TableHead>
+                      {mod.groupBy!.metrics.map((m) => (
+                        <TableHead key={m.name} className="text-right whitespace-nowrap">{m.label}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groupSummary.map((g) => (
+                      <TableRow key={g.key}>
+                        <TableCell className="font-medium">{g.key}</TableCell>
+                        {mod.groupBy!.metrics.map((m) => (
+                          <TableCell key={m.name} className={`text-right tabular-nums ${m.name === "balance" && (g.vals[m.name] ?? 0) > 0 ? "text-rose-500 font-semibold" : ""}`}>
+                            {(g.vals[m.name] ?? 0).toLocaleString()}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row gap-2 mb-3">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-3">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
@@ -376,6 +432,26 @@ export function ModulePage({ module: mod }: Props) {
                 className="pl-8"
               />
             </div>
+            {filterFields.map((f) => {
+              const opts = Array.from(new Set([
+                ...(f.lookupDefaults ?? []),
+                ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
+              ])).sort();
+              return (
+                <Select key={f.name} value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
+                  <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব {f.label}</SelectItem>
+                    {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              );
+            })}
+            {mod.computed?.some((c) => c.name === "balance") && (
+              <Button type="button" variant={dueOnly ? "default" : "outline"} size="sm" onClick={() => setDueOnly((v) => !v)} className="gap-1.5">
+                <Wallet className="h-4 w-4" /> শুধু Due
+              </Button>
+            )}
             {mod.statuses && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
