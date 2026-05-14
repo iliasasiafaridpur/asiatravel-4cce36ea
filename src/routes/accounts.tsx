@@ -546,7 +546,7 @@ ${node.innerHTML}
                 <tr>
                   <th>#</th><th>তারিখ</th><th>ধরন</th><th>ID</th><th>বিবরণ</th>
                   <th>ক্যাটাগরি/মাধ্যম</th><th>মন্তব্য</th>
-                  <th class="num">আয়</th><th class="num">খরচ/জমা</th><th class="num">ব্যালেন্স</th>
+                  <th className="num">আয়</th><th className="num">খরচ/জমা</th><th className="num">ব্যালেন্স</th>
                 </tr>
               </thead>
               <tbody>
