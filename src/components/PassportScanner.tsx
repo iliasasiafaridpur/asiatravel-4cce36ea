@@ -67,15 +67,28 @@ export function PassportScanner({ onResult, compact }: Props) {
         setBusy(false);
         return;
       }
-      const resp = await fetch(FUNC_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ image: dataUrl }),
-      });
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 60000);
+      let resp: Response;
+      try {
+        resp = await fetch(FUNC_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ image: dataUrl }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if ((err as Error).name === "AbortError") {
+          throw new Error("সার্ভার রেসপন্স দিচ্ছে না (টাইমআউট) — আবার চেষ্টা করুন");
+        }
+        throw err;
+      } finally {
+        window.clearTimeout(timer);
+      }
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error || `HTTP ${resp.status}`);
       const fields: PassportFields = json.fields ?? {};
