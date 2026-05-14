@@ -33,6 +33,8 @@ interface Props {
   onChange: (v: string) => void;
   /** Built-in seed values that always appear (cannot be deleted from DB). */
   defaults?: string[];
+  /** Hide the Add (+) and Manage (gear) buttons; render only the Select. */
+  compact?: boolean;
 }
 
 // Module-level cache shared across selects
