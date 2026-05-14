@@ -67,6 +67,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
   const [bmetCountryMap, setBmetCountryMap] = useState<Map<string, string>>(new Map());
   const [visaCountryMap, setVisaCountryMap] = useState<Map<string, string>>(new Map());
+  const [sourceInfoMap, setSourceInfoMap] = useState<Map<string, { passport?: string; mobile?: string }>>(new Map());
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -155,28 +156,38 @@ export function LedgerPage({ module: mod }: Props) {
   useEffect(() => {
     (async () => {
       const [tk, bm, kv, sv] = await Promise.all([
-        supabase.from("tickets").select("id,flight_date,trip_road").limit(2000),
-        supabase.from("bmet_cards").select("id,country_name").limit(2000),
-        supabase.from("kuwait_visas").select("id").limit(2000),
-        supabase.from("saudi_visas").select("id").limit(2000),
+        supabase.from("tickets").select("id,flight_date,trip_road,passport,mobile").limit(2000),
+        supabase.from("bmet_cards").select("id,country_name,passport,mobile").limit(2000),
+        supabase.from("kuwait_visas").select("id,passport,mobile").limit(2000),
+        supabase.from("saudi_visas").select("id,passport,mobile").limit(2000),
       ]);
       const fm = new Map<string, string>();
       const rm = new Map<string, string>();
-      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null }[]) ?? [])) {
+      const info = new Map<string, { passport?: string; mobile?: string }>();
+      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
         if (t.flight_date) fm.set(t.id, t.flight_date);
         if (t.trip_road) rm.set(t.id, t.trip_road);
+        if (t.passport || t.mobile) info.set(t.id, { passport: t.passport ?? undefined, mobile: t.mobile ?? undefined });
       }
       const cm = new Map<string, string>();
-      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null }[]) ?? [])) {
+      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
         if (b.country_name) cm.set(b.id, b.country_name);
+        if (b.passport || b.mobile) info.set(b.id, { passport: b.passport ?? undefined, mobile: b.mobile ?? undefined });
       }
       const vm = new Map<string, string>();
-      for (const v of (((kv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Kuwait");
-      for (const v of (((sv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Saudi Arabia");
+      for (const v of (((kv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+        vm.set(v.id, "Kuwait");
+        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+      }
+      for (const v of (((sv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+        vm.set(v.id, "Saudi Arabia");
+        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+      }
       setTicketFlightMap(fm);
       setTicketRouteMap(rm);
       setBmetCountryMap(cm);
       setVisaCountryMap(vm);
+      setSourceInfoMap(info);
       const { data: profs } = await supabase.from("profiles").select("user_id,full_name");
       const pm: Record<string, string> = {};
       for (const p of (profs as { user_id: string; full_name: string }[] | null) ?? []) pm[p.user_id] = p.full_name;
@@ -636,6 +647,15 @@ export function LedgerPage({ module: mod }: Props) {
                       </TableCell>
                       <TableCell className="align-top py-3 min-w-[140px]">
                         <div className="font-medium">{passenger || "—"}</div>
+                        {(() => {
+                          const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+                          return (
+                            <>
+                              {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">P:</span> {info.passport}</div>}
+                              {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">M:</span> {info.mobile}</div>}
+                            </>
+                          );
+                        })()}
                         {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{remarks}</div>}
                       </TableCell>
                       <TableCell className="align-top py-3 min-w-[140px]">
@@ -699,6 +719,31 @@ export function LedgerPage({ module: mod }: Props) {
           <DialogHeader>
             <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
           </DialogHeader>
+          {editing && (() => {
+            const srcId = String(editing.source_id ?? "");
+            const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+            const cb = String(editing.created_by ?? "");
+            const byName = cb ? profilesMap[cb] : "";
+            const svc = String(editing.service_type ?? "");
+            const cr = String(editing.country_route ?? "");
+            return (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-mono text-xs text-primary font-semibold">{String(editing[mod.idColumn] ?? "")}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(editing.entry_date as string | null)}</span>
+                  {byName && <span className="text-xs text-muted-foreground">by {byName}</span>}
+                </div>
+                <div className="font-semibold">{String(editing.passenger_name ?? "—")}</div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                  {info?.passport && <div><span className="opacity-60">Passport:</span> <span className="text-foreground font-medium">{info.passport}</span></div>}
+                  {info?.mobile && <div><span className="opacity-60">Mobile:</span> <span className="text-foreground font-medium">{info.mobile}</span></div>}
+                  {svc && <div><span className="opacity-60">Service:</span> <span className="text-foreground font-medium">{svc}</span></div>}
+                  {cr && <div><span className="opacity-60">Country/Route:</span> <span className="text-foreground font-medium">{cr}</span></div>}
+                  <div><span className="opacity-60">{groupLabel}:</span> <span className="text-foreground font-medium">{String(editing[groupField] ?? "—")}</span></div>
+                </div>
+              </div>
+            );
+          })()}
           <FormSections mod={formMod} form={form} setForm={setForm} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
