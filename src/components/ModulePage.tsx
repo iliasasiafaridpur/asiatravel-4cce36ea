@@ -569,10 +569,8 @@ export function ModulePage({ module: mod }: Props) {
                     {listCols.map((c) => {
                       if (c.kind === "computed") {
                         const v = c.comp.compute(r);
-                        // Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
+                        // Service Due কলাম হলে — ক্লিক করলে Due Receive ডায়লগ খুলবে
                         const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
-                        // Ledger Balance Due হলে — ক্লিক করলে Edit dialog (Payment update)
-                        const isLedgerDue = c.comp.name === "balance" && v > 0;
                         return (
                           <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
                             {isServiceDue ? (
