@@ -568,9 +568,9 @@ function AccountsPage() {
                       : runningReceived.map((r) => (
                         <TableRow key={`${r.source}-${r.id}`}>
                           <TableCell className="py-3 align-top min-w-[140px]">
-                            <div className="font-mono text-xs font-semibold">{r.receipt_id}</div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.entry_date)}</div>
-                            {r.received_by_name && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.received_by_name}</div>}
+                            <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date)}</div>
+                            <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap mt-0.5">{r.receipt_id}</div>
+                            {r.received_by_name && <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-0.5">by {r.received_by_name}</div>}
                           </TableCell>
                           <TableCell className="py-3 align-top min-w-[200px]">
                             <div className="font-semibold leading-tight">{r.passenger_name}</div>
