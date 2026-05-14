@@ -83,6 +83,13 @@ export function LedgerPage({ module: mod }: Props) {
   const [viewRow, setViewRow] = useState<Row | null>(null);
   const [datePopover, setDatePopover] = useState(false);
   const [agentPopover, setAgentPopover] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [payTarget, setPayTarget] = useState<string>("");
+  const [payDue, setPayDue] = useState<number>(0);
+  const [payDate, setPayDate] = useState<string>(todayIso());
+  const [payAmount, setPayAmount] = useState<string>("");
+  const [payRemarks, setPayRemarks] = useState<string>("");
+  const [paySaving, setPaySaving] = useState(false);
   const loadingRef = useRef(false);
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
