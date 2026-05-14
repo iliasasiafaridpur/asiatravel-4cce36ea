@@ -688,21 +688,15 @@ export function ModulePage({ module: mod }: Props) {
         </CardContent>
       </Card>
 
-      {summary && (
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="grid grid-cols-3 gap-3">
-              {summary.map((s) => (
-                <div key={s.name} className="rounded-md border bg-muted/30 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
-                  <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
-                    {s.total.toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {summary && summary.length > 0 && (
+        <div className={`grid gap-2.5 sm:gap-3 grid-cols-2 ${summary.length >= 4 ? "lg:grid-cols-4" : summary.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+          {summary.map((s) => {
+            const st = summaryStyle(s.name);
+            return (
+              <StatCard key={s.name} label={s.label} value={s.total} icon={st.icon} tone={st.tone} format="currency" />
+            );
+          })}
+        </div>
       )}
 
       {groupSummary && groupSummary.length > 0 && (
