@@ -101,20 +101,38 @@ export function LookupSelect({ kind, value, onChange, defaults }: Props) {
     const { error } = await supabase.from("lookups").delete().eq("kind", kind).eq("value", v);
     if (error) { toast.error(error.message); return; }
     cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
+    // also track deletion of defaults so they don't reappear after reload
+    if ((defaults ?? []).includes(v)) {
+      const key = `lookup_hidden_defaults:${kind}`;
+      try {
+        const cur: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
+        if (!cur.includes(v)) localStorage.setItem(key, JSON.stringify([...cur, v]));
+      } catch { /* ignore */ }
+    }
     notify(kind);
     if (value === v) onChange("");
     toast.success("ডিলিট হয়েছে");
   };
 
-  // Merge defaults + DB options + current value (de-duped, preserve order: defaults first)
+  // Filter out defaults the user has previously deleted
+  let effectiveDefaults = defaults ?? [];
+  try {
+    const hidden: string[] = JSON.parse(
+      (typeof window !== "undefined" ? localStorage.getItem(`lookup_hidden_defaults:${kind}`) : null) ?? "[]"
+    );
+    if (hidden.length) effectiveDefaults = effectiveDefaults.filter((d) => !hidden.includes(d));
+  } catch { /* ignore */ }
+
+  // Merge effective defaults + DB options + current value (de-duped, defaults first)
   const merged: string[] = [];
   const seen = new Set<string>();
-  for (const v of (defaults ?? [])) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
+  for (const v of effectiveDefaults) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   for (const v of options) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   if (value && !seen.has(value)) merged.unshift(value);
 
-  // For Manage dialog: only show user-added (DB) values (defaults are protected)
-  const dbOptions = options.filter((o) => !(defaults ?? []).includes(o));
+  // For Manage dialog: show every visible option (both defaults and DB-added) with delete
+  const manageList = merged.filter((o) => o !== value || true); // all
+  const isDefault = (o: string) => effectiveDefaults.includes(o);
 
   return (
     <>
@@ -162,23 +180,15 @@ export function LookupSelect({ kind, value, onChange, defaults }: Props) {
             <DialogTitle>{label} ম্যানেজ করুন</DialogTitle>
           </DialogHeader>
           <div className="max-h-80 overflow-y-auto divide-y">
-            {(defaults ?? []).length > 0 && (
-              <div className="py-2">
-                <div className="text-xs text-muted-foreground mb-1">ডিফল্ট (ডিলিট করা যাবে না)</div>
-                {(defaults ?? []).map((o) => (
-                  <div key={o} className="flex items-center justify-between py-1.5">
-                    <span className="text-sm">{o}</span>
-                    <span className="text-xs text-muted-foreground">ডিফল্ট</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {dbOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">কাস্টম অপশন নেই</div>
-            ) : dbOptions.map((o) => (
+            {manageList.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">কোনো অপশন নেই</div>
+            ) : manageList.map((o) => (
               <div key={o} className="flex items-center justify-between py-2">
-                <span className="text-sm">{o}</span>
-                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)}>
+                <span className="text-sm">
+                  {o}
+                  {isDefault(o) && <span className="ml-2 text-xs text-muted-foreground">(ডিফল্ট)</span>}
+                </span>
+                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)} title="ডিলিট">
                   <Trash2 className="h-4 w-4 text-rose-500" />
                 </Button>
               </div>
