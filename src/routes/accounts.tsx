@@ -799,11 +799,13 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
               const label = isHand ? (row as Hand).to_name : (row as Exp).category;
               const desc = isHand ? (row as Hand).method : ((row as Exp).purpose ?? "—");
               const remarks = (row as Hand | Exp).remarks ?? "";
+              const byName = isHand ? (row as Hand).from_name : (row as Exp).spent_by_name;
               return (
                 <TableRow key={row.id}>
                   <TableCell className="py-3 align-top min-w-[140px]">
                     <div className="font-mono text-xs font-semibold">{id}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(row.entry_date)}</div>
+                    {byName && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {byName}</div>}
                   </TableCell>
                   <TableCell className="py-3 align-top min-w-[200px]">
                     <div className="font-semibold leading-tight">{label}</div>
