@@ -574,13 +574,21 @@ export function ModulePage({ module: mod }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{mod.label}</h1>
-          <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}>
+            {(() => { const Ico = MODULE_ICON[mod.key] ?? Layers; return <Ico className="h-5 w-5" />; })()}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{mod.label}</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="gap-1 font-normal"><Layers className="h-3 w-3" /> মোট {rows.length}</Badge>
+              {filtered.length !== rows.length && <Badge variant="outline" className="gap-1 font-normal"><Search className="h-3 w-3" /> ফিল্টার: {filtered.length}</Badge>}
+            </p>
+          </div>
         </div>
         <Dialog open={openForm} onOpenChange={setOpenForm}>
           <DialogTrigger asChild>
-            <Button onClick={startCreate} className="gap-1.5">
+            <Button onClick={startCreate} className="gap-1.5 h-10">
               <Plus className="h-4 w-4" /> নতুন এন্ট্রি
             </Button>
           </DialogTrigger>
