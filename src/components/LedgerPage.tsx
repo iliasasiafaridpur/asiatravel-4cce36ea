@@ -641,18 +641,18 @@ export function LedgerPage({ module: mod }: Props) {
                         {(() => { const cb = String(r.created_by ?? ""); const nm = cb ? profilesMap[cb] : ""; return nm ? <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {nm}</div> : null; })()}
                       </TableCell>
                       <TableCell className="py-3.5 align-top min-w-[200px]">
-                        <div className="font-semibold leading-tight">{String(r[groupField] ?? "—")}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{passenger || "—"}</div>
+                        <div className="font-semibold leading-tight"><span className="opacity-60 text-xs font-normal">{groupField === "vendor_name" ? "Vendor" : "Agent"}:</span> {String(r[groupField] ?? "—")}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5"><span className="opacity-70">Passenger:</span> {passenger || "—"}</div>
                         <div className="text-[11px] text-muted-foreground/80 mt-0.5 flex flex-wrap items-center gap-x-1.5">
-                          {service && <span>{service}</span>}
+                          {service && <span><span className="opacity-70">Service:</span> {service}</span>}
                           {service && cr && <span className="opacity-50">·</span>}
                           {cr && <span>{crLabel ? `${crLabel}: ` : ""}{cr}</span>}
                           {flightDate && <><span className="opacity-50">·</span><span>Flight: {flightDate}</span></>}
                         </div>
-                        {remarks && <div className="text-[11px] text-muted-foreground/70 mt-0.5 italic truncate max-w-[260px]">{remarks}</div>}
+                        {remarks && <div className="text-[11px] text-muted-foreground/70 mt-0.5 italic truncate max-w-[260px]"><span className="opacity-70 not-italic">Remarks:</span> {remarks}</div>}
                       </TableCell>
                       <TableCell className="text-right py-3.5 align-top min-w-[180px]">
-                        <div className="font-bold tabular-nums">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
+                        <div className="font-bold tabular-nums"><span className="opacity-60 text-xs font-normal">Total:</span> ৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
                         <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
                           {paidLabel}: {Number(r[paidCol] ?? 0).toLocaleString()}
                         </div>
