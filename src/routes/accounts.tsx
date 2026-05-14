@@ -805,14 +805,14 @@ function HistoryTableInner(props: { kind: "handover"; handovers: Hand[]; onDelet
               return (
                 <TableRow key={row.id}>
                   <TableCell className="py-3 align-top min-w-[140px]">
-                    <div className="font-mono text-xs font-semibold">{id}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(row.entry_date)}</div>
+                    <div className="font-mono text-xs font-semibold"><span className="opacity-70 font-sans font-normal">ID:</span> {id}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">Date:</span> {formatDate(row.entry_date)}</div>
                     {byName && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {byName}</div>}
                   </TableCell>
                   <TableCell className="py-3 align-top min-w-[200px]">
-                    <div className="font-semibold leading-tight">{label}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{desc}</div>
-                    {remarks && <div className="text-[11px] text-muted-foreground/70 italic mt-0.5 truncate max-w-[260px]">{remarks}</div>}
+                    <div className="font-semibold leading-tight"><span className="opacity-60 text-xs font-normal">{isHand ? "To" : "Category"}:</span> {label}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5"><span className="opacity-70">{isHand ? "Method" : "Purpose"}:</span> {desc}</div>
+                    {remarks && <div className="text-[11px] text-muted-foreground/70 italic mt-0.5 truncate max-w-[260px]"><span className="opacity-70 not-italic">Remarks:</span> {remarks}</div>}
                   </TableCell>
                   <MoneyCell value={Number(row.amount)} tone={isHand ? "warning" : "destructive"} />
                   <TableCell className="py-3 align-top"><ConfirmDeleteButton onConfirm={() => props.onDelete(row.id)} description={`${isHand ? "Hand-over" : "Expense"} entry (৳${Number(row.amount).toLocaleString()}) ডিলেট করবেন?`} /></TableCell>
