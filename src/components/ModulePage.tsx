@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
