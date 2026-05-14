@@ -647,6 +647,15 @@ export function LedgerPage({ module: mod }: Props) {
                       </TableCell>
                       <TableCell className="align-top py-3 min-w-[140px]">
                         <div className="font-medium">{passenger || "—"}</div>
+                        {(() => {
+                          const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+                          return (
+                            <>
+                              {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">P:</span> {info.passport}</div>}
+                              {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">M:</span> {info.mobile}</div>}
+                            </>
+                          );
+                        })()}
                         {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{remarks}</div>}
                       </TableCell>
                       <TableCell className="align-top py-3 min-w-[140px]">
@@ -710,6 +719,31 @@ export function LedgerPage({ module: mod }: Props) {
           <DialogHeader>
             <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
           </DialogHeader>
+          {editing && (() => {
+            const srcId = String(editing.source_id ?? "");
+            const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+            const cb = String(editing.created_by ?? "");
+            const byName = cb ? profilesMap[cb] : "";
+            const svc = String(editing.service_type ?? "");
+            const cr = String(editing.country_route ?? "");
+            return (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-mono text-xs text-primary font-semibold">{String(editing[mod.idColumn] ?? "")}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(editing.entry_date as string | null)}</span>
+                  {byName && <span className="text-xs text-muted-foreground">by {byName}</span>}
+                </div>
+                <div className="font-semibold">{String(editing.passenger_name ?? "—")}</div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                  {info?.passport && <div><span className="opacity-60">Passport:</span> <span className="text-foreground font-medium">{info.passport}</span></div>}
+                  {info?.mobile && <div><span className="opacity-60">Mobile:</span> <span className="text-foreground font-medium">{info.mobile}</span></div>}
+                  {svc && <div><span className="opacity-60">Service:</span> <span className="text-foreground font-medium">{svc}</span></div>}
+                  {cr && <div><span className="opacity-60">Country/Route:</span> <span className="text-foreground font-medium">{cr}</span></div>}
+                  <div><span className="opacity-60">{groupLabel}:</span> <span className="text-foreground font-medium">{String(editing[groupField] ?? "—")}</span></div>
+                </div>
+              </div>
+            );
+          })()}
           <FormSections mod={formMod} form={form} setForm={setForm} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
