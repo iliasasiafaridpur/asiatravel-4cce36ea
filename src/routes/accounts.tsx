@@ -245,6 +245,51 @@ function AccountsPage() {
 
   const balance = acct?.current_balance ?? (periodIncome - periodHand - periodExp);
 
+  // Print timeline
+  const handlePrint = () => {
+    const node = printRef.current;
+    if (!node) return;
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
+    const periodLabel = sinceZero
+      ? "০ ব্যালেন্স থেকে এখন পর্যন্ত"
+      : preset === "today" ? "আজ" : preset === "month" ? "এই মাস" : preset === "year" ? "এই বছর" : "সব সময়";
+    const totals = timeline.reduce(
+      (acc, it) => {
+        const amt = Number((it.row as { amount: number }).amount || 0);
+        if (it.kind === "received") acc.inAmt += amt; else acc.outAmt += amt;
+        return acc;
+      },
+      { inAmt: 0, outAmt: 0 },
+    );
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আমার হিসাব — Timeline</title>
+<style>
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
+  h1{margin:0 0 4px;font-size:20px}
+  .meta{color:#555;font-size:12px;margin-bottom:14px}
+  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:12px}
+  .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#f5f5f5;font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}
+  tfoot td{font-weight:700;background:#fafafa}
+  @media print{body{padding:8px}}
+</style></head><body>
+<h1>আমার হিসাব — Timeline</h1>
+<div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
+<div class="summary">
+  <div>হাতে আছে: <b>${fmt(balance)}</b></div>
+  <div class="in">আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
+  <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
+</div>
+${node.innerHTML}
+<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
+</body></html>`);
+    w.document.close();
+  };
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-8">
       {/* Header */}
