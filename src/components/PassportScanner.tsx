@@ -24,22 +24,31 @@ interface Props {
 const FUNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/passport-ocr`;
 
 async function fileToDataUrl(file: File): Promise<string> {
-  // Compress if huge: draw to canvas, max width 1600
-  const img = await new Promise<HTMLImageElement>((res, rej) => {
-    const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = rej;
-    i.src = URL.createObjectURL(file);
-  });
-  const max = 1600;
-  const scale = Math.min(1, max / Math.max(img.width, img.height));
-  const w = Math.round(img.width * scale);
-  const h = Math.round(img.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0, w, h);
-  return canvas.toDataURL("image/jpeg", 0.85);
+  // Some phones return HEIC which the browser cannot decode → reject early
+  if (/\.hei[cf]$/i.test(file.name) || /heic|heif/i.test(file.type)) {
+    throw new Error("HEIC ছবি সাপোর্ট করে না — JPG/PNG দিয়ে আপলোড করুন");
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      const t = window.setTimeout(() => rej(new Error("ছবি লোড টাইমআউট")), 15000);
+      i.onload = () => { window.clearTimeout(t); res(i); };
+      i.onerror = () => { window.clearTimeout(t); rej(new Error("ছবি ডিকোড করা যায়নি")); };
+      i.src = url;
+    });
+    const max = 1600;
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 export function PassportScanner({ onResult, compact }: Props) {
