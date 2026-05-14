@@ -150,12 +150,16 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
             )}
           </SelectContent>
         </Select>
-        <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
-          <Settings2 className="h-4 w-4" />
-        </Button>
+        {!compact && (
+          <>
+            <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
+              <Settings2 className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </div>
 
       <Dialog open={openAdd} onOpenChange={setOpenAdd}>
