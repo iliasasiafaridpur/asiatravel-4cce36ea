@@ -71,6 +71,9 @@ export function LedgerPage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
   const [rows, setRows] = useState<Row[]>([]);
   const [ticketFlightMap, setTicketFlightMap] = useState<Map<string, string>>(new Map());
+  const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
+  const [bmetCountryMap, setBmetCountryMap] = useState<Map<string, string>>(new Map());
+  const [visaCountryMap, setVisaCountryMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
@@ -156,15 +159,32 @@ export function LedgerPage({ module: mod }: Props) {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Load tickets for flight_date enrichment (ledger row's source_id → flight_date)
+  // Load source-table enrichment maps: tickets (route + flight_date), bmet (country), saudi/kuwait visas (sponsor/country)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("tickets").select("id,flight_date").limit(2000);
-      const m = new Map<string, string>();
-      for (const t of (((data as unknown) as { id: string; flight_date: string | null }[]) ?? [])) {
-        if (t.flight_date) m.set(t.id, t.flight_date);
+      const [tk, bm, kv, sv] = await Promise.all([
+        supabase.from("tickets").select("id,flight_date,trip_road").limit(2000),
+        supabase.from("bmet_cards").select("id,country_name").limit(2000),
+        supabase.from("kuwait_visas").select("id").limit(2000),
+        supabase.from("saudi_visas").select("id").limit(2000),
+      ]);
+      const fm = new Map<string, string>();
+      const rm = new Map<string, string>();
+      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null }[]) ?? [])) {
+        if (t.flight_date) fm.set(t.id, t.flight_date);
+        if (t.trip_road) rm.set(t.id, t.trip_road);
       }
-      setTicketFlightMap(m);
+      const cm = new Map<string, string>();
+      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null }[]) ?? [])) {
+        if (b.country_name) cm.set(b.id, b.country_name);
+      }
+      const vm = new Map<string, string>();
+      for (const v of (((kv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Kuwait");
+      for (const v of (((sv.data as unknown) as { id: string }[]) ?? [])) vm.set(v.id, "Saudi Arabia");
+      setTicketFlightMap(fm);
+      setTicketRouteMap(rm);
+      setBmetCountryMap(cm);
+      setVisaCountryMap(vm);
     })();
   }, []);
 
@@ -593,13 +613,19 @@ export function LedgerPage({ module: mod }: Props) {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
-                  const cr = String(r.country_route ?? "");
+                  let cr = String(r.country_route ?? "");
                   const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
                   const isTicket = svcUpper.includes("TICKET");
-                  const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
-                    ? "Country" : isTicket ? "Route" : "";
+                  const isBmet = svcUpper.includes("BMET");
+                  const isVisa = svcUpper.includes("VISA");
                   const srcId = String(r.source_id ?? "");
+                  if (!cr && srcId) {
+                    if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
+                    else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
+                    else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
+                  }
+                  const crLabel = isBmet || isVisa ? "Country" : isTicket ? "Route" : "";
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   return (
