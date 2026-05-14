@@ -532,8 +532,8 @@ export function ModulePage({ module: mod }: Props) {
         return [
           { key: "name", header: "Name", render: (r) => (
             <div>
-              <div className="font-medium">{String(r.name ?? "—")}</div>
-              <div className="text-[11px] font-mono text-muted-foreground">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="font-medium"><span className="opacity-60 text-xs">Name:</span> {String(r.name ?? "—")}</div>
+              <div className="text-[11px] font-mono text-muted-foreground"><span className="opacity-70">ID:</span> {String(r[mod.idColumn] ?? "")}</div>
             </div>
           )},
           { key: "contact", header: "Contact", render: (r) => (
