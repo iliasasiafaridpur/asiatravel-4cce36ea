@@ -208,45 +208,55 @@ function DayBookPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead><TableHead>Service</TableHead>
-                  <TableHead>ID</TableHead><TableHead>Passenger / Party</TableHead>
-                  <TableHead>Agent</TableHead><TableHead>Status</TableHead>
-                  <TableHead>Received By</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Received</TableHead>
-                  <TableHead className="text-right">Due</TableHead>
+                  <TableHead>Ref</TableHead>
+                  <TableHead>Service / Party</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Financials</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
-                ) : filtered.map((r, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="whitespace-nowrap">{formatDate(r.date)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{r.module}</TableCell>
-                    <TableCell className="font-mono text-xs whitespace-nowrap">{r.id}</TableCell>
-                    <TableCell className="whitespace-nowrap">{r.passenger}</TableCell>
-                    <TableCell className="whitespace-nowrap">{r.agent || "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{r.status || "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">{r.receivedBy || "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{r.amount.toLocaleString()}</TableCell>
-                    <TableCell className="text-right tabular-nums">{r.received.toLocaleString()}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      <span className={r.amount - r.received > 0 ? "text-rose-500" : "text-emerald-600"}>
-                        {(r.amount - r.received).toLocaleString()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <ConfirmDeleteButton
-                        onConfirm={() => handleDelete(r)}
-                        description={`${r.module} — ${r.id} (${r.passenger}) ডিলেট করলে এই ক্লায়েন্টের সকল হিসাব (Day Book, My Accounts, Ledger) থেকেও মুছে যাবে। নিশ্চিত?`}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">কোনো এন্ট্রি নেই</TableCell></TableRow>
+                ) : filtered.map((r, i) => {
+                  const due = r.amount - r.received;
+                  return (
+                    <TableRow key={i}>
+                      <TableCell className="py-3 align-top min-w-[140px]">
+                        <div className="font-mono text-xs font-semibold">{r.id}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.date)}</div>
+                        {r.receivedBy && <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {r.receivedBy}</div>}
+                      </TableCell>
+                      <TableCell className="py-3 align-top min-w-[200px]">
+                        <div className="font-semibold leading-tight">{r.passenger}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{r.module}</div>
+                        {(r.agent || r.vendor) && (
+                          <div className="text-[11px] text-muted-foreground/80 mt-0.5">
+                            {r.agent && <span>Agent: {r.agent}</span>}
+                            {r.agent && r.vendor && <span className="opacity-50"> · </span>}
+                            {r.vendor && <span>Vendor: {r.vendor}</span>}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3 align-top whitespace-nowrap">{r.status || "—"}</TableCell>
+                      <TableCell className="text-right py-3 align-top min-w-[160px]">
+                        <div className="font-bold tabular-nums">৳ {r.amount.toLocaleString()}</div>
+                        <div className="text-[11px] text-emerald-600 tabular-nums mt-0.5">Recv: {r.received.toLocaleString()}</div>
+                        <div className={`text-[11px] tabular-nums mt-0.5 font-semibold ${due > 0 ? "text-rose-500" : "text-muted-foreground"}`}>
+                          Due: {due.toLocaleString()}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 align-top">
+                        <ConfirmDeleteButton
+                          onConfirm={() => handleDelete(r)}
+                          description={`${r.module} — ${r.id} (${r.passenger}) ডিলেট করলে এই ক্লায়েন্টের সকল হিসাব (Day Book, My Accounts, Ledger) থেকেও মুছে যাবে। নিশ্চিত?`}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
