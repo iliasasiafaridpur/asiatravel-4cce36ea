@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, type ModuleSchema, type Field } from "@/lib/modules";
 import { LookupSelect } from "@/components/LookupSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -721,6 +722,7 @@ export function LedgerPage({ module: mod }: Props) {
               <Label className="text-xs">{groupFieldLabel} <span className="text-rose-500">*</span></Label>
               <LookupSelect
                 kind={isAgency ? "sub_agency" : "vendor"}
+                compact
                 value={payTarget}
                 onChange={(v) => {
                   setPayTarget(v);
@@ -749,20 +751,14 @@ export function LedgerPage({ module: mod }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Payment Method <span className="text-rose-500">*</span></Label>
-              <div className="flex flex-wrap gap-1.5">
-                {PAYMENT_METHODS.map((m) => (
-                  <Button
-                    key={m}
-                    type="button"
-                    variant={payMethod === m ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPayMethod(m)}
-                    className="h-8 text-xs"
-                  >
-                    {m}
-                  </Button>
-                ))}
-              </div>
+              <Select value={payMethod} onValueChange={setPayMethod}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="-- Method --" /></SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Remarks</Label>

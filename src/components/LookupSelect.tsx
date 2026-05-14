@@ -33,6 +33,8 @@ interface Props {
   onChange: (v: string) => void;
   /** Built-in seed values that always appear (cannot be deleted from DB). */
   defaults?: string[];
+  /** Hide the Add (+) and Manage (gear) buttons; render only the Select. */
+  compact?: boolean;
 }
 
 // Module-level cache shared across selects
@@ -58,7 +60,7 @@ async function loadKind(kind: string): Promise<string[]> {
   return vs;
 }
 
-export function LookupSelect({ kind, value, onChange, defaults }: Props) {
+export function LookupSelect({ kind, value, onChange, defaults, compact }: Props) {
   const [options, setOptions] = useState<string[]>(cache[kind] ?? []);
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
@@ -148,12 +150,16 @@ export function LookupSelect({ kind, value, onChange, defaults }: Props) {
             )}
           </SelectContent>
         </Select>
-        <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
-          <Settings2 className="h-4 w-4" />
-        </Button>
+        {!compact && (
+          <>
+            <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
+              <Settings2 className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </div>
 
       <Dialog open={openAdd} onOpenChange={setOpenAdd}>
