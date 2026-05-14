@@ -510,7 +510,7 @@ export function LedgerPage({ module: mod }: Props) {
                         {g.due > 0 ? (
                           <button
                             type="button"
-                            onClick={() => startGroupPayment(g.key, g.due)}
+                            onClick={() => openPayment(g.key, g.due)}
                             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums"
                             title="পেমেন্ট পরিশোধ"
                           >
