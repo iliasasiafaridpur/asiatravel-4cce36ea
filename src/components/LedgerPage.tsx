@@ -613,13 +613,19 @@ export function LedgerPage({ module: mod }: Props) {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
-                  const cr = String(r.country_route ?? "");
+                  let cr = String(r.country_route ?? "");
                   const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
                   const isTicket = svcUpper.includes("TICKET");
-                  const crLabel = svcUpper.includes("BMET") || svcUpper.includes("VISA")
-                    ? "Country" : isTicket ? "Route" : "";
+                  const isBmet = svcUpper.includes("BMET");
+                  const isVisa = svcUpper.includes("VISA");
                   const srcId = String(r.source_id ?? "");
+                  if (!cr && srcId) {
+                    if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
+                    else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
+                    else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
+                  }
+                  const crLabel = isBmet || isVisa ? "Country" : isTicket ? "Route" : "";
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   return (
