@@ -262,7 +262,7 @@ export function LedgerPage({ module: mod }: Props) {
         country_route: "",
         [billCol]: 0,
         [paidCol]: amt,
-        remarks: `${payRemarks ? payRemarks + " · " : ""}Entry by: ${me}`,
+        remarks: `Method: ${payMethod}${payRemarks ? " · " + payRemarks : ""} · Entry by: ${me}`,
       };
       if (user?.id) payload.created_by = user.id;
       const { error } = await supabase.from(mod.table as never).insert(payload as never);
