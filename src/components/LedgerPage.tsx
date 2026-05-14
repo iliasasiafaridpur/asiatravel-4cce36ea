@@ -74,6 +74,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
   const [bmetCountryMap, setBmetCountryMap] = useState<Map<string, string>>(new Map());
   const [visaCountryMap, setVisaCountryMap] = useState<Map<string, string>>(new Map());
+  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
@@ -185,6 +186,10 @@ export function LedgerPage({ module: mod }: Props) {
       setTicketRouteMap(rm);
       setBmetCountryMap(cm);
       setVisaCountryMap(vm);
+      const { data: profs } = await supabase.from("profiles").select("user_id,full_name");
+      const pm: Record<string, string> = {};
+      for (const p of (profs as { user_id: string; full_name: string }[] | null) ?? []) pm[p.user_id] = p.full_name;
+      setProfilesMap(pm);
     })();
   }, []);
 
@@ -633,6 +638,7 @@ export function LedgerPage({ module: mod }: Props) {
                       <TableCell className="py-3.5 align-top min-w-[140px]">
                         <div className="font-mono text-xs font-semibold">{String(r[mod.idColumn] ?? "")}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">{formatDate(r.entry_date as string | null)}</div>
+                        {(() => { const cb = String(r.created_by ?? ""); const nm = cb ? profilesMap[cb] : ""; return nm ? <div className="text-[11px] text-muted-foreground/80 mt-0.5">By: {nm}</div> : null; })()}
                       </TableCell>
                       <TableCell className="py-3.5 align-top min-w-[200px]">
                         <div className="font-semibold leading-tight">{String(r[groupField] ?? "—")}</div>
