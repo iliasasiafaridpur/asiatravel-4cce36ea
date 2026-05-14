@@ -4,7 +4,6 @@ import { SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Save, Search, Plane, IdCard, Globe2, ClipboardList, Zap, Layers, Sparkles } from "lucide-react";
@@ -245,5 +244,3 @@ function ActionBoardPage() {
   );
 }
 
-// Helper Label re-export to keep old import surface
-export { Label };
