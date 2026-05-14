@@ -67,6 +67,7 @@ export function PassportScanner({ onResult, compact }: Props) {
     setErrorOpen(true);
   };
 
+  const handleFile = async (file: File | null) => {
     if (!file) return;
     setBusy(true);
     try {
@@ -78,7 +79,7 @@ export function PassportScanner({ onResult, compact }: Props) {
         return;
       }
       const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 60000);
+      const timer = window.setTimeout(() => controller.abort(), 30000);
       let resp: Response;
       try {
         resp = await fetch(FUNC_URL, {
@@ -93,7 +94,7 @@ export function PassportScanner({ onResult, compact }: Props) {
         });
       } catch (err) {
         if ((err as Error).name === "AbortError") {
-          throw new Error("সার্ভার রেসপন্স দিচ্ছে না (টাইমআউট) — আবার চেষ্টা করুন");
+          throw new Error("TIMEOUT");
         }
         throw err;
       } finally {
@@ -103,13 +104,18 @@ export function PassportScanner({ onResult, compact }: Props) {
       if (!resp.ok) throw new Error(json.error || `HTTP ${resp.status}`);
       const fields: PassportFields = json.fields ?? {};
       if (!fields.passenger_name && !fields.passport) {
-        toast.error("পাসপোর্ট পড়া যায়নি — পরিষ্কার ছবি দিয়ে আবার চেষ্টা করুন");
+        showError("পাসপোর্টের ছবি অস্পষ্ট বা পড়া যায়নি।\n\n• ছবিটি স্পষ্ট ও আলোকিত হতে হবে\n• MRZ লাইন (নিচের ২ লাইন) সম্পূর্ণ থাকতে হবে\n• ছায়া/চমক ছাড়া আবার তুলে চেষ্টা করুন");
       } else {
         toast.success(`তথ্য পাওয়া গেছে: ${fields.passenger_name ?? ""}`);
         onResult(fields);
       }
     } catch (e) {
-      toast.error("OCR সমস্যা: " + (e as Error).message);
+      const msg = (e as Error).message;
+      if (msg === "TIMEOUT") {
+        showError("সার্ভার সময়মতো রেসপন্স দেয়নি (টাইমআউট)।\n\n• ছবিটি অস্পষ্ট হলে রিড করতে সমস্যা হয়\n• পরিষ্কার, সরাসরি, ভালো আলোতে তোলা ছবি দিন\n• ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন");
+      } else {
+        showError("OCR সমস্যা: " + msg);
+      }
     } finally {
       setBusy(false);
       if (cameraRef.current) cameraRef.current.value = "";
