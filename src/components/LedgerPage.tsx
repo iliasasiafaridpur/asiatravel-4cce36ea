@@ -20,15 +20,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
-} from "@/components/ui/command";
-import {
   Plus, Pencil, Trash2, Search, Wallet, RotateCcw, Eye, CreditCard,
-  CalendarRange, ChevronsUpDown, Check, FileSpreadsheet, Printer,
-  TrendingUp, TrendingDown, Receipt,
+  FileSpreadsheet, Printer, Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
