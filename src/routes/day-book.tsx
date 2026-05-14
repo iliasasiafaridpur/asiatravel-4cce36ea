@@ -243,6 +243,7 @@ function DayBookPage() {
                       <TableCell className="py-3 align-top min-w-[200px]">
                         <div className="font-semibold leading-tight">{r.passenger}</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">{r.module}</div>
+                        {r.extra && <div className="text-[11px] text-muted-foreground/90 mt-0.5">{r.extra}</div>}
                         {(r.agent || r.vendor) && (
                           <div className="text-[11px] text-muted-foreground/80 mt-0.5">
                             {r.agent && <span>Agent: {r.agent}</span>}
