@@ -276,12 +276,21 @@ function AccountsPage() {
       {/* Action Bar */}
       <Card className="overflow-hidden">
         <CardContent className="p-3 flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {(["today", "month", "year", "all"] as Preset[]).map((p) => (
-              <Button key={p} size="sm" variant={preset === p ? "default" : "outline"} onClick={() => setPreset(p)} className="h-8 text-xs">
+              <Button key={p} size="sm" variant={!sinceZero && preset === p ? "default" : "outline"} onClick={() => { setSinceZero(false); setPreset(p); }} className="h-8 text-xs">
                 {p === "today" ? "আজ" : p === "month" ? "এই মাস" : p === "year" ? "এই বছর" : "সব"}
               </Button>
             ))}
+            <Button
+              size="sm"
+              variant={sinceZero ? "default" : "outline"}
+              onClick={() => setSinceZero((v) => !v)}
+              className="h-8 text-xs gap-1"
+              title="হাতে ০ ব্যালেন্স হওয়ার পর থেকে এখন পর্যন্ত"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> ০ থেকে এখন
+            </Button>
           </div>
           <div className="flex gap-2">
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
