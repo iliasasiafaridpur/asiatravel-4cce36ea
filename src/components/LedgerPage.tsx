@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, type ModuleSchema } from "@/lib/modules";
+import { formatDate, type ModuleSchema, type Field } from "@/lib/modules";
+import { LookupSelect } from "@/components/LookupSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
