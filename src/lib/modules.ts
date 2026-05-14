@@ -17,7 +17,16 @@ export interface Field {
   lookupDefaults?: string[]; // built-in seed values for the lookup
   section?: Section;       // grouping in form
   defaultEmpty?: boolean;  // for selects: start empty instead of first option
+  filterable?: boolean;    // show as filter dropdown above table
 }
+
+export const LEDGER_SERVICE_TYPES = [
+  "AIR TICKET",
+  "BMET CARD",
+  "SAUDI VISA",
+  "KUWAIT VISA",
+  "OTHERS",
+];
 
 export interface ModuleSchema {
   key: string;
