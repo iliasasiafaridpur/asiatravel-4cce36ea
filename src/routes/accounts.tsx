@@ -701,7 +701,10 @@ function AccountsPage() {
                     {reportRows.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">এই সময়ে কোনো এন্ট্রি নেই</TableCell></TableRow>
                       : reportRows.map((r) => (
                         <TableRow key={`${r.kind}-${r.serial}`} className={r.kind === "received" ? "" : r.kind === "handover" ? "bg-warning/5" : "bg-destructive/5"}>
-                          <TableCell className="text-xs align-top py-3">{r.serial}</TableCell>
+                          <TableCell className="text-xs align-top py-3 min-w-[80px]">
+                            <div>{r.serial}</div>
+                            {r.user && r.user !== "—" && <div className="text-[10px] text-muted-foreground/80 mt-1">By: {r.user}</div>}
+                          </TableCell>
                           <TableCell className="py-3 align-top min-w-[240px]">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold leading-tight">{r.name}</span>
@@ -709,7 +712,6 @@ function AccountsPage() {
                             </div>
                             <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(r.date)}{r.extra ? ` · ${r.extra}` : ""}</div>
                             {r.expenseDesc && <div className="text-[11px] text-muted-foreground/80 italic mt-0.5">{r.expenseDesc}</div>}
-                            <div className="text-[11px] text-muted-foreground/70 mt-0.5">User: {r.user}</div>
                           </TableCell>
                           <TableCell className="text-right py-3 align-top tabular-nums bg-success/5 min-w-[140px]">
                             {r.received ? <div className="text-success font-semibold text-xs">+{r.received.toLocaleString()}</div> : <div className="text-muted-foreground/40 text-xs">—</div>}
