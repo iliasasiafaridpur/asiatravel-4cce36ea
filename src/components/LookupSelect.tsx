@@ -7,32 +7,42 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export type LookupKind = "country" | "airline" | "sub_agency" | "vendor" | "route" | "service_item";
+export type LookupKind = string;
 
-const LABELS: Record<LookupKind, string> = {
+const LABELS: Record<string, string> = {
   country: "দেশ",
   airline: "এয়ারলাইন্স",
   sub_agency: "Sub Agency / Reference",
   vendor: "Vendor",
   route: "Route / Airport",
   service_item: "Service Item",
+  visa_type: "Visa Type",
+  medical_status: "Medical Status",
+  rl_no: "RL No",
+  bmet_status: "BMET Status",
+  status_visa: "Status",
+  status_bmet: "Status",
+  status_delivery: "Status",
+  status: "Status",
 };
 
 interface Props {
   kind: LookupKind;
   value: string;
   onChange: (v: string) => void;
+  /** Built-in seed values that always appear (cannot be deleted from DB). */
+  defaults?: string[];
 }
 
-// Module-level cache so multiple selects share data.
-const cache: Partial<Record<LookupKind, string[]>> = {};
-const listeners: Partial<Record<LookupKind, Set<() => void>>> = {};
+// Module-level cache shared across selects
+const cache: Record<string, string[]> = {};
+const listeners: Record<string, Set<() => void>> = {};
 
-function notify(kind: LookupKind) {
+function notify(kind: string) {
   listeners[kind]?.forEach((fn) => fn());
 }
 
-async function loadKind(kind: LookupKind): Promise<string[]> {
+async function loadKind(kind: string): Promise<string[]> {
   const { data, error } = await supabase
     .from("lookups")
     .select("value")
@@ -47,33 +57,27 @@ async function loadKind(kind: LookupKind): Promise<string[]> {
   return vs;
 }
 
-export function LookupSelect({ kind, value, onChange }: Props) {
+export function LookupSelect({ kind, value, onChange, defaults }: Props) {
   const [options, setOptions] = useState<string[]>(cache[kind] ?? []);
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
   const [newVal, setNewVal] = useState("");
-  
+  const label = LABELS[kind] ?? kind;
 
   useEffect(() => {
     let alive = true;
-    if (!cache[kind]) {
-      void loadKind(kind).then((vs) => {
-        if (alive) setOptions(vs);
-      });
+    if (cache[kind] === undefined) {
+      void loadKind(kind).then((vs) => { if (alive) setOptions(vs); });
     }
     if (!listeners[kind]) listeners[kind] = new Set();
     const fn = () => setOptions(cache[kind] ?? []);
-    listeners[kind]!.add(fn);
-    return () => {
-      alive = false;
-      listeners[kind]?.delete(fn);
-    };
+    listeners[kind].add(fn);
+    return () => { alive = false; listeners[kind]?.delete(fn); };
   }, [kind]);
 
   const addNew = () => {
     const v = newVal.trim();
     if (!v) return;
-    // Optimistic: update UI immediately, persist in background
     if (!(cache[kind] ?? []).includes(v)) {
       cache[kind] = [...(cache[kind] ?? []), v].sort((a, b) => a.localeCompare(b));
       notify(kind);
@@ -83,12 +87,11 @@ export function LookupSelect({ kind, value, onChange }: Props) {
     setOpenAdd(false);
     void supabase.from("lookups").insert({ kind, value: v }).then(({ error }) => {
       if (error) {
-        // Rollback on failure
         cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
         notify(kind);
         toast.error(error.message);
       } else {
-        toast.success(`${LABELS[kind]} যোগ হয়েছে`);
+        toast.success(`${label} যোগ হয়েছে`);
       }
     });
   };
@@ -103,26 +106,33 @@ export function LookupSelect({ kind, value, onChange }: Props) {
     toast.success("ডিলিট হয়েছে");
   };
 
-  // Ensure current value (even if not in cache yet) is selectable.
-  const allOpts = value && !options.includes(value) ? [value, ...options] : options;
+  // Merge defaults + DB options + current value (de-duped, preserve order: defaults first)
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const v of (defaults ?? [])) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
+  for (const v of options) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
+  if (value && !seen.has(value)) merged.unshift(value);
+
+  // For Manage dialog: only show user-added (DB) values (defaults are protected)
+  const dbOptions = options.filter((o) => !(defaults ?? []).includes(o));
 
   return (
     <>
       <div className="flex gap-1.5">
         <Select value={value || ""} onValueChange={onChange}>
-          <SelectTrigger className="flex-1"><SelectValue placeholder={`-- ${LABELS[kind]} --`} /></SelectTrigger>
+          <SelectTrigger className="flex-1"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
           <SelectContent>
-            {allOpts.length === 0 ? (
+            {merged.length === 0 ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
             ) : (
-              allOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)
+              merged.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)
             )}
           </SelectContent>
         </Select>
-        <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${LABELS[kind]} যোগ`}>
+        <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
           <Plus className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${LABELS[kind]} ম্যানেজ`}>
+        <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
           <Settings2 className="h-4 w-4" />
         </Button>
       </div>
@@ -130,12 +140,12 @@ export function LookupSelect({ kind, value, onChange }: Props) {
       <Dialog open={openAdd} onOpenChange={setOpenAdd}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>নতুন {LABELS[kind]} যোগ করুন</DialogTitle>
+            <DialogTitle>নতুন {label} যোগ করুন</DialogTitle>
           </DialogHeader>
           <Input
             value={newVal}
             onChange={(e) => setNewVal(e.target.value)}
-            placeholder={LABELS[kind]}
+            placeholder={label}
             onKeyDown={(e) => { if (e.key === "Enter") void addNew(); }}
             autoFocus
           />
@@ -149,12 +159,23 @@ export function LookupSelect({ kind, value, onChange }: Props) {
       <Dialog open={openManage} onOpenChange={setOpenManage}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{LABELS[kind]} ম্যানেজ করুন</DialogTitle>
+            <DialogTitle>{label} ম্যানেজ করুন</DialogTitle>
           </DialogHeader>
           <div className="max-h-80 overflow-y-auto divide-y">
-            {options.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">কোনো অপশন নেই</div>
-            ) : options.map((o) => (
+            {(defaults ?? []).length > 0 && (
+              <div className="py-2">
+                <div className="text-xs text-muted-foreground mb-1">ডিফল্ট (ডিলিট করা যাবে না)</div>
+                {(defaults ?? []).map((o) => (
+                  <div key={o} className="flex items-center justify-between py-1.5">
+                    <span className="text-sm">{o}</span>
+                    <span className="text-xs text-muted-foreground">ডিফল্ট</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {dbOptions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">কাস্টম অপশন নেই</div>
+            ) : dbOptions.map((o) => (
               <div key={o} className="flex items-center justify-between py-2">
                 <span className="text-sm">{o}</span>
                 <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)}>
