@@ -41,6 +41,24 @@ const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
   "kuwait-visa": "kuwait-visa",
 };
 
+// মডিউল-ভিত্তিক হেডার আইকন
+const MODULE_ICON: Record<string, LucideIcon> = {
+  tickets: Plane,
+  bmet: IdCard,
+  "saudi-visa": Globe2,
+  "kuwait-visa": Globe2,
+};
+
+// summary field → tone + icon mapping
+function summaryStyle(name: string): { tone: StatTone; icon: LucideIcon } {
+  if (name === "balance" || name === "due") return { tone: "danger", icon: Wallet };
+  if (name === "profit") return { tone: "success", icon: TrendingUp };
+  if (name === "cost_price" || name === "cost") return { tone: "warning", icon: TrendingDown };
+  if (/received|paid/i.test(name)) return { tone: "info", icon: ReceiptIcon };
+  if (/sold|price|bill|payable/i.test(name)) return { tone: "primary", icon: Layers };
+  return { tone: "neutral", icon: Layers };
+}
+
 type Row = Record<string, unknown> & { id: string };
 
 interface Props {
