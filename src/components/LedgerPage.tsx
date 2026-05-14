@@ -186,6 +186,10 @@ export function LedgerPage({ module: mod }: Props) {
       setTicketRouteMap(rm);
       setBmetCountryMap(cm);
       setVisaCountryMap(vm);
+      const { data: profs } = await supabase.from("profiles").select("user_id,full_name");
+      const pm: Record<string, string> = {};
+      for (const p of (profs as { user_id: string; full_name: string }[] | null) ?? []) pm[p.user_id] = p.full_name;
+      setProfilesMap(pm);
     })();
   }, []);
 
