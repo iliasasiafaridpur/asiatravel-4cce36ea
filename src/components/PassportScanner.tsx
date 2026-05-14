@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Camera, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface PassportFields {
   passenger_name?: string;
@@ -55,8 +59,14 @@ export function PassportScanner({ onResult, compact }: Props) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleFile = async (file: File | null) => {
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setErrorOpen(true);
+  };
+
     if (!file) return;
     setBusy(true);
     try {
