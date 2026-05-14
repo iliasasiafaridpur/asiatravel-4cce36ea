@@ -584,17 +584,8 @@ export function ModulePage({ module: mod }: Props) {
                               >
                                 {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                               </button>
-                            ) : isLedgerDue ? (
-                              <button
-                                type="button"
-                                onClick={() => startEdit(r)}
-                                className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
-                                title="Payment আপডেট করুন"
-                              >
-                                {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
-                              </button>
                             ) : (
-                              <span className={v < 0 ? "text-rose-500" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                              <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
                             )}
                           </TableCell>
                         );
