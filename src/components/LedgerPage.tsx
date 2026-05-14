@@ -222,12 +222,26 @@ export function LedgerPage({ module: mod }: Props) {
     setOpenForm(true);
   };
 
+  // Compute outstanding for any group key from ALL rows (not filtered).
+  const dueForGroup = useCallback((key: string) => {
+    if (!key) return 0;
+    let bill = 0, paid = 0;
+    for (const r of rows) {
+      if (String(r[groupField] ?? "") !== key) continue;
+      bill += Number(r[billCol] ?? 0);
+      paid += Number(r[paidCol] ?? 0);
+    }
+    return bill - paid;
+  }, [rows, groupField, billCol, paidCol]);
+
   const openPayment = (groupKey: string, dueAmount: number) => {
+    const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayTarget(groupKey);
-    setPayDue(dueAmount);
-    setPayAmount(String(dueAmount > 0 ? dueAmount : ""));
+    setPayDue(due);
+    setPayAmount(String(due > 0 ? due : ""));
     setPayDate(todayIso());
     setPayRemarks("");
+    setPayMethod("Cash");
     setPayOpen(true);
   };
 
