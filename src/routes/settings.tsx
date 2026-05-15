@@ -95,6 +95,33 @@ function SettingsPage() {
     } catch { toast.error("Cache clear ব্যর্থ"); }
   };
 
+  const toggleReset = (key: string) =>
+    setResetSelected((s) => ({ ...s, [key]: !s[key] }));
+
+  const selectedGroups = RESET_GROUPS.filter((g) => resetSelected[g.key]);
+  const selectedTables = Array.from(new Set(selectedGroups.flatMap((g) => g.tables)));
+
+  const runDataReset = async () => {
+    if (selectedTables.length === 0) { toast.error("কোন মডিউল নির্বাচন করা হয়নি"); return; }
+    if (confirmText.trim().toUpperCase() !== "DELETE") {
+      toast.error('নিশ্চিত করতে "DELETE" টাইপ করুন'); return;
+    }
+    setResetBusy(true);
+    const errors: string[] = [];
+    for (const table of selectedTables) {
+      const { error } = await supabase
+        .from(table as never)
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) errors.push(`${table}: ${error.message}`);
+    }
+    setResetBusy(false);
+    setConfirmText("");
+    setResetSelected({});
+    if (errors.length) toast.error(`কিছু টেবিলে সমস্যা: ${errors.join(" | ")}`);
+    else toast.success(`${selectedTables.length} টেবিলের ডাটা মুছে ফেলা হয়েছে`);
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto p-4">
       <div>
