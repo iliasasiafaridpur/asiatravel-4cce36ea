@@ -627,51 +627,62 @@ export function LedgerPage({ module: mod }: Props) {
                   let cr = String(r.country_route ?? "");
                   const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
-                  const isTicket = svcUpper.includes("TICKET");
-                  const isBmet = svcUpper.includes("BMET");
-                  const isVisa = svcUpper.includes("VISA");
+                  const svcLower = service.toLowerCase();
+                  const isTicket = svcUpper.includes("TICKET") || svcLower === "tickets";
+                  const isBmet = svcUpper.includes("BMET") || svcLower === "bmet_cards";
+                  const isKuwait = svcLower === "kuwait_visas" || (svcUpper.includes("KUWAIT") && svcUpper.includes("VISA"));
+                  const isSaudi = svcLower === "saudi_visas" || (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
+                  const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
+                  const isPayment = svcUpper === "PAYMENT";
                   const srcId = String(r.source_id ?? "");
+                  const info = srcId ? sourceInfoMap.get(srcId) : undefined;
                   if (!cr && srcId) {
                     if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
                     else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
                     else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
                   }
-                  const crLabel = isBmet || isVisa ? "🌍" : isTicket ? "✈" : "•";
+                  const serviceLabel = isTicket ? "Air Ticket"
+                    : isBmet ? "BMET Card"
+                    : isKuwait ? "Kuwait Visa"
+                    : isSaudi ? "Saudi Visa"
+                    : isPayment ? (isAgency ? "Payment Received" : "Payment Paid")
+                    : service || "—";
+                  const ServiceIcon = isTicket ? "✈" : isBmet ? "🪪" : isVisa ? "🌍" : isPayment ? "💵" : "•";
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
                   const byName = cb ? profilesMap[cb] : "";
+                  const profit = info && typeof info.sold === "number" && typeof info.cost === "number" ? info.sold - info.cost : null;
+                  const status = info?.status ?? "";
+                  const isPending = !!status && /pending|process/i.test(status);
                   return (
-                    <TableRow key={r.id}>
-                      <TableCell className="align-top py-3">
-                        <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
+                    <TableRow key={r.id} className="border-b border-border/40">
+                      <TableCell className="align-top py-4">
+                        <div className="font-bold whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
                         <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
                         {byName && <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {byName}</div>}
                       </TableCell>
-                      <TableCell className="align-top py-3 min-w-[140px]">
-                        <div className="font-medium">{passenger || "—"}</div>
-                        {(() => {
-                          const info = srcId ? sourceInfoMap.get(srcId) : undefined;
-                          return (
-                            <>
-                              {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">P:</span> {info.passport}</div>}
-                              {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">M:</span> {info.mobile}</div>}
-                            </>
-                          );
-                        })()}
-                        {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{remarks}</div>}
+                      <TableCell className="align-top py-4 min-w-[160px]">
+                        <div className="font-bold">{passenger || "—"}</div>
+                        {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight font-mono">PP: {info.passport}</div>}
+                        {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight">📱 {info.mobile}</div>}
+                        {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">{remarks}</div>}
                       </TableCell>
-                      <TableCell className="align-top py-3 min-w-[140px]">
-                        {service && <div className="text-sm font-medium">{service}</div>}
-                        {cr && <div className="text-xs text-muted-foreground leading-tight"><span className="opacity-60">{crLabel}</span> {cr}</div>}
-                        {flightDate && <div className="text-xs text-muted-foreground leading-tight"><span className="opacity-60">Flight:</span> {flightDate}</div>}
+                      <TableCell className="align-top py-4 min-w-[160px]">
+                        <div className="text-sm font-semibold">{serviceLabel}</div>
+                        {info?.airline && <div className="text-xs text-muted-foreground leading-tight">{info.airline}{cr ? ` · ${cr}` : ""}</div>}
+                        {!info?.airline && cr && <div className="text-xs text-muted-foreground leading-tight">{ServiceIcon} {cr}</div>}
+                        {flightDate && <div className="text-xs text-muted-foreground leading-tight">✈ Flight: {flightDate}</div>}
+                        {info?.pnr && <div className="text-xs text-muted-foreground leading-tight">PNR: {info.pnr}</div>}
+                        {isPending && <Badge variant="outline" className="mt-1 border-amber-500/60 text-amber-600 dark:text-amber-400 text-[10px]">Pending</Badge>}
                       </TableCell>
-                      <TableCell className="align-top py-3 min-w-[120px]">
-                        <div className="font-medium">{String(r[groupField] ?? "—")}</div>
+                      <TableCell className="align-top py-4 min-w-[140px]">
+                        <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
+                        {info?.vendor && <div className="text-[11px] text-muted-foreground leading-tight">V: {info.vendor}</div>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums whitespace-nowrap align-top py-3">
-                        <div className="font-semibold">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
-                        <div className="text-xs text-emerald-600">{isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}</div>
+                      <TableCell className="text-right tabular-nums whitespace-nowrap align-top py-4">
+                        <div className="font-bold text-base">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
+                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}</div>
                         <div className="text-xs">
                           {bal > 0 ? (
                             <button
@@ -688,8 +699,13 @@ export function LedgerPage({ module: mod }: Props) {
                             <span className="text-amber-500">Adv: {Math.abs(bal).toLocaleString()}</span>
                           )}
                         </div>
+                        {profit !== null && profit !== 0 && (
+                          <div className={`text-[11px] font-medium ${profit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+                            Profit: {profit.toLocaleString()}
+                          </div>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right align-top py-3 print:hidden">
+                      <TableCell className="text-right align-top py-4 print:hidden">
                         <div className="flex justify-end gap-0.5">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewRow(r)} title="View">
                             <Eye className="h-3.5 w-3.5" />
