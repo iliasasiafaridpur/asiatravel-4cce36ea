@@ -124,10 +124,17 @@ function AccountsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, reload]);
 
-  // Latest-N filter — parse input
+  // Filter mode: date range takes priority over latest-N
   const parsedN = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
   const latestN = Number.isFinite(parsedN) && parsedN > 0 ? parsedN : 0;
-  const isInvalidInput = latestN === 0;
+  const useDateFilter = !!(dateFrom || dateTo);
+  const isInvalidInput = !useDateFilter && latestN === 0;
+  const inDateRange = useCallback((d: string) => {
+    if (!d) return false;
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  }, [dateFrom, dateTo]);
 
   // Service detail map (for timeline secondary text & due display)
   type SvcDetail = {
