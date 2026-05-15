@@ -328,8 +328,9 @@ function AccountsPage() {
 </div>
 ${node.innerHTML.replace(
   "</tbody>",
-  `<tr><td colspan="8" style="font-weight:700">Total</td>` +
+  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
+  `<td></td>` +
   `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
   `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
@@ -773,10 +774,9 @@ ${node.innerHTML.replace(
                     }
                   }
                   const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
-                  const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
-                  const due = totalBill !== null && totalPaid !== null ? totalBill - totalPaid : null;
                   // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt
                   let advText = "";
+                  let sumPrev = 0;
                   if (isIn && r.service_row_id) {
                     const curDate = r.entry_date;
                     const prior = received.filter(p =>
@@ -785,7 +785,7 @@ ${node.innerHTML.replace(
                       (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
                     );
                     if (prior.length > 0) {
-                      const sumPrev = prior.reduce((s, p) => s + Number(p.amount || 0), 0);
+                      sumPrev = prior.reduce((s, p) => s + Number(p.amount || 0), 0);
                       const lastDate = prior.reduce((d, p) => {
                         const pd = p.entry_date;
                         return !d || pd > d ? pd : d;
@@ -793,6 +793,8 @@ ${node.innerHTML.replace(
                       if (sumPrev > 0.005) advText = `${fmt(sumPrev)}\n(${formatDate(lastDate)})`;
                     }
                   }
+                  // বাকি = মোট বিল − (এই আয় + পূর্বে জমা)
+                  const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev) : null;
                   const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
