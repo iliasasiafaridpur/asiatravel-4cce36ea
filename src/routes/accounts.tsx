@@ -670,23 +670,34 @@ ${node.innerHTML}
           <Card><CardContent className="p-0">
             {fRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
               : <div className="divide-y">
-                {fRecv.map((r) => (
-                  <div key={r.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
-                    <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      <ArrowDownLeft className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                        <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
+                {fRecv.map((r) => {
+                  const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
+                  const bits: string[] = [];
+                  if (svc) {
+                    if (r.service_table === "tickets") {
+                      if (svc.route) bits.push(svc.route);
+                      if (svc.airline) bits.push(svc.airline);
+                    } else if (svc.country) {
+                      bits.push(svc.country);
+                    }
+                  }
+                  return (
+                    <div key={r.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                      <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        <ArrowDownLeft className="h-4 w-4" />
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {r.service_type} · {formatDate(r.entry_date)} · <span className="font-mono">{r.receipt_id}</span>
-                        {r.ref_id && <span> · Ref {r.ref_id}</span>}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
+                          <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground break-words">
+                          {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>}
           </CardContent></Card>
         </TabsContent>
