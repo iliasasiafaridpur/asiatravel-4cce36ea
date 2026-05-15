@@ -634,6 +634,8 @@ ${node.innerHTML}
                       primaryBits.push(svc.country);
                     }
                   }
+                  if (isIn && r.method) primaryBits.push(`💳 ${r.method}`);
+                  if (isIn && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
