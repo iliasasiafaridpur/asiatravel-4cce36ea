@@ -459,7 +459,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
-              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
@@ -508,7 +508,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
-              {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
             </div>
           )},
