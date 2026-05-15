@@ -303,19 +303,20 @@ function AccountsPage() {
     );
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
-  h1{margin:0 0 4px;font-size:20px}
-  .meta{color:#555;font-size:12px;margin-bottom:14px}
-  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:14px;font-weight:700}
-  .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top;white-space:nowrap}
+  @page{size:A4 landscape;margin:6mm}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:6px;color:#111;margin:0}
+  h1{margin:0 0 2px;font-size:16px}
+  .meta{color:#555;font-size:11px;margin-bottom:8px}
+  .summary{display:flex;gap:6px;margin-bottom:8px;font-size:12px;font-weight:700}
+  .summary div{padding:4px 8px;border:1px solid #ddd;border-radius:4px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}
+  th,td{border-bottom:1px solid #e5e5e5;padding:3px 4px;text-align:left;vertical-align:top}
   td.wrap,th.wrap{white-space:normal}
   th{background:#f5f5f5;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
   tfoot td{font-weight:700;background:#fafafa}
-  @media print{body{padding:8px}}
+  @media print{body{padding:2px}}
 </style></head><body>
 <h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
@@ -326,8 +327,9 @@ function AccountsPage() {
 </div>
 ${node.innerHTML.replace(
   "</tbody>",
-  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
+  `<tr><td colspan="8" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
+  `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
   `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
 )}
