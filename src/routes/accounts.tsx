@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/accounts")({
