@@ -702,6 +702,7 @@ export function LedgerPage({ module: mod }: Props) {
     setSearch("");
     setGroupFilter("all");
     setDueOnly(false);
+    setSinceLastZero(false);
     setStartDate("");
     setEndDate("");
   };
