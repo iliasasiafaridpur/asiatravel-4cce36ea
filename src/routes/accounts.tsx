@@ -309,7 +309,7 @@ function AccountsPage() {
       },
       { inAmt: 0, outAmt: 0 },
     );
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আমার হিসাব — Timeline</title>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
   h1{margin:0 0 4px;font-size:20px}
