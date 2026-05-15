@@ -1146,6 +1146,7 @@ export function LedgerPage({ module: mod }: Props) {
               })
             )}
           </div>
+          </div>
         </CardContent>
       </Card>
 
