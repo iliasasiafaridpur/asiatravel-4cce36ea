@@ -548,6 +548,7 @@ ${node.innerHTML}
                     if (r.service_table === "tickets") {
                       if (svc.route) primaryBits.push(svc.route);
                       if (svc.airline) primaryBits.push(svc.airline);
+                      if (svc.flight_date) primaryBits.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
                       primaryBits.push(svc.country);
                     }
