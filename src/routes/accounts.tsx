@@ -174,9 +174,9 @@ function AccountsPage() {
     return () => { cancelled = true; };
   }, [received]);
 
-  const fRecv = useMemo(() => received.filter((r) => inRange(r.entry_date)), [received, inRange]);
-  const fHand = useMemo(() => handovers.filter((h) => inRange(h.entry_date)), [handovers, inRange]);
-  const fExp  = useMemo(() => expenses.filter((e) => inRange(e.entry_date)), [expenses, inRange]);
+  const fRecv = useMemo(() => received.slice(0, latestN), [received, latestN]);
+  const fHand = useMemo(() => handovers.slice(0, latestN), [handovers, latestN]);
+  const fExp  = useMemo(() => expenses.slice(0, latestN), [expenses, latestN]);
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
   const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
