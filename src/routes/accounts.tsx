@@ -74,6 +74,8 @@ function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [latestInput, setLatestInput] = useState("5");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   
   const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
