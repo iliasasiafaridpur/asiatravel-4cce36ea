@@ -304,15 +304,15 @@ function AccountsPage() {
     );
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:A4 landscape;margin:6mm}
-  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:6px;color:#111;margin:0}
-  h1{margin:0 0 2px;font-size:16px}
-  .meta{color:#555;font-size:11px;margin-bottom:8px}
-  .summary{display:flex;gap:6px;margin-bottom:8px;font-size:12px;font-weight:700}
-  .summary div{padding:4px 8px;border:1px solid #ddd;border-radius:4px;flex:1}
-  table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}
-  th,td{border-bottom:1px solid #e5e5e5;padding:3px 4px;text-align:left;vertical-align:top}
-  td.wrap,th.wrap{white-space:normal}
+  @page{size:A4 ${printOrientation};margin:5mm}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0}
+  h1{margin:0 0 2px;font-size:15px}
+  .meta{color:#555;font-size:10.5px;margin-bottom:6px}
+  .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700}
+  .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word}
   th{background:#f5f5f5;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
