@@ -949,8 +949,8 @@ export function LedgerPage({ module: mod }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupSummary.map((g) => (
-                    <TableRow key={g.key}>
+                  {groupSummary.map((g, idx) => (
+                    <TableRow key={g.key} className={`row-tint-${idx % 6}`}>
                       <TableCell className="font-medium">{g.key}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {g.bill.toLocaleString()}

@@ -769,8 +769,8 @@ export function ModulePage({ module: mod }: Props) {
                     </TableRow>
                   );
                   if (filtered.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
-                  return filtered.map((r) => (
-                    <TableRow key={r.id} className="align-top">
+                  return filtered.map((r, idx) => (
+                    <TableRow key={r.id} className={`align-top row-tint-${idx % 6}`}>
                       {stackedCols ? (
                         stackedCols.map((c) => (
                           <TableCell key={c.key} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>

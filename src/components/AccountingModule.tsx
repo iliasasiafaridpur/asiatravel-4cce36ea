@@ -400,8 +400,8 @@ function LedgerTab({ users, txs }: { users: AcctUser[]; txs: Transaction[] }) {
             <TableBody>
               {withRunning.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">কোনো transaction নেই</TableCell></TableRow>
-              ) : withRunning.map((t) => (
-                <TableRow key={t.id}>
+              ) : withRunning.map((t, idx) => (
+                <TableRow key={t.id} className={`row-tint-${idx % 6}`}>
                   <TableCell>{t.date}</TableCell>
                   <TableCell>{t.userId ? userMap.get(t.userId) ?? "—" : "—"}</TableCell>
                   <TableCell>
@@ -442,8 +442,8 @@ function BalancesTab({ users, txs, onAddUser }: { users: AcctUser[]; txs: Transa
             <TableBody>
               {users.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">কোনো user নেই</TableCell></TableRow>
-              ) : users.map((u) => (
-                <TableRow key={u.id} className="cursor-pointer" onClick={() => setOpenUser(u)}>
+              ) : users.map((u, idx) => (
+                <TableRow key={u.id} className={`cursor-pointer row-tint-${idx % 6}`} onClick={() => setOpenUser(u)}>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.phone || "—"}</TableCell>
                   <TableCell className={`text-right font-semibold ${u.currentBalance > 0 ? "text-green-600" : u.currentBalance < 0 ? "text-red-600" : ""}`}>{fmt(u.currentBalance)}</TableCell>
@@ -465,8 +465,8 @@ function BalancesTab({ users, txs, onAddUser }: { users: AcctUser[]; txs: Transa
               <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Description</TableHead></TableRow></TableHeader>
               <TableBody>
                 {userTxs.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No transactions</TableCell></TableRow>
-                  : userTxs.map((t) => (
-                    <TableRow key={t.id}>
+                  : userTxs.map((t, idx) => (
+                    <TableRow key={t.id} className={`row-tint-${idx % 6}`}>
                       <TableCell>{t.date}</TableCell>
                       <TableCell><Badge variant={t.type === "received" ? "default" : "secondary"}>{t.type}</Badge></TableCell>
                       <TableCell>{t.category}</TableCell>
