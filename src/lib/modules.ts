@@ -18,6 +18,7 @@ export interface Field {
   section?: Section; // grouping in form
   defaultEmpty?: boolean; // for selects: start empty instead of first option
   filterable?: boolean; // show as filter dropdown above table
+  hideInForm?: boolean; // hide from entry/edit form (still shown in list)
 }
 
 export const LEDGER_SERVICE_TYPES = [
