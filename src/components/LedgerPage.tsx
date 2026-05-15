@@ -156,32 +156,35 @@ export function LedgerPage({ module: mod }: Props) {
   useEffect(() => {
     (async () => {
       const [tk, bm, kv, sv] = await Promise.all([
-        supabase.from("tickets").select("id,flight_date,trip_road,passport,mobile").limit(2000),
-        supabase.from("bmet_cards").select("id,country_name,passport,mobile").limit(2000),
-        supabase.from("kuwait_visas").select("id,passport,mobile").limit(2000),
-        supabase.from("saudi_visas").select("id,passport,mobile").limit(2000),
+        supabase.from("tickets").select("id,flight_date,trip_road,passport,mobile,vendor_bought,sold_price,cost_price,status,airline,pnr").limit(2000),
+        supabase.from("bmet_cards").select("id,country_name,passport,mobile,vendor_bought,sold_price,cost_price,status").limit(2000),
+        supabase.from("kuwait_visas").select("id,passport,mobile,vendor_bought,sold_price,cost_price,status").limit(2000),
+        supabase.from("saudi_visas").select("id,passport,mobile,vendor_bought,sold_price,cost_price,status").limit(2000),
       ]);
       const fm = new Map<string, string>();
       const rm = new Map<string, string>();
-      const info = new Map<string, { passport?: string; mobile?: string }>();
-      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
+      const info = new Map<string, { passport?: string; mobile?: string; vendor?: string; sold?: number; cost?: number; status?: string; airline?: string; pnr?: string }>();
+      type T = { id: string; flight_date: string | null; trip_road: string | null; passport: string | null; mobile: string | null; vendor_bought: string | null; sold_price: number | null; cost_price: number | null; status: string | null; airline: string | null; pnr: string | null };
+      for (const t of (((tk.data as unknown) as T[]) ?? [])) {
         if (t.flight_date) fm.set(t.id, t.flight_date);
         if (t.trip_road) rm.set(t.id, t.trip_road);
-        if (t.passport || t.mobile) info.set(t.id, { passport: t.passport ?? undefined, mobile: t.mobile ?? undefined });
+        info.set(t.id, { passport: t.passport ?? undefined, mobile: t.mobile ?? undefined, vendor: t.vendor_bought ?? undefined, sold: t.sold_price ?? undefined, cost: t.cost_price ?? undefined, status: t.status ?? undefined, airline: t.airline ?? undefined, pnr: t.pnr ?? undefined });
       }
       const cm = new Map<string, string>();
-      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
+      type B = { id: string; country_name: string | null; passport: string | null; mobile: string | null; vendor_bought: string | null; sold_price: number | null; cost_price: number | null; status: string | null };
+      for (const b of (((bm.data as unknown) as B[]) ?? [])) {
         if (b.country_name) cm.set(b.id, b.country_name);
-        if (b.passport || b.mobile) info.set(b.id, { passport: b.passport ?? undefined, mobile: b.mobile ?? undefined });
+        info.set(b.id, { passport: b.passport ?? undefined, mobile: b.mobile ?? undefined, vendor: b.vendor_bought ?? undefined, sold: b.sold_price ?? undefined, cost: b.cost_price ?? undefined, status: b.status ?? undefined });
       }
       const vm = new Map<string, string>();
-      for (const v of (((kv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+      type V = { id: string; passport: string | null; mobile: string | null; vendor_bought: string | null; sold_price: number | null; cost_price: number | null; status: string | null };
+      for (const v of (((kv.data as unknown) as V[]) ?? [])) {
         vm.set(v.id, "Kuwait");
-        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+        info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined, vendor: v.vendor_bought ?? undefined, sold: v.sold_price ?? undefined, cost: v.cost_price ?? undefined, status: v.status ?? undefined });
       }
-      for (const v of (((sv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+      for (const v of (((sv.data as unknown) as V[]) ?? [])) {
         vm.set(v.id, "Saudi Arabia");
-        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+        info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined, vendor: v.vendor_bought ?? undefined, sold: v.sold_price ?? undefined, cost: v.cost_price ?? undefined, status: v.status ?? undefined });
       }
       setTicketFlightMap(fm);
       setTicketRouteMap(rm);
