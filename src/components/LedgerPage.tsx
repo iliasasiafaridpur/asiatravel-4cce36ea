@@ -403,16 +403,6 @@ export function LedgerPage({ module: mod }: Props) {
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
     // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
     if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
-    // "০ → এখন" — শেষবার due শূন্য হওয়ার পর থেকে চলমান লেনদেন
-    if (sinceLastZero) {
-      xs = xs.filter((r) => {
-        const k = String(r[groupField] ?? "");
-        if ((dueByGroup.get(k) ?? 0) <= 0) return false; // currently settled → nothing pending
-        const lz = lastZeroDateByGroup.get(k);
-        if (!lz) return true; // never settled → entire history is the current cycle
-        return String(r.entry_date ?? "").slice(0, 10) > lz;
-      });
-    }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
@@ -424,9 +414,14 @@ export function LedgerPage({ module: mod }: Props) {
             .includes(q),
         ),
       );
+    // Latest-N limiter: only when date range NOT active
+    if (!startDate && !endDate) {
+      const parsed = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
+      if (Number.isFinite(parsed) && parsed > 0) xs = xs.slice(0, parsed);
+    }
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, sinceLastZero, startDate, endDate, search, dueByGroup, lastZeroDateByGroup]);
+  }, [rows, groupFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0,
