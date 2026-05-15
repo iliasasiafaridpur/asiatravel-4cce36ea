@@ -382,7 +382,7 @@ ${node.innerHTML}
             </div>
 
             {/* Date range */}
-            <div className="flex items-center gap-1.5 flex-1 min-w-[240px]">
+            <div className="flex items-center gap-1.5 flex-1 basis-full sm:basis-auto min-w-[240px]">
               <div className="relative flex-1">
                 <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
@@ -434,7 +434,7 @@ ${node.innerHTML}
                     if (isToday) { setDateFrom(""); setDateTo(""); }
                     else { setDateFrom(t); setDateTo(t); }
                   }}
-                  className="h-9 gap-1.5 rounded-xl text-xs font-semibold"
+                  className="h-9 gap-1.5 rounded-xl text-xs font-semibold shrink-0"
                   title="আজকের লেনদেন"
                 >
                   <CalendarDays className="h-3.5 w-3.5" />
