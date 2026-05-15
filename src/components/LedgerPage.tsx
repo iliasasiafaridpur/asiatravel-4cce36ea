@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, type ModuleSchema, type Field } from "@/lib/modules";
+import { formatDate, statusBadgeClass, type ModuleSchema, type Field } from "@/lib/modules";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -317,6 +317,9 @@ export function LedgerPage({ module: mod }: Props) {
         country_route: "",
         [billCol]: 0,
         [paidCol]: amt,
+        passport: "",
+        mobile: "",
+        profit: 0,
         remarks: `Method: ${payMethod}${payRemarks ? " · " + payRemarks : ""} · Entry by: ${me}`,
       };
       if (user?.id) payload.created_by = user.id;
