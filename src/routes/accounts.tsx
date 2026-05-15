@@ -705,17 +705,20 @@ ${node.innerHTML.replace(
                         )}
                       </div>
 
-                      {/* Col 4: Vendor + cost */}
+                      {/* Col 4: Agent + Vendor + cost */}
                       <div className="min-w-0">
+                        {isIn && svc?.agent && (
+                          <p className="text-[11px] font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
+                        )}
                         {isIn && svc?.vendor ? (
                           <>
-                            <p className="text-[11px] font-medium leading-tight break-words">{svc.vendor}</p>
+                            <p className={`text-[11px] font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
                             {typeof svc.cost === "number" && svc.cost > 0 && (
                               <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
                             )}
                           </>
                         ) : (
-                          <p className="text-[10px] text-muted-foreground/50">—</p>
+                          !svc?.agent && <p className="text-[10px] text-muted-foreground/50">—</p>
                         )}
                       </div>
 
