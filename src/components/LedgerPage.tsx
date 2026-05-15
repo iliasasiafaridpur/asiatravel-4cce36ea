@@ -375,28 +375,7 @@ export function LedgerPage({ module: mod }: Props) {
     return m;
   }, [rows, groupField, billCol, paidCol]);
 
-  // Per-group: date of the most recent moment when cumulative balance reached ≤ 0
-  // (i.e. the last time the agent/vendor was fully settled). Rows AFTER this date
-  // represent the current ongoing due cycle.
-  const lastZeroDateByGroup = useMemo(() => {
-    const sorted = [...rows].sort((a, b) => {
-      const da = String(a.entry_date ?? "").slice(0, 10);
-      const db = String(b.entry_date ?? "").slice(0, 10);
-      if (da !== db) return da < db ? -1 : 1;
-      const ca = String(a.created_at ?? "");
-      const cb = String(b.created_at ?? "");
-      return ca < cb ? -1 : ca > cb ? 1 : 0;
-    });
-    const running = new Map<string, number>();
-    const lastZero = new Map<string, string>();
-    for (const r of sorted) {
-      const k = String(r[groupField] ?? "");
-      const next = (running.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
-      running.set(k, next);
-      if (next <= 0) lastZero.set(k, String(r.entry_date ?? "").slice(0, 10));
-    }
-    return lastZero;
-  }, [rows, groupField, billCol, paidCol]);
+
 
   const filtered = useMemo(() => {
     let xs = rows;
