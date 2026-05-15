@@ -324,12 +324,13 @@ function AccountsPage() {
   <div class="in">আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
 </div>
-${node.innerHTML}
-<div class="summary" style="margin-top:16px">
-  <div class="in">মোট আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
-  <div class="out">মোট খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
-  <div>নীট হাতে: <b>${fmt(balance)}</b></div>
-</div>
+${node.innerHTML.replace(
+  "</tbody>",
+  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
+  `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
+  `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
+  `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
+)}
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
     w.document.close();
