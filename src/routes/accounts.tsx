@@ -775,11 +775,11 @@ ${node.innerHTML.replace(
                   // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt
                   let advText = "";
                   if (isIn && r.service_row_id) {
-                    const curTime = new Date(r.created_at || r.entry_date).getTime();
+                    const curDate = r.entry_date;
                     const prior = received.filter(p =>
                       p.service_row_id === r.service_row_id &&
                       p.id !== r.id &&
-                      new Date(p.created_at || p.entry_date).getTime() < curTime
+                      (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
                     );
                     if (prior.length > 0) {
                       const sumPrev = prior.reduce((s, p) => s + Number(p.amount || 0), 0);
