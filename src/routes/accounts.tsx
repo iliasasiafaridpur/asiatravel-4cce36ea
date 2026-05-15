@@ -732,9 +732,14 @@ ${node.innerHTML.replace(
             <table>
               <thead>
                 <tr>
-                  <th>#</th><th>তারিখ</th><th>ধরন</th>
+                  <th>#</th><th>তারিখ</th>
                   <th>নাম</th><th>সার্ভিস</th><th>দেশ/রোড</th>
-                  <th className="num">আয়</th><th className="num">খরচ/জমা</th><th className="num">ব্যালেন্স</th>
+                  <th className="num">মোট বিল</th>
+                  <th className="num">আয়</th>
+                  <th className="num">বাকি</th>
+                  <th>Adv</th>
+                  <th className="num">খরচ/জমা</th>
+                  <th className="num">ব্যালেন্স</th>
                 </tr>
               </thead>
               <tbody>
@@ -754,18 +759,24 @@ ${node.innerHTML.replace(
                       region = svc.country;
                     }
                   }
-                  const cls = isIn ? "in" : isHand ? "hand" : "out";
-                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
+                  const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
+                  const due = totalBill !== null && totalPaid !== null ? totalBill - totalPaid : null;
+                  const advAmt = isIn && totalPaid !== null ? totalPaid - amt : 0;
+                  const advText = isIn && advAmt > 0.005 ? `${fmt(advAmt)} (${formatDate(it.date)})` : "";
+                  const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
-                      <td className={cls}>{kindLabel}</td>
                       <td>{name}</td>
                       <td>{service}</td>
                       <td>{region}</td>
+                      <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
-                      <td className={`num ${isHand ? "hand" : "out"}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
+                      <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
+                      <td>{advText}</td>
+                      <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
                       <td className="num">{fmt(it.running)}</td>
                     </tr>
                   );
