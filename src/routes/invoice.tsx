@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
-import { Printer, Search, Plus, Trash2, ArrowRight, Plane } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Printer, Search, Plus, Trash2, ArrowRight, Plane, User } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
