@@ -140,6 +140,9 @@ export function LedgerPage({ module: mod }: Props) {
   const [payRemarks, setPayRemarks] = useState<string>("");
   const [payMethod, setPayMethod] = useState<string>("Cash");
   const [paySaving, setPaySaving] = useState(false);
+  // When set, payment is for THIS specific ledger row (passenger-specific).
+  // When null, payment is at the agent/vendor level (legacy bulk flow).
+  const [payRow, setPayRow] = useState<Row | null>(null);
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -471,9 +474,22 @@ export function LedgerPage({ module: mod }: Props) {
 
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
+    setPayRow(null);
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
+    setPayDate(todayIso());
+    setPayRemarks("");
+    setPayMethod("Cash");
+    setPayOpen(true);
+  };
+
+  // Passenger/row-specific payment: due is THIS row's bill - paid only.
+  const openPaymentForRow = (row: Row, lineDue: number) => {
+    setPayRow(row);
+    setPayTarget(String(row[groupField] ?? ""));
+    setPayDue(lineDue);
+    setPayAmount(String(lineDue > 0 ? lineDue : ""));
     setPayDate(todayIso());
     setPayRemarks("");
     setPayMethod("Cash");
@@ -484,9 +500,91 @@ export function LedgerPage({ module: mod }: Props) {
     const amt = Number(payAmount);
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    if (payRow && amt > payDue + 0.001)
+      return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
     setPaySaving(true);
     try {
       const me = displayName(profile, user);
+
+      // ---------- Passenger-specific (row-mode) ----------
+      if (payRow && isAgency) {
+        const srcTable = String(payRow.source_table ?? "");
+        const srcId = String(payRow.source_id ?? "");
+        const passenger = String(payRow.passenger_name ?? "");
+        const refId = String(payRow[mod.idColumn] ?? "");
+
+        // map source table → received column name
+        const recvColMap: Record<string, string> = {
+          tickets: "received",
+          bmet_cards: "received_amount",
+          saudi_visas: "received_amount",
+          kuwait_visas: "received",
+        };
+        const recvCol = recvColMap[srcTable];
+
+        if (srcTable && srcId && recvCol) {
+          // 1) Read current received from source row
+          const { data: srcRow, error: rErr } = await supabase
+            .from(srcTable as never)
+            .select(`id, ${recvCol}`)
+            .eq("id", srcId)
+            .maybeSingle();
+          if (rErr) throw rErr;
+          const cur = Number((srcRow as Record<string, unknown> | null)?.[recvCol] ?? 0);
+          const upd: Record<string, unknown> = { [recvCol]: cur + amt };
+          if (user?.id) upd.received_by = user.id;
+          const { error: uErr } = await supabase
+            .from(srcTable as never)
+            .update(upd as never)
+            .eq("id", srcId);
+          if (uErr) throw uErr;
+          // DB trigger sync_agency_ledger will refresh the agency_ledger row automatically.
+        } else {
+          // Fallback: manual ledger entry without source — bump received_amount on the ledger row directly
+          const cur = Number(payRow[paidCol] ?? 0);
+          const { error: uErr } = await supabase
+            .from(mod.table as never)
+            .update({ [paidCol]: cur + amt } as never)
+            .eq("id", payRow.id);
+          if (uErr) throw uErr;
+        }
+
+        // 2) Mirror into payment_receipts (cash drawer + history)
+        if (user?.id) {
+          const rid = await generateNextId({
+            key: "_rcpt", label: "", short: "", table: "payment_receipts",
+            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+          });
+          const receiptPayload: Record<string, unknown> = {
+            receipt_id: rid,
+            entry_date: payDate,
+            service_type: "Agency Receive",
+            ref_id: refId,
+            passenger_name: passenger,
+            amount: amt,
+            method: payMethod,
+            source: "agency_ledger",
+            remarks: payRemarks || null,
+            received_by: user.id,
+            received_by_name: me,
+            created_by: user.id,
+          };
+          if (srcTable) receiptPayload.service_table = srcTable;
+          if (srcId) receiptPayload.service_row_id = srcId;
+          const { error: e2 } = await supabase
+            .from("payment_receipts")
+            .insert(receiptPayload as never);
+          if (e2) console.warn("payment_receipts mirror failed:", e2);
+        }
+
+        toast.success(`✓ ${passenger || payTarget} — পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`);
+        setPayOpen(false);
+        setPayRow(null);
+        void load();
+        return;
+      }
+
+      // ---------- Agent/Vendor-level (legacy bulk) ----------
       const finalId = await generateNextId(mod);
       const payload: Record<string, unknown> = {
         [mod.idColumn]: finalId,
@@ -1201,7 +1299,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {bal > 0 ? (
                             <button
                               type="button"
-                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
@@ -1245,7 +1343,7 @@ export function LedgerPage({ module: mod }: Props) {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-emerald-600"
-                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
                               title="Quick Pay"
                             >
                               <CreditCard className="h-3.5 w-3.5" />
@@ -1418,13 +1516,48 @@ export function LedgerPage({ module: mod }: Props) {
       </AlertDialog>
 
       {/* Payment entry dialog (Receive / Pay) */}
-      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+      <Dialog
+        open={payOpen}
+        onOpenChange={(o) => {
+          setPayOpen(o);
+          if (!o) setPayRow(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" /> {payTitle}
+              {payRow && (
+                <span className="text-xs font-normal text-muted-foreground">
+                  — যাত্রী-নির্দিষ্ট
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
+          {payRow && (
+            <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-primary font-semibold">
+                  {String(payRow[mod.idColumn] ?? "")}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDate(payRow.entry_date as string | null)}
+                </span>
+                <span className="text-muted-foreground">
+                  {String(payRow.service_type ?? "—")}
+                </span>
+              </div>
+              <div className="font-semibold text-sm text-foreground">
+                {String(payRow.passenger_name ?? "—")}
+              </div>
+              <div className="text-muted-foreground">
+                {groupFieldLabel}:{" "}
+                <span className="text-foreground font-medium">
+                  {String(payRow[groupField] ?? "—")}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1445,21 +1578,25 @@ export function LedgerPage({ module: mod }: Props) {
               <Label className="text-xs">
                 {groupFieldLabel} <span className="text-rose-500">*</span>
               </Label>
-              <LookupSelect
-                kind={isAgency ? "sub_agency" : "vendor"}
-                compact
-                value={payTarget}
-                onChange={(v) => {
-                  setPayTarget(v);
-                  const due = dueForGroup(v);
-                  setPayDue(due);
-                  setPayAmount(String(due > 0 ? due : ""));
-                }}
-              />
+              {payRow ? (
+                <Input value={payTarget} readOnly className="h-10 bg-muted/40 font-semibold" />
+              ) : (
+                <LookupSelect
+                  kind={isAgency ? "sub_agency" : "vendor"}
+                  compact
+                  value={payTarget}
+                  onChange={(v) => {
+                    setPayTarget(v);
+                    const due = dueForGroup(v);
+                    setPayDue(due);
+                    setPayAmount(String(due > 0 ? due : ""));
+                  }}
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Total Outstanding</Label>
+                <Label className="text-xs">{payRow ? "এই যাত্রীর Due" : "Total Outstanding"}</Label>
                 <Input
                   value={payDue.toLocaleString()}
                   readOnly

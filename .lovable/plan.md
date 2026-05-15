@@ -1,42 +1,53 @@
+
 ## লক্ষ্য
 
-পুরো সফটওয়্যারে হালকা রঙিন থিম যোগ করা — Soft Cool Tones প্যালেট (নীল, বেগুনি, পিঙ্ক, লেভেন্ডার)। প্রতিটি ID রো-তে আলাদা হালকা কালার। **শুধু কালার পরিবর্তন, অন্য কোনো logic/structure/UI behavior পরিবর্তন হবে না।**
+`/agency-ledger`-এ একই Agent-এর একাধিক যাত্রী/সার্ভিস লাইনের যেকোনো একটির **Due** amount-এ ক্লিক করলে:
+1. পেমেন্ট ডায়লগে শুধু **ঐ যাত্রীর/আইডির due** আসবে (Agent-এর মোট নয়)।
+2. পেমেন্ট সেভ করলে শুধু **ঐ নির্দিষ্ট লাইনের** due কমবে এবং ledger-এ ঐ যাত্রীর নামেই entry শো করবে।
+3. Agent-এর মোট বিল সারাংশ স্বয়ংক্রিয়ভাবে সমন্বয় হবে।
 
-## প্যালেট (নির্বাচিত)
+## এখন কেন ভুল হচ্ছে
 
+`LedgerPage.tsx`-এর `openPayment(groupKey, bal)` ফাংশন `dueForGroup(groupKey)` দিয়ে Agent-এর **মোট outstanding** আবার হিসাব করে — তাই যেকোনো এক যাত্রীর Due-তে ক্লিক করলেও Agent-এর সম্পূর্ণ মোট due ডায়লগে চলে আসে। আবার `submitPayment` agency_ledger-এ একটা নতুন generic row বানায় (passenger_name = "পেমেন্ট গ্রহণ", source_id খালি), যা কোনো নির্দিষ্ট source row-এর সাথে যুক্ত নয়।
+
+সঠিক সমাধান: agency_ledger rows আসে underlying service tables (tickets/bmet_cards/saudi_visas/kuwait_visas) থেকে DB trigger দিয়ে। একটা নির্দিষ্ট passenger-এর due কমানোর একমাত্র টেকসই উপায় হলো ঐ source row-এর `received` / `received_amount` কলাম আপডেট করা — তারপর trigger নিজেই agency_ledger সিঙ্ক করবে। এই কাজটাই `DueReceiveDialog` এবং `payment_receipts` ইতোমধ্যে করে।
+
+## পরিবর্তন (শুধু `src/components/LedgerPage.tsx`)
+
+### 1. নতুন state — কোন row-তে ক্লিক হয়েছে মনে রাখা
+```ts
+const [payRow, setPayRow] = useState<Row | null>(null);
 ```
-#e0f2fe  হালকা আকাশি
-#ede9fe  হালকা লেভেন্ডার
-#fce7f3  হালকা পিঙ্ক
-#f0f9ff  হিম-নীল
-#f5f3ff  সফট ভায়োলেট
-#fdf2f8  সফট রোজ
-```
 
-## পরিবর্তন
+### 2. `openPayment` দুই-মোডে কাজ করবে
+- **Row-mode** (passenger-specific): `openPaymentForRow(row, bal)` → due = সেই row-এর নিজস্ব `bill - paid` (Agent total নয়), `payRow = row`, `payTarget = agent name` (display-only, lock)।
+- **Agent-mode** (Header-এর "পেমেন্ট গ্রহণ এন্ট্রি" বাটন): আগের মতো `dueForGroup(agent)` ব্যবহার করে, `payRow = null`।
 
-### ১) Global background (`src/styles.css`)
-- `--background` টোকেনকে হালকা multi-color gradient/tint-এ আপডেট করা (light mode)। Dark mode অপরিবর্তিত।
-- `--card` সামান্য সাদাটে রেখে gradient background-এর উপরে বসবে।
-- নতুন CSS utility class `.row-tint-0` থেকে `.row-tint-5` যোগ করা হবে — প্রতিটি প্যালেট থেকে একটি হালকা ব্যাকগ্রাউন্ড দেবে। Hover state ও print mode-এ এই tint মৃদু হবে।
+Row-cell এবং Quick-Pay icon (lines 1202-1209, 1248) থেকে `openPaymentForRow(r, bal)` কল হবে।
 
-### ২) Row coloring (প্রতি ID-তে আলাদা কালার)
+### 3. `submitPayment` দুই-পথে split
+- **`payRow != null` (passenger-specific):**
+  - source service detect: `payRow.source_table` + `payRow.source_id` থেকে। যদি না থাকে (legacy row বা manual entry), তাহলে সরাসরি `agency_ledger.received_amount += amt` ঐ row-এ আপডেট।
+  - যদি থাকে: ঐ source table-এর `received` / `received_amount` কলামে `amt` যোগ করে UPDATE — DB trigger আপনাআপনি agency_ledger সিঙ্ক করবে এবং ঐ যাত্রীর নামেই থাকবে।
+  - `payment_receipts`-এ একটা entry insert (passenger_name = ঐ যাত্রীর নাম, ref_id = source row-এর ref, amount = amt, source = `agency_ledger`) — এতে cash drawer/হিসাব সিঙ্ক থাকবে এবং History-তে দেখাবে।
+- **`payRow == null` (legacy agent-level payment):** আগের code অপরিবর্তিত (নতুন agency_ledger row বসে)।
 
-নিচের ফাইলগুলোতে data table-এর প্রতিটি `<TableRow key=...>`-এ index-based class যোগ করা হবে: `row-tint-${index % 6}`। **শুধু className যোগ — আর কিছু না।**
+### 4. ডায়লগ UI
+- যখন `payRow` সেট, তখন ডায়লগের শিরোনামের নিচে যাত্রীর নাম + ID + service + line-due ছোট কার্ডে দেখাও, এবং Agent dropdown lock।
+- Max amount validation: `amt <= payDue` (line-due)।
+- ডায়লগ বন্ধ হলে `setPayRow(null)`।
 
-- `src/components/ModulePage.tsx` (line 773 — সকল service module: tickets, bmet, saudi-visa, kuwait-visa)
-- `src/components/LedgerPage.tsx` (line 953 — agency-ledger, vendor-ledger)
-- `src/routes/accounts.tsx` (Accounts table এর body rows)
-- `src/routes/agents.tsx` (line 40)
-- `src/routes/vendors.tsx` (line 40)
-- `src/components/AccountingModule.tsx` (lines 404, 446, 469)
-- `src/routes/invoice.tsx` (যদি list থাকে)
+### 5. Realtime / load
+পরিবর্তন নেই — trigger-driven sync + existing `postgres_changes` channel UI auto-refresh করবে।
 
-### ৩) Print preserve
-`@media print`-এ row tint হালকা রাখা হবে (যাতে প্রিন্টে রঙ না আসলেও সমস্যা না হয়), অপশনাল `-webkit-print-color-adjust: exact` যোগ করে রঙিন প্রিন্ট সক্ষম রাখা।
+## পরিবর্তন বহির্ভূত
 
-## কী পরিবর্তন হবে না (গ্যারান্টি)
+- কোনো DB migration লাগবে না (existing trigger `sync_agency_ledger` যথেষ্ট)।
+- Print/CSV/filter কিছুই পরিবর্তন হবে না।
+- Vendor-ledger flow (same component, `isAgency=false`)-এও একই pattern কাজ করবে: তখন source table-এ `received_vendor` (saudi) বা manual update fallback ব্যবহার হবে — vendor-ledger তে এখন এটা কম প্রয়োজন বলে শুধু agency-mode-এ প্রথমে enable করব, vendor-mode আগের generic flow-এ থাকবে।
 
-- কোনো logic, query, filter, form, validation, RLS, route, navigation, business rule অপরিবর্তিত
-- কোনো column add/remove নেই
-- কোনো text/
+## ঝুঁকি / Edge case
+
+- **Source row পাওয়া যাচ্ছে না** (manual ledger entry): fallback হিসেবে সরাসরি agency_ledger row-এর `received_amount` আপডেট — passenger নাম অপরিবর্তিত থাকবে।
+- **Over-payment**: validation `amt > payDue` হলে error toast, save হবে না।
+- **Negative balance (Adv)**: Adv lines-এ Due button দেখায় না, তাই ক্লিক হয় না — অপরিবর্তিত।
