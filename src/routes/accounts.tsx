@@ -361,28 +361,72 @@ ${node.innerHTML}
       {/* Action Bar */}
       <Card className="overflow-hidden">
         <CardContent className="p-3 flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-[220px] max-w-md">
-            <div className="relative flex-1 group">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-[220px]">
+            {/* Latest-N input */}
+            <div className="relative flex-1 min-w-[180px] max-w-[260px] group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 value={latestInput}
+                disabled={useDateFilter}
                 onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
-                placeholder="সংখ্যা লিখুন (যেমন: 5)"
-                className="h-10 pl-9 pr-24 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl"
+                placeholder="সংখ্যা (যেমন: 5)"
+                className="h-10 pl-9 pr-20 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl disabled:opacity-50"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider flex items-center gap-1 pointer-events-none">
                 <History className="h-3 w-3" />
                 সর্বশেষ
               </span>
             </div>
-            {!isInvalidInput && (
-              <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
-                {latestN} এন্ট্রি
+
+            {/* Date range */}
+            <div className="flex items-center gap-1.5 flex-1 min-w-[240px]">
+              <div className="relative flex-1">
+                <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-10 pl-8 text-xs tabular-nums bg-gradient-to-br from-card to-muted/40 border-sky-500/20 focus-visible:ring-sky-500/40 shadow-sm rounded-xl"
+                  aria-label="শুরুর তারিখ"
+                />
               </div>
-            )}
+              <span className="text-muted-foreground text-xs">→</span>
+              <div className="relative flex-1">
+                <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-10 pl-8 text-xs tabular-nums bg-gradient-to-br from-card to-muted/40 border-sky-500/20 focus-visible:ring-sky-500/40 shadow-sm rounded-xl"
+                  aria-label="শেষ তারিখ"
+                />
+              </div>
+              {useDateFilter && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                  aria-label="তারিখ ফিল্টার মুছুন"
+                  title="তারিখ ফিল্টার মুছুন"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Active badge */}
+            <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
+              {useDateFilter
+                ? `${fRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
+                : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
+            </div>
           </div>
           <div className="flex gap-2">
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
