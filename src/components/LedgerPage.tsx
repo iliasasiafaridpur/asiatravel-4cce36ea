@@ -140,6 +140,9 @@ export function LedgerPage({ module: mod }: Props) {
   const [payRemarks, setPayRemarks] = useState<string>("");
   const [payMethod, setPayMethod] = useState<string>("Cash");
   const [paySaving, setPaySaving] = useState(false);
+  // When set, payment is for THIS specific ledger row (passenger-specific).
+  // When null, payment is at the agent/vendor level (legacy bulk flow).
+  const [payRow, setPayRow] = useState<Row | null>(null);
 
   const PAYMENT_METHODS = [
     "Cash",
