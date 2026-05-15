@@ -42,17 +42,22 @@ function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [resetSelected, setResetSelected] = useState<Record<string, boolean>>({});
+  const [resetBusy, setResetBusy] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id;
       if (!uid) return;
-      supabase.from("profiles").select("full_name,mobile,designation").eq("user_id", uid).maybeSingle()
+      supabase.from("profiles").select("full_name,mobile,designation,role").eq("user_id", uid).maybeSingle()
         .then(({ data }) => {
-          const p = (data ?? {}) as { full_name?: string; mobile?: string; designation?: string };
+          const p = (data ?? {}) as { full_name?: string; mobile?: string; designation?: string; role?: string };
           setFullName(p.full_name ?? "");
           setMobile(p.mobile ?? "");
           setDesignation(p.designation ?? "");
+          setIsAdmin((p.role ?? "") === "admin");
         });
     });
   }, []);
