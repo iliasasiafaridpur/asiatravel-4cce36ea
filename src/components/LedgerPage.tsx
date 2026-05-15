@@ -688,7 +688,6 @@ export function LedgerPage({ module: mod }: Props) {
         const paid = Number(r[paidCol] ?? 0);
         const due = bill - paid;
         const srcId = String(r.source_id ?? "");
-        const info = srcId ? sourceInfoMap.get(srcId) : undefined;
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
         const isTicket = svcU.includes("TICKET");
@@ -702,7 +701,6 @@ export function LedgerPage({ module: mod }: Props) {
         }
         const passenger = String(r.passenger_name ?? "—");
         const agent = String(r[groupField] ?? "—");
-        const vendorExtra = info?.vendor ? `<div style="font-size:10px;color:#666">V: ${info.vendor}</div>` : "";
         const dueCell =
           due > 0
             ? `<span style="color:#dc2626;font-weight:700">${fmt(due)}</span>`
@@ -714,7 +712,7 @@ export function LedgerPage({ module: mod }: Props) {
 <td>${formatDate(r.entry_date as string | null)}<div style="font-size:10px;color:#666">${String(r[mod.idColumn] ?? "")}</div></td>
 <td>${passenger}</td>
 <td>${service || "—"}${cr ? `<div style="font-size:10px;color:#666">${cr}</div>` : ""}</td>
-<td>${agent}${vendorExtra}</td>
+<td>${agent}</td>
 <td class="num">${fmt(bill)}</td>
 <td class="num">${fmt(paid)}</td>
 <td class="num">${dueCell}</td>
