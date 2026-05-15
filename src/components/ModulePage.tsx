@@ -886,7 +886,7 @@ export function FormSections({ mod, form, setForm }: {
       {hasPassportFields && (
         <PassportScanner onResult={applyOcr} />
       )}
-      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: mod.fields }]).map((g) => (
+      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: visibleFields }]).map((g) => (
         <div key={g.section}>
           {usesSections && (
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 pb-1 border-b">
