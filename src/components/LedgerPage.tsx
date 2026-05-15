@@ -1045,14 +1045,6 @@ export function LedgerPage({ module: mod }: Props) {
                           PNR: {info.pnr}
                         </div>
                       )}
-                      {status && (
-                        <Badge
-                          variant="outline"
-                          className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
-                        >
-                          {isPending ? "Pending" : status}
-                        </Badge>
-                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
