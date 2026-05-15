@@ -317,7 +317,8 @@ function AccountsPage() {
   .summary{display:flex;gap:12px;margin-bottom:14px;font-size:14px;font-weight:700}
   .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
   table{width:100%;border-collapse:collapse;font-size:12px}
-  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top}
+  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top;white-space:nowrap}
+  td.wrap,th.wrap{white-space:normal}
   th{background:#f5f5f5;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}
