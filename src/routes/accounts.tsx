@@ -772,20 +772,36 @@ ${node.innerHTML.replace(
                   const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
                   const due = totalBill !== null && totalPaid !== null ? totalBill - totalPaid : null;
-                  const advAmt = isIn && totalPaid !== null ? totalPaid - amt : 0;
-                  const advText = isIn && advAmt > 0.005 ? `${fmt(advAmt)} (${formatDate(it.date)})` : "";
+                  // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt
+                  let advText = "";
+                  if (isIn && r.service_row_id) {
+                    const curTime = new Date(r.created_at || r.entry_date).getTime();
+                    const prior = received.filter(p =>
+                      p.service_row_id === r.service_row_id &&
+                      p.id !== r.id &&
+                      new Date(p.created_at || p.entry_date).getTime() < curTime
+                    );
+                    if (prior.length > 0) {
+                      const sumPrev = prior.reduce((s, p) => s + Number(p.amount || 0), 0);
+                      const lastDate = prior.reduce((d, p) => {
+                        const pd = p.entry_date;
+                        return !d || pd > d ? pd : d;
+                      }, "");
+                      if (sumPrev > 0.005) advText = `${fmt(sumPrev)}\n(${formatDate(lastDate)})`;
+                    }
+                  }
                   const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
-                      <td>{name}</td>
-                      <td>{service}</td>
-                      <td>{region}</td>
+                      <td className="wrap">{name}</td>
+                      <td className="wrap">{service}</td>
+                      <td className="wrap">{region}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td>{advText}</td>
+                      <td className="wrap" style={{whiteSpace:"pre-line"}}>{advText}</td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
                       <td className="num">{fmt(it.running)}</td>
                     </tr>
