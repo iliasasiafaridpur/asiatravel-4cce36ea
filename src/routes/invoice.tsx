@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
-import { Printer, Search, Plus, Trash2, ArrowRight, Plane } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Printer, Search, Plus, Trash2, ArrowRight, Plane, User } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -45,6 +46,7 @@ const genUid = () => Math.random().toString(36).slice(2, 10);
 function InvoicePage() {
   const [allEntries, setAllEntries] = useState<ServiceEntry[]>([]);
   const [search, setSearch] = useState("");
+  const [moduleFilter, setModuleFilter] = useState<string>("all");
 
   const [invoiceNo, setInvoiceNo] = useState<string>(
     "INV-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(Math.random() * 900 + 100),
@@ -58,11 +60,15 @@ function InvoicePage() {
   const [discount, setDiscount] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
 
+  const serviceModules = useMemo(
+    () => MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key)),
+    [],
+  );
+
   useEffect(() => {
     (async () => {
       const all: ServiceEntry[] = [];
-      const targets = MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key));
-      await Promise.all(targets.map(async (m) => {
+      await Promise.all(serviceModules.map(async (m) => {
         const { data } = await supabase.from(m.table as never)
           .select("*").order("created_at", { ascending: false }).limit(300);
         for (const r of ((data as unknown) as Record<string, unknown>[] | null) ?? []) {
@@ -83,16 +89,25 @@ function InvoicePage() {
       }));
       setAllEntries(all);
     })();
-  }, []);
+  }, [serviceModules]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return [];
-    return allEntries.filter((e) => `${e.id} ${e.passenger} ${e.passport}`.toLowerCase().includes(q)).slice(0, 20);
-  }, [allEntries, search]);
+    let list = allEntries;
+    if (moduleFilter !== "all") list = list.filter((e) => e.moduleKey === moduleFilter);
+    if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile} ${e.pnr}`.toLowerCase().includes(q));
+    else if (moduleFilter === "all") return [];
+    return list.slice(0, 30);
+  }, [allEntries, search, moduleFilter]);
 
   const loadEntry = (e: ServiceEntry) => {
-    setBill({ name: e.passenger, passport: e.passport, nationality: bill.nationality || "Bangladeshi", mobile: e.mobile || "" });
+    // Auto-fill ALL passenger info from the service entry (overwrites)
+    setBill({
+      name: e.passenger || "",
+      passport: e.passport || "",
+      nationality: bill.nationality || "Bangladeshi",
+      mobile: e.mobile || "",
+    });
     if (e.pnr) setPnr(e.pnr);
     setItems((prev) => [...prev, {
       uid: genUid(),
@@ -142,29 +157,54 @@ function InvoicePage() {
             <div><Label>PNR / Booking Ref</Label><Input value={pnr} onChange={(e) => setPnr(e.target.value)} className="mt-1.5" /></div>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="ID / Passenger / Passport দিয়ে খুঁজুন এবং Add করুন..." className="pl-8" />
-          </div>
-          {filtered.length > 0 && (
-            <ul className="max-h-56 overflow-auto rounded-md border divide-y divide-border">
-              {filtered.map((e) => (
-                <li key={e.moduleKey + e.id} className="flex items-center justify-between gap-2 p-2.5 hover:bg-accent">
-                  <div className="text-sm min-w-0">
-                    <div className="font-medium truncate">{e.passenger}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      <span className="font-mono">{e.id}</span> · {e.module}
-                      {e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+              <Search className="h-3.5 w-3.5" /> Service Module থেকে যাত্রী খুঁজুন
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-2">
+              <Select value={moduleFilter} onValueChange={setModuleFilter}>
+                <SelectTrigger><SelectValue placeholder="সব মডিউল" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">সব মডিউল</SelectItem>
+                  {serviceModules.map((m) => (
+                    <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="ID / নাম / পাসপোর্ট / মোবাইল / PNR..." className="pl-8" />
+              </div>
+            </div>
+            {moduleFilter !== "all" && filtered.length === 0 && !search && (
+              <p className="text-xs text-muted-foreground">এই মডিউলে কোনো এন্ট্রি নেই</p>
+            )}
+            {filtered.length > 0 && (
+              <ul className="max-h-64 overflow-auto rounded-md border divide-y divide-border">
+                {filtered.map((e) => (
+                  <li key={e.moduleKey + e.id} className="flex items-center justify-between gap-2 p-2.5 hover:bg-accent">
+                    <div className="text-sm min-w-0 flex-1">
+                      <div className="font-medium truncate flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        {e.passenger}
+                        {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate mt-0.5">
+                        <span className="font-mono">{e.id}</span> · {e.module}
+                        {e.mobile ? ` · ${e.mobile}` : ""}
+                        {e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
+                      </div>
                     </div>
-                  </div>
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => loadEntry(e)}>
-                    <Plus className="h-3.5 w-3.5" /> Add
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+                    <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={() => loadEntry(e)}>
+                      <Plus className="h-3.5 w-3.5" /> Add
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
 
           <div className="space-y-2 pt-2">
             <div className="text-xs font-semibold text-muted-foreground">Passenger Info</div>
