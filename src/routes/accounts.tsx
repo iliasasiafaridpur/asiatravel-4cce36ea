@@ -305,6 +305,8 @@ function AccountsPage() {
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
     const periodLabel = sinceZero
       ? "০ ব্যালেন্স থেকে এখন পর্যন্ত"
+      : customRange
+      ? `${customRange.from} → ${customRange.to}`
       : preset === "today" ? "আজ" : preset === "month" ? "এই মাস" : preset === "year" ? "এই বছর" : "সব সময়";
     const totals = timeline.reduce(
       (acc, it) => {
