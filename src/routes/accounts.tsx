@@ -74,10 +74,7 @@ function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [latestInput, setLatestInput] = useState("5");
-  const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
-  const [customOpen, setCustomOpen] = useState(false);
-  const [draftFrom, setDraftFrom] = useState(today());
-  const [draftTo, setDraftTo] = useState(today());
+  const printRef_unused = null; void printRef_unused;
   const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
