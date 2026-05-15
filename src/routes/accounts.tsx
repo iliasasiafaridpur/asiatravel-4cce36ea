@@ -328,8 +328,9 @@ function AccountsPage() {
 </div>
 ${node.innerHTML.replace(
   "</tbody>",
-  `<tr><td colspan="8" style="font-weight:700">Total</td>` +
+  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
+  `<td></td>` +
   `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
   `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
