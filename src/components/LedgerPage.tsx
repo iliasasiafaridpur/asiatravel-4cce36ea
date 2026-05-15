@@ -975,7 +975,7 @@ export function LedgerPage({ module: mod }: Props) {
                     style={{ background: "var(--gradient-card)" }}
                   >
                     <div className="min-w-0">
-                      <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                         Date / ID
                       </div>
                       <div className="font-bold whitespace-nowrap">
@@ -991,7 +991,7 @@ export function LedgerPage({ module: mod }: Props) {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                         Passenger
                       </div>
                       <div className="font-bold">{passenger || "—"}</div>
@@ -1012,7 +1012,7 @@ export function LedgerPage({ module: mod }: Props) {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                         Service
                       </div>
                       <div className="text-sm font-semibold">{serviceLabel}</div>
@@ -1047,7 +1047,7 @@ export function LedgerPage({ module: mod }: Props) {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                         {groupLabel}
                       </div>
                       <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
@@ -1057,8 +1057,8 @@ export function LedgerPage({ module: mod }: Props) {
                         </div>
                       )}
                     </div>
-                    <div className="tabular-nums whitespace-nowrap lg:text-right">
-                      <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                    <div className="tabular-nums whitespace-nowrap text-right">
+                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                         Amount
                       </div>
                       <div className="font-bold text-base">
