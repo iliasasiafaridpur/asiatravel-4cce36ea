@@ -92,7 +92,7 @@ export function LedgerPage({ module: mod }: Props) {
 
   const PAYMENT_METHODS = ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Other"];
   const loadingRef = useRef(false);
-  const cacheKey = `cache_v2_${mod.table}`;
+  const cacheKey = `cache_v3_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
   const groupField = mod.groupBy?.field ?? "agent_name";
