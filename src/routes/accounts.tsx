@@ -498,10 +498,9 @@ ${node.innerHTML}
           {/* Timeline header strip with count + print */}
           <div className="flex items-center justify-between gap-2 px-1">
             <div className="text-xs text-muted-foreground">
-              {sinceZero ? <span className="text-primary font-medium">০ ব্যালেন্স থেকে এখন পর্যন্ত</span> : "বর্তমান ফিল্টার"} · মোট <b className="text-foreground">{timeline.length}</b> এন্ট্রি
-              {sinceZero && lastZeroIdx >= 0 && fullAsc[lastZeroIdx] && (
-                <span> · শুরু: {formatDate(fullAsc[lastZeroIdx].date)}</span>
-              )}
+              {isInvalidInput
+                ? <span className="text-amber-600 font-medium">⚠ সঠিক সংখ্যা লিখুন</span>
+                : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
             <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
               <Printer className="h-3.5 w-3.5" /> প্রিন্ট
@@ -510,7 +509,18 @@ ${node.innerHTML}
 
           <Card><CardContent className="p-0">
             {loading ? <EmptyRow>লোড হচ্ছে...</EmptyRow>
-              : timeline.length === 0 ? <EmptyRow>এই সময়সীমার মধ্যে কোনো এন্ট্রি নেই</EmptyRow>
+              : isInvalidInput ? (
+                <div className="text-center py-16 px-4 space-y-3">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 grid place-items-center">
+                    <Search className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">সংখ্যা লিখুন</p>
+                    <p className="text-xs text-muted-foreground mt-1">কতগুলো সর্বশেষ লেনদেন দেখতে চান? উপরের বক্সে একটি সংখ্যা (যেমন: ৫, ১০, ২৫) লিখুন।</p>
+                  </div>
+                </div>
+              )
+              : timeline.length === 0 ? <EmptyRow>কোনো লেনদেন পাওয়া যায়নি</EmptyRow>
               : <div className="divide-y">
                 {timeline.map((it) => {
                   const isIn = it.kind === "received";
