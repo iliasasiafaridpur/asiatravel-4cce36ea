@@ -533,9 +533,7 @@ ${node.innerHTML}
                   const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "ব্যয়";
-                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
-
-                  // Col 1: Name
+                   // Col 1: Name
                   const name = isIn
                     ? (r.passenger_name || "—")
                     : isHand
@@ -572,7 +570,6 @@ ${node.innerHTML}
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
                         {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
-                        <p className="text-[9px] text-muted-foreground/70 font-mono mt-0.5">{refId}</p>
                       </div>
 
                       {/* Col 2: Service + secondary */}
