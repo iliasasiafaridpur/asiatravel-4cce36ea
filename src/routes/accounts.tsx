@@ -76,7 +76,8 @@ function AccountsPage() {
   const [latestInput, setLatestInput] = useState("5");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+  const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
+
   const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
