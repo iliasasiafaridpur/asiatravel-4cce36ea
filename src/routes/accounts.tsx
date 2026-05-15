@@ -629,8 +629,8 @@ ${node.innerHTML}
             <table>
               <thead>
                 <tr>
-                  <th>#</th><th>তারিখ</th><th>ধরন</th><th>ID</th><th>বিবরণ</th>
-                  <th>ক্যাটাগরি/মাধ্যম</th><th>মন্তব্য</th>
+                  <th>#</th><th>তারিখ</th><th>ধরন</th>
+                  <th>নাম</th><th>সার্ভিস</th><th>দেশ/রোড</th>
                   <th className="num">আয়</th><th className="num">খরচ/জমা</th><th className="num">ব্যালেন্স</th>
                 </tr>
               </thead>
@@ -640,10 +640,17 @@ ${node.innerHTML}
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
-                  const title = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
-                  const refId = isIn ? r.receipt_id : isHand ? h.handover_id : e.expense_id;
-                  const cm = isIn ? `${r.service_type}${r.method ? " · " + r.method : ""}` : isHand ? h.method : e.category;
-                  const remarks = (isIn ? r.remarks : isHand ? h.remarks : e.remarks) || (isIn && r.ref_id ? `Ref ${r.ref_id}` : "");
+                  const name = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
+                  const service = isIn ? r.service_type : isHand ? "জমা" : "খরচ";
+                  let region = "";
+                  if (isIn && svc) {
+                    if (r.service_table === "tickets") {
+                      region = [svc.route, svc.airline].filter(Boolean).join(" · ");
+                    } else if (svc.country) {
+                      region = svc.country;
+                    }
+                  }
                   const cls = isIn ? "in" : isHand ? "hand" : "out";
                   const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
                   return (
@@ -651,10 +658,9 @@ ${node.innerHTML}
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
                       <td className={cls}>{kindLabel}</td>
-                      <td><span style={{ fontFamily: "monospace" }}>{refId}</span></td>
-                      <td>{title}</td>
-                      <td>{cm}</td>
-                      <td>{remarks}</td>
+                      <td>{name}</td>
+                      <td>{service}</td>
+                      <td>{region}</td>
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
                       <td className={`num ${isHand ? "hand" : "out"}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
                       <td className="num">{fmt(it.running)}</td>
