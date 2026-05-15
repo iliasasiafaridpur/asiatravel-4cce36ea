@@ -4,9 +4,31 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { User, KeyRound, Trash2, RefreshCw, Phone, Briefcase } from "lucide-react";
+import { User, KeyRound, Trash2, RefreshCw, Phone, Briefcase, AlertTriangle } from "lucide-react";
+
+// Data-reset groups. Each "module" maps to one or more tables that must be wiped together
+// to keep ledgers/receipts in sync (services + their auto-generated ledger/receipt rows).
+const RESET_GROUPS: { key: string; label: string; tables: string[] }[] = [
+  { key: "tickets", label: "Air Ticket (tickets)", tables: ["tickets"] },
+  { key: "bmet", label: "BMET কার্ড (bmet_cards)", tables: ["bmet_cards"] },
+  { key: "saudi", label: "সৌদি ভিসা (saudi_visas)", tables: ["saudi_visas"] },
+  { key: "kuwait", label: "কুয়েত ভিসা (kuwait_visas)", tables: ["kuwait_visas"] },
+  { key: "agency_ledger", label: "Agency Ledger", tables: ["agency_ledger"] },
+  { key: "vendor_ledger", label: "Vendor Ledger", tables: ["vendor_ledger"] },
+  { key: "payment_receipts", label: "Payment Receipts (আয়)", tables: ["payment_receipts"] },
+  { key: "cash_handovers", label: "Cash Handovers (জমা)", tables: ["cash_handovers"] },
+  { key: "cash_expenses", label: "Cash Expenses (খরচ)", tables: ["cash_expenses"] },
+  { key: "passengers", label: "Passengers", tables: ["passengers"] },
+  { key: "agents", label: "Agents (পরিচিতি)", tables: ["agents"] },
+  { key: "vendors", label: "Vendors (পরিচিতি)", tables: ["vendors"] },
+];
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Asia Travel" }] }),
