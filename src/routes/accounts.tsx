@@ -556,7 +556,9 @@ ${node.innerHTML}
           <div className="flex items-center justify-between gap-2 px-1">
             <div className="text-xs text-muted-foreground">
               {isInvalidInput
-                ? <span className="text-amber-600 font-medium">⚠ সঠিক সংখ্যা লিখুন</span>
+                ? <span className="text-amber-600 font-medium">⚠ সঠিক সংখ্যা বা তারিখ দিন</span>
+                : useDateFilter
+                ? <>{dateFrom || "শুরু"} → {dateTo || "এখন"} · <b className="text-foreground">{timeline.length}</b> লেনদেন</>
                 : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
             <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
