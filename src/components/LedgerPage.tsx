@@ -1299,7 +1299,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {bal > 0 ? (
                             <button
                               type="button"
-                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
@@ -1343,7 +1343,7 @@ export function LedgerPage({ module: mod }: Props) {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-emerald-600"
-                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
                               title="Quick Pay"
                             >
                               <CreditCard className="h-3.5 w-3.5" />
