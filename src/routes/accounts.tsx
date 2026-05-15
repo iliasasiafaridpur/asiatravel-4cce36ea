@@ -73,8 +73,7 @@ function AccountsPage() {
   const [expenses, setExpenses] = useState<Exp[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [preset, setPreset] = useState<Preset>("month");
-  const [sinceZero, setSinceZero] = useState(false);
+  const [latestInput, setLatestInput] = useState("5");
   const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [draftFrom, setDraftFrom] = useState(today());
