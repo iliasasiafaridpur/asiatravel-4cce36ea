@@ -500,9 +500,91 @@ export function LedgerPage({ module: mod }: Props) {
     const amt = Number(payAmount);
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    if (payRow && amt > payDue + 0.001)
+      return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
     setPaySaving(true);
     try {
       const me = displayName(profile, user);
+
+      // ---------- Passenger-specific (row-mode) ----------
+      if (payRow && isAgency) {
+        const srcTable = String(payRow.source_table ?? "");
+        const srcId = String(payRow.source_id ?? "");
+        const passenger = String(payRow.passenger_name ?? "");
+        const refId = String(payRow[mod.idColumn] ?? "");
+
+        // map source table → received column name
+        const recvColMap: Record<string, string> = {
+          tickets: "received",
+          bmet_cards: "received_amount",
+          saudi_visas: "received_amount",
+          kuwait_visas: "received",
+        };
+        const recvCol = recvColMap[srcTable];
+
+        if (srcTable && srcId && recvCol) {
+          // 1) Read current received from source row
+          const { data: srcRow, error: rErr } = await supabase
+            .from(srcTable as never)
+            .select(`id, ${recvCol}`)
+            .eq("id", srcId)
+            .maybeSingle();
+          if (rErr) throw rErr;
+          const cur = Number((srcRow as Record<string, unknown> | null)?.[recvCol] ?? 0);
+          const upd: Record<string, unknown> = { [recvCol]: cur + amt };
+          if (user?.id) upd.received_by = user.id;
+          const { error: uErr } = await supabase
+            .from(srcTable as never)
+            .update(upd as never)
+            .eq("id", srcId);
+          if (uErr) throw uErr;
+          // DB trigger sync_agency_ledger will refresh the agency_ledger row automatically.
+        } else {
+          // Fallback: manual ledger entry without source — bump received_amount on the ledger row directly
+          const cur = Number(payRow[paidCol] ?? 0);
+          const { error: uErr } = await supabase
+            .from(mod.table as never)
+            .update({ [paidCol]: cur + amt } as never)
+            .eq("id", payRow.id);
+          if (uErr) throw uErr;
+        }
+
+        // 2) Mirror into payment_receipts (cash drawer + history)
+        if (user?.id) {
+          const rid = await generateNextId({
+            key: "_rcpt", label: "", short: "", table: "payment_receipts",
+            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+          });
+          const receiptPayload: Record<string, unknown> = {
+            receipt_id: rid,
+            entry_date: payDate,
+            service_type: "Agency Receive",
+            ref_id: refId,
+            passenger_name: passenger,
+            amount: amt,
+            method: payMethod,
+            source: "agency_ledger",
+            remarks: payRemarks || null,
+            received_by: user.id,
+            received_by_name: me,
+            created_by: user.id,
+          };
+          if (srcTable) receiptPayload.service_table = srcTable;
+          if (srcId) receiptPayload.service_row_id = srcId;
+          const { error: e2 } = await supabase
+            .from("payment_receipts")
+            .insert(receiptPayload as never);
+          if (e2) console.warn("payment_receipts mirror failed:", e2);
+        }
+
+        toast.success(`✓ ${passenger || payTarget} — পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`);
+        setPayOpen(false);
+        setPayRow(null);
+        void load();
+        return;
+      }
+
+      // ---------- Agent/Vendor-level (legacy bulk) ----------
       const finalId = await generateNextId(mod);
       const payload: Record<string, unknown> = {
         [mod.idColumn]: finalId,
