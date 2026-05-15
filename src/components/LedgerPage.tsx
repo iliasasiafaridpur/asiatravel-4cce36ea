@@ -713,7 +713,7 @@ export function LedgerPage({ module: mod }: Props) {
 <td>${formatDate(r.entry_date as string | null)}<div style="font-size:10px;color:#666">${String(r[mod.idColumn] ?? "")}</div></td>
 <td>${passenger}</td>
 <td>${service || "—"}${cr ? `<div style="font-size:10px;color:#666">${cr}</div>` : ""}</td>
-<td>${agent}${vendorExtra}</td>
+<td>${agent}</td>
 <td class="num">${fmt(bill)}</td>
 <td class="num">${fmt(paid)}</td>
 <td class="num">${dueCell}</td>
