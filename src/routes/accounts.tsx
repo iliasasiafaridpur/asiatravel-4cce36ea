@@ -138,7 +138,7 @@ function AccountsPage() {
   // Service detail map (for timeline secondary text & due display)
   type SvcDetail = {
     country?: string | null; route?: string | null; airline?: string | null;
-    flight_date?: string | null; vendor?: string | null;
+    flight_date?: string | null; vendor?: string | null; cost?: number;
     sold?: number; received_total?: number;
   };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
@@ -151,20 +151,20 @@ function AccountsPage() {
     }
     const tableConfigs: Record<string, { cols: string; map: (row: Record<string, unknown>) => SvcDetail }> = {
       tickets: {
-        cols: "id,airline,trip_road,flight_date,vendor_bought,sold_price,received",
-        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,airline,trip_road,flight_date,vendor_bought,sold_price,cost_price,received",
+        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
       },
       bmet_cards: {
-        cols: "id,country_name,vendor_bought,sold_price,received_amount",
-        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,country_name,vendor_bought,sold_price,cost_price,received_amount",
+        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
       },
       saudi_visas: {
-        cols: "id,vendor_bought,sold_price,received_amount",
-        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,vendor_bought,sold_price,cost_price,received_amount",
+        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
       },
       kuwait_visas: {
-        cols: "id,vendor_bought,sold_price,received",
-        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,vendor_bought,sold_price,cost_price,received",
+        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
       },
     };
     let cancelled = false;
