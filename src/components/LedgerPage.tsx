@@ -592,7 +592,7 @@ export function LedgerPage({ module: mod }: Props) {
         </Card>
       )}
 
-      {/* Main ledger table — flat traditional columns */}
+      {/* Main ledger entries — Ticket-page style stacked rows */}
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3 print:hidden">
@@ -606,24 +606,20 @@ export function LedgerPage({ module: mod }: Props) {
               </Button>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="whitespace-nowrap">Date / ID</TableHead>
-                  <TableHead className="whitespace-nowrap">Passenger</TableHead>
-                  <TableHead className="whitespace-nowrap">Service</TableHead>
-                  <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
-                  <TableHead className="text-right whitespace-nowrap print:hidden">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">লোড হচ্ছে...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>
-                ) : filtered.map((r) => {
+          <div className="space-y-2">
+            <div className="hidden lg:grid grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/60">
+              <div>Date / ID</div>
+              <div>Passenger</div>
+              <div>Service</div>
+              <div>{groupLabel}</div>
+              <div className="text-right">Amount</div>
+              <div className="text-right print:hidden">Actions</div>
+            </div>
+            {loading ? (
+              <div className="text-center text-muted-foreground py-8">লোড হচ্ছে...</div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</div>
+            ) : filtered.map((r) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
@@ -655,35 +651,49 @@ export function LedgerPage({ module: mod }: Props) {
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
                   const byName = cb ? profilesMap[cb] : "";
-                  const profit = info && typeof info.sold === "number" && typeof info.cost === "number" ? info.sold - info.cost : null;
+                  const passport = String(r.passport ?? info?.passport ?? "");
+                  const mobile = String(r.mobile ?? info?.mobile ?? "");
+                  const rowProfit = r.profit;
+                  const profit = rowProfit !== undefined && rowProfit !== null && rowProfit !== ""
+                    ? Number(rowProfit)
+                    : info && typeof info.sold === "number" && typeof info.cost === "number" ? info.sold - info.cost : 0;
                   const status = info?.status ?? "";
                   const isPending = !!status && /pending|process/i.test(status);
                   return (
-                    <TableRow key={r.id} className="border-b border-border/40">
-                      <TableCell className="align-top py-4">
+                    <div
+                      key={r.id}
+                      className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm lg:grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] lg:items-start lg:gap-4"
+                      style={{ background: "var(--gradient-card)" }}
+                    >
+                      <div className="min-w-0">
+                        <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Date / ID</div>
                         <div className="font-bold whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
                         <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
                         {byName && <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {byName}</div>}
-                      </TableCell>
-                      <TableCell className="align-top py-4 min-w-[160px]">
+                      </div>
+                      <div className="min-w-0">
+                        <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Passenger</div>
                         <div className="font-bold">{passenger || "—"}</div>
-                        {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight font-mono">PP: {info.passport}</div>}
-                        {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight">📱 {info.mobile}</div>}
+                        {passport && <div className="text-[11px] text-muted-foreground leading-tight font-mono">PP: {passport}</div>}
+                        {mobile && <div className="text-[11px] text-muted-foreground leading-tight">📱 {mobile}</div>}
                         {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">{remarks}</div>}
-                      </TableCell>
-                      <TableCell className="align-top py-4 min-w-[160px]">
+                      </div>
+                      <div className="min-w-0">
+                        <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Service</div>
                         <div className="text-sm font-semibold">{serviceLabel}</div>
                         {info?.airline && <div className="text-xs text-muted-foreground leading-tight">{info.airline}{cr ? ` · ${cr}` : ""}</div>}
                         {!info?.airline && cr && <div className="text-xs text-muted-foreground leading-tight">{ServiceIcon} {cr}</div>}
                         {flightDate && <div className="text-xs text-muted-foreground leading-tight">✈ Flight: {flightDate}</div>}
                         {info?.pnr && <div className="text-xs text-muted-foreground leading-tight">PNR: {info.pnr}</div>}
-                        {isPending && <Badge variant="outline" className="mt-1 border-amber-500/60 text-amber-600 dark:text-amber-400 text-[10px]">Pending</Badge>}
-                      </TableCell>
-                      <TableCell className="align-top py-4 min-w-[140px]">
+                        {status && <Badge variant="outline" className={cn("mt-1 text-[10px]", statusBadgeClass(status))}>{isPending ? "Pending" : status}</Badge>}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{groupLabel}</div>
                         <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
                         {info?.vendor && <div className="text-[11px] text-muted-foreground leading-tight">V: {info.vendor}</div>}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums whitespace-nowrap align-top py-4">
+                      </div>
+                      <div className="tabular-nums whitespace-nowrap lg:text-right">
+                        <div className="lg:hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Amount</div>
                         <div className="font-bold text-base">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}</div>
                         <div className="text-xs">
@@ -702,14 +712,12 @@ export function LedgerPage({ module: mod }: Props) {
                             <span className="text-amber-500">Adv: {Math.abs(bal).toLocaleString()}</span>
                           )}
                         </div>
-                        {profit !== null && profit !== 0 && (
-                          <div className={`text-[11px] font-medium ${profit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
-                            Profit: {profit.toLocaleString()}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right align-top py-4 print:hidden">
-                        <div className="flex justify-end gap-0.5">
+                        <div className={cn("text-[11px] font-medium", profit < 0 ? "text-rose-500" : "text-muted-foreground")}>
+                          Profit: {profit.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="print:hidden">
+                        <div className="flex justify-end gap-0.5 lg:justify-end">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewRow(r)} title="View">
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
@@ -725,12 +733,10 @@ export function LedgerPage({ module: mod }: Props) {
                             <Trash2 className="h-3.5 w-3.5 text-rose-500" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   );
                 })}
-              </TableBody>
-            </Table>
           </div>
         </CardContent>
       </Card>
