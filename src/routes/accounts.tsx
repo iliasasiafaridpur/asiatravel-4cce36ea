@@ -545,19 +545,20 @@ ${node.innerHTML}
                   // Col 2: Service primary + secondary lines
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const servicePrimary = isIn ? (r.service_type || "Service") : isHand ? "জমা / Handover" : (e.category || "খরচ");
-                  const secondaryBits: string[] = [];
+                  const primaryBits: string[] = [];
+                  const vendorBits: string[] = [];
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
-                      if (svc.route) secondaryBits.push(svc.route);
-                      if (svc.airline) secondaryBits.push(svc.airline);
-                      if (svc.flight_date) secondaryBits.push(`✈ ${formatDate(svc.flight_date)}`);
+                      if (svc.route) primaryBits.push(svc.route);
+                      if (svc.airline) primaryBits.push(svc.airline);
+                      if (svc.flight_date) primaryBits.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
-                      secondaryBits.push(svc.country);
+                      primaryBits.push(svc.country);
                     }
-                    if (svc.vendor) secondaryBits.push(`Vendor: ${svc.vendor}`);
+                    if (svc.vendor) vendorBits.push(`Vendor: ${svc.vendor}`);
                   }
-                  if (r.method && isIn) secondaryBits.push(`💳 ${r.method}`);
-                  if (isHand && h.method) secondaryBits.push(`💳 ${h.method}`);
+                  if (r.method && isIn) vendorBits.push(`💳 ${r.method}`);
+                  if (isHand && h.method) vendorBits.push(`💳 ${h.method}`);
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
 
@@ -579,9 +580,14 @@ ${node.innerHTML}
                       {/* Col 2: Service + secondary */}
                       <div className="min-w-0">
                         <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
-                        {secondaryBits.length > 0 && (
+                        {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
-                            {secondaryBits.join(" · ")}
+                            {primaryBits.join(" · ")}
+                          </p>
+                        )}
+                        {vendorBits.length > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                            {vendorBits.join(" · ")}
                           </p>
                         )}
                         {dueLeft !== null && dueLeft > 0.005 && (
