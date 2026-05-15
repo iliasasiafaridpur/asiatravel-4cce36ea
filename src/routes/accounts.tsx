@@ -138,11 +138,11 @@ function AccountsPage() {
   }, [dateFrom, dateTo]);
 
   // Service detail map (for timeline secondary text & due display)
-  type SvcDetail = {
-    country?: string | null; route?: string | null; airline?: string | null;
-    flight_date?: string | null; vendor?: string | null; cost?: number;
-    sold?: number; received_total?: number;
-  };
+   type SvcDetail = {
+     country?: string | null; route?: string | null; airline?: string | null;
+     flight_date?: string | null; vendor?: string | null; cost?: number;
+     sold?: number; received_total?: number; agent?: string | null;
+   };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
 
   useEffect(() => {
@@ -153,20 +153,20 @@ function AccountsPage() {
     }
     const tableConfigs: Record<string, { cols: string; map: (row: Record<string, unknown>) => SvcDetail }> = {
       tickets: {
-        cols: "id,airline,trip_road,flight_date,vendor_bought,sold_price,cost_price,received",
-        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received",
+        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
       },
       bmet_cards: {
-        cols: "id,country_name,vendor_bought,sold_price,cost_price,received_amount",
-        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,country_name,vendor_bought,agency_sold,sold_price,cost_price,received_amount",
+        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
       },
       saudi_visas: {
-        cols: "id,vendor_bought,sold_price,cost_price,received_amount",
-        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received_amount",
+        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
       },
       kuwait_visas: {
-        cols: "id,vendor_bought,sold_price,cost_price,received",
-        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received",
+        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
       },
     };
     let cancelled = false;
@@ -705,17 +705,20 @@ ${node.innerHTML.replace(
                         )}
                       </div>
 
-                      {/* Col 4: Vendor + cost */}
+                      {/* Col 4: Agent + Vendor + cost */}
                       <div className="min-w-0">
+                        {isIn && svc?.agent && (
+                          <p className="text-[11px] font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
+                        )}
                         {isIn && svc?.vendor ? (
                           <>
-                            <p className="text-[11px] font-medium leading-tight break-words">{svc.vendor}</p>
+                            <p className={`text-[11px] font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
                             {typeof svc.cost === "number" && svc.cost > 0 && (
                               <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
                             )}
                           </>
                         ) : (
-                          <p className="text-[10px] text-muted-foreground/50">—</p>
+                          !svc?.agent && <p className="text-[10px] text-muted-foreground/50">—</p>
                         )}
                       </div>
 
