@@ -123,9 +123,9 @@ export function LedgerPage({ module: mod }: Props) {
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [dueOnly, setDueOnly] = useState(false);
-  const [sinceLastZero, setSinceLastZero] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [latestInput, setLatestInput] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
