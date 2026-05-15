@@ -702,7 +702,6 @@ export function LedgerPage({ module: mod }: Props) {
         }
         const passenger = String(r.passenger_name ?? "—");
         const agent = String(r[groupField] ?? "—");
-        const vendorExtra = info?.vendor ? `<div style="font-size:10px;color:#666">V: ${info.vendor}</div>` : "";
         const dueCell =
           due > 0
             ? `<span style="color:#dc2626;font-weight:700">${fmt(due)}</span>`
