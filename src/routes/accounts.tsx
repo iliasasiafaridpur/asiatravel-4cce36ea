@@ -138,11 +138,11 @@ function AccountsPage() {
   }, [dateFrom, dateTo]);
 
   // Service detail map (for timeline secondary text & due display)
-  type SvcDetail = {
-    country?: string | null; route?: string | null; airline?: string | null;
-    flight_date?: string | null; vendor?: string | null; cost?: number;
-    sold?: number; received_total?: number;
-  };
+   type SvcDetail = {
+     country?: string | null; route?: string | null; airline?: string | null;
+     flight_date?: string | null; vendor?: string | null; cost?: number;
+     sold?: number; received_total?: number; agent?: string | null;
+   };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
 
   useEffect(() => {
