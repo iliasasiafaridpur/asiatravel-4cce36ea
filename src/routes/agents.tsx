@@ -36,8 +36,8 @@ function AgentsPage() {
               <TableHeader><TableRow><TableHead>Agent</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead></TableRow></TableHeader>
               <TableBody>
                 {bals.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
-                  : bals.map((b) => (
-                    <TableRow key={b.agent_name}>
+                  : bals.map((b, idx) => (
+                    <TableRow key={b.agent_name} className={`row-tint-${idx % 6}`}>
                       <TableCell className="font-medium">{b.agent_name}</TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_bill).toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums text-emerald-600">৳ {Number(b.total_received).toLocaleString()}</TableCell>
