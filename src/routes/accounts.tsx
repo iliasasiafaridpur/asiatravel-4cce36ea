@@ -183,9 +183,9 @@ function AccountsPage() {
     return () => { cancelled = true; };
   }, [received]);
 
-  const fRecv = useMemo(() => received.slice(0, latestN), [received, latestN]);
-  const fHand = useMemo(() => handovers.slice(0, latestN), [handovers, latestN]);
-  const fExp  = useMemo(() => expenses.slice(0, latestN), [expenses, latestN]);
+  const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
+  const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
+  const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
   const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
