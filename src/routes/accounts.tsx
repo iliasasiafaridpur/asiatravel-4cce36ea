@@ -303,19 +303,20 @@ function AccountsPage() {
     );
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
-  h1{margin:0 0 4px;font-size:20px}
-  .meta{color:#555;font-size:12px;margin-bottom:14px}
-  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:14px;font-weight:700}
-  .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top;white-space:nowrap}
+  @page{size:A4 landscape;margin:6mm}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:6px;color:#111;margin:0}
+  h1{margin:0 0 2px;font-size:16px}
+  .meta{color:#555;font-size:11px;margin-bottom:8px}
+  .summary{display:flex;gap:6px;margin-bottom:8px;font-size:12px;font-weight:700}
+  .summary div{padding:4px 8px;border:1px solid #ddd;border-radius:4px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}
+  th,td{border-bottom:1px solid #e5e5e5;padding:3px 4px;text-align:left;vertical-align:top}
   td.wrap,th.wrap{white-space:normal}
   th{background:#f5f5f5;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
   tfoot td{font-weight:700;background:#fafafa}
-  @media print{body{padding:8px}}
+  @media print{body{padding:2px}}
 </style></head><body>
 <h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
@@ -326,8 +327,9 @@ function AccountsPage() {
 </div>
 ${node.innerHTML.replace(
   "</tbody>",
-  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
+  `<tr><td colspan="8" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
+  `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
   `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
 )}
@@ -643,8 +645,11 @@ ${node.innerHTML.replace(
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
 
+                  const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
+                  const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
+
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.2fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
                       {/* Col 1: Name */}
                       <div className="min-w-0">
                         <p className="font-semibold text-[13px] leading-tight break-words">{name}</p>
@@ -657,17 +662,12 @@ ${node.innerHTML.replace(
                         {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
 
-                      {/* Col 2: Service + secondary */}
+                      {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
                         <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
                         {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
                             {primaryBits.join(" · ")}
-                          </p>
-                        )}
-                        {dueLeft !== null && dueLeft > 0.005 && (
-                          <p className="text-[10px] text-rose-600 mt-0.5 font-medium">
-                            বাকি: {fmt(dueLeft)}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
@@ -678,7 +678,24 @@ ${node.innerHTML.replace(
                         )}
                       </div>
 
-                      {/* Col 3: Vendor + cost */}
+                      {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
+                      <div className="min-w-0 text-[10px] space-y-0.5">
+                        {totalBill !== null ? (
+                          <>
+                            <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
+                            {totalPaid !== null && (
+                              <p className="text-muted-foreground">মোট জমা: <span className="font-semibold text-emerald-600 tabular-nums">{fmt(totalPaid)}</span></p>
+                            )}
+                            {dueLeft !== null && (
+                              <p className="text-muted-foreground">বাকি: <span className={`font-semibold tabular-nums ${dueLeft > 0.005 ? "text-rose-600" : "text-emerald-600"}`}>{fmt(dueLeft)}</span></p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground/50">—</p>
+                        )}
+                      </div>
+
+                      {/* Col 4: Vendor + cost */}
                       <div className="min-w-0">
                         {isIn && svc?.vendor ? (
                           <>
@@ -715,9 +732,14 @@ ${node.innerHTML.replace(
             <table>
               <thead>
                 <tr>
-                  <th>#</th><th>তারিখ</th><th>ধরন</th>
+                  <th>#</th><th>তারিখ</th>
                   <th>নাম</th><th>সার্ভিস</th><th>দেশ/রোড</th>
-                  <th className="num">আয়</th><th className="num">খরচ/জমা</th><th className="num">ব্যালেন্স</th>
+                  <th className="num">মোট বিল</th>
+                  <th className="num">আয়</th>
+                  <th className="num">বাকি</th>
+                  <th>Adv</th>
+                  <th className="num">খরচ/জমা</th>
+                  <th className="num">ব্যালেন্স</th>
                 </tr>
               </thead>
               <tbody>
@@ -737,18 +759,24 @@ ${node.innerHTML.replace(
                       region = svc.country;
                     }
                   }
-                  const cls = isIn ? "in" : isHand ? "hand" : "out";
-                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "খরচ";
+                  const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
+                  const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
+                  const due = totalBill !== null && totalPaid !== null ? totalBill - totalPaid : null;
+                  const advAmt = isIn && totalPaid !== null ? totalPaid - amt : 0;
+                  const advText = isIn && advAmt > 0.005 ? `${fmt(advAmt)} (${formatDate(it.date)})` : "";
+                  const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
-                      <td className={cls}>{kindLabel}</td>
                       <td>{name}</td>
                       <td>{service}</td>
                       <td>{region}</td>
+                      <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
-                      <td className={`num ${isHand ? "hand" : "out"}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
+                      <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
+                      <td>{advText}</td>
+                      <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
                       <td className="num">{fmt(it.running)}</td>
                     </tr>
                   );
