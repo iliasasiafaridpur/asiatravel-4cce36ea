@@ -603,7 +603,7 @@ ${node.innerHTML}
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
                         <p className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap mt-1">
-                          ব্যাল
+                          ব্যালেন্স
                         </p>
                         <p className="text-[11px] tabular-nums whitespace-nowrap font-semibold text-foreground">
                           {fmt(it.running)}
