@@ -279,11 +279,7 @@ function AccountsPage() {
     if (!node) return;
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
-    const periodLabel = sinceZero
-      ? "০ ব্যালেন্স থেকে এখন পর্যন্ত"
-      : customRange
-      ? `${customRange.from} → ${customRange.to}`
-      : preset === "today" ? "আজ" : preset === "month" ? "এই মাস" : preset === "year" ? "এই বছর" : "সব সময়";
+    const periodLabel = `সর্বশেষ ${latestN} লেনদেন`;
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
