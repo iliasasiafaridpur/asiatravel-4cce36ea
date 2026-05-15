@@ -592,9 +592,18 @@ ${node.innerHTML.replace(
                 ? <>{dateFrom || "শুরু"} → {dateTo || "এখন"} · <b className="text-foreground">{timeline.length}</b> লেনদেন</>
                 : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
-            <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
-              <Printer className="h-3.5 w-3.5" /> প্রিন্ট
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
+                <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+              </Button>
+            </div>
           </div>
 
           <Card><CardContent className="p-0">
