@@ -290,7 +290,9 @@ function AccountsPage() {
     if (!node) return;
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
-    const periodLabel = `সর্বশেষ ${latestN} লেনদেন`;
+    const periodLabel = useDateFilter
+      ? `${dateFrom || "শুরু"} → ${dateTo || "এখন"}`
+      : `সর্বশেষ ${latestN} লেনদেন`;
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
