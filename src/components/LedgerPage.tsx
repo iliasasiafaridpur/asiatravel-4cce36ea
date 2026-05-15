@@ -751,6 +751,20 @@ export function LedgerPage({ module: mod }: Props) {
                   </Button>
                   <Button
                     type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setStartDate("");
+                      setEndDate(new Date().toISOString().slice(0, 10));
+                      setDueOnly(true);
+                      setGroupFilter("all");
+                    }}
+                    className="h-10 gap-1.5 flex-1 whitespace-nowrap"
+                    title="শুরু থেকে আজ পর্যন্ত সব বকেয়া বিল"
+                  >
+                    <Wallet className="h-4 w-4" /> সব Due (০ → এখন)
+                  </Button>
+                  <Button
+                    type="button"
                     variant="outline"
                     onClick={resetFilters}
                     className="h-10 gap-1.5"
