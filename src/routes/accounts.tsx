@@ -213,9 +213,11 @@ function AccountsPage() {
   }, [received, handovers, expenses]);
 
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
+    const desc = [...fullAsc].reverse();
+    if (useDateFilter) return desc.filter(it => inDateRange(it.date));
     if (latestN === 0) return [];
-    return [...fullAsc].reverse().slice(0, latestN);
-  }, [fullAsc, latestN]);
+    return desc.slice(0, latestN);
+  }, [fullAsc, latestN, useDateFilter, inDateRange]);
 
   // Save handover
   const saveHandover = async () => {
