@@ -670,7 +670,90 @@ export function LedgerPage({ module: mod }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  const printPage = () => window.print();
+  const printPage = () => {
+    const w = window.open("", "_blank", "width=1000,height=700");
+    if (!w) {
+      toast.error("পপ-আপ ব্লক হয়েছে");
+      return;
+    }
+    const heading = isAgency
+      ? "সাব এজেন্সি হিসাব - এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্"
+      : "Vendor Ledger - এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্";
+    const periodLabel =
+      startDate || endDate ? `${startDate || "শুরু"} → ${endDate || "এখন"}` : "সকল তারিখ";
+    const fmt = (n: number) => Number(n || 0).toLocaleString();
+    const rowsHtml = filtered
+      .map((r, i) => {
+        const bill = Number(r[billCol] ?? 0);
+        const paid = Number(r[paidCol] ?? 0);
+        const due = bill - paid;
+        const srcId = String(r.source_id ?? "");
+        const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+        const service = String(r.service_type ?? "");
+        const svcU = service.toUpperCase();
+        const isTicket = svcU.includes("TICKET");
+        const isBmet = svcU.includes("BMET");
+        const isVisa = svcU.includes("VISA");
+        let cr = String(r.country_route ?? "");
+        if (!cr && srcId) {
+          if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
+          else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
+          else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
+        }
+        const passenger = String(r.passenger_name ?? "—");
+        const agent = String(r[groupField] ?? "—");
+        const vendorExtra = info?.vendor ? `<div style="font-size:10px;color:#666">V: ${info.vendor}</div>` : "";
+        const dueCell =
+          due > 0
+            ? `<span style="color:#dc2626;font-weight:700">${fmt(due)}</span>`
+            : due === 0
+              ? `<span style="color:#059669">Paid</span>`
+              : `<span style="color:#d97706">Adv ${fmt(Math.abs(due))}</span>`;
+        return `<tr>
+<td>${i + 1}</td>
+<td>${formatDate(r.entry_date as string | null)}<div style="font-size:10px;color:#666">${String(r[mod.idColumn] ?? "")}</div></td>
+<td>${passenger}</td>
+<td>${service || "—"}${cr ? `<div style="font-size:10px;color:#666">${cr}</div>` : ""}</td>
+<td>${agent}${vendorExtra}</td>
+<td class="num">${fmt(bill)}</td>
+<td class="num">${fmt(paid)}</td>
+<td class="num">${dueCell}</td>
+</tr>`;
+      })
+      .join("");
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${heading}</title>
+<style>
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
+  h1{margin:0 0 4px;font-size:20px}
+  .meta{color:#555;font-size:12px;margin-bottom:14px}
+  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:14px;font-weight:700}
+  .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#f5f5f5;font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tfoot td{font-weight:700;background:#fafafa}
+  @media print{body{padding:8px}}
+</style></head><body>
+<h1>${heading}</h1>
+<div class="meta">${periodLabel} · মোট ${filtered.length} এন্ট্রি</div>
+<div class="summary">
+  <div>${billLabel}: <b>৳ ${fmt(totals.bill)}</b></div>
+  <div style="color:#059669">${paidLabel}: <b>৳ ${fmt(totals.paid)}</b></div>
+  <div style="color:#dc2626">Total Due: <b>৳ ${fmt(totals.due)}</b></div>
+</div>
+<table>
+<thead><tr>
+<th>#</th><th>Date / ID</th><th>Passenger</th><th>Service</th><th>${groupLabel}</th>
+<th class="num">${billLabel}</th><th class="num">${paidLabel}</th><th class="num">Due</th>
+</tr></thead>
+<tbody>${rowsHtml}</tbody>
+<tfoot><tr><td colspan="5">Total</td><td class="num">${fmt(totals.bill)}</td><td class="num">${fmt(totals.paid)}</td><td class="num">${fmt(totals.due)}</td></tr></tfoot>
+</table>
+<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
+</body></html>`);
+    w.document.close();
+  };
 
   const resetFilters = () => {
     setSearch("");
