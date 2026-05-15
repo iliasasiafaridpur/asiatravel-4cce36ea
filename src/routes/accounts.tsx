@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/accounts")({
@@ -74,6 +74,8 @@ function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [latestInput, setLatestInput] = useState("5");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   
   const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
@@ -122,10 +124,17 @@ function AccountsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, reload]);
 
-  // Latest-N filter — parse input
+  // Filter mode: date range takes priority over latest-N
   const parsedN = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
   const latestN = Number.isFinite(parsedN) && parsedN > 0 ? parsedN : 0;
-  const isInvalidInput = latestN === 0;
+  const useDateFilter = !!(dateFrom || dateTo);
+  const isInvalidInput = !useDateFilter && latestN === 0;
+  const inDateRange = useCallback((d: string) => {
+    if (!d) return false;
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  }, [dateFrom, dateTo]);
 
   // Service detail map (for timeline secondary text & due display)
   type SvcDetail = {
@@ -174,9 +183,9 @@ function AccountsPage() {
     return () => { cancelled = true; };
   }, [received]);
 
-  const fRecv = useMemo(() => received.slice(0, latestN), [received, latestN]);
-  const fHand = useMemo(() => handovers.slice(0, latestN), [handovers, latestN]);
-  const fExp  = useMemo(() => expenses.slice(0, latestN), [expenses, latestN]);
+  const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
+  const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
+  const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
   const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
@@ -204,9 +213,11 @@ function AccountsPage() {
   }, [received, handovers, expenses]);
 
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
+    const desc = [...fullAsc].reverse();
+    if (useDateFilter) return desc.filter(it => inDateRange(it.date));
     if (latestN === 0) return [];
-    return [...fullAsc].reverse().slice(0, latestN);
-  }, [fullAsc, latestN]);
+    return desc.slice(0, latestN);
+  }, [fullAsc, latestN, useDateFilter, inDateRange]);
 
   // Save handover
   const saveHandover = async () => {
@@ -279,7 +290,9 @@ function AccountsPage() {
     if (!node) return;
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
-    const periodLabel = `সর্বশেষ ${latestN} লেনদেন`;
+    const periodLabel = useDateFilter
+      ? `${dateFrom || "শুরু"} → ${dateTo || "এখন"}`
+      : `সর্বশেষ ${latestN} লেনদেন`;
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
@@ -348,28 +361,72 @@ ${node.innerHTML}
       {/* Action Bar */}
       <Card className="overflow-hidden">
         <CardContent className="p-3 flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-[220px] max-w-md">
-            <div className="relative flex-1 group">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-[220px]">
+            {/* Latest-N input */}
+            <div className="relative flex-1 min-w-[180px] max-w-[260px] group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 value={latestInput}
+                disabled={useDateFilter}
                 onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
-                placeholder="সংখ্যা লিখুন (যেমন: 5)"
-                className="h-10 pl-9 pr-24 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl"
+                placeholder="সংখ্যা (যেমন: 5)"
+                className="h-10 pl-9 pr-20 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl disabled:opacity-50"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider flex items-center gap-1 pointer-events-none">
                 <History className="h-3 w-3" />
                 সর্বশেষ
               </span>
             </div>
-            {!isInvalidInput && (
-              <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
-                {latestN} এন্ট্রি
+
+            {/* Date range */}
+            <div className="flex items-center gap-1.5 flex-1 min-w-[240px]">
+              <div className="relative flex-1">
+                <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-10 pl-8 text-xs tabular-nums bg-gradient-to-br from-card to-muted/40 border-sky-500/20 focus-visible:ring-sky-500/40 shadow-sm rounded-xl"
+                  aria-label="শুরুর তারিখ"
+                />
               </div>
-            )}
+              <span className="text-muted-foreground text-xs">→</span>
+              <div className="relative flex-1">
+                <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-10 pl-8 text-xs tabular-nums bg-gradient-to-br from-card to-muted/40 border-sky-500/20 focus-visible:ring-sky-500/40 shadow-sm rounded-xl"
+                  aria-label="শেষ তারিখ"
+                />
+              </div>
+              {useDateFilter && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                  aria-label="তারিখ ফিল্টার মুছুন"
+                  title="তারিখ ফিল্টার মুছুন"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Active badge */}
+            <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
+              {useDateFilter
+                ? `${fRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
+                : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
+            </div>
           </div>
           <div className="flex gap-2">
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
@@ -499,7 +556,9 @@ ${node.innerHTML}
           <div className="flex items-center justify-between gap-2 px-1">
             <div className="text-xs text-muted-foreground">
               {isInvalidInput
-                ? <span className="text-amber-600 font-medium">⚠ সঠিক সংখ্যা লিখুন</span>
+                ? <span className="text-amber-600 font-medium">⚠ সঠিক সংখ্যা বা তারিখ দিন</span>
+                : useDateFilter
+                ? <>{dateFrom || "শুরু"} → {dateTo || "এখন"} · <b className="text-foreground">{timeline.length}</b> লেনদেন</>
                 : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
             <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
