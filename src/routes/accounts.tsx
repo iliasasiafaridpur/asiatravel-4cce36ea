@@ -106,9 +106,9 @@ function AccountsPage() {
 
     const [a, r, h, e] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
-      supabase.from("payment_receipts").select("id,receipt_id,entry_date,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").eq("received_by", user.id).order("entry_date", { ascending: false }).limit(500),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,to_name,amount,method,remarks,from_user").eq("from_user", user.id).order("entry_date", { ascending: false }).limit(500),
-      supabase.from("cash_expenses").select("id,expense_id,entry_date,category,purpose,amount,remarks,spent_by").eq("spent_by", user.id).order("entry_date", { ascending: false }).limit(500),
+      supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").eq("received_by", user.id).order("created_at", { ascending: false }).limit(500),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user").eq("from_user", user.id).order("created_at", { ascending: false }).limit(500),
+      supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").eq("spent_by", user.id).order("created_at", { ascending: false }).limit(500),
     ]);
 
     const err = a.error || r.error || h.error || e.error;
@@ -634,6 +634,8 @@ ${node.innerHTML}
                       primaryBits.push(svc.country);
                     }
                   }
+                  if (isIn && r.method) primaryBits.push(`💳 ${r.method}`);
+                  if (isIn && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
