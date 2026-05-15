@@ -76,7 +76,8 @@ function AccountsPage() {
   const [latestInput, setLatestInput] = useState("5");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+  const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
+
   const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
@@ -303,15 +304,15 @@ function AccountsPage() {
     );
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:A4 landscape;margin:6mm}
-  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:6px;color:#111;margin:0}
-  h1{margin:0 0 2px;font-size:16px}
-  .meta{color:#555;font-size:11px;margin-bottom:8px}
-  .summary{display:flex;gap:6px;margin-bottom:8px;font-size:12px;font-weight:700}
-  .summary div{padding:4px 8px;border:1px solid #ddd;border-radius:4px;flex:1}
-  table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}
-  th,td{border-bottom:1px solid #e5e5e5;padding:3px 4px;text-align:left;vertical-align:top}
-  td.wrap,th.wrap{white-space:normal}
+  @page{size:A4 ${printOrientation};margin:5mm}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0}
+  h1{margin:0 0 2px;font-size:15px}
+  .meta{color:#555;font-size:10.5px;margin-bottom:6px}
+  .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700}
+  .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word}
   th{background:#f5f5f5;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
@@ -591,9 +592,18 @@ ${node.innerHTML.replace(
                 ? <>{dateFrom || "শুরু"} → {dateTo || "এখন"} · <b className="text-foreground">{timeline.length}</b> লেনদেন</>
                 : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
-            <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
-              <Printer className="h-3.5 w-3.5" /> প্রিন্ট
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
+                <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+              </Button>
+            </div>
           </div>
 
           <Card><CardContent className="p-0">
@@ -737,7 +747,7 @@ ${node.innerHTML.replace(
                   <th className="num">মোট বিল</th>
                   <th className="num">আয়</th>
                   <th className="num">বাকি</th>
-                  <th>Adv</th>
+                  <th className="wrap">Advance</th>
                   <th className="num">খরচ/জমা</th>
                   <th className="num">ব্যালেন্স</th>
                 </tr>
@@ -762,20 +772,36 @@ ${node.innerHTML.replace(
                   const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
                   const due = totalBill !== null && totalPaid !== null ? totalBill - totalPaid : null;
-                  const advAmt = isIn && totalPaid !== null ? totalPaid - amt : 0;
-                  const advText = isIn && advAmt > 0.005 ? `${fmt(advAmt)} (${formatDate(it.date)})` : "";
+                  // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt
+                  let advText = "";
+                  if (isIn && r.service_row_id) {
+                    const curDate = r.entry_date;
+                    const prior = received.filter(p =>
+                      p.service_row_id === r.service_row_id &&
+                      p.id !== r.id &&
+                      (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
+                    );
+                    if (prior.length > 0) {
+                      const sumPrev = prior.reduce((s, p) => s + Number(p.amount || 0), 0);
+                      const lastDate = prior.reduce((d, p) => {
+                        const pd = p.entry_date;
+                        return !d || pd > d ? pd : d;
+                      }, "");
+                      if (sumPrev > 0.005) advText = `${fmt(sumPrev)}\n(${formatDate(lastDate)})`;
+                    }
+                  }
                   const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
-                      <td>{name}</td>
-                      <td>{service}</td>
-                      <td>{region}</td>
+                      <td className="wrap">{name}</td>
+                      <td className="wrap">{service}</td>
+                      <td className="wrap">{region}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td>{advText}</td>
+                      <td className="wrap" style={{whiteSpace:"pre-line"}}>{advText}</td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
                       <td className="num">{fmt(it.running)}</td>
                     </tr>
