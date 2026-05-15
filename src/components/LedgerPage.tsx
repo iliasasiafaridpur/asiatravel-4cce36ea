@@ -375,11 +375,44 @@ export function LedgerPage({ module: mod }: Props) {
     return m;
   }, [rows, groupField, billCol, paidCol]);
 
+  // Per-group: date of the most recent moment when cumulative balance reached ≤ 0
+  // (i.e. the last time the agent/vendor was fully settled). Rows AFTER this date
+  // represent the current ongoing due cycle.
+  const lastZeroDateByGroup = useMemo(() => {
+    const sorted = [...rows].sort((a, b) => {
+      const da = String(a.entry_date ?? "").slice(0, 10);
+      const db = String(b.entry_date ?? "").slice(0, 10);
+      if (da !== db) return da < db ? -1 : 1;
+      const ca = String(a.created_at ?? "");
+      const cb = String(b.created_at ?? "");
+      return ca < cb ? -1 : ca > cb ? 1 : 0;
+    });
+    const running = new Map<string, number>();
+    const lastZero = new Map<string, string>();
+    for (const r of sorted) {
+      const k = String(r[groupField] ?? "");
+      const next = (running.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+      running.set(k, next);
+      if (next <= 0) lastZero.set(k, String(r.entry_date ?? "").slice(0, 10));
+    }
+    return lastZero;
+  }, [rows, groupField, billCol, paidCol]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
     // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
     if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
+    // "০ → এখন" — শেষবার due শূন্য হওয়ার পর থেকে চলমান লেনদেন
+    if (sinceLastZero) {
+      xs = xs.filter((r) => {
+        const k = String(r[groupField] ?? "");
+        if ((dueByGroup.get(k) ?? 0) <= 0) return false; // currently settled → nothing pending
+        const lz = lastZeroDateByGroup.get(k);
+        if (!lz) return true; // never settled → entire history is the current cycle
+        return String(r.entry_date ?? "").slice(0, 10) > lz;
+      });
+    }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
@@ -393,7 +426,7 @@ export function LedgerPage({ module: mod }: Props) {
       );
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, startDate, endDate, search, dueByGroup]);
+  }, [rows, groupFilter, dueOnly, sinceLastZero, startDate, endDate, search, dueByGroup, lastZeroDateByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0,
