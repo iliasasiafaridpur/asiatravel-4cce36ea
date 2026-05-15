@@ -46,6 +46,7 @@ const genUid = () => Math.random().toString(36).slice(2, 10);
 function InvoicePage() {
   const [allEntries, setAllEntries] = useState<ServiceEntry[]>([]);
   const [search, setSearch] = useState("");
+  const [moduleFilter, setModuleFilter] = useState<string>("all");
 
   const [invoiceNo, setInvoiceNo] = useState<string>(
     "INV-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(Math.random() * 900 + 100),
@@ -59,11 +60,15 @@ function InvoicePage() {
   const [discount, setDiscount] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
 
+  const serviceModules = useMemo(
+    () => MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key)),
+    [],
+  );
+
   useEffect(() => {
     (async () => {
       const all: ServiceEntry[] = [];
-      const targets = MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key));
-      await Promise.all(targets.map(async (m) => {
+      await Promise.all(serviceModules.map(async (m) => {
         const { data } = await supabase.from(m.table as never)
           .select("*").order("created_at", { ascending: false }).limit(300);
         for (const r of ((data as unknown) as Record<string, unknown>[] | null) ?? []) {
@@ -84,16 +89,25 @@ function InvoicePage() {
       }));
       setAllEntries(all);
     })();
-  }, []);
+  }, [serviceModules]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return [];
-    return allEntries.filter((e) => `${e.id} ${e.passenger} ${e.passport}`.toLowerCase().includes(q)).slice(0, 20);
-  }, [allEntries, search]);
+    let list = allEntries;
+    if (moduleFilter !== "all") list = list.filter((e) => e.moduleKey === moduleFilter);
+    if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile} ${e.pnr}`.toLowerCase().includes(q));
+    else if (moduleFilter === "all") return [];
+    return list.slice(0, 30);
+  }, [allEntries, search, moduleFilter]);
 
   const loadEntry = (e: ServiceEntry) => {
-    setBill({ name: e.passenger, passport: e.passport, nationality: bill.nationality || "Bangladeshi", mobile: e.mobile || "" });
+    // Auto-fill ALL passenger info from the service entry (overwrites)
+    setBill({
+      name: e.passenger || "",
+      passport: e.passport || "",
+      nationality: bill.nationality || "Bangladeshi",
+      mobile: e.mobile || "",
+    });
     if (e.pnr) setPnr(e.pnr);
     setItems((prev) => [...prev, {
       uid: genUid(),
