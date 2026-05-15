@@ -123,9 +123,9 @@ export function LedgerPage({ module: mod }: Props) {
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [dueOnly, setDueOnly] = useState(false);
-  const [sinceLastZero, setSinceLastZero] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [latestInput, setLatestInput] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
@@ -375,44 +375,13 @@ export function LedgerPage({ module: mod }: Props) {
     return m;
   }, [rows, groupField, billCol, paidCol]);
 
-  // Per-group: date of the most recent moment when cumulative balance reached ≤ 0
-  // (i.e. the last time the agent/vendor was fully settled). Rows AFTER this date
-  // represent the current ongoing due cycle.
-  const lastZeroDateByGroup = useMemo(() => {
-    const sorted = [...rows].sort((a, b) => {
-      const da = String(a.entry_date ?? "").slice(0, 10);
-      const db = String(b.entry_date ?? "").slice(0, 10);
-      if (da !== db) return da < db ? -1 : 1;
-      const ca = String(a.created_at ?? "");
-      const cb = String(b.created_at ?? "");
-      return ca < cb ? -1 : ca > cb ? 1 : 0;
-    });
-    const running = new Map<string, number>();
-    const lastZero = new Map<string, string>();
-    for (const r of sorted) {
-      const k = String(r[groupField] ?? "");
-      const next = (running.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
-      running.set(k, next);
-      if (next <= 0) lastZero.set(k, String(r.entry_date ?? "").slice(0, 10));
-    }
-    return lastZero;
-  }, [rows, groupField, billCol, paidCol]);
+
 
   const filtered = useMemo(() => {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
     // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
     if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
-    // "০ → এখন" — শেষবার due শূন্য হওয়ার পর থেকে চলমান লেনদেন
-    if (sinceLastZero) {
-      xs = xs.filter((r) => {
-        const k = String(r[groupField] ?? "");
-        if ((dueByGroup.get(k) ?? 0) <= 0) return false; // currently settled → nothing pending
-        const lz = lastZeroDateByGroup.get(k);
-        if (!lz) return true; // never settled → entire history is the current cycle
-        return String(r.entry_date ?? "").slice(0, 10) > lz;
-      });
-    }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
@@ -424,9 +393,14 @@ export function LedgerPage({ module: mod }: Props) {
             .includes(q),
         ),
       );
+    // Latest-N limiter: only when date range NOT active
+    if (!startDate && !endDate) {
+      const parsed = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
+      if (Number.isFinite(parsed) && parsed > 0) xs = xs.slice(0, parsed);
+    }
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, sinceLastZero, startDate, endDate, search, dueByGroup, lastZeroDateByGroup]);
+  }, [rows, groupFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0,
@@ -702,9 +676,9 @@ export function LedgerPage({ module: mod }: Props) {
     setSearch("");
     setGroupFilter("all");
     setDueOnly(false);
-    setSinceLastZero(false);
     setStartDate("");
     setEndDate("");
+    setLatestInput("");
   };
 
   return (
@@ -773,30 +747,48 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 flex flex-col">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">সর্বশেষ N</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={latestInput}
+                  disabled={!!(startDate || endDate)}
+                  onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="যেমন: 5"
+                  className="h-10 text-base tabular-nums disabled:opacity-50"
+                />
+              </div>
+              <div className="space-y-1.5 flex flex-col col-span-2 sm:col-span-3 lg:col-span-4">
                 <Label className="text-sm font-medium opacity-0 hidden sm:block">.</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
                     onClick={() => setDueOnly((v) => !v)}
-                    className="h-10 gap-1.5 flex-1"
+                    className="h-10 gap-1.5"
                   >
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
-                  <Button
-                    type="button"
-                    variant={sinceLastZero ? "default" : "secondary"}
-                    onClick={() => {
-                      setSinceLastZero((v) => !v);
-                      setStartDate("");
-                      setEndDate("");
-                    }}
-                    className="h-10 gap-1.5 flex-1 whitespace-nowrap"
-                    title="প্রতিটি Agent/Vendor-এর শেষবার Due শূন্য হওয়ার পর থেকে চলমান লেনদেন"
-                  >
-                    <Wallet className="h-4 w-4" /> ০ → এখন
-                  </Button>
+                  {(() => {
+                    const t = todayIso();
+                    const isToday = startDate === t && endDate === t;
+                    return (
+                      <Button
+                        type="button"
+                        variant={isToday ? "default" : "secondary"}
+                        onClick={() => {
+                          if (isToday) { setStartDate(""); setEndDate(""); }
+                          else { setStartDate(t); setEndDate(t); }
+                        }}
+                        className="h-10 gap-1.5 whitespace-nowrap"
+                        title="আজকের লেনদেন"
+                      >
+                        <Wallet className="h-4 w-4" /> আজকের গুলো
+                      </Button>
+                    );
+                  })()}
                   <Button
                     type="button"
                     variant="outline"
