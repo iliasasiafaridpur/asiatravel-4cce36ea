@@ -548,12 +548,10 @@ ${node.innerHTML}
                     if (r.service_table === "tickets") {
                       if (svc.route) primaryBits.push(svc.route);
                       if (svc.airline) primaryBits.push(svc.airline);
-                      if (svc.flight_date) primaryBits.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
                       primaryBits.push(svc.country);
                     }
                   }
-                  if (r.method && isIn) primaryBits.push(`💳 ${r.method}`);
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
