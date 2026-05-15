@@ -141,11 +141,43 @@
   input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
+/* Soft cool-tone tints for table rows (per-ID alternating colors) */
+.row-tint-0 { background-color: #e0f2fe !important; }
+.row-tint-1 { background-color: #ede9fe !important; }
+.row-tint-2 { background-color: #fce7f3 !important; }
+.row-tint-3 { background-color: #f0f9ff !important; }
+.row-tint-4 { background-color: #f5f3ff !important; }
+.row-tint-5 { background-color: #fdf2f8 !important; }
+.row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover,
+.row-tint-3:hover, .row-tint-4:hover, .row-tint-5:hover {
+  filter: brightness(0.97);
+}
+.dark .row-tint-0 { background-color: oklch(0.3 0.04 230) !important; }
+.dark .row-tint-1 { background-color: oklch(0.3 0.04 290) !important; }
+.dark .row-tint-2 { background-color: oklch(0.3 0.04 350) !important; }
+.dark .row-tint-3 { background-color: oklch(0.28 0.03 220) !important; }
+.dark .row-tint-4 { background-color: oklch(0.3 0.04 300) !important; }
+.dark .row-tint-5 { background-color: oklch(0.3 0.04 340) !important; }
+
+/* Multi-color soft background for the app */
+:root {
+  --background: oklch(0.985 0.012 280);
+}
+body {
+  background-image:
+    radial-gradient(at 0% 0%, #e0f2fe 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #fce7f3 0px, transparent 50%),
+    radial-gradient(at 0% 100%, #ede9fe 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #f0f9ff 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
 @media print {
-  body { background: white !important; color: black !important; }
+  body { background: white !important; background-image: none !important; color: black !important; }
   aside, nav, [data-sidebar], header.app-header { display: none !important; }
   .print\:hidden { display: none !important; }
   main, .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
   table { font-size: 11px; }
   .border, .border-border\/60 { border-color: #999 !important; }
+  [class*="row-tint-"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
