@@ -864,12 +864,13 @@ export function FormSections({ mod, form, setForm }: {
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
+  const visibleFields = mod.fields.filter((f) => !f.hideInForm);
   const sections: Section[] = ["passenger", "agency", "vendor"];
   const grouped = sections
-    .map((s) => ({ section: s, fields: mod.fields.filter((f) => (f.section ?? "passenger") === s) }))
+    .map((s) => ({ section: s, fields: visibleFields.filter((f) => (f.section ?? "passenger") === s) }))
     .filter((g) => g.fields.length > 0);
   // If no field uses sections at all, render as one block (e.g. agents/vendors/ledgers).
-  const usesSections = mod.fields.some((f) => f.section);
+  const usesSections = visibleFields.some((f) => f.section);
   const hasPassportFields = mod.fields.some((f) => f.name === "passenger_name") && mod.fields.some((f) => f.name === "passport");
   const applyOcr = (fields: PassportFields) => {
     setForm((s) => {
@@ -885,7 +886,7 @@ export function FormSections({ mod, form, setForm }: {
       {hasPassportFields && (
         <PassportScanner onResult={applyOcr} />
       )}
-      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: mod.fields }]).map((g) => (
+      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: visibleFields }]).map((g) => (
         <div key={g.section}>
           {usesSections && (
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 pb-1 border-b">
