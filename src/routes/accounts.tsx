@@ -324,7 +324,7 @@ function AccountsPage() {
   tfoot td{font-weight:700;background:#fafafa}
   @media print{body{padding:8px}}
 </style></head><body>
-<h1>আমার হিসাব — Timeline</h1>
+<h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
 <div class="summary">
   <div>হাতে আছে: <b>${fmt(balance)}</b></div>
