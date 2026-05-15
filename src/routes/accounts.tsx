@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -18,7 +17,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, RotateCcw, Tag, MessageSquare,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History,
 } from "lucide-react";
 
 export const Route = createFileRoute("/accounts")({
@@ -31,16 +30,7 @@ const EXPENSE_CATEGORIES = ["Office", "Transport", "Food", "Stationery", "Bill",
 const RECEIVERS = ["MD Sir", "Office", "Bank Deposit", "Other"];
 
 const today = () => new Date().toISOString().slice(0, 10);
-const monthStart = () => `${new Date().toISOString().slice(0, 8)}01`;
-const yearStart = () => `${new Date().getFullYear()}-01-01`;
 
-type Preset = "today" | "month" | "year" | "all";
-function presetRange(p: Preset): { from: string; to: string } {
-  if (p === "today") { const d = today(); return { from: d, to: d }; }
-  if (p === "month") return { from: monthStart(), to: today() };
-  if (p === "year") return { from: yearStart(), to: today() };
-  return { from: "1970-01-01", to: "2999-12-31" };
-}
 
 interface Acct {
   user_id: string; full_name: string;
@@ -83,12 +73,8 @@ function AccountsPage() {
   const [expenses, setExpenses] = useState<Exp[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [preset, setPreset] = useState<Preset>("month");
-  const [sinceZero, setSinceZero] = useState(false);
-  const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
-  const [customOpen, setCustomOpen] = useState(false);
-  const [draftFrom, setDraftFrom] = useState(today());
-  const [draftTo, setDraftTo] = useState(today());
+  const [latestInput, setLatestInput] = useState("5");
+  
   const printRef = useRef<HTMLDivElement>(null);
   const reloadingRef = useRef(false);
 
@@ -136,9 +122,10 @@ function AccountsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, reload]);
 
-  // Period filter
-  const range = useMemo(() => (customRange ?? presetRange(preset)), [preset, customRange]);
-  const inRange = useCallback((d: string) => d >= range.from && d <= range.to, [range]);
+  // Latest-N filter — parse input
+  const parsedN = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
+  const latestN = Number.isFinite(parsedN) && parsedN > 0 ? parsedN : 0;
+  const isInvalidInput = latestN === 0;
 
   // Service detail map (for timeline secondary text & due display)
   type SvcDetail = {
@@ -187,9 +174,9 @@ function AccountsPage() {
     return () => { cancelled = true; };
   }, [received]);
 
-  const fRecv = useMemo(() => received.filter((r) => inRange(r.entry_date)), [received, inRange]);
-  const fHand = useMemo(() => handovers.filter((h) => inRange(h.entry_date)), [handovers, inRange]);
-  const fExp  = useMemo(() => expenses.filter((e) => inRange(e.entry_date)), [expenses, inRange]);
+  const fRecv = useMemo(() => received.slice(0, latestN), [received, latestN]);
+  const fHand = useMemo(() => handovers.slice(0, latestN), [handovers, latestN]);
+  const fExp  = useMemo(() => expenses.slice(0, latestN), [expenses, latestN]);
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
   const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
@@ -216,21 +203,10 @@ function AccountsPage() {
     });
   }, [received, handovers, expenses]);
 
-  // Find last index where running balance was 0 (cycle start)
-  const lastZeroIdx = useMemo(() => {
-    let idx = -1;
-    for (let i = 0; i < fullAsc.length; i++) {
-      if (Math.abs(fullAsc[i].running) < 0.005) idx = i;
-    }
-    return idx;
-  }, [fullAsc]);
-
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
-    const slice = sinceZero
-      ? fullAsc.slice(lastZeroIdx + 1)
-      : fullAsc.filter((it) => inRange(it.date));
-    return [...slice].reverse();
-  }, [fullAsc, sinceZero, lastZeroIdx, inRange]);
+    if (latestN === 0) return [];
+    return [...fullAsc].reverse().slice(0, latestN);
+  }, [fullAsc, latestN]);
 
   // Save handover
   const saveHandover = async () => {
@@ -303,11 +279,7 @@ function AccountsPage() {
     if (!node) return;
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
-    const periodLabel = sinceZero
-      ? "০ ব্যালেন্স থেকে এখন পর্যন্ত"
-      : customRange
-      ? `${customRange.from} → ${customRange.to}`
-      : preset === "today" ? "আজ" : preset === "month" ? "এই মাস" : preset === "year" ? "এই বছর" : "সব সময়";
+    const periodLabel = `সর্বশেষ ${latestN} লেনদেন`;
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
@@ -376,94 +348,28 @@ ${node.innerHTML}
       {/* Action Bar */}
       <Card className="overflow-hidden">
         <CardContent className="p-3 flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex flex-wrap gap-1.5 items-center">
-            {(["today", "month", "year", "all"] as Preset[]).map((p) => (
-              <Button key={p} size="sm" variant={!sinceZero && !customRange && preset === p ? "default" : "outline"} onClick={() => { setSinceZero(false); setCustomRange(null); setPreset(p); }} className="h-8 text-xs">
-                {p === "today" ? "আজ" : p === "month" ? "এই মাস" : p === "year" ? "এই বছর" : "সব"}
-              </Button>
-            ))}
-            <Button
-              size="sm"
-              variant={sinceZero ? "default" : "outline"}
-              onClick={() => { setCustomRange(null); setSinceZero((v) => !v); }}
-              className="h-8 text-xs gap-1"
-              title="হাতে ০ ব্যালেন্স হওয়ার পর থেকে এখন পর্যন্ত"
-            >
-              <RotateCcw className="h-3.5 w-3.5" /> ০ থেকে এখন
-            </Button>
-            <Popover open={customOpen} onOpenChange={(o) => {
-              setCustomOpen(o);
-              if (o && customRange) { setDraftFrom(customRange.from); setDraftTo(customRange.to); }
-            }}>
-              <PopoverTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={customRange ? "default" : "outline"}
-                  className="h-8 text-xs gap-1"
-                  title="নির্দিষ্ট তারিখ পরিসর"
-                >
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {customRange ? `${customRange.from} → ${customRange.to}` : "তারিখ পরিসর"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-3 space-y-2" align="start">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs">From</Label>
-                    <Input type="date" value={draftFrom} max={draftTo} onChange={(e) => setDraftFrom(e.target.value)} className="h-8" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To</Label>
-                    <Input type="date" value={draftTo} min={draftFrom} onChange={(e) => setDraftTo(e.target.value)} className="h-8" />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {([
-                    { k: "7d", label: "৭ দিন", days: 6 },
-                    { k: "30d", label: "৩০ দিন", days: 29 },
-                    { k: "90d", label: "৯০ দিন", days: 89 },
-                  ] as const).map((q) => (
-                    <Button
-                      key={q.k}
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-[11px] flex-1"
-                      onClick={() => {
-                        const to = new Date();
-                        const from = new Date();
-                        from.setDate(to.getDate() - q.days);
-                        setDraftFrom(from.toISOString().slice(0, 10));
-                        setDraftTo(to.toISOString().slice(0, 10));
-                      }}
-                    >
-                      {q.label}
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex justify-between gap-2 pt-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs"
-                    onClick={() => { setCustomRange(null); setCustomOpen(false); }}
-                  >
-                    Clear
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => {
-                      if (!draftFrom || !draftTo) return;
-                      setSinceZero(false);
-                      setCustomRange({ from: draftFrom, to: draftTo });
-                      setCustomOpen(false);
-                    }}
-                  >
-                    Apply
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+          <div className="flex items-center gap-2 flex-1 min-w-[220px] max-w-md">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={latestInput}
+                onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
+                placeholder="সংখ্যা লিখুন (যেমন: 5)"
+                className="h-10 pl-9 pr-24 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider flex items-center gap-1 pointer-events-none">
+                <History className="h-3 w-3" />
+                সর্বশেষ
+              </span>
+            </div>
+            {!isInvalidInput && (
+              <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
+                {latestN} এন্ট্রি
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
@@ -592,10 +498,9 @@ ${node.innerHTML}
           {/* Timeline header strip with count + print */}
           <div className="flex items-center justify-between gap-2 px-1">
             <div className="text-xs text-muted-foreground">
-              {sinceZero ? <span className="text-primary font-medium">০ ব্যালেন্স থেকে এখন পর্যন্ত</span> : "বর্তমান ফিল্টার"} · মোট <b className="text-foreground">{timeline.length}</b> এন্ট্রি
-              {sinceZero && lastZeroIdx >= 0 && fullAsc[lastZeroIdx] && (
-                <span> · শুরু: {formatDate(fullAsc[lastZeroIdx].date)}</span>
-              )}
+              {isInvalidInput
+                ? <span className="text-amber-600 font-medium">⚠ সঠিক সংখ্যা লিখুন</span>
+                : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
             <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
               <Printer className="h-3.5 w-3.5" /> প্রিন্ট
@@ -604,7 +509,18 @@ ${node.innerHTML}
 
           <Card><CardContent className="p-0">
             {loading ? <EmptyRow>লোড হচ্ছে...</EmptyRow>
-              : timeline.length === 0 ? <EmptyRow>এই সময়সীমার মধ্যে কোনো এন্ট্রি নেই</EmptyRow>
+              : isInvalidInput ? (
+                <div className="text-center py-16 px-4 space-y-3">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 grid place-items-center">
+                    <Search className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">সংখ্যা লিখুন</p>
+                    <p className="text-xs text-muted-foreground mt-1">কতগুলো সর্বশেষ লেনদেন দেখতে চান? উপরের বক্সে একটি সংখ্যা (যেমন: ৫, ১০, ২৫) লিখুন।</p>
+                  </div>
+                </div>
+              )
+              : timeline.length === 0 ? <EmptyRow>কোনো লেনদেন পাওয়া যায়নি</EmptyRow>
               : <div className="divide-y">
                 {timeline.map((it) => {
                   const isIn = it.kind === "received";
