@@ -79,6 +79,10 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 
 function selectColumns(mod: ModuleSchema): string {
   const cols = new Set(["id", mod.idColumn, "created_at", "created_by"]);
+  if (mod.key === "agency-ledger" || mod.key === "vendor-ledger") {
+    cols.add("source_id");
+    cols.add("source_table");
+  }
   mod.fields.forEach((field) => cols.add(field.name));
   return Array.from(cols).join(",");
 }
@@ -147,7 +151,7 @@ export function LedgerPage({ module: mod }: Props) {
     "Other",
   ];
   const loadingRef = useRef(false);
-  const cacheKey = `cache_v3_${mod.table}`;
+  const cacheKey = `cache_v4_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
   const groupField = mod.groupBy?.field ?? "agent_name";
@@ -890,267 +894,267 @@ export function LedgerPage({ module: mod }: Props) {
             </div>
           </div>
           <div className="overflow-x-auto -mx-2 px-2">
-          <div className="space-y-2 min-w-[860px]">
-            <div className="grid grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/60">
-              <div>Date / ID</div>
-              <div>Passenger</div>
-              <div>Service</div>
-              <div>{groupLabel}</div>
-              <div className="text-right">Amount</div>
-              <div className="text-right print:hidden">Actions</div>
-            </div>
-            {loading ? (
-              <div className="text-center text-muted-foreground py-8">লোড হচ্ছে...</div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                কোনো এন্ট্রি পাওয়া যায়নি
+            <div className="space-y-2 min-w-[860px]">
+              <div className="grid grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/60">
+                <div>Date / ID</div>
+                <div>Passenger</div>
+                <div>Service</div>
+                <div>{groupLabel}</div>
+                <div className="text-right">Amount</div>
+                <div className="text-right print:hidden">Actions</div>
               </div>
-            ) : (
-              filtered.map((r) => {
-                const bal = balanceOf(r);
-                const passenger = String(r.passenger_name ?? "");
-                const service = String(r.service_type ?? "");
-                let cr = String(r.country_route ?? "");
-                const remarks = String(r.remarks ?? "");
-                const svcUpper = service.toUpperCase();
-                const svcLower = service.toLowerCase();
-                const isTicket = svcUpper.includes("TICKET") || svcLower === "tickets";
-                const isBmet = svcUpper.includes("BMET") || svcLower === "bmet_cards";
-                const isKuwait =
-                  svcLower === "kuwait_visas" ||
-                  (svcUpper.includes("KUWAIT") && svcUpper.includes("VISA"));
-                const isSaudi =
-                  svcLower === "saudi_visas" ||
-                  (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
-                const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
-                const isPayment = svcUpper === "PAYMENT";
-                const srcId = String(r.source_id ?? "");
-                const info = srcId ? sourceInfoMap.get(srcId) : undefined;
-                if (!cr && srcId) {
-                  if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
-                  else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
-                  else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
-                }
-                const serviceLabel = isTicket
-                  ? "Air Ticket"
-                  : isBmet
-                    ? "BMET Card"
-                    : isKuwait
-                      ? "Kuwait Visa"
-                      : isSaudi
-                        ? "Saudi Visa"
+              {loading ? (
+                <div className="text-center text-muted-foreground py-8">লোড হচ্ছে...</div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  কোনো এন্ট্রি পাওয়া যায়নি
+                </div>
+              ) : (
+                filtered.map((r) => {
+                  const bal = balanceOf(r);
+                  const passenger = String(r.passenger_name ?? "");
+                  const service = String(r.service_type ?? "");
+                  let cr = String(r.country_route ?? "");
+                  const remarks = String(r.remarks ?? "");
+                  const svcUpper = service.toUpperCase();
+                  const svcLower = service.toLowerCase();
+                  const isTicket = svcUpper.includes("TICKET") || svcLower === "tickets";
+                  const isBmet = svcUpper.includes("BMET") || svcLower === "bmet_cards";
+                  const isKuwait =
+                    svcLower === "kuwait_visas" ||
+                    (svcUpper.includes("KUWAIT") && svcUpper.includes("VISA"));
+                  const isSaudi =
+                    svcLower === "saudi_visas" ||
+                    (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
+                  const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
+                  const isPayment = svcUpper === "PAYMENT";
+                  const srcId = String(r.source_id ?? "");
+                  const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+                  if (!cr && srcId) {
+                    if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
+                    else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
+                    else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
+                  }
+                  const serviceLabel = isTicket
+                    ? "Air Ticket"
+                    : isBmet
+                      ? "BMET Card"
+                      : isKuwait
+                        ? "Kuwait Visa"
+                        : isSaudi
+                          ? "Saudi Visa"
+                          : isPayment
+                            ? isAgency
+                              ? "Payment Received"
+                              : "Payment Paid"
+                            : service || "—";
+                  const ServiceIcon = isTicket
+                    ? "✈"
+                    : isBmet
+                      ? "🪪"
+                      : isVisa
+                        ? "🌍"
                         : isPayment
-                          ? isAgency
-                            ? "Payment Received"
-                            : "Payment Paid"
-                          : service || "—";
-                const ServiceIcon = isTicket
-                  ? "✈"
-                  : isBmet
-                    ? "🪪"
-                    : isVisa
-                      ? "🌍"
-                      : isPayment
-                        ? "💵"
-                        : "•";
-                const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
-                const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
-                const cb = String(r.created_by ?? "");
-                const byName = cb ? profilesMap[cb] : "";
-                const passport = String(r.passport ?? info?.passport ?? "");
-                const mobile = String(r.mobile ?? info?.mobile ?? "");
-                const rowProfit = r.profit;
-                const profit =
-                  rowProfit !== undefined && rowProfit !== null && rowProfit !== ""
-                    ? Number(rowProfit)
-                    : info && typeof info.sold === "number" && typeof info.cost === "number"
-                      ? info.sold - info.cost
-                      : 0;
-                const status = info?.status ?? "";
-                const isPending = !!status && /pending|process/i.test(status);
-                return (
-                  <div
-                    key={r.id}
-                    className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start"
-                    style={{ background: "var(--gradient-card)" }}
-                  >
-                    <div className="min-w-0">
-                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                        Date / ID
-                      </div>
-                      <div className="font-bold whitespace-nowrap">
-                        {formatDate(r.entry_date as string | null)}
-                      </div>
-                      <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
-                        {String(r[mod.idColumn] ?? "")}
-                      </div>
-                       {status && (
-                         <Badge
-                           variant="outline"
-                           className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
-                         >
-                           {isPending ? "Pending" : status}
-                         </Badge>
-                       )}
-                       {byName && (
-                         <div className="text-[10px] text-muted-foreground whitespace-nowrap">
-                           by {byName}
-                         </div>
-                       )}
-                     </div>
-                    <div className="min-w-0">
-                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                        Passenger
-                      </div>
-                      <div className="font-bold">{passenger || "—"}</div>
-                      {passport && (
-                        <div className="text-[11px] text-muted-foreground leading-tight font-mono">
-                          PP: {passport}
+                          ? "💵"
+                          : "•";
+                  const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
+                  const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
+                  const cb = String(r.created_by ?? "");
+                  const byName = cb ? profilesMap[cb] : "";
+                  const passport = String(r.passport ?? info?.passport ?? "");
+                  const mobile = String(r.mobile ?? info?.mobile ?? "");
+                  const rowProfit = r.profit;
+                  const profit =
+                    rowProfit !== undefined && rowProfit !== null && rowProfit !== ""
+                      ? Number(rowProfit)
+                      : info && typeof info.sold === "number" && typeof info.cost === "number"
+                        ? info.sold - info.cost
+                        : 0;
+                  const status = info?.status ?? "";
+                  const isPending = !!status && /pending|process/i.test(status);
+                  return (
+                    <div
+                      key={r.id}
+                      className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start"
+                      style={{ background: "var(--gradient-card)" }}
+                    >
+                      <div className="min-w-0">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                          Date / ID
                         </div>
-                      )}
-                      {mobile && (
-                        <div className="text-[11px] text-muted-foreground leading-tight">
-                          📱 {mobile}
+                        <div className="font-bold whitespace-nowrap">
+                          {formatDate(r.entry_date as string | null)}
                         </div>
-                      )}
-                      {remarks && (
-                        <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">
-                          {remarks}
+                        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
+                          {String(r[mod.idColumn] ?? "")}
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                        Service
-                      </div>
-                      <div className="text-sm font-semibold">{serviceLabel}</div>
-                      {info?.airline && (
-                        <div className="text-xs text-muted-foreground leading-tight">
-                          {info.airline}
-                          {cr ? ` · ${cr}` : ""}
-                        </div>
-                      )}
-                      {!info?.airline && cr && (
-                        <div className="text-xs text-muted-foreground leading-tight">
-                          {ServiceIcon} {cr}
-                        </div>
-                      )}
-                      {flightDate && (
-                        <div className="text-xs text-muted-foreground leading-tight">
-                          ✈ Flight: {flightDate}
-                        </div>
-                      )}
-                      {info?.pnr && (
-                        <div className="text-xs text-muted-foreground leading-tight">
-                          PNR: {info.pnr}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                        {groupLabel}
-                      </div>
-                      <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
-                      {info?.vendor && (
-                        <div className="text-[11px] text-muted-foreground leading-tight">
-                          V: {info.vendor}
-                        </div>
-                      )}
-                      {typeof info?.cost === "number" && info.cost > 0 && (
-                        <div className="text-[10px] text-muted-foreground leading-tight tabular-nums">
-                          ৳ {info.cost.toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="tabular-nums whitespace-nowrap text-right">
-                      <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                        Amount
-                      </div>
-                      <div className="font-bold text-base">
-                        ৳ {Number(r[billCol] ?? 0).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                        {isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}
-                      </div>
-                      <div className="text-xs">
-                        {bal > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
-                            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
-                            title="পেমেন্ট"
-                          >
-                            Due: {bal.toLocaleString()} <Wallet className="h-3 w-3" />
-                          </button>
-                        ) : bal === 0 ? (
+                        {status && (
                           <Badge
                             variant="outline"
-                            className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]"
+                            className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
                           >
-                            Paid
+                            {isPending ? "Pending" : status}
                           </Badge>
-                        ) : (
-                          <span className="text-amber-500">
-                            Adv: {Math.abs(bal).toLocaleString()}
-                          </span>
+                        )}
+                        {byName && (
+                          <div className="text-[10px] text-muted-foreground whitespace-nowrap">
+                            by {byName}
+                          </div>
                         )}
                       </div>
-                      <div
-                        className={cn(
-                          "text-[11px] font-medium",
-                          profit < 0 ? "text-rose-500" : "text-muted-foreground",
+                      <div className="min-w-0">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                          Passenger
+                        </div>
+                        <div className="font-bold">{passenger || "—"}</div>
+                        {passport && (
+                          <div className="text-[11px] text-muted-foreground leading-tight font-mono">
+                            PP: {passport}
+                          </div>
                         )}
-                      >
-                        Profit: {profit.toLocaleString()}
+                        {mobile && (
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            📱 {mobile}
+                          </div>
+                        )}
+                        {remarks && (
+                          <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">
+                            {remarks}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="print:hidden">
-                      <div className="flex justify-end gap-0.5 lg:justify-end">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setViewRow(r)}
-                          title="View"
+                      <div className="min-w-0">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                          Service
+                        </div>
+                        <div className="text-sm font-semibold">{serviceLabel}</div>
+                        {info?.airline && (
+                          <div className="text-xs text-muted-foreground leading-tight">
+                            {info.airline}
+                            {cr ? ` · ${cr}` : ""}
+                          </div>
+                        )}
+                        {!info?.airline && cr && (
+                          <div className="text-xs text-muted-foreground leading-tight">
+                            {ServiceIcon} {cr}
+                          </div>
+                        )}
+                        {flightDate && (
+                          <div className="text-xs text-muted-foreground leading-tight">
+                            ✈ Flight: {flightDate}
+                          </div>
+                        )}
+                        {info?.pnr && (
+                          <div className="text-xs text-muted-foreground leading-tight">
+                            PNR: {info.pnr}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                          {groupLabel}
+                        </div>
+                        <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
+                        {info?.vendor && (
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            V: {info.vendor}
+                          </div>
+                        )}
+                        {typeof info?.cost === "number" && info.cost > 0 && (
+                          <div className="text-[10px] text-muted-foreground leading-tight tabular-nums">
+                            ৳ {info.cost.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="tabular-nums whitespace-nowrap text-right">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                          Amount
+                        </div>
+                        <div className="font-bold text-base">
+                          ৳ {Number(r[billCol] ?? 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                          {isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs">
+                          {bal > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
+                              title="পেমেন্ট"
+                            >
+                              Due: {bal.toLocaleString()} <Wallet className="h-3 w-3" />
+                            </button>
+                          ) : bal === 0 ? (
+                            <Badge
+                              variant="outline"
+                              className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]"
+                            >
+                              Paid
+                            </Badge>
+                          ) : (
+                            <span className="text-amber-500">
+                              Adv: {Math.abs(bal).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className={cn(
+                            "text-[11px] font-medium",
+                            profit < 0 ? "text-rose-500" : "text-muted-foreground",
+                          )}
                         >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                        {bal > 0 && (
+                          Profit: {profit.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="print:hidden">
+                        <div className="flex justify-end gap-0.5 lg:justify-end">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-emerald-600"
-                            onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
-                            title="Quick Pay"
+                            className="h-8 w-8"
+                            onClick={() => setViewRow(r)}
+                            title="View"
                           >
-                            <CreditCard className="h-3.5 w-3.5" />
+                            <Eye className="h-3.5 w-3.5" />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => startEdit(r)}
-                          title="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setDeleteRow(r)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                        </Button>
+                          {bal > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-emerald-600"
+                              onClick={() => openPayment(String(r[groupField] ?? ""), bal)}
+                              title="Quick Pay"
+                            >
+                              <CreditCard className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => startEdit(r)}
+                            title="Edit"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setDeleteRow(r)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
