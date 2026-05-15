@@ -643,8 +643,11 @@ ${node.innerHTML.replace(
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
 
+                  const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
+                  const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
+
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.2fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
                       {/* Col 1: Name */}
                       <div className="min-w-0">
                         <p className="font-semibold text-[13px] leading-tight break-words">{name}</p>
@@ -657,17 +660,12 @@ ${node.innerHTML.replace(
                         {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
 
-                      {/* Col 2: Service + secondary */}
+                      {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
                         <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
                         {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
                             {primaryBits.join(" · ")}
-                          </p>
-                        )}
-                        {dueLeft !== null && dueLeft > 0.005 && (
-                          <p className="text-[10px] text-rose-600 mt-0.5 font-medium">
-                            বাকি: {fmt(dueLeft)}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
@@ -678,7 +676,24 @@ ${node.innerHTML.replace(
                         )}
                       </div>
 
-                      {/* Col 3: Vendor + cost */}
+                      {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
+                      <div className="min-w-0 text-[10px] space-y-0.5">
+                        {totalBill !== null ? (
+                          <>
+                            <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
+                            {totalPaid !== null && (
+                              <p className="text-muted-foreground">মোট জমা: <span className="font-semibold text-emerald-600 tabular-nums">{fmt(totalPaid)}</span></p>
+                            )}
+                            {dueLeft !== null && (
+                              <p className="text-muted-foreground">বাকি: <span className={`font-semibold tabular-nums ${dueLeft > 0.005 ? "text-rose-600" : "text-emerald-600"}`}>{fmt(dueLeft)}</span></p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground/50">—</p>
+                        )}
+                      </div>
+
+                      {/* Col 4: Vendor + cost */}
                       <div className="min-w-0">
                         {isIn && svc?.vendor ? (
                           <>
