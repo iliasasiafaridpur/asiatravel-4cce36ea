@@ -23,7 +23,10 @@ export type Database = {
           entry_date: string
           id: string
           ledger_id: string
+          mobile: string | null
           passenger_name: string | null
+          passport: string | null
+          profit: number | null
           received_amount: number | null
           received_by: string | null
           remarks: string | null
@@ -41,7 +44,10 @@ export type Database = {
           entry_date?: string
           id?: string
           ledger_id: string
+          mobile?: string | null
           passenger_name?: string | null
+          passport?: string | null
+          profit?: number | null
           received_amount?: number | null
           received_by?: string | null
           remarks?: string | null
@@ -59,7 +65,10 @@ export type Database = {
           entry_date?: string
           id?: string
           ledger_id?: string
+          mobile?: string | null
           passenger_name?: string | null
+          passport?: string | null
+          profit?: number | null
           received_amount?: number | null
           received_by?: string | null
           remarks?: string | null
@@ -709,8 +718,11 @@ export type Database = {
           entry_date: string
           id: string
           ledger_id: string
+          mobile: string | null
           paid_amount: number | null
           passenger_name: string | null
+          passport: string | null
+          profit: number | null
           received_by: string | null
           remarks: string | null
           service_type: string | null
@@ -727,8 +739,11 @@ export type Database = {
           entry_date?: string
           id?: string
           ledger_id: string
+          mobile?: string | null
           paid_amount?: number | null
           passenger_name?: string | null
+          passport?: string | null
+          profit?: number | null
           received_by?: string | null
           remarks?: string | null
           service_type?: string | null
@@ -745,8 +760,11 @@ export type Database = {
           entry_date?: string
           id?: string
           ledger_id?: string
+          mobile?: string | null
           paid_amount?: number | null
           passenger_name?: string | null
+          passport?: string | null
+          profit?: number | null
           received_by?: string | null
           remarks?: string | null
           service_type?: string | null
