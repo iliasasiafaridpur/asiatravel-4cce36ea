@@ -142,35 +142,24 @@
 }
 
 /* Soft cool-tone tints for table rows (per-ID alternating colors) */
-.row-tint-0 { background-color: #e0f2fe !important; }
-.row-tint-1 { background-color: #ede9fe !important; }
-.row-tint-2 { background-color: #fce7f3 !important; }
-.row-tint-3 { background-color: #f0f9ff !important; }
-.row-tint-4 { background-color: #f5f3ff !important; }
-.row-tint-5 { background-color: #fdf2f8 !important; }
+/* Light mode: very light pastel backgrounds, dark text */
+.row-tint-0 { background-color: #eff6ff !important; color: #0f172a !important; }
+.row-tint-1 { background-color: #f5f3ff !important; color: #0f172a !important; }
+.row-tint-2 { background-color: #fdf2f8 !important; color: #0f172a !important; }
+.row-tint-3 { background-color: #ecfeff !important; color: #0f172a !important; }
+.row-tint-4 { background-color: #f0fdf4 !important; color: #0f172a !important; }
+.row-tint-5 { background-color: #fefce8 !important; color: #0f172a !important; }
 .row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover,
 .row-tint-3:hover, .row-tint-4:hover, .row-tint-5:hover {
-  filter: brightness(0.97);
+  filter: brightness(0.96);
 }
-.dark .row-tint-0 { background-color: oklch(0.3 0.04 230) !important; }
-.dark .row-tint-1 { background-color: oklch(0.3 0.04 290) !important; }
-.dark .row-tint-2 { background-color: oklch(0.3 0.04 350) !important; }
-.dark .row-tint-3 { background-color: oklch(0.28 0.03 220) !important; }
-.dark .row-tint-4 { background-color: oklch(0.3 0.04 300) !important; }
-.dark .row-tint-5 { background-color: oklch(0.3 0.04 340) !important; }
-
-/* Multi-color soft background for the app */
-:root {
-  --background: oklch(0.985 0.012 280);
-}
-body {
-  background-image:
-    radial-gradient(at 0% 0%, #e0f2fe 0px, transparent 50%),
-    radial-gradient(at 100% 0%, #fce7f3 0px, transparent 50%),
-    radial-gradient(at 0% 100%, #ede9fe 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #f0f9ff 0px, transparent 50%);
-  background-attachment: fixed;
-}
+/* Dark mode: subtle tinted dark backgrounds with light text */
+.dark .row-tint-0 { background-color: oklch(0.26 0.025 240) !important; color: oklch(0.96 0.01 240) !important; }
+.dark .row-tint-1 { background-color: oklch(0.26 0.025 290) !important; color: oklch(0.96 0.01 240) !important; }
+.dark .row-tint-2 { background-color: oklch(0.26 0.025 340) !important; color: oklch(0.96 0.01 240) !important; }
+.dark .row-tint-3 { background-color: oklch(0.26 0.025 200) !important; color: oklch(0.96 0.01 240) !important; }
+.dark .row-tint-4 { background-color: oklch(0.26 0.025 160) !important; color: oklch(0.96 0.01 240) !important; }
+.dark .row-tint-5 { background-color: oklch(0.26 0.025 90) !important; color: oklch(0.96 0.01 240) !important; }
 
 @media print {
   body { background: white !important; background-image: none !important; color: black !important; }
