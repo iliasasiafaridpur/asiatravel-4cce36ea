@@ -348,94 +348,28 @@ ${node.innerHTML}
       {/* Action Bar */}
       <Card className="overflow-hidden">
         <CardContent className="p-3 flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex flex-wrap gap-1.5 items-center">
-            {(["today", "month", "year", "all"] as Preset[]).map((p) => (
-              <Button key={p} size="sm" variant={!sinceZero && !customRange && preset === p ? "default" : "outline"} onClick={() => { setSinceZero(false); setCustomRange(null); setPreset(p); }} className="h-8 text-xs">
-                {p === "today" ? "আজ" : p === "month" ? "এই মাস" : p === "year" ? "এই বছর" : "সব"}
-              </Button>
-            ))}
-            <Button
-              size="sm"
-              variant={sinceZero ? "default" : "outline"}
-              onClick={() => { setCustomRange(null); setSinceZero((v) => !v); }}
-              className="h-8 text-xs gap-1"
-              title="হাতে ০ ব্যালেন্স হওয়ার পর থেকে এখন পর্যন্ত"
-            >
-              <RotateCcw className="h-3.5 w-3.5" /> ০ থেকে এখন
-            </Button>
-            <Popover open={customOpen} onOpenChange={(o) => {
-              setCustomOpen(o);
-              if (o && customRange) { setDraftFrom(customRange.from); setDraftTo(customRange.to); }
-            }}>
-              <PopoverTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={customRange ? "default" : "outline"}
-                  className="h-8 text-xs gap-1"
-                  title="নির্দিষ্ট তারিখ পরিসর"
-                >
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {customRange ? `${customRange.from} → ${customRange.to}` : "তারিখ পরিসর"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-3 space-y-2" align="start">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs">From</Label>
-                    <Input type="date" value={draftFrom} max={draftTo} onChange={(e) => setDraftFrom(e.target.value)} className="h-8" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To</Label>
-                    <Input type="date" value={draftTo} min={draftFrom} onChange={(e) => setDraftTo(e.target.value)} className="h-8" />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {([
-                    { k: "7d", label: "৭ দিন", days: 6 },
-                    { k: "30d", label: "৩০ দিন", days: 29 },
-                    { k: "90d", label: "৯০ দিন", days: 89 },
-                  ] as const).map((q) => (
-                    <Button
-                      key={q.k}
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-[11px] flex-1"
-                      onClick={() => {
-                        const to = new Date();
-                        const from = new Date();
-                        from.setDate(to.getDate() - q.days);
-                        setDraftFrom(from.toISOString().slice(0, 10));
-                        setDraftTo(to.toISOString().slice(0, 10));
-                      }}
-                    >
-                      {q.label}
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex justify-between gap-2 pt-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs"
-                    onClick={() => { setCustomRange(null); setCustomOpen(false); }}
-                  >
-                    Clear
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => {
-                      if (!draftFrom || !draftTo) return;
-                      setSinceZero(false);
-                      setCustomRange({ from: draftFrom, to: draftTo });
-                      setCustomOpen(false);
-                    }}
-                  >
-                    Apply
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+          <div className="flex items-center gap-2 flex-1 min-w-[220px] max-w-md">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={latestInput}
+                onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
+                placeholder="সংখ্যা লিখুন (যেমন: 5)"
+                className="h-10 pl-9 pr-24 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider flex items-center gap-1 pointer-events-none">
+                <History className="h-3 w-3" />
+                সর্বশেষ
+              </span>
+            </div>
+            {!isInvalidInput && (
+              <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
+                {latestN} এন্ট্রি
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
