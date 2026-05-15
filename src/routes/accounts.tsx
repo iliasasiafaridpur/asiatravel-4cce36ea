@@ -30,16 +30,7 @@ const EXPENSE_CATEGORIES = ["Office", "Transport", "Food", "Stationery", "Bill",
 const RECEIVERS = ["MD Sir", "Office", "Bank Deposit", "Other"];
 
 const today = () => new Date().toISOString().slice(0, 10);
-const monthStart = () => `${new Date().toISOString().slice(0, 8)}01`;
-const yearStart = () => `${new Date().getFullYear()}-01-01`;
 
-type Preset = "today" | "month" | "year" | "all";
-function presetRange(p: Preset): { from: string; to: string } {
-  if (p === "today") { const d = today(); return { from: d, to: d }; }
-  if (p === "month") return { from: monthStart(), to: today() };
-  if (p === "year") return { from: yearStart(), to: today() };
-  return { from: "1970-01-01", to: "2999-12-31" };
-}
 
 interface Acct {
   user_id: string; full_name: string;
