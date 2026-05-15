@@ -67,7 +67,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
   const [bmetCountryMap, setBmetCountryMap] = useState<Map<string, string>>(new Map());
   const [visaCountryMap, setVisaCountryMap] = useState<Map<string, string>>(new Map());
-  const [sourceInfoMap, setSourceInfoMap] = useState<Map<string, { passport?: string; mobile?: string }>>(new Map());
+  const [sourceInfoMap, setSourceInfoMap] = useState<Map<string, { passport?: string; mobile?: string; vendor?: string; sold?: number; cost?: number; status?: string; airline?: string; pnr?: string }>>(new Map());
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -156,32 +156,35 @@ export function LedgerPage({ module: mod }: Props) {
   useEffect(() => {
     (async () => {
       const [tk, bm, kv, sv] = await Promise.all([
-        supabase.from("tickets").select("id,flight_date,trip_road,passport,mobile").limit(2000),
-        supabase.from("bmet_cards").select("id,country_name,passport,mobile").limit(2000),
-        supabase.from("kuwait_visas").select("id,passport,mobile").limit(2000),
-        supabase.from("saudi_visas").select("id,passport,mobile").limit(2000),
+        supabase.from("tickets").select("id,flight_date,trip_road,passport,mobile,vendor_bought,sold_price,cost_price,status,airline,pnr").limit(2000),
+        supabase.from("bmet_cards").select("id,country_name,passport,mobile,vendor_bought,sold_price,cost_price,status").limit(2000),
+        supabase.from("kuwait_visas").select("id,passport,mobile,vendor_bought,sold_price,cost_price,status").limit(2000),
+        supabase.from("saudi_visas").select("id,passport,mobile,vendor_bought,sold_price,cost_price,status").limit(2000),
       ]);
       const fm = new Map<string, string>();
       const rm = new Map<string, string>();
-      const info = new Map<string, { passport?: string; mobile?: string }>();
-      for (const t of (((tk.data as unknown) as { id: string; flight_date: string | null; trip_road: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
+      const info = new Map<string, { passport?: string; mobile?: string; vendor?: string; sold?: number; cost?: number; status?: string; airline?: string; pnr?: string }>();
+      type T = { id: string; flight_date: string | null; trip_road: string | null; passport: string | null; mobile: string | null; vendor_bought: string | null; sold_price: number | null; cost_price: number | null; status: string | null; airline: string | null; pnr: string | null };
+      for (const t of (((tk.data as unknown) as T[]) ?? [])) {
         if (t.flight_date) fm.set(t.id, t.flight_date);
         if (t.trip_road) rm.set(t.id, t.trip_road);
-        if (t.passport || t.mobile) info.set(t.id, { passport: t.passport ?? undefined, mobile: t.mobile ?? undefined });
+        info.set(t.id, { passport: t.passport ?? undefined, mobile: t.mobile ?? undefined, vendor: t.vendor_bought ?? undefined, sold: t.sold_price ?? undefined, cost: t.cost_price ?? undefined, status: t.status ?? undefined, airline: t.airline ?? undefined, pnr: t.pnr ?? undefined });
       }
       const cm = new Map<string, string>();
-      for (const b of (((bm.data as unknown) as { id: string; country_name: string | null; passport: string | null; mobile: string | null }[]) ?? [])) {
+      type B = { id: string; country_name: string | null; passport: string | null; mobile: string | null; vendor_bought: string | null; sold_price: number | null; cost_price: number | null; status: string | null };
+      for (const b of (((bm.data as unknown) as B[]) ?? [])) {
         if (b.country_name) cm.set(b.id, b.country_name);
-        if (b.passport || b.mobile) info.set(b.id, { passport: b.passport ?? undefined, mobile: b.mobile ?? undefined });
+        info.set(b.id, { passport: b.passport ?? undefined, mobile: b.mobile ?? undefined, vendor: b.vendor_bought ?? undefined, sold: b.sold_price ?? undefined, cost: b.cost_price ?? undefined, status: b.status ?? undefined });
       }
       const vm = new Map<string, string>();
-      for (const v of (((kv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+      type V = { id: string; passport: string | null; mobile: string | null; vendor_bought: string | null; sold_price: number | null; cost_price: number | null; status: string | null };
+      for (const v of (((kv.data as unknown) as V[]) ?? [])) {
         vm.set(v.id, "Kuwait");
-        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+        info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined, vendor: v.vendor_bought ?? undefined, sold: v.sold_price ?? undefined, cost: v.cost_price ?? undefined, status: v.status ?? undefined });
       }
-      for (const v of (((sv.data as unknown) as { id: string; passport: string | null; mobile: string | null }[]) ?? [])) {
+      for (const v of (((sv.data as unknown) as V[]) ?? [])) {
         vm.set(v.id, "Saudi Arabia");
-        if (v.passport || v.mobile) info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined });
+        info.set(v.id, { passport: v.passport ?? undefined, mobile: v.mobile ?? undefined, vendor: v.vendor_bought ?? undefined, sold: v.sold_price ?? undefined, cost: v.cost_price ?? undefined, status: v.status ?? undefined });
       }
       setTicketFlightMap(fm);
       setTicketRouteMap(rm);
@@ -624,51 +627,62 @@ export function LedgerPage({ module: mod }: Props) {
                   let cr = String(r.country_route ?? "");
                   const remarks = String(r.remarks ?? "");
                   const svcUpper = service.toUpperCase();
-                  const isTicket = svcUpper.includes("TICKET");
-                  const isBmet = svcUpper.includes("BMET");
-                  const isVisa = svcUpper.includes("VISA");
+                  const svcLower = service.toLowerCase();
+                  const isTicket = svcUpper.includes("TICKET") || svcLower === "tickets";
+                  const isBmet = svcUpper.includes("BMET") || svcLower === "bmet_cards";
+                  const isKuwait = svcLower === "kuwait_visas" || (svcUpper.includes("KUWAIT") && svcUpper.includes("VISA"));
+                  const isSaudi = svcLower === "saudi_visas" || (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
+                  const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
+                  const isPayment = svcUpper === "PAYMENT";
                   const srcId = String(r.source_id ?? "");
+                  const info = srcId ? sourceInfoMap.get(srcId) : undefined;
                   if (!cr && srcId) {
                     if (isTicket) cr = ticketRouteMap.get(srcId) ?? "";
                     else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
                     else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
                   }
-                  const crLabel = isBmet || isVisa ? "🌍" : isTicket ? "✈" : "•";
+                  const serviceLabel = isTicket ? "Air Ticket"
+                    : isBmet ? "BMET Card"
+                    : isKuwait ? "Kuwait Visa"
+                    : isSaudi ? "Saudi Visa"
+                    : isPayment ? (isAgency ? "Payment Received" : "Payment Paid")
+                    : service || "—";
+                  const ServiceIcon = isTicket ? "✈" : isBmet ? "🪪" : isVisa ? "🌍" : isPayment ? "💵" : "•";
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
                   const byName = cb ? profilesMap[cb] : "";
+                  const profit = info && typeof info.sold === "number" && typeof info.cost === "number" ? info.sold - info.cost : null;
+                  const status = info?.status ?? "";
+                  const isPending = !!status && /pending|process/i.test(status);
                   return (
-                    <TableRow key={r.id}>
-                      <TableCell className="align-top py-3">
-                        <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
+                    <TableRow key={r.id} className="border-b border-border/40">
+                      <TableCell className="align-top py-4">
+                        <div className="font-bold whitespace-nowrap">{formatDate(r.entry_date as string | null)}</div>
                         <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
                         {byName && <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {byName}</div>}
                       </TableCell>
-                      <TableCell className="align-top py-3 min-w-[140px]">
-                        <div className="font-medium">{passenger || "—"}</div>
-                        {(() => {
-                          const info = srcId ? sourceInfoMap.get(srcId) : undefined;
-                          return (
-                            <>
-                              {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">P:</span> {info.passport}</div>}
-                              {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight"><span className="opacity-60">M:</span> {info.mobile}</div>}
-                            </>
-                          );
-                        })()}
-                        {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px]">{remarks}</div>}
+                      <TableCell className="align-top py-4 min-w-[160px]">
+                        <div className="font-bold">{passenger || "—"}</div>
+                        {info?.passport && <div className="text-[11px] text-muted-foreground leading-tight font-mono">PP: {info.passport}</div>}
+                        {info?.mobile && <div className="text-[11px] text-muted-foreground leading-tight">📱 {info.mobile}</div>}
+                        {remarks && <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">{remarks}</div>}
                       </TableCell>
-                      <TableCell className="align-top py-3 min-w-[140px]">
-                        {service && <div className="text-sm font-medium">{service}</div>}
-                        {cr && <div className="text-xs text-muted-foreground leading-tight"><span className="opacity-60">{crLabel}</span> {cr}</div>}
-                        {flightDate && <div className="text-xs text-muted-foreground leading-tight"><span className="opacity-60">Flight:</span> {flightDate}</div>}
+                      <TableCell className="align-top py-4 min-w-[160px]">
+                        <div className="text-sm font-semibold">{serviceLabel}</div>
+                        {info?.airline && <div className="text-xs text-muted-foreground leading-tight">{info.airline}{cr ? ` · ${cr}` : ""}</div>}
+                        {!info?.airline && cr && <div className="text-xs text-muted-foreground leading-tight">{ServiceIcon} {cr}</div>}
+                        {flightDate && <div className="text-xs text-muted-foreground leading-tight">✈ Flight: {flightDate}</div>}
+                        {info?.pnr && <div className="text-xs text-muted-foreground leading-tight">PNR: {info.pnr}</div>}
+                        {isPending && <Badge variant="outline" className="mt-1 border-amber-500/60 text-amber-600 dark:text-amber-400 text-[10px]">Pending</Badge>}
                       </TableCell>
-                      <TableCell className="align-top py-3 min-w-[120px]">
-                        <div className="font-medium">{String(r[groupField] ?? "—")}</div>
+                      <TableCell className="align-top py-4 min-w-[140px]">
+                        <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
+                        {info?.vendor && <div className="text-[11px] text-muted-foreground leading-tight">V: {info.vendor}</div>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums whitespace-nowrap align-top py-3">
-                        <div className="font-semibold">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
-                        <div className="text-xs text-emerald-600">{isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}</div>
+                      <TableCell className="text-right tabular-nums whitespace-nowrap align-top py-4">
+                        <div className="font-bold text-base">৳ {Number(r[billCol] ?? 0).toLocaleString()}</div>
+                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}</div>
                         <div className="text-xs">
                           {bal > 0 ? (
                             <button
@@ -685,8 +699,13 @@ export function LedgerPage({ module: mod }: Props) {
                             <span className="text-amber-500">Adv: {Math.abs(bal).toLocaleString()}</span>
                           )}
                         </div>
+                        {profit !== null && profit !== 0 && (
+                          <div className={`text-[11px] font-medium ${profit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+                            Profit: {profit.toLocaleString()}
+                          </div>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right align-top py-3 print:hidden">
+                      <TableCell className="text-right align-top py-4 print:hidden">
                         <div className="flex justify-end gap-0.5">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewRow(r)} title="View">
                             <Eye className="h-3.5 w-3.5" />
