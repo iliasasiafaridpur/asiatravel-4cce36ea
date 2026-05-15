@@ -309,12 +309,12 @@ function AccountsPage() {
       },
       { inAmt: 0, outAmt: 0 },
     );
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আমার হিসাব — Timeline</title>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
   h1{margin:0 0 4px;font-size:20px}
   .meta{color:#555;font-size:12px;margin-bottom:14px}
-  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:12px}
+  .summary{display:flex;gap:12px;margin-bottom:14px;font-size:14px;font-weight:700}
   .summary div{padding:8px 12px;border:1px solid #ddd;border-radius:6px;flex:1}
   table{width:100%;border-collapse:collapse;font-size:12px}
   th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left;vertical-align:top}
@@ -324,7 +324,7 @@ function AccountsPage() {
   tfoot td{font-weight:700;background:#fafafa}
   @media print{body{padding:8px}}
 </style></head><body>
-<h1>আমার হিসাব — Timeline</h1>
+<h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
 <div class="summary">
   <div>হাতে আছে: <b>${fmt(balance)}</b></div>
