@@ -768,30 +768,48 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 flex flex-col">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">সর্বশেষ N</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={latestInput}
+                  disabled={!!(startDate || endDate)}
+                  onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="যেমন: 5"
+                  className="h-10 text-base tabular-nums disabled:opacity-50"
+                />
+              </div>
+              <div className="space-y-1.5 flex flex-col col-span-2 sm:col-span-3 lg:col-span-4">
                 <Label className="text-sm font-medium opacity-0 hidden sm:block">.</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
                     onClick={() => setDueOnly((v) => !v)}
-                    className="h-10 gap-1.5 flex-1"
+                    className="h-10 gap-1.5"
                   >
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
-                  <Button
-                    type="button"
-                    variant={sinceLastZero ? "default" : "secondary"}
-                    onClick={() => {
-                      setSinceLastZero((v) => !v);
-                      setStartDate("");
-                      setEndDate("");
-                    }}
-                    className="h-10 gap-1.5 flex-1 whitespace-nowrap"
-                    title="প্রতিটি Agent/Vendor-এর শেষবার Due শূন্য হওয়ার পর থেকে চলমান লেনদেন"
-                  >
-                    <Wallet className="h-4 w-4" /> ০ → এখন
-                  </Button>
+                  {(() => {
+                    const t = todayIso();
+                    const isToday = startDate === t && endDate === t;
+                    return (
+                      <Button
+                        type="button"
+                        variant={isToday ? "default" : "secondary"}
+                        onClick={() => {
+                          if (isToday) { setStartDate(""); setEndDate(""); }
+                          else { setStartDate(t); setEndDate(t); }
+                        }}
+                        className="h-10 gap-1.5 whitespace-nowrap"
+                        title="আজকের লেনদেন"
+                      >
+                        <Wallet className="h-4 w-4" /> আজকের গুলো
+                      </Button>
+                    );
+                  })()}
                   <Button
                     type="button"
                     variant="outline"
