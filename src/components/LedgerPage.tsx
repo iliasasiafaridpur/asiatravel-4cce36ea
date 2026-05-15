@@ -984,12 +984,20 @@ export function LedgerPage({ module: mod }: Props) {
                       <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
                         {String(r[mod.idColumn] ?? "")}
                       </div>
-                      {byName && (
-                        <div className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          by {byName}
-                        </div>
-                      )}
-                    </div>
+                       {status && (
+                         <Badge
+                           variant="outline"
+                           className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
+                         >
+                           {isPending ? "Pending" : status}
+                         </Badge>
+                       )}
+                       {byName && (
+                         <div className="text-[10px] text-muted-foreground whitespace-nowrap">
+                           by {byName}
+                         </div>
+                       )}
+                     </div>
                     <div className="min-w-0">
                       <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                         Passenger
@@ -1036,14 +1044,6 @@ export function LedgerPage({ module: mod }: Props) {
                         <div className="text-xs text-muted-foreground leading-tight">
                           PNR: {info.pnr}
                         </div>
-                      )}
-                      {status && (
-                        <Badge
-                          variant="outline"
-                          className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
-                        >
-                          {isPending ? "Pending" : status}
-                        </Badge>
                       )}
                     </div>
                     <div className="min-w-0">
