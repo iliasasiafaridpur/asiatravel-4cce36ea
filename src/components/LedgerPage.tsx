@@ -79,6 +79,10 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 
 function selectColumns(mod: ModuleSchema): string {
   const cols = new Set(["id", mod.idColumn, "created_at", "created_by"]);
+  if (mod.key === "agency-ledger" || mod.key === "vendor-ledger") {
+    cols.add("source_id");
+    cols.add("source_table");
+  }
   mod.fields.forEach((field) => cols.add(field.name));
   return Array.from(cols).join(",");
 }
@@ -147,7 +151,7 @@ export function LedgerPage({ module: mod }: Props) {
     "Other",
   ];
   const loadingRef = useRef(false);
-  const cacheKey = `cache_v3_${mod.table}`;
+  const cacheKey = `cache_v4_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
   const groupField = mod.groupBy?.field ?? "agent_name";
