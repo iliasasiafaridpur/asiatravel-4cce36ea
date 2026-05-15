@@ -688,7 +688,6 @@ export function LedgerPage({ module: mod }: Props) {
         const paid = Number(r[paidCol] ?? 0);
         const due = bill - paid;
         const srcId = String(r.source_id ?? "");
-        const info = srcId ? sourceInfoMap.get(srcId) : undefined;
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
         const isTicket = svcU.includes("TICKET");
