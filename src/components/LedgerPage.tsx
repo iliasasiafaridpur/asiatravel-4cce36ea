@@ -1056,6 +1056,11 @@ export function LedgerPage({ module: mod }: Props) {
                           V: {info.vendor}
                         </div>
                       )}
+                      {typeof info?.cost === "number" && info.cost > 0 && (
+                        <div className="text-[10px] text-muted-foreground leading-tight tabular-nums">
+                          ৳ {info.cost.toLocaleString()}
+                        </div>
+                      )}
                     </div>
                     <div className="tabular-nums whitespace-nowrap text-right">
                       <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
