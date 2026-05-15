@@ -137,7 +137,7 @@ function AccountsPage() {
   }, [user?.id, reload]);
 
   // Period filter
-  const range = useMemo(() => presetRange(preset), [preset]);
+  const range = useMemo(() => (customRange ?? presetRange(preset)), [preset, customRange]);
   const inRange = useCallback((d: string) => d >= range.from && d <= range.to, [range]);
 
   // Service detail map (for timeline secondary text & due display)
