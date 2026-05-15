@@ -580,9 +580,14 @@ ${node.innerHTML}
                       {/* Col 2: Service + secondary */}
                       <div className="min-w-0">
                         <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
-                        {secondaryBits.length > 0 && (
+                        {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
-                            {secondaryBits.join(" · ")}
+                            {primaryBits.join(" · ")}
+                          </p>
+                        )}
+                        {vendorBits.length > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                            {vendorBits.join(" · ")}
                           </p>
                         )}
                         {dueLeft !== null && dueLeft > 0.005 && (
