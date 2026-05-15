@@ -894,16 +894,16 @@ export function LedgerPage({ module: mod }: Props) {
             </div>
           </div>
           <div className="overflow-x-auto -mx-2 px-2">
-          <div className="space-y-2 min-w-[860px]">
-            <div className="grid grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/60">
-              <div>Date / ID</div>
-              <div>Passenger</div>
-              <div>Service</div>
-              <div>{groupLabel}</div>
-              <div className="text-right">Amount</div>
-              <div className="text-right print:hidden">Actions</div>
-            </div>
-            {loading ? (
+            <div className="space-y-2 min-w-[860px]">
+              <div className="grid grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border/60">
+                <div>Date / ID</div>
+                <div>Passenger</div>
+                <div>Service</div>
+                <div>{groupLabel}</div>
+                <div className="text-right">Amount</div>
+                <div className="text-right print:hidden">Actions</div>
+              </div>
+              {loading ? (
               <div className="text-center text-muted-foreground py-8">লোড হচ্ছে...</div>
             ) : filtered.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
