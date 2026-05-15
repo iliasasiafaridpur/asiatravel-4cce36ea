@@ -138,7 +138,7 @@ function AccountsPage() {
   // Service detail map (for timeline secondary text & due display)
   type SvcDetail = {
     country?: string | null; route?: string | null; airline?: string | null;
-    flight_date?: string | null; vendor?: string | null;
+    flight_date?: string | null; vendor?: string | null; cost?: number;
     sold?: number; received_total?: number;
   };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
@@ -151,20 +151,20 @@ function AccountsPage() {
     }
     const tableConfigs: Record<string, { cols: string; map: (row: Record<string, unknown>) => SvcDetail }> = {
       tickets: {
-        cols: "id,airline,trip_road,flight_date,vendor_bought,sold_price,received",
-        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,airline,trip_road,flight_date,vendor_bought,sold_price,cost_price,received",
+        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
       },
       bmet_cards: {
-        cols: "id,country_name,vendor_bought,sold_price,received_amount",
-        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,country_name,vendor_bought,sold_price,cost_price,received_amount",
+        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
       },
       saudi_visas: {
-        cols: "id,vendor_bought,sold_price,received_amount",
-        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,vendor_bought,sold_price,cost_price,received_amount",
+        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
       },
       kuwait_visas: {
-        cols: "id,vendor_bought,sold_price,received",
-        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,vendor_bought,sold_price,cost_price,received",
+        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
       },
     };
     let cancelled = false;
@@ -546,7 +546,6 @@ ${node.innerHTML}
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const servicePrimary = isIn ? (r.service_type || "Service") : isHand ? "জমা / Handover" : (e.category || "খরচ");
                   const primaryBits: string[] = [];
-                  const vendorBits: string[] = [];
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
                       if (svc.route) primaryBits.push(svc.route);
@@ -555,15 +554,14 @@ ${node.innerHTML}
                     } else if (svc.country) {
                       primaryBits.push(svc.country);
                     }
-                    if (svc.vendor) vendorBits.push(`Vendor: ${svc.vendor}`);
                   }
-                  if (r.method && isIn) vendorBits.push(`💳 ${r.method}`);
-                  if (isHand && h.method) vendorBits.push(`💳 ${h.method}`);
+                  if (r.method && isIn) primaryBits.push(`💳 ${r.method}`);
+                  if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total : null;
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.4fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.2fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
                       {/* Col 1: Name */}
                       <div className="min-w-0">
                         <p className="font-semibold text-[13px] leading-tight break-words">{name}</p>
@@ -585,11 +583,6 @@ ${node.innerHTML}
                             {primaryBits.join(" · ")}
                           </p>
                         )}
-                        {vendorBits.length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
-                            {vendorBits.join(" · ")}
-                          </p>
-                        )}
                         {dueLeft !== null && dueLeft > 0.005 && (
                           <p className="text-[10px] text-rose-600 mt-0.5 font-medium">
                             বাকি: {fmt(dueLeft)}
@@ -603,7 +596,21 @@ ${node.innerHTML}
                         )}
                       </div>
 
-                      {/* Col 3: Amount + Balance */}
+                      {/* Col 3: Vendor + cost */}
+                      <div className="min-w-0">
+                        {isIn && svc?.vendor ? (
+                          <>
+                            <p className="text-[11px] font-medium leading-tight break-words">{svc.vendor}</p>
+                            {typeof svc.cost === "number" && svc.cost > 0 && (
+                              <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground/50">—</p>
+                        )}
+                      </div>
+
+                      {/* Col 4: Amount + Balance */}
                       <div className="text-right shrink-0">
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
                           {isIn ? "+" : "−"} {fmt(amt)}
