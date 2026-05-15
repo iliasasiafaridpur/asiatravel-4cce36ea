@@ -136,6 +136,7 @@ export const MODULES: ModuleSchema[] = [
         section: "passenger",
         lookup: "status_delivery",
         lookupDefaults: STATUS_DELIVERY,
+        hideInForm: true,
       },
       {
         name: "sold_price",
