@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -18,7 +17,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, RotateCcw, Tag, MessageSquare,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History,
 } from "lucide-react";
 
 export const Route = createFileRoute("/accounts")({
