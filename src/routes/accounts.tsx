@@ -572,6 +572,8 @@ ${node.innerHTML}
                         <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
+                        {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
+                        <p className="text-[9px] text-muted-foreground/70 font-mono mt-0.5">{refId}</p>
                       </div>
 
                       {/* Col 2: Service + secondary */}
@@ -582,13 +584,11 @@ ${node.innerHTML}
                             {secondaryBits.join(" · ")}
                           </p>
                         )}
-                        {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                         {dueLeft !== null && dueLeft > 0.005 && (
                           <p className="text-[10px] text-rose-600 mt-0.5 font-medium">
                             বাকি: {fmt(dueLeft)}
                           </p>
                         )}
-                        <p className="text-[9px] text-muted-foreground/70 font-mono mt-0.5">{refId}</p>
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
                           <p className="text-[10px] text-muted-foreground/90 mt-1 flex items-start gap-1">
                             <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
