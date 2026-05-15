@@ -971,7 +971,7 @@ export function LedgerPage({ module: mod }: Props) {
                 return (
                   <div
                     key={r.id}
-                    className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm lg:grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] lg:items-start lg:gap-4"
+                    className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start"
                     style={{ background: "var(--gradient-card)" }}
                   >
                     <div className="min-w-0">
