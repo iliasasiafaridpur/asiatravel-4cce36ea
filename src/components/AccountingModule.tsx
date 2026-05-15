@@ -465,8 +465,8 @@ function BalancesTab({ users, txs, onAddUser }: { users: AcctUser[]; txs: Transa
               <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Description</TableHead></TableRow></TableHeader>
               <TableBody>
                 {userTxs.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No transactions</TableCell></TableRow>
-                  : userTxs.map((t) => (
-                    <TableRow key={t.id}>
+                  : userTxs.map((t, idx) => (
+                    <TableRow key={t.id} className={`row-tint-${idx % 6}`}>
                       <TableCell>{t.date}</TableCell>
                       <TableCell><Badge variant={t.type === "received" ? "default" : "secondary"}>{t.type}</Badge></TableCell>
                       <TableCell>{t.category}</TableCell>
