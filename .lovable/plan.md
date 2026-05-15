@@ -1,65 +1,42 @@
-# My Accounts — সম্পূর্ণ নতুন ডিজাইন
+## লক্ষ্য
 
-পুরনো `/day-book` ও `/accounts` দুইটি পেইজ ডিলেট করে একটি একক, আধুনিক, প্রফেশনাল **My Accounts** পেইজ তৈরি করব।
+পুরো সফটওয়্যারে হালকা রঙিন থিম যোগ করা — Soft Cool Tones প্যালেট (নীল, বেগুনি, পিঙ্ক, লেভেন্ডার)। প্রতিটি ID রো-তে আলাদা হালকা কালার। **শুধু কালার পরিবর্তন, অন্য কোনো logic/structure/UI behavior পরিবর্তন হবে না।**
 
-## মূল উদ্দেশ্য
-1. বর্তমান ব্যবহারকারীর **আয়** (services থেকে received টাকা) দেখা
-2. **ব্যয়** (cash expense) দেখা ও যোগ করা
-3. দিন শেষে **কতৃপক্ষের কাছে জমা** (handover) দেওয়া
-4. **লাইভ ব্যালেন্স** (হাতে কত টাকা আছে) দেখা
+## প্যালেট (নির্বাচিত)
 
-## পেইজ স্ট্রাকচার
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Hero Header: "আমার হিসাব"  +  আজকের তারিখ  +  Refresh    │
-├─────────────────────────────────────────────────────────────┤
-│  ৪টি Stat Card (gradient, large numbers):                  │
-│   💰 হাতে আছে    📥 মোট আয়    📤 মোট জমা    🧾 মোট খরচ   │
-│   (current bal)  (received)   (handover)    (expense)      │
-├─────────────────────────────────────────────────────────────┤
-│  Quick Action Bar (sticky):                                │
-│   [ + জমা দিন ]   [ + খরচ যোগ ]   Period: [আজ|মাস|বছর|সব]│
-├─────────────────────────────────────────────────────────────┤
-│  Tabs: [ Timeline ]  [ আয় ]  [ খরচ ]  [ জমা ]              │
-│                                                             │
-│  ▸ Timeline: তারিখ অনুযায়ী আয়/খরচ/জমা একসাথে               │
-│    (Stacked Row Content style — service, party, amount,    │
-│     running balance)                                        │
-│  ▸ আয়: payment_receipts (filtered by user)                 │
-│  ▸ খরচ: cash_expenses (filtered by user)                   │
-│  ▸ জমা: cash_handovers (filtered by user)                  │
-└─────────────────────────────────────────────────────────────┘
+```
+#e0f2fe  হালকা আকাশি
+#ede9fe  হালকা লেভেন্ডার
+#fce7f3  হালকা পিঙ্ক
+#f0f9ff  হিম-নীল
+#f5f3ff  সফট ভায়োলেট
+#fdf2f8  সফট রোজ
 ```
 
-## ডিজাইন ভাষা
-- **Stat Cards**: gradient background (`--gradient-hero`, `--gradient-primary`), বড় টাইপোগ্রাফি, আইকন সহ
-- **Stacked Row Content** (যেমন BMET/Saudi Visa-তে): প্রতিটি entry-তে date+id বামে, party+description মাঝে, amount+running ডানে — কোনো বড় টেবিল নয়, কার্ড-স্টাইল রো
-- **Quick Action Dialogs**: জমা/খরচ যোগ করার জন্য সুন্দর modal (Dialog) — পেইজে বড় ফর্ম থাকবে না
-- **Sticky filter bar** — টাইপ অনুযায়ী filter
-- **Empty states** ও **loading skeletons** সহ
-- সব semantic tokens (`bg-card`, `text-foreground`, `text-emerald-600` ইত্যাদি existing pattern অনুসরণ করে)
+## পরিবর্তন
 
-## ডেটা সোর্স (existing tables)
-- `payment_receipts` (received_by = user.id) → আয়
-- `cash_expenses` (spent_by = user.id) → খরচ
-- `cash_handovers` (from_user = user.id) → জমা
-- `get_user_account` RPC → সরাসরি ব্যালেন্স summary
-- Realtime subscription → তিনটি table-এ `postgres_changes`
+### ১) Global background (`src/styles.css`)
+- `--background` টোকেনকে হালকা multi-color gradient/tint-এ আপডেট করা (light mode)। Dark mode অপরিবর্তিত।
+- `--card` সামান্য সাদাটে রেখে gradient background-এর উপরে বসবে।
+- নতুন CSS utility class `.row-tint-0` থেকে `.row-tint-5` যোগ করা হবে — প্রতিটি প্যালেট থেকে একটি হালকা ব্যাকগ্রাউন্ড দেবে। Hover state ও print mode-এ এই tint মৃদু হবে।
 
-## ফাইল পরিবর্তন
+### ২) Row coloring (প্রতি ID-তে আলাদা কালার)
 
-1. **Delete**: `src/routes/day-book.tsx`
-2. **Rewrite from scratch**: `src/routes/accounts.tsx` (নতুন কম্পোনেন্ট, ক্লিন কোড, ~400 lines)
-3. **Update**: `src/components/AppSidebar.tsx`
-   - "Day Book" এন্ট্রি বাদ
-   - "My Accounts" সাইডবারে একই জায়গায় রাখা (icon: Wallet)
-4. **Check**: `src/lib/modules.ts` ও অন্য কোথাও `/day-book` লিঙ্ক থাকলে রিমুভ
+নিচের ফাইলগুলোতে data table-এর প্রতিটি `<TableRow key=...>`-এ index-based class যোগ করা হবে: `row-tint-${index % 6}`। **শুধু className যোগ — আর কিছু না।**
 
-## কী **থাকবে না** (পুরনো accounts.tsx থেকে বাদ)
-- "Manual Receive" form — services already auto-create receipts; manual entry confusing
-- "Daily Report" giant table — Timeline tab এতেই ঢাকা
-- "Staff Overview" — admin-only, এই পেইজ user-centric
-- Day Book-এর সব service entries listing (ওটার জন্য আলাদা service pages আছে)
+- `src/components/ModulePage.tsx` (line 773 — সকল service module: tickets, bmet, saudi-visa, kuwait-visa)
+- `src/components/LedgerPage.tsx` (line 953 — agency-ledger, vendor-ledger)
+- `src/routes/accounts.tsx` (Accounts table এর body rows)
+- `src/routes/agents.tsx` (line 40)
+- `src/routes/vendors.tsx` (line 40)
+- `src/components/AccountingModule.tsx` (lines 404, 446, 469)
+- `src/routes/invoice.tsx` (যদি list থাকে)
 
-ফলে পেইজ হবে personal cash drawer + journal — exactly user যা চেয়েছেন।
+### ৩) Print preserve
+`@media print`-এ row tint হালকা রাখা হবে (যাতে প্রিন্টে রঙ না আসলেও সমস্যা না হয়), অপশনাল `-webkit-print-color-adjust: exact` যোগ করে রঙিন প্রিন্ট সক্ষম রাখা।
+
+## কী পরিবর্তন হবে না (গ্যারান্টি)
+
+- কোনো logic, query, filter, form, validation, RLS, route, navigation, business rule অপরিবর্তিত
+- কোনো column add/remove নেই
+- কোনো text/
