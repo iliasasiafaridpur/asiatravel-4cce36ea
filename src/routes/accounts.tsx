@@ -122,9 +122,10 @@ function AccountsPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, reload]);
 
-  // Period filter
-  const range = useMemo(() => (customRange ?? presetRange(preset)), [preset, customRange]);
-  const inRange = useCallback((d: string) => d >= range.from && d <= range.to, [range]);
+  // Latest-N filter — parse input
+  const parsedN = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
+  const latestN = Number.isFinite(parsedN) && parsedN > 0 ? parsedN : 0;
+  const isInvalidInput = latestN === 0;
 
   // Service detail map (for timeline secondary text & due display)
   type SvcDetail = {
