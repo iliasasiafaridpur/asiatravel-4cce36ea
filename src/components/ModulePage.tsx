@@ -389,6 +389,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -458,7 +459,6 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? subLine("V", String(r.vendor_bought)) : null}
-              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
