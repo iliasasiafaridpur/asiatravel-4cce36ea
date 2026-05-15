@@ -203,21 +203,10 @@ function AccountsPage() {
     });
   }, [received, handovers, expenses]);
 
-  // Find last index where running balance was 0 (cycle start)
-  const lastZeroIdx = useMemo(() => {
-    let idx = -1;
-    for (let i = 0; i < fullAsc.length; i++) {
-      if (Math.abs(fullAsc[i].running) < 0.005) idx = i;
-    }
-    return idx;
-  }, [fullAsc]);
-
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
-    const slice = sinceZero
-      ? fullAsc.slice(lastZeroIdx + 1)
-      : fullAsc.filter((it) => inRange(it.date));
-    return [...slice].reverse();
-  }, [fullAsc, sinceZero, lastZeroIdx, inRange]);
+    if (latestN === 0) return [];
+    return [...fullAsc].reverse().slice(0, latestN);
+  }, [fullAsc, latestN]);
 
   // Save handover
   const saveHandover = async () => {
