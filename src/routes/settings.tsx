@@ -179,6 +179,83 @@ function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {isAdmin && (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> Data Reset (Admin)
+            </CardTitle>
+            <CardDescription>
+              নির্দিষ্ট মডিউলের সকল ডাটা স্থায়ীভাবে মুছে ফেলা হবে। অফিসিয়াল ব্যবহারের আগে শুরুর reset-এর জন্য।
+              <br />
+              <span className="text-amber-600 font-medium">
+                পরামর্শ: পরিষেবা (Ticket/BMET/Visa) ডিলিট করলে সংশ্লিষ্ট ledger ও receipt স্বয়ংক্রিয় ভাবে মুছে যায়।
+                কিন্তু Agency Ledger থেকে সরাসরি "Due Receive" করা receipt গুলো ledger রো ডিলিট করলেও থেকে যায় —
+                তাই এখান থেকে <b>Payment Receipts</b> আলাদাভাবে রিসেট করুন।
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {RESET_GROUPS.map((g) => (
+                <label key={g.key} className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent">
+                  <Checkbox
+                    checked={!!resetSelected[g.key]}
+                    onCheckedChange={() => toggleReset(g.key)}
+                  />
+                  <span className="text-sm">{g.label}</span>
+                </label>
+              ))}
+            </div>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  disabled={selectedTables.length === 0}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  নির্বাচিত {selectedTables.length}টি টেবিল ডিলিট করুন
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive">নিশ্চিত?</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-2">
+                      <div>নিম্নলিখিত টেবিলের সকল ডাটা স্থায়ীভাবে মুছে যাবে:</div>
+                      <ul className="list-disc pl-5 text-xs">
+                        {selectedTables.map((t) => <li key={t}>{t}</li>)}
+                      </ul>
+                      <div className="pt-2">
+                        নিশ্চিত করতে নিচে <b>DELETE</b> টাইপ করুন:
+                      </div>
+                      <Input
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder="DELETE"
+                        autoFocus
+                      />
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setConfirmText("")}>বাতিল</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={resetBusy || confirmText.trim().toUpperCase() !== "DELETE"}
+                    onClick={runDataReset}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {resetBusy ? "Deleting…" : "Permanently Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
