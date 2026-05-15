@@ -421,6 +421,28 @@ ${node.innerHTML}
               )}
             </div>
 
+            {/* Quick: Today */}
+            {(() => {
+              const t = today();
+              const isToday = useDateFilter && dateFrom === t && dateTo === t;
+              return (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={isToday ? "default" : "outline"}
+                  onClick={() => {
+                    if (isToday) { setDateFrom(""); setDateTo(""); }
+                    else { setDateFrom(t); setDateTo(t); }
+                  }}
+                  className="h-9 gap-1.5 rounded-xl text-xs font-semibold"
+                  title="আজকের লেনদেন"
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  আজকের গুলো
+                </Button>
+              );
+            })()}
+
             {/* Active badge */}
             <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
               {useDateFilter
