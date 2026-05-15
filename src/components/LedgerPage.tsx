@@ -1516,13 +1516,48 @@ export function LedgerPage({ module: mod }: Props) {
       </AlertDialog>
 
       {/* Payment entry dialog (Receive / Pay) */}
-      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+      <Dialog
+        open={payOpen}
+        onOpenChange={(o) => {
+          setPayOpen(o);
+          if (!o) setPayRow(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" /> {payTitle}
+              {payRow && (
+                <span className="text-xs font-normal text-muted-foreground">
+                  — যাত্রী-নির্দিষ্ট
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
+          {payRow && (
+            <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-primary font-semibold">
+                  {String(payRow[mod.idColumn] ?? "")}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDate(payRow.entry_date as string | null)}
+                </span>
+                <span className="text-muted-foreground">
+                  {String(payRow.service_type ?? "—")}
+                </span>
+              </div>
+              <div className="font-semibold text-sm text-foreground">
+                {String(payRow.passenger_name ?? "—")}
+              </div>
+              <div className="text-muted-foreground">
+                {groupFieldLabel}:{" "}
+                <span className="text-foreground font-medium">
+                  {String(payRow[groupField] ?? "—")}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1543,21 +1578,25 @@ export function LedgerPage({ module: mod }: Props) {
               <Label className="text-xs">
                 {groupFieldLabel} <span className="text-rose-500">*</span>
               </Label>
-              <LookupSelect
-                kind={isAgency ? "sub_agency" : "vendor"}
-                compact
-                value={payTarget}
-                onChange={(v) => {
-                  setPayTarget(v);
-                  const due = dueForGroup(v);
-                  setPayDue(due);
-                  setPayAmount(String(due > 0 ? due : ""));
-                }}
-              />
+              {payRow ? (
+                <Input value={payTarget} readOnly className="h-10 bg-muted/40 font-semibold" />
+              ) : (
+                <LookupSelect
+                  kind={isAgency ? "sub_agency" : "vendor"}
+                  compact
+                  value={payTarget}
+                  onChange={(v) => {
+                    setPayTarget(v);
+                    const due = dueForGroup(v);
+                    setPayDue(due);
+                    setPayAmount(String(due > 0 ? due : ""));
+                  }}
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Total Outstanding</Label>
+                <Label className="text-xs">{payRow ? "এই যাত্রীর Due" : "Total Outstanding"}</Label>
                 <Input
                   value={payDue.toLocaleString()}
                   readOnly
