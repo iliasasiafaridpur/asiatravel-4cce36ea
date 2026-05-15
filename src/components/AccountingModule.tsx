@@ -400,8 +400,8 @@ function LedgerTab({ users, txs }: { users: AcctUser[]; txs: Transaction[] }) {
             <TableBody>
               {withRunning.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">কোনো transaction নেই</TableCell></TableRow>
-              ) : withRunning.map((t) => (
-                <TableRow key={t.id}>
+              ) : withRunning.map((t, idx) => (
+                <TableRow key={t.id} className={`row-tint-${idx % 6}`}>
                   <TableCell>{t.date}</TableCell>
                   <TableCell>{t.userId ? userMap.get(t.userId) ?? "—" : "—"}</TableCell>
                   <TableCell>
