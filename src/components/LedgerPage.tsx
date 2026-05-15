@@ -786,17 +786,16 @@ export function LedgerPage({ module: mod }: Props) {
                   </Button>
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant={sinceLastZero ? "default" : "secondary"}
                     onClick={() => {
+                      setSinceLastZero((v) => !v);
                       setStartDate("");
-                      setEndDate(new Date().toISOString().slice(0, 10));
-                      setDueOnly(true);
-                      setGroupFilter("all");
+                      setEndDate("");
                     }}
                     className="h-10 gap-1.5 flex-1 whitespace-nowrap"
-                    title="শুরু থেকে আজ পর্যন্ত সব বকেয়া বিল"
+                    title="প্রতিটি Agent/Vendor-এর শেষবার Due শূন্য হওয়ার পর থেকে চলমান লেনদেন"
                   >
-                    <Wallet className="h-4 w-4" /> সব Due (০ → এখন)
+                    <Wallet className="h-4 w-4" /> ০ → এখন
                   </Button>
                   <Button
                     type="button"
