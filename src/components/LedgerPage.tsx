@@ -474,9 +474,22 @@ export function LedgerPage({ module: mod }: Props) {
 
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
+    setPayRow(null);
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
+    setPayDate(todayIso());
+    setPayRemarks("");
+    setPayMethod("Cash");
+    setPayOpen(true);
+  };
+
+  // Passenger/row-specific payment: due is THIS row's bill - paid only.
+  const openPaymentForRow = (row: Row, lineDue: number) => {
+    setPayRow(row);
+    setPayTarget(String(row[groupField] ?? ""));
+    setPayDue(lineDue);
+    setPayAmount(String(lineDue > 0 ? lineDue : ""));
     setPayDate(todayIso());
     setPayRemarks("");
     setPayMethod("Cash");
