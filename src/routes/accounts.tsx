@@ -747,7 +747,7 @@ ${node.innerHTML.replace(
                   <th className="num">মোট বিল</th>
                   <th className="num">আয়</th>
                   <th className="num">বাকি</th>
-                  <th>Adv</th>
+                  <th className="wrap">Advance</th>
                   <th className="num">খরচ/জমা</th>
                   <th className="num">ব্যালেন্স</th>
                 </tr>
