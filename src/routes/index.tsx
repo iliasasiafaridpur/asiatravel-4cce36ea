@@ -426,6 +426,8 @@ function DashboardPage() {
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
         <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
+        <GradientStat label="Estimated Profit" sublabel="আনুমানিক লাভ" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
+        <GradientStat label="Realized Profit" sublabel="নগদ লাভ" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
         <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-1 lg:row-span-2">
           <GradientStat
             label={myAccount?.full_name ?? meName}
@@ -438,8 +440,6 @@ function DashboardPage() {
             large
           />
         </Link>
-        <GradientStat label="Estimated Profit (আনুমানিক লাভ)" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
-        <GradientStat label="Realized Profit (নগদ লাভ)" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
       </div>
 
       {/* Module shortcuts */}
@@ -679,7 +679,12 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, to, money, lar
               )}
             </>
           ) : (
-            <p className="text-xs uppercase tracking-wide opacity-95 leading-tight truncate font-semibold">{label}</p>
+            <>
+              <p className="text-xs uppercase tracking-wide opacity-95 leading-tight truncate font-semibold">{label}</p>
+              {sublabel && (
+                <p className="text-[11px] tracking-wide opacity-90 leading-tight truncate font-medium mt-0.5">{sublabel}</p>
+              )}
+            </>
           )}
         </div>
         <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-10 w-10" : "h-9 w-9")}>
