@@ -1375,9 +1375,14 @@ export function LedgerPage({ module: mod }: Props) {
                           {groupLabel}
                         </div>
                         <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
-                        {info?.vendor && (
+                        {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
+                          </div>
+                        )}
+                        {!isAgency && info?.agency_sold && (
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            A: {info.agency_sold}
                           </div>
                         )}
                         {typeof info?.cost === "number" && info.cost > 0 && (
