@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -420,15 +420,12 @@ function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Stats — gradient cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
+      {/* Stats — gradient cards: 3x2 grid on left + tall Current Balance card on right */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 auto-rows-fr">
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
-        <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
-        <GradientStat label="Estimated Profit (আনুমানিক লাভ)" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
-        <GradientStat label="Realized Profit (নগদ লাভ)" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
-        <Link to="/accounts" className="block col-span-2 lg:col-span-1">
+        <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-2 lg:row-span-2">
           <GradientStat
             label={`${myAccount?.full_name ?? meName} • Current Balance`}
             value={Number(myAccount?.current_balance ?? 0)}
@@ -436,8 +433,12 @@ function DashboardPage() {
             icon={Wallet}
             from="from-amber-500"
             to="to-orange-600"
+            large
           />
         </Link>
+        <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
+        <GradientStat label="Estimated Profit (আনুমানিক লাভ)" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
+        <GradientStat label="Realized Profit (নগদ লাভ)" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
       </div>
 
       {/* Module shortcuts */}
@@ -621,21 +622,59 @@ function DashboardPage() {
   );
 }
 
-function GradientStat({ label, value, icon: Icon, from, to, money }: {
-  label: string; value: number; icon: React.ComponentType<{ className?: string }>;
-  from: string; to: string; money?: boolean;
-}) {
+function AutoFitText({ text, max, min = 10, className }: { text: string; max: number; min?: number; className?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const [size, setSize] = useState(max);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const c = containerRef.current, s = spanRef.current;
+      if (!c || !s) return;
+      let fs = max;
+      s.style.fontSize = `${fs}px`;
+      while (s.scrollWidth > c.clientWidth && fs > min) {
+        fs -= 1;
+        s.style.fontSize = `${fs}px`;
+      }
+      setSize(fs);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [text, max, min]);
   return (
-    <div className={cn("rounded-xl p-3 text-white shadow-lg bg-gradient-to-br min-w-0", from, to)} title={money ? `৳ ${value.toLocaleString()}` : String(value)}>
+    <div ref={containerRef} className={cn("w-full overflow-hidden", className)}>
+      <span ref={spanRef} className="font-bold tabular-nums whitespace-nowrap inline-block" style={{ fontSize: size, lineHeight: 1.1 }}>
+        {text}
+      </span>
+    </div>
+  );
+}
+
+function GradientStat({ label, value, icon: Icon, from, to, money, large }: {
+  label: string; value: number; icon: React.ComponentType<{ className?: string }>;
+  from: string; to: string; money?: boolean; large?: boolean;
+}) {
+  const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
+  return (
+    <div
+      className={cn(
+        "rounded-xl text-white shadow-lg bg-gradient-to-br min-w-0 h-full flex flex-col",
+        large ? "p-5 sm:p-6" : "p-4",
+        from, to
+      )}
+      title={text}
+    >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-wide opacity-90 leading-tight break-words flex-1">{label}</p>
-        <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-          <Icon className="h-4 w-4" />
+        <p className={cn("uppercase tracking-wide opacity-90 leading-tight break-words flex-1", large ? "text-sm" : "text-xs")}>{label}</p>
+        <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-12 w-12" : "h-9 w-9")}>
+          <Icon className={large ? "h-6 w-6" : "h-4 w-4"} />
         </div>
       </div>
-      <p className="text-base sm:text-lg lg:text-xl font-bold mt-2 tabular-nums break-all leading-tight">
-        {money && "৳ "}{value.toLocaleString()}
-      </p>
+      <div className="mt-auto pt-3">
+        <AutoFitText text={text} max={large ? 56 : 26} min={10} />
+      </div>
     </div>
   );
 }
