@@ -421,13 +421,14 @@ function DashboardPage() {
       </Card>
 
       {/* Stats — gradient cards: 3x2 grid on left + tall Current Balance card on right */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 auto-rows-fr">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
-        <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-2 lg:row-span-2">
+        <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-1 lg:row-span-2">
           <GradientStat
-            label={`${myAccount?.full_name ?? meName} • Current Balance`}
+            label={myAccount?.full_name ?? meName}
+            sublabel="Current Balance"
             value={Number(myAccount?.current_balance ?? 0)}
             money
             icon={Wallet}
