@@ -112,6 +112,7 @@ export function LedgerPage({ module: mod }: Props) {
         passport?: string;
         mobile?: string;
         vendor?: string;
+        agency_sold?: string;
         sold?: number;
         cost?: number;
         status?: string;
