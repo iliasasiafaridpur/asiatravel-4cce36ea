@@ -266,11 +266,11 @@ function InvoicePage() {
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                       <Label className="text-xs">Qty</Label>
-                      <Input type="number" value={it.qty} onChange={(e) => updateItem(it.uid, { qty: Number(e.target.value) || 0 })} />
+                      <Input type="number" value={it.qty || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { qty: Number(e.target.value) || 0 })} />
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                       <Label className="text-xs">Rate</Label>
-                      <Input type="number" value={it.rate} onChange={(e) => updateItem(it.uid, { rate: Number(e.target.value) || 0 })} />
+                      <Input type="number" value={it.rate || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { rate: Number(e.target.value) || 0 })} />
                     </div>
                     <Button size="icon" variant="ghost" className="col-span-12 sm:col-span-1 text-destructive"
                       onClick={() => removeItem(it.uid)}>
