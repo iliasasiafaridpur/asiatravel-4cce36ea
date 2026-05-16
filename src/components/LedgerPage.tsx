@@ -330,6 +330,7 @@ export function LedgerPage({ module: mod }: Props) {
         passport: string | null;
         mobile: string | null;
         vendor_bought: string | null;
+        agency_sold: string | null;
         sold_price: number | null;
         cost_price: number | null;
         status: string | null;
@@ -340,6 +341,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport: v.passport ?? undefined,
           mobile: v.mobile ?? undefined,
           vendor: v.vendor_bought ?? undefined,
+          agency_sold: v.agency_sold ?? undefined,
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
@@ -351,6 +353,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport: v.passport ?? undefined,
           mobile: v.mobile ?? undefined,
           vendor: v.vendor_bought ?? undefined,
+          agency_sold: v.agency_sold ?? undefined,
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
