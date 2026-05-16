@@ -400,7 +400,7 @@ function InvoicePage() {
       </div>
 
       <style>{`
-        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 16pt; }
+        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 14pt; }
         .invoice-print .invoice-agency-name { font-size: 22pt; }
         .invoice-print .invoice-title { font-size: 26pt; }
         .invoice-print, .invoice-print * {
@@ -419,10 +419,10 @@ function InvoicePage() {
             width: 100% !important; max-width: 100% !important;
             min-height: calc(297mm - 20mm) !important;
             box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
-            font-size: 16pt !important;
+            font-size: 14pt !important;
           }
           .invoice-print p, .invoice-print td, .invoice-print th, .invoice-print div, .invoice-print span, .invoice-print li {
-            font-size: 16pt !important;
+            font-size: 14pt !important;
             line-height: 1.4 !important;
           }
           .invoice-print .invoice-agency-name { font-size: 24pt !important; }
