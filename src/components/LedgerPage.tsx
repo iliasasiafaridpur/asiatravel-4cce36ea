@@ -239,7 +239,7 @@ export function LedgerPage({ module: mod }: Props) {
         supabase
           .from("tickets")
           .select(
-            "id,flight_date,trip_road,passport,mobile,vendor_bought,sold_price,cost_price,status,airline,pnr",
+            "id,flight_date,trip_road,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status,airline,pnr",
           )
           .limit(2000),
         supabase
