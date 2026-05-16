@@ -294,27 +294,29 @@ function InvoicePage() {
         <div className="flex">
           <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
           <div className="flex-1 p-8 sm:p-10">
-            <div className="flex justify-between items-start gap-6 border-b border-slate-200 pb-6">
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white">
-                    <Plane className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0b2545] leading-none">{AGENCY.name}</h2>
-                    <p className="text-sm italic text-[#c8a45c] font-semibold mt-1">"{AGENCY.slogan}"</p>
-                  </div>
+            <div className="flex justify-between items-center gap-4 border-b border-slate-200 pb-4">
+              <div className="min-w-0 flex items-center gap-2">
+                <div className="h-9 w-9 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
+                  <Plane className="h-5 w-5" />
                 </div>
-                <div className="mt-3 text-base text-slate-700 space-y-0.5 font-medium">
-                  <p>{AGENCY.address}</p>
-                  <p>📞 {AGENCY.phone}</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0b2545] leading-tight truncate">{AGENCY.name}</h2>
+                  <p className="text-[10px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-3xl sm:text-4xl font-black tracking-widest text-[#0b2545]">INVOICE</p>
-                <p className="font-mono text-sm mt-1">{invoiceNo}</p>
-                <p className="text-xs text-slate-500">Date: {formatDate(invoiceDate)}</p>
-                {pnr && <p className="text-xs text-slate-500">PNR: <span className="font-mono">{pnr}</span></p>}
+                <p className="text-lg sm:text-xl font-black tracking-widest text-[#0b2545] leading-none">INVOICE</p>
+                <p className="font-mono text-[11px] mt-0.5">{invoiceNo}</p>
+              </div>
+            </div>
+            <div className="flex justify-between text-[11px] text-slate-600 mt-2 gap-4">
+              <div>
+                <p>{AGENCY.address}</p>
+                <p>📞 {AGENCY.phone}</p>
+              </div>
+              <div className="text-right">
+                <p>Date: {formatDate(invoiceDate)}</p>
+                {pnr && <p>PNR: <span className="font-mono">{pnr}</span></p>}
               </div>
             </div>
 
@@ -332,11 +334,7 @@ function InvoicePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#0b2545] text-white">
-                    <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">#</th>
                     <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Service</th>
-                    <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Airline</th>
-                    <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Route</th>
-                    <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Date</th>
                     <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Qty</th>
                     <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Rate</th>
                     <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Amount</th>
@@ -344,23 +342,32 @@ function InvoicePage() {
                 </thead>
                 <tbody>
                   {items.length === 0 && (
-                    <tr><td colSpan={8} className="p-6 text-center text-slate-400 text-xs">No items</td></tr>
+                    <tr><td colSpan={4} className="p-6 text-center text-slate-400 text-xs">No items</td></tr>
                   )}
-                  {items.map((it, idx) => (
-                    <tr key={it.uid} className="border-t border-slate-200">
-                      <td className="p-2.5 text-slate-500">{idx + 1}</td>
-                      <td className="p-2.5 font-medium">{it.serviceItem || "—"}</td>
-                      <td className="p-2.5 text-slate-700">{it.airline || "—"}</td>
-                      <td className="p-2.5 text-slate-600">
-                        {(it.fromRoute || it.toRoute) ? (
-                          <span className="inline-flex items-center gap-1">
-                            {it.fromRoute || "?"}
-                            <ArrowRight className="h-3 w-3 text-[#c8a45c]" />
-                            {it.toRoute || "?"}
-                          </span>
-                        ) : it.detail || "—"}
+                  {items.map((it) => (
+                    <tr key={it.uid} className="border-t border-slate-200 align-top">
+                      <td className="p-2.5">
+                        <div className="font-bold text-[#0b2545] uppercase tracking-wide text-sm">
+                          {(it.serviceItem || "—").toUpperCase()}
+                        </div>
+                        <div className="text-xs text-slate-600 mt-0.5">
+                          {(it.fromRoute || it.toRoute) ? (
+                            <span className="inline-flex items-center gap-1">
+                              ROUTE: {it.fromRoute || "?"}
+                              <ArrowRight className="h-3 w-3 text-[#c8a45c]" />
+                              {it.toRoute || "?"}
+                            </span>
+                          ) : it.detail ? `Ref: ${it.detail}` : null}
+                        </div>
+                        {it.date && (
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            Flight date: {formatDate(it.date)}
+                          </div>
+                        )}
+                        {it.airline && (
+                          <div className="text-[11px] text-slate-500">Airline: {it.airline}</div>
+                        )}
                       </td>
-                      <td className="p-2.5 text-slate-600">{it.date ? formatDate(it.date) : "—"}</td>
                       <td className="p-2.5 text-right tabular-nums">{it.qty}</td>
                       <td className="p-2.5 text-right tabular-nums">{it.rate.toLocaleString()}</td>
                       <td className="p-2.5 text-right tabular-nums font-semibold">{(it.qty * it.rate).toLocaleString()}</td>
