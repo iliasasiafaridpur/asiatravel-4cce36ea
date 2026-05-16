@@ -626,18 +626,16 @@ function GradientStat({ label, value, icon: Icon, from, to, money }: {
   from: string; to: string; money?: boolean;
 }) {
   return (
-    <div className={cn("rounded-xl p-4 text-white shadow-lg bg-gradient-to-br", from, to)}>
-      <div className="flex items-center justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wide opacity-90">{label}</p>
-          <p className="text-xl sm:text-2xl font-bold mt-1 tabular-nums truncate">
-            {money && "৳ "}{value.toLocaleString()}
-          </p>
-        </div>
-        <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-          <Icon className="h-5 w-5" />
+    <div className={cn("rounded-xl p-3 text-white shadow-lg bg-gradient-to-br min-w-0", from, to)} title={money ? `৳ ${value.toLocaleString()}` : String(value)}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-wide opacity-90 leading-tight break-words flex-1">{label}</p>
+        <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4" />
         </div>
       </div>
+      <p className="text-base sm:text-lg lg:text-xl font-bold mt-2 tabular-nums break-all leading-tight">
+        {money && "৳ "}{value.toLocaleString()}
+      </p>
     </div>
   );
 }
