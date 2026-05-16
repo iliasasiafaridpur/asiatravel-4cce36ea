@@ -640,16 +640,17 @@ ${node.innerHTML.replace(
                   // Col 2: Service primary + secondary lines
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const servicePrimary = isIn ? (r.service_type || "Service") : isHand ? "জমা / Handover" : (e.category || "খরচ");
-                  const primaryBits: string[] = [];
+                  const svcLines: string[] = [];
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
-                      if (svc.route) primaryBits.push(svc.route);
-                      if (svc.airline) primaryBits.push(svc.airline);
-                      if (svc.flight_date) primaryBits.push(`✈ ${formatDate(svc.flight_date)}`);
+                      if (svc.route) svcLines.push(svc.route);
+                      if (svc.airline) svcLines.push(svc.airline);
+                      if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
-                      primaryBits.push(svc.country);
+                      svcLines.push(svc.country);
                     }
                   }
+                  const primaryBits: string[] = [];
                   if (isIn && r.method) primaryBits.push(`💳 ${r.method}`);
                   if (isIn && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
@@ -676,6 +677,11 @@ ${node.innerHTML.replace(
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
                         <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
+                        {svcLines.map((line, i) => (
+                          <p key={i} className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                            {line}
+                          </p>
+                        ))}
                         {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
                             {primaryBits.join(" · ")}
@@ -728,10 +734,10 @@ ${node.innerHTML.replace(
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
-                        <p className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap mt-1">
+                        <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
-                        <p className="text-[11px] tabular-nums whitespace-nowrap font-semibold text-foreground">
+                        <p className="text-[11px] tabular-nums whitespace-nowrap font-semibold text-primary">
                           {fmt(it.running)}
                         </p>
                       </div>
