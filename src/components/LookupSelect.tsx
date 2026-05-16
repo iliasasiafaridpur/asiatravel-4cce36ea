@@ -65,6 +65,8 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
   const [newVal, setNewVal] = useState("");
+  const [renamingOrig, setRenamingOrig] = useState<string | null>(null);
+  const [renameVal, setRenameVal] = useState("");
   const label = LABELS[kind] ?? kind;
 
   useEffect(() => {
