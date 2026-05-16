@@ -1340,20 +1340,19 @@ export function LedgerPage({ module: mod }: Props) {
                           Service
                         </div>
                         <div className="text-sm font-semibold">{serviceLabel}</div>
+                        {cr && (
+                          <div className="text-xs text-muted-foreground leading-tight">
+                            {cr}
+                          </div>
+                        )}
                         {info?.airline && (
                           <div className="text-xs text-muted-foreground leading-tight">
                             {info.airline}
-                            {cr ? ` · ${cr}` : ""}
-                          </div>
-                        )}
-                        {!info?.airline && cr && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {ServiceIcon} {cr}
                           </div>
                         )}
                         {flightDate && (
                           <div className="text-xs text-muted-foreground leading-tight">
-                            ✈ Flight: {flightDate}
+                            ✈ {flightDate}
                           </div>
                         )}
                         {info?.pnr && (

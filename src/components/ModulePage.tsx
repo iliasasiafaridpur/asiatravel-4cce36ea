@@ -402,8 +402,9 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "trip", header: "Trip", render: (r) => (
             <div className="min-w-[140px]">
-              <div className="font-medium">{[r.airline, r.trip_road].filter(Boolean).join(" · ") || "—"}</div>
-              {r.flight_date ? subLine("✈ Flight", formatDate(r.flight_date as string)) : null}
+              <div className="font-medium">{String(r.trip_road ?? "—")}</div>
+              {r.airline ? <div className="text-xs text-muted-foreground leading-tight">{String(r.airline)}</div> : null}
+              {r.flight_date ? <div className="text-xs text-muted-foreground leading-tight">✈ {formatDate(r.flight_date as string)}</div> : null}
               {r.pnr ? subLine("PNR", String(r.pnr)) : null}
             </div>
           )},
