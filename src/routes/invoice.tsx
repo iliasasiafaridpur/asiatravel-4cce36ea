@@ -293,7 +293,6 @@ function InvoicePage() {
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0 flex">
         <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
         <div className="flex-1 p-8 sm:p-10 flex flex-col">
-          <div>
             <div className="flex justify-between items-center gap-3 border-b border-slate-200 pb-4 flex-nowrap">
               <div className="min-w-0 flex items-center gap-2 flex-1">
                 <div className="h-10 w-10 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
