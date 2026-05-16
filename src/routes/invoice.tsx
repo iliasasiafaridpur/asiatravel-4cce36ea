@@ -290,26 +290,25 @@ function InvoicePage() {
       </Card>
 
       {/* === PRINTABLE INVOICE === */}
-      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0">
-        <div className="flex">
-          <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
-          <div className="flex-1 p-8 sm:p-10">
-            <div className="flex justify-between items-center gap-4 border-b border-slate-200 pb-4">
-              <div className="min-w-0 flex items-center gap-2">
-                <div className="h-9 w-9 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
+      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0 flex">
+        <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
+        <div className="flex-1 p-8 sm:p-10 flex flex-col">
+            <div className="flex justify-between items-center gap-3 border-b border-slate-200 pb-4 flex-nowrap">
+              <div className="min-w-0 flex items-center gap-2 flex-1">
+                <div className="h-10 w-10 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
                   <Plane className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0b2545] leading-tight truncate">{AGENCY.name}</h2>
-                  <p className="text-[10px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
+                  <h2 className="invoice-agency-name font-extrabold tracking-tight text-[#0b2545] leading-tight whitespace-nowrap">{AGENCY.name}</h2>
+                  <p className="text-[11px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-lg sm:text-xl font-black tracking-widest text-[#0b2545] leading-none">INVOICE</p>
-                <p className="font-mono text-[11px] mt-0.5">{invoiceNo}</p>
+                <p className="invoice-title font-black tracking-widest text-[#0b2545] leading-none whitespace-nowrap">INVOICE</p>
+                <p className="font-mono text-xs mt-1">{invoiceNo}</p>
               </div>
             </div>
-            <div className="flex justify-between text-[11px] text-slate-600 mt-2 gap-4">
+            <div className="flex justify-between text-xs text-slate-600 mt-3 gap-4">
               <div>
                 <p>{AGENCY.address}</p>
                 <p>📞 {AGENCY.phone}</p>
@@ -393,23 +392,24 @@ function InvoicePage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-slate-200 text-center">
-              <p className="text-[11px] text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
-              <p className="text-[10px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
+            <div className="mt-auto pt-6 border-t border-slate-200 text-center">
+              <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
+              <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
             </div>
-          </div>
         </div>
       </div>
 
       <style>{`
-        .invoice-print { width: 100%; max-width: 210mm; }
+        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 12pt; }
+        .invoice-print .invoice-agency-name { font-size: 22pt; }
+        .invoice-print .invoice-title { font-size: 26pt; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           color-adjust: exact !important;
         }
         @media print {
-          @page { size: A4; margin: 8mm; }
+          @page { size: A4; margin: 10mm; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           body * { visibility: hidden !important; }
           .invoice-print, .invoice-print * { visibility: visible !important; }
@@ -417,6 +417,7 @@ function InvoicePage() {
             position: absolute !important;
             left: 0 !important; top: 0 !important;
             width: 100% !important; max-width: 100% !important;
+            min-height: calc(297mm - 20mm) !important;
             box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
           }
         }
