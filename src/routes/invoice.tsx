@@ -122,6 +122,7 @@ function InvoicePage() {
     }]);
     setReceived((r) => r + (e.received || 0));
     setSearch("");
+    setModuleFilter("all");
   };
 
   const addBlankItem = () => setItems((p) => [...p, {
@@ -135,7 +136,6 @@ function InvoicePage() {
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
   const grandTotal = Math.max(0, subtotal - discount);
   const due = Math.max(0, grandTotal - received);
-  const paid = received >= grandTotal && grandTotal > 0;
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto pb-10">
@@ -265,11 +265,11 @@ function InvoicePage() {
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                       <Label className="text-xs">Qty</Label>
-                      <Input type="number" value={it.qty} onChange={(e) => updateItem(it.uid, { qty: Number(e.target.value) || 0 })} />
+                      <Input type="number" value={it.qty || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { qty: Number(e.target.value) || 0 })} />
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                       <Label className="text-xs">Rate</Label>
-                      <Input type="number" value={it.rate} onChange={(e) => updateItem(it.uid, { rate: Number(e.target.value) || 0 })} />
+                      <Input type="number" value={it.rate || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { rate: Number(e.target.value) || 0 })} />
                     </div>
                     <Button size="icon" variant="ghost" className="col-span-12 sm:col-span-1 text-destructive"
                       onClick={() => removeItem(it.uid)}>
@@ -282,8 +282,8 @@ function InvoicePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div><Label>Discount</Label><Input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value) || 0)} className="mt-1.5" /></div>
-            <div><Label>Received</Label><Input type="number" value={received} onChange={(e) => setReceived(Number(e.target.value) || 0)} className="mt-1.5" /></div>
+            <div><Label>Discount</Label><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} className="mt-1.5" /></div>
+            <div><Label>Received</Label><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} className="mt-1.5" /></div>
             <div><Label>Notes</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional remarks" className="mt-1.5" /></div>
           </div>
         </CardContent>
@@ -390,13 +390,6 @@ function InvoicePage() {
                 </div>
                 <div className="flex justify-between text-sm"><span className="text-slate-600">Received</span><span className="tabular-nums">{received.toLocaleString()}৳</span></div>
                 <div className="flex justify-between text-sm font-semibold"><span className="text-slate-700">Due</span><span className="tabular-nums">{due.toLocaleString()}৳</span></div>
-                <div className="pt-1">
-                  {paid ? (
-                    <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold tracking-wider">● PAYMENT RECEIVED</span>
-                  ) : (
-                    <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold tracking-wider">● PAYMENT DUE</span>
-                  )}
-                </div>
               </div>
             </div>
 
