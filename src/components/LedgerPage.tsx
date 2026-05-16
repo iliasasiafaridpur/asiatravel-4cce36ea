@@ -478,9 +478,35 @@ export function LedgerPage({ module: mod }: Props) {
     [rows, groupField, billCol, paidCol],
   );
 
+  // Open bookings for a group: only rows with positive balance, excluding payment-only entries,
+  // sorted oldest-first (entry_date asc, then created_at asc).
+  const openBookingsFor = useCallback(
+    (key: string): Row[] => {
+      if (!key) return [];
+      const list = rows.filter(
+        (r) =>
+          String(r[groupField] ?? "") === key &&
+          String(r.service_type ?? "").toUpperCase() !== "PAYMENT" &&
+          Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) > 0.0001,
+      );
+      list.sort((a, b) => {
+        const ad = String(a.entry_date ?? "");
+        const bd = String(b.entry_date ?? "");
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        const ac = String(a.created_at ?? "");
+        const bc = String(b.created_at ?? "");
+        return ac < bc ? -1 : 1;
+      });
+      return list;
+    },
+    [rows, groupField, billCol, paidCol],
+  );
+
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayRow(null);
+    setPayMode("fifo");
+    setSelectedLines({});
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -493,6 +519,8 @@ export function LedgerPage({ module: mod }: Props) {
   // Passenger/row-specific payment: due is THIS row's bill - paid only.
   const openPaymentForRow = (row: Row, lineDue: number) => {
     setPayRow(row);
+    setPayMode("fifo");
+    setSelectedLines({});
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
