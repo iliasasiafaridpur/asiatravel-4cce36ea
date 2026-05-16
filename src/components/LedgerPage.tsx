@@ -1004,6 +1004,22 @@ export function LedgerPage({ module: mod }: Props) {
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label className="text-sm font-medium">সার্ভিস মডিউল</Label>
+                <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                  <SelectTrigger className="h-10 text-base">
+                    <SelectValue placeholder="সব সার্ভিস" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব সার্ভিস</SelectItem>
+                    {serviceOptions.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-sm font-medium">সর্বশেষ N</Label>
                 <Input
                   type="text"
