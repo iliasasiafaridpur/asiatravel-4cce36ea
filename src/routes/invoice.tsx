@@ -136,7 +136,6 @@ function InvoicePage() {
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
   const grandTotal = Math.max(0, subtotal - discount);
   const due = Math.max(0, grandTotal - received);
-  const paid = received >= grandTotal && grandTotal > 0;
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto pb-10">
