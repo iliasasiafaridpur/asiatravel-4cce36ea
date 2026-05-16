@@ -124,6 +124,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -386,9 +387,19 @@ export function LedgerPage({ module: mod }: Props) {
 
 
 
+  const serviceOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) {
+      const s = String(r.service_type ?? "").trim();
+      if (s) set.add(s);
+    }
+    return Array.from(set).sort();
+  }, [rows]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
+    if (serviceFilter !== "all") xs = xs.filter((r) => String(r.service_type ?? "") === serviceFilter);
     // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
     if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
@@ -409,7 +420,7 @@ export function LedgerPage({ module: mod }: Props) {
     }
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
+  }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0,
@@ -919,6 +930,7 @@ export function LedgerPage({ module: mod }: Props) {
   const resetFilters = () => {
     setSearch("");
     setGroupFilter("all");
+    setServiceFilter("all");
     setDueOnly(false);
     setStartDate("");
     setEndDate("");
@@ -984,6 +996,22 @@ export function LedgerPage({ module: mod }: Props) {
                   <SelectContent>
                     <SelectItem value="all">সব {groupLabel}</SelectItem>
                     {groupOptions.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">সার্ভিস মডিউল</Label>
+                <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                  <SelectTrigger className="h-10 text-base">
+                    <SelectValue placeholder="সব সার্ভিস" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব সার্ভিস</SelectItem>
+                    {serviceOptions.map((o) => (
                       <SelectItem key={o} value={o}>
                         {o}
                       </SelectItem>
@@ -1394,26 +1422,6 @@ export function LedgerPage({ module: mod }: Props) {
                       </div>
                       <div className="print:hidden">
                         <div className="flex justify-end gap-0.5 lg:justify-end">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setViewRow(r)}
-                            title="View"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          {bal > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-emerald-600"
-                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
-                              title="Quick Pay"
-                            >
-                              <CreditCard className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
                           <Button
                             variant="ghost"
                             size="icon"
