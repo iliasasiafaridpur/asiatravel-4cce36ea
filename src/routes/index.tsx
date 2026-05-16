@@ -669,9 +669,17 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, to, money, lar
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className={cn("uppercase tracking-wide opacity-95 leading-tight truncate font-semibold", large ? "text-sm" : "text-xs")}>{label}</p>
-          {sublabel && (
-            <p className={cn("opacity-80 leading-tight truncate mt-0.5", large ? "text-xs" : "text-[10px]")}>{sublabel}</p>
+          {large ? (
+            <>
+              <AutoFitText text={label} max={22} min={11} className="font-semibold uppercase tracking-wide" />
+              {sublabel && (
+                <div className="mt-1">
+                  <AutoFitText text={sublabel} max={22} min={11} className="font-semibold uppercase tracking-wide opacity-95" />
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs uppercase tracking-wide opacity-95 leading-tight truncate font-semibold">{label}</p>
           )}
         </div>
         <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-10 w-10" : "h-9 w-9")}>
