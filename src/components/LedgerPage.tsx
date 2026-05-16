@@ -40,6 +40,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Pencil,
@@ -143,6 +145,10 @@ export function LedgerPage({ module: mod }: Props) {
   // When set, payment is for THIS specific ledger row (passenger-specific).
   // When null, payment is at the agent/vendor level (legacy bulk flow).
   const [payRow, setPayRow] = useState<Row | null>(null);
+  // Bulk allocation mode: "fifo" = oldest-first auto; "specific" = bill-by-bill checklist
+  const [payMode, setPayMode] = useState<"fifo" | "specific">("fifo");
+  // For specific mode: rowId -> amount string
+  const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -472,9 +478,35 @@ export function LedgerPage({ module: mod }: Props) {
     [rows, groupField, billCol, paidCol],
   );
 
+  // Open bookings for a group: only rows with positive balance, excluding payment-only entries,
+  // sorted oldest-first (entry_date asc, then created_at asc).
+  const openBookingsFor = useCallback(
+    (key: string): Row[] => {
+      if (!key) return [];
+      const list = rows.filter(
+        (r) =>
+          String(r[groupField] ?? "") === key &&
+          String(r.service_type ?? "").toUpperCase() !== "PAYMENT" &&
+          Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) > 0.0001,
+      );
+      list.sort((a, b) => {
+        const ad = String(a.entry_date ?? "");
+        const bd = String(b.entry_date ?? "");
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        const ac = String(a.created_at ?? "");
+        const bc = String(b.created_at ?? "");
+        return ac < bc ? -1 : 1;
+      });
+      return list;
+    },
+    [rows, groupField, billCol, paidCol],
+  );
+
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayRow(null);
+    setPayMode("fifo");
+    setSelectedLines({});
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -487,6 +519,8 @@ export function LedgerPage({ module: mod }: Props) {
   // Passenger/row-specific payment: due is THIS row's bill - paid only.
   const openPaymentForRow = (row: Row, lineDue: number) => {
     setPayRow(row);
+    setPayMode("fifo");
+    setSelectedLines({});
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
@@ -496,171 +530,202 @@ export function LedgerPage({ module: mod }: Props) {
     setPayOpen(true);
   };
 
+  // Map source table -> column to bump for THIS ledger's payment side.
+  // Agency receives: customer-received column on each service row.
+  // Vendor pays: only saudi_visas tracks vendor-paid (received_vendor).
+  const sourceRecvCol = (srcTable: string): string | null => {
+    if (isAgency) {
+      const m: Record<string, string> = {
+        tickets: "received",
+        bmet_cards: "received_amount",
+        saudi_visas: "received_amount",
+        kuwait_visas: "received",
+      };
+      return m[srcTable] ?? null;
+    }
+    // vendor side
+    if (srcTable === "saudi_visas") return "received_vendor";
+    return null;
+  };
+
+  // Apply `amt` to a single ledger row: update source row if linked (trigger refreshes ledger),
+  // otherwise bump the ledger row's paidCol directly.
+  const applyAllocationToRow = async (row: Row, amt: number) => {
+    const srcTable = String(row.source_table ?? "");
+    const srcId = String(row.source_id ?? "");
+    const recvCol = srcTable ? sourceRecvCol(srcTable) : null;
+    if (srcTable && srcId && recvCol) {
+      const { data: srcRow, error: rErr } = await supabase
+        .from(srcTable as never)
+        .select(`id, ${recvCol}`)
+        .eq("id", srcId)
+        .maybeSingle();
+      if (rErr) throw rErr;
+      const cur = Number((srcRow as Record<string, unknown> | null)?.[recvCol] ?? 0);
+      const upd: Record<string, unknown> = { [recvCol]: cur + amt };
+      if (isAgency && user?.id) upd.received_by = user.id;
+      const { error: uErr } = await supabase
+        .from(srcTable as never)
+        .update(upd as never)
+        .eq("id", srcId);
+      if (uErr) throw uErr;
+    } else {
+      const cur = Number(row[paidCol] ?? 0);
+      const { error: uErr } = await supabase
+        .from(mod.table as never)
+        .update({ [paidCol]: cur + amt } as never)
+        .eq("id", row.id);
+      if (uErr) throw uErr;
+    }
+  };
+
+  // Live FIFO allocation preview for the current payAmount.
+  const fifoPreview = useMemo(() => {
+    if (payRow) return [] as Array<{ row: Row; alloc: number; due: number }>;
+    const amt = Number(payAmount) || 0;
+    let remaining = amt;
+    const list = openBookingsFor(payTarget);
+    const out: Array<{ row: Row; alloc: number; due: number }> = [];
+    for (const r of list) {
+      const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+      if (remaining <= 0.0001) {
+        out.push({ row: r, alloc: 0, due });
+        continue;
+      }
+      const take = Math.min(remaining, due);
+      out.push({ row: r, alloc: take, due });
+      remaining -= take;
+    }
+    return out;
+  }, [payAmount, payTarget, payRow, openBookingsFor, billCol, paidCol]);
+
+  const specificTotal = useMemo(() => {
+    let t = 0;
+    for (const v of Object.values(selectedLines)) t += Number(v) || 0;
+    return t;
+  }, [selectedLines]);
+
+  // Write a single cash-drawer mirror entry for a bulk allocation.
+  const writeCashMirror = async (totalAmt: number, refId: string, allocSummary: string) => {
+    if (!user?.id) return;
+    const me = displayName(profile, user);
+    if (isAgency) {
+      const rid = await generateNextId({
+        key: "_rcpt", label: "", short: "", table: "payment_receipts",
+        idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+      });
+      const { error } = await supabase.from("payment_receipts").insert({
+        receipt_id: rid,
+        entry_date: payDate,
+        service_type: "Agency Receive",
+        ref_id: refId,
+        passenger_name: payTarget,
+        amount: totalAmt,
+        method: payMethod,
+        source: "agency_ledger",
+        remarks: `${payRemarks ? payRemarks + " · " : ""}Alloc: ${allocSummary}`,
+        received_by: user.id,
+        received_by_name: me,
+        created_by: user.id,
+      } as never);
+      if (error) console.warn("payment_receipts mirror failed:", error);
+    } else {
+      const eid = await generateNextId({
+        key: "_exp", label: "", short: "", table: "cash_expenses",
+        idColumn: "expense_id", idPrefix: "EXP", monthlyId: true, fields: [],
+      });
+      const { error } = await supabase.from("cash_expenses").insert({
+        expense_id: eid,
+        entry_date: payDate,
+        category: "Vendor Payment",
+        purpose: `Vendor: ${payTarget}`,
+        amount: totalAmt,
+        remarks: `${payMethod}${payRemarks ? " · " + payRemarks : ""} · Alloc: ${allocSummary}`,
+        spent_by: user.id,
+        spent_by_name: me,
+        created_by: user.id,
+      } as never);
+      if (error) console.warn("cash_expenses mirror failed:", error);
+    }
+  };
+
   const submitPayment = async () => {
-    const amt = Number(payAmount);
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-    if (payRow && amt > payDue + 0.001)
-      return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
     setPaySaving(true);
     try {
-      const me = displayName(profile, user);
-
-      // ---------- Passenger-specific (row-mode) ----------
-      if (payRow && isAgency) {
-        const srcTable = String(payRow.source_table ?? "");
-        const srcId = String(payRow.source_id ?? "");
-        const passenger = String(payRow.passenger_name ?? "");
-        const refId = String(payRow[mod.idColumn] ?? "");
-
-        // map source table → received column name
-        const recvColMap: Record<string, string> = {
-          tickets: "received",
-          bmet_cards: "received_amount",
-          saudi_visas: "received_amount",
-          kuwait_visas: "received",
-        };
-        const recvCol = recvColMap[srcTable];
-
-        if (srcTable && srcId && recvCol) {
-          // 1) Read current received from source row
-          const { data: srcRow, error: rErr } = await supabase
-            .from(srcTable as never)
-            .select(`id, ${recvCol}`)
-            .eq("id", srcId)
-            .maybeSingle();
-          if (rErr) throw rErr;
-          const cur = Number((srcRow as Record<string, unknown> | null)?.[recvCol] ?? 0);
-          const upd: Record<string, unknown> = { [recvCol]: cur + amt };
-          if (user?.id) upd.received_by = user.id;
-          const { error: uErr } = await supabase
-            .from(srcTable as never)
-            .update(upd as never)
-            .eq("id", srcId);
-          if (uErr) throw uErr;
-          // DB trigger sync_agency_ledger will refresh the agency_ledger row automatically.
-        } else {
-          // Fallback: manual ledger entry without source — bump received_amount on the ledger row directly
-          const cur = Number(payRow[paidCol] ?? 0);
-          const { error: uErr } = await supabase
-            .from(mod.table as never)
-            .update({ [paidCol]: cur + amt } as never)
-            .eq("id", payRow.id);
-          if (uErr) throw uErr;
-        }
-
-        // 2) Mirror into payment_receipts (cash drawer + history)
-        if (user?.id) {
-          const rid = await generateNextId({
-            key: "_rcpt", label: "", short: "", table: "payment_receipts",
-            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
-          });
-          const receiptPayload: Record<string, unknown> = {
-            receipt_id: rid,
-            entry_date: payDate,
-            service_type: "Agency Receive",
-            ref_id: refId,
-            passenger_name: passenger,
-            amount: amt,
-            method: payMethod,
-            source: "agency_ledger",
-            remarks: payRemarks || null,
-            received_by: user.id,
-            received_by_name: me,
-            created_by: user.id,
-          };
-          if (srcTable) receiptPayload.service_table = srcTable;
-          if (srcId) receiptPayload.service_row_id = srcId;
-          const { error: e2 } = await supabase
-            .from("payment_receipts")
-            .insert(receiptPayload as never);
-          if (e2) console.warn("payment_receipts mirror failed:", e2);
-        }
-
-        toast.success(`✓ ${passenger || payTarget} — পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`);
+      // ---------- Passenger-specific (single row) ----------
+      if (payRow) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        if (amt > payDue + 0.001)
+          return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
+        await applyAllocationToRow(payRow, amt);
+        await writeCashMirror(amt, String(payRow[mod.idColumn] ?? ""),
+          `${String(payRow[mod.idColumn] ?? "")}=${amt}`);
+        toast.success(`✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`);
         setPayOpen(false);
         setPayRow(null);
         void load();
         return;
       }
 
-      // ---------- Agent/Vendor-level (legacy bulk) ----------
-      const finalId = await generateNextId(mod);
-      const payload: Record<string, unknown> = {
-        [mod.idColumn]: finalId,
-        entry_date: payDate,
-        [groupField]: payTarget,
-        passenger_name: isAgency ? "পেমেন্ট গ্রহণ" : "পেমেন্ট পরিশোধ",
-        service_type: "PAYMENT",
-        country_route: "",
-        [billCol]: 0,
-        [paidCol]: amt,
-        passport: "",
-        mobile: "",
-        profit: 0,
-        remarks: `Method: ${payMethod}${payRemarks ? " · " + payRemarks : ""} · Entry by: ${me}`,
-      };
-      if (user?.id) payload.created_by = user.id;
-      const { error } = await supabase.from(mod.table as never).insert(payload as never);
-      if (error) throw error;
-
-      // Mirror to My Accounts so the cash drawer & reports stay in sync.
-      if (user?.id) {
-        if (isAgency) {
-          // Agency receive — money in to the user
-          const rid = await generateNextId({
-            key: "_rcpt",
-            label: "",
-            short: "",
-            table: "payment_receipts",
-            idColumn: "receipt_id",
-            idPrefix: "RCPT",
-            monthlyId: true,
-            fields: [],
-          });
-          const { error: e2 } = await supabase.from("payment_receipts").insert({
-            receipt_id: rid,
-            entry_date: payDate,
-            service_type: "Agency Receive",
-            ref_id: finalId,
-            passenger_name: payTarget,
-            amount: amt,
-            method: payMethod,
-            source: "agency_ledger",
-            remarks: payRemarks || null,
-            received_by: user.id,
-            received_by_name: me,
-            created_by: user.id,
-          } as never);
-          if (e2) console.warn("payment_receipts mirror failed:", e2);
-        } else {
-          // Vendor pay — money out from the user
-          const eid = await generateNextId({
-            key: "_exp",
-            label: "",
-            short: "",
-            table: "cash_expenses",
-            idColumn: "expense_id",
-            idPrefix: "EXP",
-            monthlyId: true,
-            fields: [],
-          });
-          const { error: e2 } = await supabase.from("cash_expenses").insert({
-            expense_id: eid,
-            entry_date: payDate,
-            category: "Vendor Payment",
-            purpose: `Vendor: ${payTarget}`,
-            amount: amt,
-            remarks: `${payMethod}${payRemarks ? " · " + payRemarks : ""} · Ref: ${finalId}`,
-            spent_by: user.id,
-            spent_by_name: me,
-            created_by: user.id,
-          } as never);
-          if (e2) console.warn("cash_expenses mirror failed:", e2);
+      // ---------- Bulk: Bill-by-Bill (specific) ----------
+      if (payMode === "specific") {
+        const entries = Object.entries(selectedLines)
+          .map(([id, v]) => ({ id, amt: Number(v) || 0 }))
+          .filter((e) => e.amt > 0);
+        if (entries.length === 0) return toast.error("কমপক্ষে একটি বিল নির্বাচন করুন");
+        const rowById = new Map(rows.map((r) => [r.id, r]));
+        // validate
+        for (const e of entries) {
+          const r = rowById.get(e.id);
+          if (!r) return toast.error("বিল খুঁজে পাওয়া যায়নি");
+          const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+          if (e.amt > due + 0.001)
+            return toast.error(
+              `${String(r[mod.idColumn] ?? "")} — Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${due})`,
+            );
         }
+        let total = 0;
+        const parts: string[] = [];
+        for (const e of entries) {
+          const r = rowById.get(e.id)!;
+          await applyAllocationToRow(r, e.amt);
+          total += e.amt;
+          parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
+        }
+        await writeCashMirror(total, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
+        toast.success(`✓ ${entries.length}টি বিলে পেমেন্ট সংরক্ষিত: ${total.toLocaleString()}`);
+        setPayOpen(false);
+        void load();
+        return;
       }
 
-      toast.success(`✓ ${payTitle} সংরক্ষিত: ${amt.toLocaleString()}`);
+      // ---------- Bulk: Auto FIFO ----------
+      const amt = Number(payAmount);
+      if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+      const list = openBookingsFor(payTarget);
+      const totalDue = list.reduce(
+        (s, r) => s + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0),
+        0,
+      );
+      if (amt > totalDue + 0.001)
+        return toast.error(`Total Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${totalDue})`);
+      if (list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
+
+      let remaining = amt;
+      const parts: string[] = [];
+      for (const r of list) {
+        if (remaining <= 0.0001) break;
+        const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+        const take = Math.min(remaining, due);
+        if (take <= 0) continue;
+        await applyAllocationToRow(r, take);
+        remaining -= take;
+        parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
+      }
+      await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
+      toast.success(`✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${parts.length}টি বিল)`);
       setPayOpen(false);
       void load();
     } catch (e) {
@@ -1523,7 +1588,7 @@ export function LedgerPage({ module: mod }: Props) {
           if (!o) setPayRow(null);
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className={cn(payRow ? "max-w-md" : "max-w-3xl", "max-h-[92vh] overflow-y-auto")}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" /> {payTitle}
@@ -1534,6 +1599,7 @@ export function LedgerPage({ module: mod }: Props) {
               )}
             </DialogTitle>
           </DialogHeader>
+
           {payRow && (
             <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
@@ -1558,6 +1624,8 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             </div>
           )}
+
+          {/* Shared top fields */}
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1590,57 +1658,228 @@ export function LedgerPage({ module: mod }: Props) {
                     const due = dueForGroup(v);
                     setPayDue(due);
                     setPayAmount(String(due > 0 ? due : ""));
+                    setSelectedLines({});
                   }}
                 />
               )}
             </div>
+
+            {/* Row-mode: single amount input */}
+            {payRow && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">এই যাত্রীর Due</Label>
+                  <Input
+                    value={payDue.toLocaleString()}
+                    readOnly
+                    className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    {payAmountLabel} <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
+                    className="h-10 text-lg font-semibold tabular-nums"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) */}
+            {!payRow && payTarget && (
+              <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
+                  <TabsTrigger value="specific">Bill-by-Bill (নির্দিষ্ট)</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="fifo" className="space-y-3 pt-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Total Outstanding</Label>
+                      <Input
+                        value={payDue.toLocaleString()}
+                        readOnly
+                        className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        {payAmountLabel} <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        className="h-10 text-lg font-semibold tabular-nums"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  {fifoPreview.length > 0 && (
+                    <div className="rounded-md border max-h-[40vh] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Date / ID</TableHead>
+                            <TableHead className="text-xs">Passenger</TableHead>
+                            <TableHead className="text-right text-xs">Due</TableHead>
+                            <TableHead className="text-right text-xs">Pay</TableHead>
+                            <TableHead className="text-right text-xs">After</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {fifoPreview.map(({ row, alloc, due }) => (
+                            <TableRow
+                              key={row.id}
+                              className={alloc > 0 ? "" : "opacity-40"}
+                            >
+                              <TableCell className="text-xs">
+                                <div>{formatDate(row.entry_date as string | null)}</div>
+                                <div className="font-mono text-[10px] text-muted-foreground">
+                                  {String(row[mod.idColumn] ?? "")}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {String(row.passenger_name ?? "—")}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {due.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs font-semibold text-emerald-600">
+                                {alloc > 0 ? alloc.toLocaleString() : "—"}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {alloc >= due ? (
+                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">Paid</Badge>
+                                ) : alloc > 0 ? (
+                                  <span className="text-amber-600">Partial: {(due - alloc).toLocaleString()}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">{due.toLocaleString()}</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="specific" className="space-y-3 pt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      নির্দিষ্ট বিল বাছাই করুন এবং পরিমাণ এডিট করুন
+                    </span>
+                    <span className="font-semibold tabular-nums">
+                      মোট: {specificTotal.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="rounded-md border max-h-[50vh] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-8"></TableHead>
+                          <TableHead className="text-xs">Date / ID</TableHead>
+                          <TableHead className="text-xs">Passenger</TableHead>
+                          <TableHead className="text-right text-xs">Due</TableHead>
+                          <TableHead className="text-right text-xs w-32">Pay Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {openBookingsFor(payTarget).map((r) => {
+                          const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+                          const checked = r.id in selectedLines;
+                          return (
+                            <TableRow key={r.id}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(c) => {
+                                    setSelectedLines((prev) => {
+                                      const next = { ...prev };
+                                      if (c) next[r.id] = String(due);
+                                      else delete next[r.id];
+                                      return next;
+                                    });
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <div>{formatDate(r.entry_date as string | null)}</div>
+                                <div className="font-mono text-[10px] text-muted-foreground">
+                                  {String(r[mod.idColumn] ?? "")}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {String(r.passenger_name ?? "—")}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {due.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  disabled={!checked}
+                                  value={selectedLines[r.id] ?? ""}
+                                  onChange={(e) =>
+                                    setSelectedLines((prev) => ({ ...prev, [r.id]: e.target.value }))
+                                  }
+                                  className="h-8 text-right tabular-nums"
+                                  max={due}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {openBookingsFor(payTarget).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">
+                              কোনো অপরিশোধিত বিল নেই
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">{payRow ? "এই যাত্রীর Due" : "Total Outstanding"}</Label>
-                <Input
-                  value={payDue.toLocaleString()}
-                  readOnly
-                  className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500"
-                />
+                <Label className="text-xs">
+                  Payment Method <span className="text-rose-500">*</span>
+                </Label>
+                <Select value={payMethod} onValueChange={setPayMethod}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="-- Method --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">
-                  {payAmountLabel} <span className="text-rose-500">*</span>
-                </Label>
+                <Label className="text-xs">Remarks</Label>
                 <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="h-10 text-lg font-semibold tabular-nums"
-                  autoFocus
+                  value={payRemarks}
+                  onChange={(e) => setPayRemarks(e.target.value)}
+                  placeholder="মন্তব্য (ঐচ্ছিক)"
                 />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                Payment Method <span className="text-rose-500">*</span>
-              </Label>
-              <Select value={payMethod} onValueChange={setPayMethod}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="-- Method --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Remarks</Label>
-              <Input
-                value={payRemarks}
-                onChange={(e) => setPayRemarks(e.target.value)}
-                placeholder="মন্তব্য (ঐচ্ছিক)"
-              />
             </div>
           </div>
           <DialogFooter>
@@ -1652,7 +1891,12 @@ export function LedgerPage({ module: mod }: Props) {
               disabled={paySaving}
               className="bg-emerald-600 hover:bg-emerald-700 gap-2"
             >
-              <Wallet className="h-4 w-4" /> {paySaving ? "সেভ হচ্ছে..." : "সংরক্ষণ"}
+              <Wallet className="h-4 w-4" />{" "}
+              {paySaving
+                ? "সেভ হচ্ছে..."
+                : !payRow && payMode === "specific"
+                  ? `সংরক্ষণ (${specificTotal.toLocaleString()})`
+                  : "সংরক্ষণ"}
             </Button>
           </DialogFooter>
         </DialogContent>
