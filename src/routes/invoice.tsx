@@ -290,26 +290,26 @@ function InvoicePage() {
       </Card>
 
       {/* === PRINTABLE INVOICE === */}
-      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0">
-        <div className="flex">
-          <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
-          <div className="flex-1 p-8 sm:p-10">
-            <div className="flex justify-between items-center gap-4 border-b border-slate-200 pb-4">
-              <div className="min-w-0 flex items-center gap-2">
-                <div className="h-9 w-9 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
+      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0 flex">
+        <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
+        <div className="flex-1 p-8 sm:p-10 flex flex-col">
+          <div>
+            <div className="flex justify-between items-center gap-3 border-b border-slate-200 pb-4 flex-nowrap">
+              <div className="min-w-0 flex items-center gap-2 flex-1">
+                <div className="h-10 w-10 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
                   <Plane className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0b2545] leading-tight truncate">{AGENCY.name}</h2>
-                  <p className="text-[10px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
+                  <h2 className="invoice-agency-name font-extrabold tracking-tight text-[#0b2545] leading-tight whitespace-nowrap">{AGENCY.name}</h2>
+                  <p className="text-[11px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-lg sm:text-xl font-black tracking-widest text-[#0b2545] leading-none">INVOICE</p>
-                <p className="font-mono text-[11px] mt-0.5">{invoiceNo}</p>
+                <p className="invoice-title font-black tracking-widest text-[#0b2545] leading-none whitespace-nowrap">INVOICE</p>
+                <p className="font-mono text-xs mt-1">{invoiceNo}</p>
               </div>
             </div>
-            <div className="flex justify-between text-[11px] text-slate-600 mt-2 gap-4">
+            <div className="flex justify-between text-xs text-slate-600 mt-3 gap-4">
               <div>
                 <p>{AGENCY.address}</p>
                 <p>📞 {AGENCY.phone}</p>
