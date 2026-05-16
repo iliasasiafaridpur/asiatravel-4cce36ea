@@ -622,21 +622,59 @@ function DashboardPage() {
   );
 }
 
-function GradientStat({ label, value, icon: Icon, from, to, money }: {
-  label: string; value: number; icon: React.ComponentType<{ className?: string }>;
-  from: string; to: string; money?: boolean;
-}) {
+function AutoFitText({ text, max, min = 10, className }: { text: string; max: number; min?: number; className?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const [size, setSize] = useState(max);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const c = containerRef.current, s = spanRef.current;
+      if (!c || !s) return;
+      let fs = max;
+      s.style.fontSize = `${fs}px`;
+      while (s.scrollWidth > c.clientWidth && fs > min) {
+        fs -= 1;
+        s.style.fontSize = `${fs}px`;
+      }
+      setSize(fs);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [text, max, min]);
   return (
-    <div className={cn("rounded-xl p-3 text-white shadow-lg bg-gradient-to-br min-w-0", from, to)} title={money ? `৳ ${value.toLocaleString()}` : String(value)}>
+    <div ref={containerRef} className={cn("w-full overflow-hidden", className)}>
+      <span ref={spanRef} className="font-bold tabular-nums whitespace-nowrap inline-block" style={{ fontSize: size, lineHeight: 1.1 }}>
+        {text}
+      </span>
+    </div>
+  );
+}
+
+function GradientStat({ label, value, icon: Icon, from, to, money, large }: {
+  label: string; value: number; icon: React.ComponentType<{ className?: string }>;
+  from: string; to: string; money?: boolean; large?: boolean;
+}) {
+  const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
+  return (
+    <div
+      className={cn(
+        "rounded-xl text-white shadow-lg bg-gradient-to-br min-w-0 h-full flex flex-col",
+        large ? "p-5 sm:p-6" : "p-4",
+        from, to
+      )}
+      title={text}
+    >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-wide opacity-90 leading-tight break-words flex-1">{label}</p>
-        <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-          <Icon className="h-4 w-4" />
+        <p className={cn("uppercase tracking-wide opacity-90 leading-tight break-words flex-1", large ? "text-sm" : "text-xs")}>{label}</p>
+        <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-12 w-12" : "h-9 w-9")}>
+          <Icon className={large ? "h-6 w-6" : "h-4 w-4"} />
         </div>
       </div>
-      <p className="text-base sm:text-lg lg:text-xl font-bold mt-2 tabular-nums break-all leading-tight">
-        {money && "৳ "}{value.toLocaleString()}
-      </p>
+      <div className="mt-auto pt-3">
+        <AutoFitText text={text} max={large ? 56 : 26} min={10} />
+      </div>
     </div>
   );
 }
