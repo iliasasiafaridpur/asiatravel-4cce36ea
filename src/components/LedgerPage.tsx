@@ -1426,26 +1426,6 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setViewRow(r)}
-                            title="View"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          {bal > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-emerald-600"
-                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
-                              title="Quick Pay"
-                            >
-                              <CreditCard className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
                             onClick={() => startEdit(r)}
                             title="Edit"
                           >
