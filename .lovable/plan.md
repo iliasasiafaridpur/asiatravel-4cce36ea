@@ -1,53 +1,65 @@
 
-## লক্ষ্য
+# Dual Payment Allocation: Auto-FIFO + Bill-by-Bill
 
-`/agency-ledger`-এ একই Agent-এর একাধিক যাত্রী/সার্ভিস লাইনের যেকোনো একটির **Due** amount-এ ক্লিক করলে:
-1. পেমেন্ট ডায়লগে শুধু **ঐ যাত্রীর/আইডির due** আসবে (Agent-এর মোট নয়)।
-2. পেমেন্ট সেভ করলে শুধু **ঐ নির্দিষ্ট লাইনের** due কমবে এবং ledger-এ ঐ যাত্রীর নামেই entry শো করবে।
-3. Agent-এর মোট বিল সারাংশ স্বয়ংক্রিয়ভাবে সমন্বয় হবে।
+Add two payment modes to both Vendor Ledger and Agency/Customer Ledger so that lump-sum payments either auto-distribute across oldest bookings or apply only to specifically picked bookings.
 
-## এখন কেন ভুল হচ্ছে
+## What changes for the user
 
-`LedgerPage.tsx`-এর `openPayment(groupKey, bal)` ফাংশন `dueForGroup(groupKey)` দিয়ে Agent-এর **মোট outstanding** আবার হিসাব করে — তাই যেকোনো এক যাত্রীর Due-তে ক্লিক করলেও Agent-এর সম্পূর্ণ মোট due ডায়লগে চলে আসে। আবার `submitPayment` agency_ledger-এ একটা নতুন generic row বানায় (passenger_name = "পেমেন্ট গ্রহণ", source_id খালি), যা কোনো নির্দিষ্ট source row-এর সাথে যুক্ত নয়।
+In `/vendor-ledger` and `/agency-ledger`, the existing "পেমেন্ট পরিশোধ / গ্রহণ" dialog (opened from the per-group "Pay" button) gets a **mode switcher** at the top:
 
-সঠিক সমাধান: agency_ledger rows আসে underlying service tables (tickets/bmet_cards/saudi_visas/kuwait_visas) থেকে DB trigger দিয়ে। একটা নির্দিষ্ট passenger-এর due কমানোর একমাত্র টেকসই উপায় হলো ঐ source row-এর `received` / `received_amount` কলাম আপডেট করা — তারপর trigger নিজেই agency_ledger সিঙ্ক করবে। এই কাজটাই `DueReceiveDialog` এবং `payment_receipts` ইতোমধ্যে করে।
+1. **Auto FIFO (পুরাতন থেকে নতুন)** — default
+   - Show agent/vendor name + total outstanding
+   - One amount field (e.g. 75,000)
+   - Live preview table below: which bookings will be touched, how much each gets, what stays due
+   - On submit, allocate oldest → newest until amount runs out
 
-## পরিবর্তন (শুধু `src/components/LedgerPage.tsx`)
+2. **Bill-by-Bill (নির্দিষ্ট বিল)**
+   - Checklist of all unpaid bookings for that agent/vendor (oldest first), each with: date, ref id, passenger, bill, paid, due, and an editable amount field
+   - User ticks the bookings to pay and adjusts per-line amounts (defaults to that line's due)
+   - Total of selected lines shown at bottom; submit pays exactly those
 
-### 1. নতুন state — কোন row-তে ক্লিক হয়েছে মনে রাখা
-```ts
-const [payRow, setPayRow] = useState<Row | null>(null);
-```
+Both modes use the same Method (Cash/bKash/…), Date, Remarks fields already in the dialog.
 
-### 2. `openPayment` দুই-মোডে কাজ করবে
-- **Row-mode** (passenger-specific): `openPaymentForRow(row, bal)` → due = সেই row-এর নিজস্ব `bill - paid` (Agent total নয়), `payRow = row`, `payTarget = agent name` (display-only, lock)।
-- **Agent-mode** (Header-এর "পেমেন্ট গ্রহণ এন্ট্রি" বাটন): আগের মতো `dueForGroup(agent)` ব্যবহার করে, `payRow = null`।
+The single-row "Pay" button on each table row keeps working as today (it's effectively a one-line Bill-by-Bill).
 
-Row-cell এবং Quick-Pay icon (lines 1202-1209, 1248) থেকে `openPaymentForRow(r, bal)` কল হবে।
+## Allocation rules
 
-### 3. `submitPayment` দুই-পথে split
-- **`payRow != null` (passenger-specific):**
-  - source service detect: `payRow.source_table` + `payRow.source_id` থেকে। যদি না থাকে (legacy row বা manual entry), তাহলে সরাসরি `agency_ledger.received_amount += amt` ঐ row-এ আপডেট।
-  - যদি থাকে: ঐ source table-এর `received` / `received_amount` কলামে `amt` যোগ করে UPDATE — DB trigger আপনাআপনি agency_ledger সিঙ্ক করবে এবং ঐ যাত্রীর নামেই থাকবে।
-  - `payment_receipts`-এ একটা entry insert (passenger_name = ঐ যাত্রীর নাম, ref_id = source row-এর ref, amount = amt, source = `agency_ledger`) — এতে cash drawer/হিসাব সিঙ্ক থাকবে এবং History-তে দেখাবে।
-- **`payRow == null` (legacy agent-level payment):** আগের code অপরিবর্তিত (নতুন agency_ledger row বসে)।
+A "booking" = any ledger row for the selected agent/vendor where `service_type != 'PAYMENT'` and `bill - paid > 0`, sorted by `entry_date ASC, created_at ASC`.
 
-### 4. ডায়লগ UI
-- যখন `payRow` সেট, তখন ডায়লগের শিরোনামের নিচে যাত্রীর নাম + ID + service + line-due ছোট কার্ডে দেখাও, এবং Agent dropdown lock।
-- Max amount validation: `amt <= payDue` (line-due)।
-- ডায়লগ বন্ধ হলে `setPayRow(null)`।
+- **FIFO**: walk the sorted list; for each booking take `min(remaining_amount, line_due)`, stop when `remaining_amount == 0`. If amount exceeds total due, block with an error (no overpayment).
+- **Bill-by-Bill**: per selected line, validate `0 < line_amount ≤ line_due`. Sum is the total payment.
+- After allocation, each affected booking's `paid_amount` / `received_amount` is increased by its share.
 
-### 5. Realtime / load
-পরিবর্তন নেই — trigger-driven sync + existing `postgres_changes` channel UI auto-refresh করবে।
+## Data layer
 
-## পরিবর্তন বহির্ভূত
+Per allocation we:
 
-- কোনো DB migration লাগবে না (existing trigger `sync_agency_ledger` যথেষ্ট)।
-- Print/CSV/filter কিছুই পরিবর্তন হবে না।
-- Vendor-ledger flow (same component, `isAgency=false`)-এও একই pattern কাজ করবে: তখন source table-এ `received_vendor` (saudi) বা manual update fallback ব্যবহার হবে — vendor-ledger তে এখন এটা কম প্রয়োজন বলে শুধু agency-mode-এ প্রথমে enable করব, vendor-mode আগের generic flow-এ থাকবে।
+1. For each affected booking row in `agency_ledger` / `vendor_ledger`:
+   - If the row has `source_table` + `source_id` (auto-synced from tickets/bmet/saudi/kuwait), update the **source service row's** receive column (`received` / `received_amount` / `received_vendor`). The existing `sync_agency_ledger` / `sync_vendor_ledger` triggers will refresh the ledger row.
+   - Otherwise (manual ledger entry), update the ledger row's `paidCol` directly.
 
-## ঝুঁকি / Edge case
+2. Mirror the **total** payment into the cash drawer exactly once:
+   - Agency → insert one `payment_receipts` row (source: `agency_ledger`, method, remarks, received_by)
+   - Vendor → insert one `cash_expenses` row (category `Vendor Payment`, purpose `Vendor: <name>`)
 
-- **Source row পাওয়া যাচ্ছে না** (manual ledger entry): fallback হিসেবে সরাসরি agency_ledger row-এর `received_amount` আপডেট — passenger নাম অপরিবর্তিত থাকবে।
-- **Over-payment**: validation `amt > payDue` হলে error toast, save হবে না।
-- **Negative balance (Adv)**: Adv lines-এ Due button দেখায় না, তাই ক্লিক হয় না — অপরিবর্তিত।
+3. Insert one `remarks`-tagged log line on the oldest touched ledger row (or a small JSON in remarks) listing which refs got how much, so audit history survives.
+
+No schema migration is required — all needed columns already exist (`source_table`, `source_id`, `entry_date`, `created_at`, the per-source receive columns).
+
+## Files to change
+
+- `src/components/LedgerPage.tsx`
+  - Add `payMode: "fifo" | "specific"` state and `selectedLines: Map<rowId, amount>` state
+  - Replace the body of the existing payment Dialog (around the `payOpen` block, ~lines 1100+) with a Tabs UI: FIFO tab (current single amount + preview table) and Bill-by-Bill tab (checklist table)
+  - Add helper `getOpenBookings(groupKey)` that returns sorted unpaid rows from `rows`
+  - Replace `submitPayment` group-level branch (lines 587–662) with `submitFifo()` and `submitSpecific()` that loop the allocation, do the source-row updates, then write the single cash-drawer mirror entry
+  - Keep `payRow` (row-specific) path unchanged
+
+No other files need to change. The row-level "Pay" button, totals, filters, CSV export, and DB triggers stay as-is.
+
+## Technical notes
+
+- All updates run client-side via the existing `supabase` browser client (RLS already permits authenticated CRUD on these tables).
+- Allocation loops use `Promise.all` per-booking updates for speed but wrap in try/catch so a partial failure surfaces to the user via toast (DB triggers keep ledger consistent regardless).
+- Live preview in FIFO mode recomputes whenever `payAmount` changes — pure UI, no DB calls.
+- Bill-by-Bill table reuses the existing shadcn `<Table>` + `<Checkbox>` components.
