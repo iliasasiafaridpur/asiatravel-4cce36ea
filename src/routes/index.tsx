@@ -247,7 +247,16 @@ function DashboardPage() {
     const cost = filtered.reduce((s, r) => s + (r.cost_price ?? 0), 0);
     const due = sold - received;
     const profit = sold - cost;
-    return { total, sold, received, due, profit };
+    // Realized profit = Σ (profit_i / sold_i) * received_i  (cash-basis profit)
+    const realizedProfit = filtered.reduce((s, r) => {
+      const rSold = r.sold_price ?? 0;
+      const rCost = r.cost_price ?? 0;
+      const rRecv = r.received ?? 0;
+      if (rSold <= 0) return s;
+      const margin = (rSold - rCost) / rSold;
+      return s + margin * rRecv;
+    }, 0);
+    return { total, sold, received, due, profit, realizedProfit };
   }, [filtered]);
 
   // === Per-user received ===
@@ -412,12 +421,13 @@ function DashboardPage() {
       </Card>
 
       {/* Stats — gradient cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
         <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
-        <GradientStat label="আনুমানিক লাভ" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
+        <GradientStat label="Estimated Profit (আনুমানিক লাভ)" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
+        <GradientStat label="Realized Profit (নগদ লাভ)" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
         <Link to="/accounts" className="block col-span-2 lg:col-span-1">
           <GradientStat
             label={`${myAccount?.full_name ?? meName} • Current Balance`}
