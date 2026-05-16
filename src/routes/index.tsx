@@ -420,15 +420,15 @@ function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Stats — 2 cols × 3 rows of small cards + tall Current Balance card on right (same view for all viewports) */}
-      <div className="grid grid-cols-3 gap-3 auto-rows-fr">
+      {/* Stats — 3 cols × 2 rows of small cards + tall Current Balance card on right (same view for all viewports) */}
+      <div className="grid grid-cols-4 gap-3 auto-rows-fr">
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
         <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
         <GradientStat label="Estimated Profit" sublabel="আনুমানিক লাভ" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
         <GradientStat label="Realized Profit" sublabel="নগদ লাভ" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
-        <Link to="/accounts" className="block col-start-3 row-start-1 row-span-3">
+        <Link to="/accounts" className="block col-start-4 row-start-1 row-span-2">
           <GradientStat
             label={myAccount?.full_name ?? meName}
             sublabel="Current Balance"
