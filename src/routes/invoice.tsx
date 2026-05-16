@@ -234,22 +234,22 @@ function InvoicePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Service Item</Label>
-                      <LookupSelect kind="service_item" value={it.serviceItem}
+                      <LookupSelect kind="invoice_service_item" value={it.serviceItem}
                         onChange={(v) => updateItem(it.uid, { serviceItem: v })} />
                     </div>
                     <div>
                       <Label className="text-xs">Airline</Label>
-                      <LookupSelect kind="airline" value={it.airline}
+                      <LookupSelect kind="invoice_airline" value={it.airline}
                         onChange={(v) => updateItem(it.uid, { airline: v })} />
                     </div>
                     <div>
                       <Label className="text-xs">From</Label>
-                      <LookupSelect kind="route" value={it.fromRoute}
+                      <LookupSelect kind="invoice_route" value={it.fromRoute}
                         onChange={(v) => updateItem(it.uid, { fromRoute: v })} />
                     </div>
                     <div>
                       <Label className="text-xs">To</Label>
-                      <LookupSelect kind="route" value={it.toRoute}
+                      <LookupSelect kind="invoice_route" value={it.toRoute}
                         onChange={(v) => updateItem(it.uid, { toRoute: v })} />
                     </div>
                   </div>
