@@ -400,14 +400,16 @@ function InvoicePage() {
       </div>
 
       <style>{`
-        .invoice-print { width: 100%; max-width: 210mm; }
+        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 12pt; }
+        .invoice-print .invoice-agency-name { font-size: 22pt; }
+        .invoice-print .invoice-title { font-size: 26pt; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           color-adjust: exact !important;
         }
         @media print {
-          @page { size: A4; margin: 8mm; }
+          @page { size: A4; margin: 10mm; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           body * { visibility: hidden !important; }
           .invoice-print, .invoice-print * { visibility: visible !important; }
@@ -415,6 +417,7 @@ function InvoicePage() {
             position: absolute !important;
             left: 0 !important; top: 0 !important;
             width: 100% !important; max-width: 100% !important;
+            min-height: calc(297mm - 20mm) !important;
             box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
           }
         }
