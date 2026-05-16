@@ -28,16 +28,23 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
     const checkActive = async (s: Session | null) => {
       if (!s?.user) { setActiveChecked(true); return; }
-      const { data } = await supabase.from("profiles")
-        .select("is_active,full_name").eq("user_id", s.user.id).maybeSingle();
-      const isActive = (data as { is_active?: boolean } | null)?.is_active ?? false;
-      if (!isActive) {
-        toast.error("আপনার অ্যাকাউন্ট এখনো Admin দ্বারা activate হয়নি");
-        await supabase.auth.signOut();
-        if (active) { setSession(null); setActiveChecked(true); }
-        return;
+      try {
+        const query = supabase.from("profiles")
+          .select("is_active,full_name").eq("user_id", s.user.id).maybeSingle();
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000));
+        const { data } = (await Promise.race([query, timeout])) as { data: { is_active?: boolean } | null };
+        const isActive = data?.is_active ?? false;
+        if (!isActive) {
+          toast.error("আপনার অ্যাকাউন্ট এখনো Admin দ্বারা activate হয়নি");
+          await supabase.auth.signOut();
+          if (active) { setSession(null); setActiveChecked(true); }
+          return;
+        }
+        if (active) setActiveChecked(true);
+      } catch (err) {
+        console.error("profile check failed", err);
+        if (active) setActiveChecked(true);
       }
-      if (active) setActiveChecked(true);
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
