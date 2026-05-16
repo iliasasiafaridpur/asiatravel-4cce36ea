@@ -122,6 +122,7 @@ function InvoicePage() {
     }]);
     setReceived((r) => r + (e.received || 0));
     setSearch("");
+    setModuleFilter("all");
   };
 
   const addBlankItem = () => setItems((p) => [...p, {
