@@ -1385,7 +1385,12 @@ export function LedgerPage({ module: mod }: Props) {
                             A: {info.agency_sold}
                           </div>
                         )}
-                        {typeof info?.cost === "number" && info.cost > 0 && (
+                        {!isAgency && typeof info?.sold === "number" && info.sold > 0 && (
+                          <div className="text-[11px] text-muted-foreground leading-tight tabular-nums">
+                            ৳ {info.sold.toLocaleString()}
+                          </div>
+                        )}
+                        {isAgency && typeof info?.cost === "number" && info.cost > 0 && (
                           <div className="text-[10px] text-muted-foreground leading-tight tabular-nums">
                             ৳ {info.cost.toLocaleString()}
                           </div>
