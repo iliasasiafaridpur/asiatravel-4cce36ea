@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Settings2, Trash2 } from "lucide-react";
+import { Pencil, Plus, Settings2, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 export type LookupKind = string;
@@ -65,6 +65,8 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
   const [newVal, setNewVal] = useState("");
+  const [renamingOrig, setRenamingOrig] = useState<string | null>(null);
+  const [renameVal, setRenameVal] = useState("");
   const label = LABELS[kind] ?? kind;
 
   useEffect(() => {
@@ -115,6 +117,33 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     notify(kind);
     if (value === v) onChange("");
     toast.success("ডিলিট হয়েছে");
+  };
+
+  const renameOne = async (oldVal: string, rawNew: string) => {
+    const nv = rawNew.trim();
+    if (!nv || nv === oldVal) { setRenamingOrig(null); return; }
+    const existing = [...(cache[kind] ?? []), ...(defaults ?? [])];
+    if (existing.includes(nv)) { toast.error("এই নামটি ইতিমধ্যে আছে"); return; }
+    const wasDefault = (defaults ?? []).includes(oldVal);
+    if (wasDefault) {
+      const { error } = await supabase.from("lookups").insert({ kind, value: nv });
+      if (error) { toast.error(error.message); return; }
+      const key = `lookup_hidden_defaults:${kind}`;
+      try {
+        const cur: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
+        if (!cur.includes(oldVal)) localStorage.setItem(key, JSON.stringify([...cur, oldVal]));
+      } catch { /* ignore */ }
+      cache[kind] = [...(cache[kind] ?? []), nv].sort((a, b) => a.localeCompare(b));
+    } else {
+      const { error } = await supabase.from("lookups").update({ value: nv }).eq("kind", kind).eq("value", oldVal);
+      if (error) { toast.error(error.message); return; }
+      cache[kind] = (cache[kind] ?? []).map((x) => x === oldVal ? nv : x).sort((a, b) => a.localeCompare(b));
+    }
+    notify(kind);
+    if (value === oldVal) onChange(nv);
+    setRenamingOrig(null);
+    setRenameVal("");
+    toast.success("রিনেম হয়েছে");
   };
 
   // Filter out defaults the user has previously deleted
@@ -190,14 +219,44 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
             {manageList.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">কোনো অপশন নেই</div>
             ) : manageList.map((o) => (
-              <div key={o} className="flex items-center justify-between py-2">
-                <span className="text-sm">
-                  {o}
-                  {isDefault(o) && <span className="ml-2 text-xs text-muted-foreground">(ডিফল্ট)</span>}
-                </span>
-                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)} title="ডিলিট">
-                  <Trash2 className="h-4 w-4 text-rose-500" />
-                </Button>
+              <div key={o} className="flex items-center justify-between py-2 gap-2">
+                {renamingOrig === o ? (
+                  <>
+                    <Input
+                      value={renameVal}
+                      onChange={(e) => setRenameVal(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void renameOne(o, renameVal);
+                        if (e.key === "Escape") { setRenamingOrig(null); setRenameVal(""); }
+                      }}
+                      autoFocus
+                      className="h-8 text-sm"
+                    />
+                    <div className="flex gap-1 shrink-0">
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => void renameOne(o, renameVal)} title="সেভ">
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenamingOrig(null); setRenameVal(""); }} title="বাতিল">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm truncate">
+                      {o}
+                      {isDefault(o) && <span className="ml-2 text-xs text-muted-foreground">(ডিফল্ট)</span>}
+                    </span>
+                    <div className="flex gap-1 shrink-0">
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenamingOrig(o); setRenameVal(o); }} title="রিনেম">
+                        <Pencil className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => void removeOne(o)} title="ডিলিট">
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
