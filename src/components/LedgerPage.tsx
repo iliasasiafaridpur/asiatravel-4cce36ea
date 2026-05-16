@@ -1588,7 +1588,7 @@ export function LedgerPage({ module: mod }: Props) {
           if (!o) setPayRow(null);
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className={cn(payRow ? "max-w-md" : "max-w-3xl", "max-h-[92vh] overflow-y-auto")}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" /> {payTitle}
@@ -1599,6 +1599,7 @@ export function LedgerPage({ module: mod }: Props) {
               )}
             </DialogTitle>
           </DialogHeader>
+
           {payRow && (
             <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
@@ -1623,6 +1624,8 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             </div>
           )}
+
+          {/* Shared top fields */}
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1655,57 +1658,228 @@ export function LedgerPage({ module: mod }: Props) {
                     const due = dueForGroup(v);
                     setPayDue(due);
                     setPayAmount(String(due > 0 ? due : ""));
+                    setSelectedLines({});
                   }}
                 />
               )}
             </div>
+
+            {/* Row-mode: single amount input */}
+            {payRow && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">এই যাত্রীর Due</Label>
+                  <Input
+                    value={payDue.toLocaleString()}
+                    readOnly
+                    className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    {payAmountLabel} <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
+                    className="h-10 text-lg font-semibold tabular-nums"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) */}
+            {!payRow && payTarget && (
+              <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
+                  <TabsTrigger value="specific">Bill-by-Bill (নির্দিষ্ট)</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="fifo" className="space-y-3 pt-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Total Outstanding</Label>
+                      <Input
+                        value={payDue.toLocaleString()}
+                        readOnly
+                        className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        {payAmountLabel} <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        className="h-10 text-lg font-semibold tabular-nums"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  {fifoPreview.length > 0 && (
+                    <div className="rounded-md border max-h-[40vh] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Date / ID</TableHead>
+                            <TableHead className="text-xs">Passenger</TableHead>
+                            <TableHead className="text-right text-xs">Due</TableHead>
+                            <TableHead className="text-right text-xs">Pay</TableHead>
+                            <TableHead className="text-right text-xs">After</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {fifoPreview.map(({ row, alloc, due }) => (
+                            <TableRow
+                              key={row.id}
+                              className={alloc > 0 ? "" : "opacity-40"}
+                            >
+                              <TableCell className="text-xs">
+                                <div>{formatDate(row.entry_date as string | null)}</div>
+                                <div className="font-mono text-[10px] text-muted-foreground">
+                                  {String(row[mod.idColumn] ?? "")}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {String(row.passenger_name ?? "—")}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {due.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs font-semibold text-emerald-600">
+                                {alloc > 0 ? alloc.toLocaleString() : "—"}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {alloc >= due ? (
+                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">Paid</Badge>
+                                ) : alloc > 0 ? (
+                                  <span className="text-amber-600">Partial: {(due - alloc).toLocaleString()}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">{due.toLocaleString()}</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="specific" className="space-y-3 pt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      নির্দিষ্ট বিল বাছাই করুন এবং পরিমাণ এডিট করুন
+                    </span>
+                    <span className="font-semibold tabular-nums">
+                      মোট: {specificTotal.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="rounded-md border max-h-[50vh] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-8"></TableHead>
+                          <TableHead className="text-xs">Date / ID</TableHead>
+                          <TableHead className="text-xs">Passenger</TableHead>
+                          <TableHead className="text-right text-xs">Due</TableHead>
+                          <TableHead className="text-right text-xs w-32">Pay Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {openBookingsFor(payTarget).map((r) => {
+                          const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+                          const checked = r.id in selectedLines;
+                          return (
+                            <TableRow key={r.id}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(c) => {
+                                    setSelectedLines((prev) => {
+                                      const next = { ...prev };
+                                      if (c) next[r.id] = String(due);
+                                      else delete next[r.id];
+                                      return next;
+                                    });
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <div>{formatDate(r.entry_date as string | null)}</div>
+                                <div className="font-mono text-[10px] text-muted-foreground">
+                                  {String(r[mod.idColumn] ?? "")}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {String(r.passenger_name ?? "—")}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {due.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  disabled={!checked}
+                                  value={selectedLines[r.id] ?? ""}
+                                  onChange={(e) =>
+                                    setSelectedLines((prev) => ({ ...prev, [r.id]: e.target.value }))
+                                  }
+                                  className="h-8 text-right tabular-nums"
+                                  max={due}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {openBookingsFor(payTarget).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">
+                              কোনো অপরিশোধিত বিল নেই
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">{payRow ? "এই যাত্রীর Due" : "Total Outstanding"}</Label>
-                <Input
-                  value={payDue.toLocaleString()}
-                  readOnly
-                  className="h-10 bg-muted/40 tabular-nums font-semibold text-rose-500"
-                />
+                <Label className="text-xs">
+                  Payment Method <span className="text-rose-500">*</span>
+                </Label>
+                <Select value={payMethod} onValueChange={setPayMethod}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="-- Method --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">
-                  {payAmountLabel} <span className="text-rose-500">*</span>
-                </Label>
+                <Label className="text-xs">Remarks</Label>
                 <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="h-10 text-lg font-semibold tabular-nums"
-                  autoFocus
+                  value={payRemarks}
+                  onChange={(e) => setPayRemarks(e.target.value)}
+                  placeholder="মন্তব্য (ঐচ্ছিক)"
                 />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                Payment Method <span className="text-rose-500">*</span>
-              </Label>
-              <Select value={payMethod} onValueChange={setPayMethod}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="-- Method --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Remarks</Label>
-              <Input
-                value={payRemarks}
-                onChange={(e) => setPayRemarks(e.target.value)}
-                placeholder="মন্তব্য (ঐচ্ছিক)"
-              />
             </div>
           </div>
           <DialogFooter>
@@ -1717,7 +1891,12 @@ export function LedgerPage({ module: mod }: Props) {
               disabled={paySaving}
               className="bg-emerald-600 hover:bg-emerald-700 gap-2"
             >
-              <Wallet className="h-4 w-4" /> {paySaving ? "সেভ হচ্ছে..." : "সংরক্ষণ"}
+              <Wallet className="h-4 w-4" />{" "}
+              {paySaving
+                ? "সেভ হচ্ছে..."
+                : !payRow && payMode === "specific"
+                  ? `সংরক্ষণ (${specificTotal.toLocaleString()})`
+                  : "সংরক্ষণ"}
             </Button>
           </DialogFooter>
         </DialogContent>
