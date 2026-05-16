@@ -421,13 +421,14 @@ function DashboardPage() {
       </Card>
 
       {/* Stats — gradient cards: 3x2 grid on left + tall Current Balance card on right */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 auto-rows-fr">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
-        <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-2 lg:row-span-2">
+        <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-1 lg:row-span-2">
           <GradientStat
-            label={`${myAccount?.full_name ?? meName} • Current Balance`}
+            label={myAccount?.full_name ?? meName}
+            sublabel="Current Balance"
             value={Number(myAccount?.current_balance ?? 0)}
             money
             icon={Wallet}
@@ -652,8 +653,8 @@ function AutoFitText({ text, max, min = 10, className }: { text: string; max: nu
   );
 }
 
-function GradientStat({ label, value, icon: Icon, from, to, money, large }: {
-  label: string; value: number; icon: React.ComponentType<{ className?: string }>;
+function GradientStat({ label, sublabel, value, icon: Icon, from, to, money, large }: {
+  label: string; sublabel?: string; value: number; icon: React.ComponentType<{ className?: string }>;
   from: string; to: string; money?: boolean; large?: boolean;
 }) {
   const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
@@ -661,19 +662,24 @@ function GradientStat({ label, value, icon: Icon, from, to, money, large }: {
     <div
       className={cn(
         "rounded-xl text-white shadow-lg bg-gradient-to-br min-w-0 h-full flex flex-col",
-        large ? "p-5 sm:p-6" : "p-4",
+        large ? "p-4 sm:p-5" : "p-4",
         from, to
       )}
       title={text}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className={cn("uppercase tracking-wide opacity-90 leading-tight break-words flex-1", large ? "text-sm" : "text-xs")}>{label}</p>
-        <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-12 w-12" : "h-9 w-9")}>
-          <Icon className={large ? "h-6 w-6" : "h-4 w-4"} />
+        <div className="flex-1 min-w-0">
+          <p className={cn("uppercase tracking-wide opacity-95 leading-tight truncate font-semibold", large ? "text-sm" : "text-xs")}>{label}</p>
+          {sublabel && (
+            <p className={cn("opacity-80 leading-tight truncate mt-0.5", large ? "text-xs" : "text-[10px]")}>{sublabel}</p>
+          )}
+        </div>
+        <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-10 w-10" : "h-9 w-9")}>
+          <Icon className={large ? "h-5 w-5" : "h-4 w-4"} />
         </div>
       </div>
       <div className="mt-auto pt-3">
-        <AutoFitText text={text} max={large ? 56 : 26} min={10} />
+        <AutoFitText text={text} max={large ? 44 : 28} min={10} />
       </div>
     </div>
   );
