@@ -145,6 +145,10 @@ export function LedgerPage({ module: mod }: Props) {
   // When set, payment is for THIS specific ledger row (passenger-specific).
   // When null, payment is at the agent/vendor level (legacy bulk flow).
   const [payRow, setPayRow] = useState<Row | null>(null);
+  // Bulk allocation mode: "fifo" = oldest-first auto; "specific" = bill-by-bill checklist
+  const [payMode, setPayMode] = useState<"fifo" | "specific">("fifo");
+  // For specific mode: rowId -> amount string
+  const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
 
   const PAYMENT_METHODS = [
     "Cash",
