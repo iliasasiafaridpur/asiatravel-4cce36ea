@@ -402,12 +402,24 @@ function InvoicePage() {
       </div>
 
       <style>{`
-        @media print {
-          @page { size: A4; margin: 10mm; }
-          body { background: white !important; }
-          .invoice-print { box-shadow: none !important; border: 0 !important; }
-        }
         .invoice-print { width: 100%; max-width: 210mm; }
+        .invoice-print, .invoice-print * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        @media print {
+          @page { size: A4; margin: 8mm; }
+          html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          body * { visibility: hidden !important; }
+          .invoice-print, .invoice-print * { visibility: visible !important; }
+          .invoice-print {
+            position: absolute !important;
+            left: 0 !important; top: 0 !important;
+            width: 100% !important; max-width: 100% !important;
+            box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
+          }
+        }
       `}</style>
     </div>
   );
