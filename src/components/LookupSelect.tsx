@@ -219,14 +219,44 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
             {manageList.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">কোনো অপশন নেই</div>
             ) : manageList.map((o) => (
-              <div key={o} className="flex items-center justify-between py-2">
-                <span className="text-sm">
-                  {o}
-                  {isDefault(o) && <span className="ml-2 text-xs text-muted-foreground">(ডিফল্ট)</span>}
-                </span>
-                <Button type="button" variant="ghost" size="icon" onClick={() => void removeOne(o)} title="ডিলিট">
-                  <Trash2 className="h-4 w-4 text-rose-500" />
-                </Button>
+              <div key={o} className="flex items-center justify-between py-2 gap-2">
+                {renamingOrig === o ? (
+                  <>
+                    <Input
+                      value={renameVal}
+                      onChange={(e) => setRenameVal(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void renameOne(o, renameVal);
+                        if (e.key === "Escape") { setRenamingOrig(null); setRenameVal(""); }
+                      }}
+                      autoFocus
+                      className="h-8 text-sm"
+                    />
+                    <div className="flex gap-1 shrink-0">
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => void renameOne(o, renameVal)} title="সেভ">
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenamingOrig(null); setRenameVal(""); }} title="বাতিল">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm truncate">
+                      {o}
+                      {isDefault(o) && <span className="ml-2 text-xs text-muted-foreground">(ডিফল্ট)</span>}
+                    </span>
+                    <div className="flex gap-1 shrink-0">
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenamingOrig(o); setRenameVal(o); }} title="রিনেম">
+                        <Pencil className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => void removeOne(o)} title="ডিলিট">
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
