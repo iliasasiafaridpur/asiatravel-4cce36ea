@@ -112,6 +112,7 @@ export function LedgerPage({ module: mod }: Props) {
         passport?: string;
         mobile?: string;
         vendor?: string;
+        agency_sold?: string;
         sold?: number;
         cost?: number;
         status?: string;
@@ -238,20 +239,20 @@ export function LedgerPage({ module: mod }: Props) {
         supabase
           .from("tickets")
           .select(
-            "id,flight_date,trip_road,passport,mobile,vendor_bought,sold_price,cost_price,status,airline,pnr",
+            "id,flight_date,trip_road,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status,airline,pnr",
           )
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,sold_price,cost_price,status")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,sold_price,cost_price,status")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,sold_price,cost_price,status")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
           .limit(2000),
       ]);
       const fm = new Map<string, string>();
@@ -262,6 +263,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport?: string;
           mobile?: string;
           vendor?: string;
+          agency_sold?: string;
           sold?: number;
           cost?: number;
           status?: string;
@@ -276,6 +278,7 @@ export function LedgerPage({ module: mod }: Props) {
         passport: string | null;
         mobile: string | null;
         vendor_bought: string | null;
+        agency_sold: string | null;
         sold_price: number | null;
         cost_price: number | null;
         status: string | null;
@@ -289,6 +292,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport: t.passport ?? undefined,
           mobile: t.mobile ?? undefined,
           vendor: t.vendor_bought ?? undefined,
+          agency_sold: t.agency_sold ?? undefined,
           sold: t.sold_price ?? undefined,
           cost: t.cost_price ?? undefined,
           status: t.status ?? undefined,
@@ -303,6 +307,7 @@ export function LedgerPage({ module: mod }: Props) {
         passport: string | null;
         mobile: string | null;
         vendor_bought: string | null;
+        agency_sold: string | null;
         sold_price: number | null;
         cost_price: number | null;
         status: string | null;
@@ -313,6 +318,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport: b.passport ?? undefined,
           mobile: b.mobile ?? undefined,
           vendor: b.vendor_bought ?? undefined,
+          agency_sold: b.agency_sold ?? undefined,
           sold: b.sold_price ?? undefined,
           cost: b.cost_price ?? undefined,
           status: b.status ?? undefined,
@@ -324,6 +330,7 @@ export function LedgerPage({ module: mod }: Props) {
         passport: string | null;
         mobile: string | null;
         vendor_bought: string | null;
+        agency_sold: string | null;
         sold_price: number | null;
         cost_price: number | null;
         status: string | null;
@@ -334,6 +341,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport: v.passport ?? undefined,
           mobile: v.mobile ?? undefined,
           vendor: v.vendor_bought ?? undefined,
+          agency_sold: v.agency_sold ?? undefined,
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
@@ -345,6 +353,7 @@ export function LedgerPage({ module: mod }: Props) {
           passport: v.passport ?? undefined,
           mobile: v.mobile ?? undefined,
           vendor: v.vendor_bought ?? undefined,
+          agency_sold: v.agency_sold ?? undefined,
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
@@ -1366,9 +1375,14 @@ export function LedgerPage({ module: mod }: Props) {
                           {groupLabel}
                         </div>
                         <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
-                        {info?.vendor && (
+                        {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
+                          </div>
+                        )}
+                        {!isAgency && info?.agency_sold && (
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            A: {info.agency_sold}
                           </div>
                         )}
                         {typeof info?.cost === "number" && info.cost > 0 && (
