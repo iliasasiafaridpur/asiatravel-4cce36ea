@@ -930,6 +930,7 @@ export function LedgerPage({ module: mod }: Props) {
   const resetFilters = () => {
     setSearch("");
     setGroupFilter("all");
+    setServiceFilter("all");
     setDueOnly(false);
     setStartDate("");
     setEndDate("");
