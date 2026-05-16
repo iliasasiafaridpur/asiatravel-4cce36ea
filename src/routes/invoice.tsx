@@ -400,7 +400,7 @@ function InvoicePage() {
       </div>
 
       <style>{`
-        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 12pt; }
+        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 16pt; }
         .invoice-print .invoice-agency-name { font-size: 22pt; }
         .invoice-print .invoice-title { font-size: 26pt; }
         .invoice-print, .invoice-print * {
