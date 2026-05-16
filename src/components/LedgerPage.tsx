@@ -124,6 +124,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
