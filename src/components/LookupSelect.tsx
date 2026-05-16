@@ -119,6 +119,33 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     toast.success("ডিলিট হয়েছে");
   };
 
+  const renameOne = async (oldVal: string, rawNew: string) => {
+    const nv = rawNew.trim();
+    if (!nv || nv === oldVal) { setRenamingOrig(null); return; }
+    const existing = [...(cache[kind] ?? []), ...(defaults ?? [])];
+    if (existing.includes(nv)) { toast.error("এই নামটি ইতিমধ্যে আছে"); return; }
+    const wasDefault = (defaults ?? []).includes(oldVal);
+    if (wasDefault) {
+      const { error } = await supabase.from("lookups").insert({ kind, value: nv });
+      if (error) { toast.error(error.message); return; }
+      const key = `lookup_hidden_defaults:${kind}`;
+      try {
+        const cur: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
+        if (!cur.includes(oldVal)) localStorage.setItem(key, JSON.stringify([...cur, oldVal]));
+      } catch { /* ignore */ }
+      cache[kind] = [...(cache[kind] ?? []), nv].sort((a, b) => a.localeCompare(b));
+    } else {
+      const { error } = await supabase.from("lookups").update({ value: nv }).eq("kind", kind).eq("value", oldVal);
+      if (error) { toast.error(error.message); return; }
+      cache[kind] = (cache[kind] ?? []).map((x) => x === oldVal ? nv : x).sort((a, b) => a.localeCompare(b));
+    }
+    notify(kind);
+    if (value === oldVal) onChange(nv);
+    setRenamingOrig(null);
+    setRenameVal("");
+    toast.success("রিনেম হয়েছে");
+  };
+
   // Filter out defaults the user has previously deleted
   let effectiveDefaults = defaults ?? [];
   try {
