@@ -425,6 +425,7 @@ function DashboardPage() {
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
         <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
+        <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
         <Link to="/accounts" className="block col-span-2 row-span-2 lg:col-span-1 lg:row-span-2">
           <GradientStat
             label={myAccount?.full_name ?? meName}
@@ -437,7 +438,6 @@ function DashboardPage() {
             large
           />
         </Link>
-        <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
         <GradientStat label="Estimated Profit (আনুমানিক লাভ)" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
         <GradientStat label="Realized Profit (নগদ লাভ)" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
       </div>
