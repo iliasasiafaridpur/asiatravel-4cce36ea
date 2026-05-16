@@ -679,7 +679,12 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, to, money, lar
               )}
             </>
           ) : (
-            <p className="text-xs uppercase tracking-wide opacity-95 leading-tight truncate font-semibold">{label}</p>
+            <>
+              <p className="text-xs uppercase tracking-wide opacity-95 leading-tight truncate font-semibold">{label}</p>
+              {sublabel && (
+                <p className="text-[11px] tracking-wide opacity-90 leading-tight truncate font-medium mt-0.5">{sublabel}</p>
+              )}
+            </>
           )}
         </div>
         <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-10 w-10" : "h-9 w-9")}>
