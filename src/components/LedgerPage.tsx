@@ -244,7 +244,7 @@ export function LedgerPage({ module: mod }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,sold_price,cost_price,status")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
           .limit(2000),
         supabase
           .from("kuwait_visas")
