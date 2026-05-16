@@ -387,9 +387,19 @@ export function LedgerPage({ module: mod }: Props) {
 
 
 
+  const serviceOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) {
+      const s = String(r.service_type ?? "").trim();
+      if (s) set.add(s);
+    }
+    return Array.from(set).sort();
+  }, [rows]);
+
   const filtered = useMemo(() => {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
+    if (serviceFilter !== "all") xs = xs.filter((r) => String(r.service_type ?? "") === serviceFilter);
     // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
     if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
@@ -410,7 +420,7 @@ export function LedgerPage({ module: mod }: Props) {
     }
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
+  }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
 
   const totals = useMemo(() => {
     let bill = 0,
