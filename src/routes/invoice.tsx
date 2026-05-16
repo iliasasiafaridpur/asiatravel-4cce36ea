@@ -391,13 +391,6 @@ function InvoicePage() {
                 </div>
                 <div className="flex justify-between text-sm"><span className="text-slate-600">Received</span><span className="tabular-nums">{received.toLocaleString()}৳</span></div>
                 <div className="flex justify-between text-sm font-semibold"><span className="text-slate-700">Due</span><span className="tabular-nums">{due.toLocaleString()}৳</span></div>
-                <div className="pt-1">
-                  {paid ? (
-                    <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold tracking-wider">● PAYMENT RECEIVED</span>
-                  ) : (
-                    <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold tracking-wider">● PAYMENT DUE</span>
-                  )}
-                </div>
               </div>
             </div>
 
