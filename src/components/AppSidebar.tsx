@@ -13,7 +13,6 @@ import {
   Wallet,
   Settings as SettingsIcon,
   ShieldCheck,
-  Activity,
 } from "lucide-react";
 import {
   Sidebar,
