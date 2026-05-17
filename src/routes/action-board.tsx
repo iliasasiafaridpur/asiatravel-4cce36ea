@@ -118,6 +118,7 @@ function ActionBoardPage() {
       toast.success(`Saved: ${newId}`);
       speakModuleEntry(mod.key);
       if (recvAmount > 0) speakReceived(recvAmount);
+      clearDraft();
       setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);
