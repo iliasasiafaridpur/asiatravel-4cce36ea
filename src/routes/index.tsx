@@ -656,20 +656,21 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
 }) {
   const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
   // Explicit lookup so Tailwind JIT can detect full class strings.
-  const palette: Record<string, { accent: string; border: string }> = {
-    "from-sky-500":     { accent: "text-slate-200",   border: "border-slate-500/40" },
-    "from-blue-500":    { accent: "text-cyan-300",    border: "border-cyan-400/40" },
-    "from-emerald-500": { accent: "text-emerald-300", border: "border-emerald-400/40" },
-    "from-violet-500":  { accent: "text-emerald-300", border: "border-emerald-400/40" },
-    "from-fuchsia-500": { accent: "text-emerald-300", border: "border-emerald-400/40" },
-    "from-rose-500":    { accent: "text-orange-300",  border: "border-orange-400/40" },
-    "from-amber-500":   { accent: "text-amber-300",   border: "border-amber-400/40" },
+  const palette: Record<string, { accent: string; border: string; bg: string }> = {
+    "from-sky-500":     { accent: "text-slate-200",   border: "border-slate-500/40",  bg: "bg-slate-500/24" },
+    "from-blue-500":    { accent: "text-cyan-300",    border: "border-cyan-400/40",   bg: "bg-cyan-500/24" },
+    "from-emerald-500": { accent: "text-emerald-300", border: "border-emerald-400/40", bg: "bg-emerald-500/24" },
+    "from-violet-500":  { accent: "text-emerald-300", border: "border-emerald-400/40", bg: "bg-emerald-500/24" },
+    "from-fuchsia-500": { accent: "text-emerald-300", border: "border-emerald-400/40", bg: "bg-emerald-500/24" },
+    "from-rose-500":    { accent: "text-orange-300",  border: "border-orange-400/40", bg: "bg-orange-500/24" },
+    "from-amber-500":   { accent: "text-amber-300",   border: "border-amber-400/40",  bg: "bg-amber-500/24" },
   };
-  const { accent, border } = palette[from] ?? { accent: "text-foreground", border: "border-border/60" };
+  const { accent, border, bg } = palette[from] ?? { accent: "text-foreground", border: "border-border/60", bg: "bg-card" };
   return (
     <div
       className={cn(
-        "rounded-xl bg-card border shadow-sm min-w-0 h-full flex flex-col",
+        "rounded-xl border shadow-sm min-w-0 h-full flex flex-col",
+        bg,
         border,
         large ? "p-4 sm:p-5" : "p-4",
       )}
