@@ -1185,6 +1185,7 @@ export function LedgerPage({ module: mod }: Props) {
                     <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Due</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1214,6 +1215,18 @@ export function LedgerPage({ module: mod }: Props) {
                           >
                             Paid
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {g.advance > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold"
+                          >
+                            ৳ {g.advance.toLocaleString()}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
                         )}
                       </TableCell>
                     </TableRow>
