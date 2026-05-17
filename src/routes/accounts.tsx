@@ -565,7 +565,7 @@ ${node.innerHTML.replace(
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={saveHandover} className="gap-1.5"><Plus className="h-4 w-4" />সংরক্ষণ</Button>
+                  <Button onClick={saveHandover} disabled={savingHandover} className="gap-1.5"><Plus className="h-4 w-4" />{savingHandover ? "সংরক্ষণ হচ্ছে..." : "সংরক্ষণ"}</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
