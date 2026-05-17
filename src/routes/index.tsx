@@ -459,22 +459,21 @@ function DashboardPage() {
 
       {/* Module shortcuts */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {TARGET_MODULES.map((m) => {
+        {TARGET_MODULES.map((m, i) => {
           const Icon = ICONS[m.key] ?? ClipboardList;
           const count = filtered.filter((r) => r.module === m.key).length;
+          const tint = CARD_TINTS[i % CARD_TINTS.length];
           return (
             <Link key={m.key} to={`/${m.key}` as string}>
-              <Card className="hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{m.label}</p>
-                    <p className="text-xl font-bold mt-0.5">{count}</p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLORS[m.key]}22`, color: MODULE_COLORS[m.key] }}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className={cn("rounded-xl border shadow-sm p-4 flex items-center justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer", tint)}>
+                <div>
+                  <p className="text-xs text-muted-foreground">{m.label}</p>
+                  <p className="text-xl font-bold mt-0.5">{count}</p>
+                </div>
+                <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLORS[m.key]}33`, color: MODULE_COLORS[m.key] }}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
             </Link>
           );
         })}
