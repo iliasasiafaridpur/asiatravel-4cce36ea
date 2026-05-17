@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter, Link } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import {
+  installStaleAssetRecoveryListeners,
   isRecoverableAssetError,
   tryRecoverFromStaleAssets,
 } from "./lib/stale-asset-recovery";
@@ -42,6 +43,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 }
 
 export const getRouter = () => {
+  installStaleAssetRecoveryListeners();
   const queryClient = new QueryClient();
 
   const router = createRouter({
