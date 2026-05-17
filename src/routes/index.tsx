@@ -660,8 +660,8 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
     "from-sky-500":     { accent: "text-slate-200",   border: "border-slate-500/40",  bg: "bg-slate-500/24" },
     "from-blue-500":    { accent: "text-cyan-300",    border: "border-cyan-400/40",   bg: "bg-cyan-500/24" },
     "from-emerald-500": { accent: "text-emerald-300", border: "border-emerald-400/40", bg: "bg-emerald-500/24" },
-    "from-violet-500":  { accent: "text-emerald-300", border: "border-emerald-400/40", bg: "bg-emerald-500/24" },
-    "from-fuchsia-500": { accent: "text-emerald-300", border: "border-emerald-400/40", bg: "bg-emerald-500/24" },
+    "from-violet-500":  { accent: "text-violet-300",  border: "border-violet-400/40", bg: "bg-violet-500/24" },
+    "from-fuchsia-500": { accent: "text-fuchsia-300", border: "border-fuchsia-400/40", bg: "bg-fuchsia-500/24" },
     "from-rose-500":    { accent: "text-orange-300",  border: "border-orange-400/40", bg: "bg-orange-500/24" },
     "from-amber-500":   { accent: "text-amber-300",   border: "border-amber-400/40",  bg: "bg-amber-500/24" },
   };
