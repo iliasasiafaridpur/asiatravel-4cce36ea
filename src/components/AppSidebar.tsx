@@ -13,7 +13,6 @@ import {
   Wallet,
   Settings as SettingsIcon,
   ShieldCheck,
-  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,7 +47,7 @@ const NAV = [
     { to: "/invoice", title: "Invoice", icon: FileText },
   ]},
   { group: "System", items: [
-    { to: "/activity-hub", title: "Activity Hub", icon: Activity },
+    
     { to: "/users", title: "User Management", icon: ShieldCheck },
     { to: "/settings", title: "Settings", icon: SettingsIcon },
   ]},
