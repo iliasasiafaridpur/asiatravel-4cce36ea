@@ -11,7 +11,7 @@ export const Route = createFileRoute("/agents")({
   component: AgentsPage,
 });
 
-interface Bal { agent_name: string; total_bill: number; total_received: number; balance_due: number; }
+interface Bal { agent_name: string; total_bill: number; total_received: number; balance_due: number; advance_balance: number; }
 
 function AgentsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
@@ -33,15 +33,16 @@ function AgentsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Agent</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Agent</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead></TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.agent_name} className={`row-tint-${idx % 6}`}>
                       <TableCell className="font-medium">{b.agent_name}</TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_bill).toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums text-emerald-600">৳ {Number(b.total_received).toLocaleString()}</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${b.balance_due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {Number(b.balance_due).toLocaleString()}</TableCell>
+                      <TableCell className={`text-right tabular-nums font-semibold ${Number(b.advance_balance) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {Number(b.advance_balance ?? 0).toLocaleString()}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>

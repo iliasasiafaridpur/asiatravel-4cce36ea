@@ -151,6 +151,8 @@ export function LedgerPage({ module: mod }: Props) {
   const [payMode, setPayMode] = useState<"fifo" | "specific">("fifo");
   // For specific mode: rowId -> amount string
   const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
+  // Advance payment toggle: when true, skip booking allocation and just record an ADVANCE entry
+  const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -451,7 +453,13 @@ export function LedgerPage({ module: mod }: Props) {
       map.set(k, cur);
     }
     return Array.from(map.entries())
-      .map(([key, v]) => ({ key, bill: v.bill, paid: v.paid, due: v.bill - v.paid }))
+      .map(([key, v]) => ({
+        key,
+        bill: v.bill,
+        paid: v.paid,
+        due: Math.max(v.bill - v.paid, 0),
+        advance: Math.max(v.paid - v.bill, 0),
+      }))
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol]);
 
@@ -527,6 +535,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayRow(null);
     setPayMode("fifo");
     setSelectedLines({});
+    setPayAsAdvance(false);
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -541,6 +550,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayRow(row);
     setPayMode("fifo");
     setSelectedLines({});
+    setPayAsAdvance(false);
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
@@ -673,6 +683,35 @@ export function LedgerPage({ module: mod }: Props) {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
     try {
+      // ---------- Advance Payment (no booking allocation) ----------
+      if (payAsAdvance && !payRow) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        const ledgerId = await generateNextId({
+          key: mod.key, label: "", short: "", table: mod.table,
+          idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
+          monthlyId: true, fields: [],
+        });
+        const payload: Record<string, unknown> = {
+          [mod.idColumn]: ledgerId,
+          entry_date: payDate,
+          [groupField]: payTarget,
+          service_type: "ADVANCE",
+          [billCol]: 0,
+          [paidCol]: amt,
+          remarks: `Advance ${isAgency ? "Received" : "Paid"} · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
+          created_by: user?.id ?? null,
+        };
+        if (isAgency) payload.received_by = user?.id ?? null;
+        const { error } = await supabase.from(mod.table as never).insert(payload as never);
+        if (error) throw error;
+        await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
+        toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+        setPayOpen(false);
+        void load();
+        return;
+      }
+
       // ---------- Passenger-specific (single row) ----------
       if (payRow) {
         const amt = Number(payAmount);
@@ -1146,6 +1185,7 @@ export function LedgerPage({ module: mod }: Props) {
                     <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Due</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1175,6 +1215,18 @@ export function LedgerPage({ module: mod }: Props) {
                           >
                             Paid
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {g.advance > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold"
+                          >
+                            ৳ {g.advance.toLocaleString()}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -1717,8 +1769,45 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             )}
 
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) */}
+            {/* Mark as Advance Payment toggle (bulk mode only) */}
             {!payRow && payTarget && (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2.5">
+                <Checkbox
+                  id="payAsAdvance"
+                  checked={payAsAdvance}
+                  onCheckedChange={(c) => {
+                    setPayAsAdvance(!!c);
+                    if (c) { setPayAmount(""); setSelectedLines({}); }
+                  }}
+                />
+                <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
+                  Mark as Advance Payment
+                  <span className="block text-[11px] text-muted-foreground font-normal">
+                    কোনো বুকিং-এর সাথে যুক্ত না করে advance হিসেবে রাখুন — পরের বুকিং থেকে auto adjust হবে
+                  </span>
+                </Label>
+              </div>
+            )}
+
+            {/* Advance amount input (when advance toggle ON) */}
+            {!payRow && payTarget && payAsAdvance && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Advance Amount <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="h-10 text-lg font-semibold tabular-nums"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance */}
+            {!payRow && payTarget && !payAsAdvance && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>

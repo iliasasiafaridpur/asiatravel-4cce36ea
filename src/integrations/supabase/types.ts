@@ -828,10 +828,18 @@ export type Database = {
       get_agent_balances: {
         Args: never
         Returns: {
+          advance_balance: number
           agent_name: string
           balance_due: number
           total_bill: number
           total_received: number
+        }[]
+      }
+      get_agent_wallet: {
+        Args: { _agent_name: string }
+        Returns: {
+          advance_balance: number
+          current_due: number
         }[]
       }
       get_cash_drawer: {
@@ -862,10 +870,18 @@ export type Database = {
       get_vendor_balances: {
         Args: never
         Returns: {
+          advance_balance: number
           balance_due: number
           total_paid: number
           total_payable: number
           vendor_name: string
+        }[]
+      }
+      get_vendor_wallet: {
+        Args: { _vendor_name: string }
+        Returns: {
+          advance_balance: number
+          payable_due: number
         }[]
       }
       has_role: {
