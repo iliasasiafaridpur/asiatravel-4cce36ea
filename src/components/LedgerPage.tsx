@@ -535,6 +535,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayRow(null);
     setPayMode("fifo");
     setSelectedLines({});
+    setPayAsAdvance(false);
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -549,6 +550,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayRow(row);
     setPayMode("fifo");
     setSelectedLines({});
+    setPayAsAdvance(false);
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
