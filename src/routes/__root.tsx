@@ -135,7 +135,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [dark, setDark] = useState(true);
-  useEffect(() => { document.body.classList.add("app-ready"); }, []);
+  useEffect(() => {
+    document.body.classList.add("app-ready");
+    window.setTimeout(() => document.getElementById("app-loading")?.remove(), 300);
+  }, []);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
   return (
