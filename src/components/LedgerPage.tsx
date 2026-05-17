@@ -683,6 +683,35 @@ export function LedgerPage({ module: mod }: Props) {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
     try {
+      // ---------- Advance Payment (no booking allocation) ----------
+      if (payAsAdvance && !payRow) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        const ledgerId = await generateNextId({
+          key: mod.key, label: "", short: "", table: mod.table,
+          idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
+          monthlyId: true, fields: [],
+        });
+        const payload: Record<string, unknown> = {
+          [mod.idColumn]: ledgerId,
+          entry_date: payDate,
+          [groupField]: payTarget,
+          service_type: "ADVANCE",
+          [billCol]: 0,
+          [paidCol]: amt,
+          remarks: `Advance ${isAgency ? "Received" : "Paid"} · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
+          created_by: user?.id ?? null,
+        };
+        if (isAgency) payload.received_by = user?.id ?? null;
+        const { error } = await supabase.from(mod.table as never).insert(payload as never);
+        if (error) throw error;
+        await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
+        toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+        setPayOpen(false);
+        void load();
+        return;
+      }
+
       // ---------- Passenger-specific (single row) ----------
       if (payRow) {
         const amt = Number(payAmount);
