@@ -246,81 +246,73 @@ export function ModulePage({ module: mod }: Props) {
   };
 
   const submit = async () => {
+    if (saving) return; // Prevent double-submit
     setSaving(true);
-    // Build payload, coerce types, drop empty optional dates.
-    const payload: Record<string, unknown> = {};
-    const hasField = (n: string) => mod.fields.some((f) => f.name === n);
-    for (const field of mod.fields) {
-      const v = form[field.name];
-      if (field.type === "number") payload[field.name] = Number(v) || 0;
-      else if (field.type === "boolean") payload[field.name] = Boolean(v);
-      else if (field.type === "date") payload[field.name] = v ? v : null;
-      else payload[field.name] = v ?? null;
-    }
-
-    const me = displayName(profile, user);
-    const recvCols = ["received", "received_amount", "paid_amount"];
-    const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
-
-    if (user?.id) {
-      if (!editing) (payload as Record<string, unknown>).created_by = user.id;
-      if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
-    }
-    if (hasField("entry_by") && (!payload.entry_by || payload.entry_by === "User")) (payload as Record<string, unknown>).entry_by = me;
-
-    if (mod.deriveStatus && hasField("status")) {
-      const derived = mod.deriveStatus(payload);
-      if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
-    }
-
-    const isEdit = !!editing;
-    const editId = editing?.id;
-    const finalId = !isEdit ? await generateNextId(mod) : undefined;
-    if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
-
-    // Close immediately for snappy UX
-    setOpenForm(false);
-    setSaving(false);
-
-    // Optimistic local update
-    if (isEdit && editId) {
-      setRows((prev) => prev.map((r) => (r.id === editId ? { ...r, ...payload } as Row : r)));
-    } else {
-      const tempId = `tmp-${Date.now()}`;
-      setRows((prev) => [{ id: tempId, ...payload } as Row, ...prev]);
-    }
-
-    // Persist in background
-    void (async () => {
-      try {
-        if (isEdit && editId) {
-          const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editId);
-          if (error) throw error;
-          toast.success("আপডেট হয়েছে");
-          // Voice: delivery status transition
-          const prevStatus = String(editing?.status ?? "");
-          const newStatus = String((payload as Record<string, unknown>).status ?? "");
-          if (newStatus && newStatus !== prevStatus && /deliver/i.test(newStatus)) {
-            speakDelivery(String((payload as Record<string, unknown>).passenger_name ?? ""));
-          }
-          if (recvAmount > 0 && Number(editing?.received ?? editing?.received_amount ?? editing?.paid_amount ?? 0) !== recvAmount) {
-            speakReceived(recvAmount);
-          }
-        } else {
-          const { error } = await supabase.from(mod.table as never).insert(payload as never);
-          if (error) throw error;
-          toast.success(`✓ যোগ হয়েছে: ${finalId}`);
-          clearDraft();
-          speakModuleEntry(mod.key);
-          if (recvAmount > 0) speakReceived(recvAmount);
-        }
-        void load();
-      } catch (e) {
-        const msg = errMsg(e);
-        toast.error("সমস্যা: " + msg);
-        void load();
+    try {
+      // Build payload, coerce types, drop empty optional dates.
+      const payload: Record<string, unknown> = {};
+      const hasField = (n: string) => mod.fields.some((f) => f.name === n);
+      for (const field of mod.fields) {
+        const v = form[field.name];
+        if (field.type === "number") payload[field.name] = Number(v) || 0;
+        else if (field.type === "boolean") payload[field.name] = Boolean(v);
+        else if (field.type === "date") payload[field.name] = v ? v : null;
+        else payload[field.name] = v ?? null;
       }
-    })();
+
+      const me = displayName(profile, user);
+      const recvCols = ["received", "received_amount", "paid_amount"];
+      const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
+
+      if (user?.id) {
+        if (!editing) (payload as Record<string, unknown>).created_by = user.id;
+        if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
+      }
+      if (hasField("entry_by") && (!payload.entry_by || payload.entry_by === "User")) (payload as Record<string, unknown>).entry_by = me;
+
+      if (mod.deriveStatus && hasField("status")) {
+        const derived = mod.deriveStatus(payload);
+        if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
+      }
+
+      const isEdit = !!editing;
+      const editId = editing?.id;
+      const finalId = !isEdit ? await generateNextId(mod) : undefined;
+      if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
+
+      if (isEdit && editId) {
+        const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editId);
+        if (error) throw error;
+        setOpenForm(false);
+        toast.success("আপডেট হয়েছে");
+        const prevStatus = String(editing?.status ?? "");
+        const newStatus = String((payload as Record<string, unknown>).status ?? "");
+        if (newStatus && newStatus !== prevStatus && /deliver/i.test(newStatus)) {
+          speakDelivery(String((payload as Record<string, unknown>).passenger_name ?? ""));
+        }
+        if (recvAmount > 0 && Number(editing?.received ?? editing?.received_amount ?? editing?.paid_amount ?? 0) !== recvAmount) {
+          speakReceived(recvAmount);
+        }
+      } else {
+        const { error } = await supabase.from(mod.table as never).insert(payload as never);
+        if (error) throw error;
+        setOpenForm(false);
+        toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+        clearDraft();
+        speakModuleEntry(mod.key);
+        if (recvAmount > 0) speakReceived(recvAmount);
+      }
+      void load();
+    } catch (e: unknown) {
+      const err = e as { code?: string; message?: string };
+      if (err?.code === "23505" && /passport.*entry_date|entry_date.*passport|uniq_.*_passport_date/i.test(String(err?.message ?? ""))) {
+        toast.error("⛔ ডুপ্লিকেট এন্ট্রি! এই পাসপোর্টের জন্য আজকের তারিখে এই সার্ভিস ইতিমধ্যে বুক করা আছে।", { duration: 6000 });
+      } else {
+        toast.error("সমস্যা: " + errMsg(e));
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const confirmDelete = async () => {
