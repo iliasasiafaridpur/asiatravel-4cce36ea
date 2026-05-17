@@ -11,7 +11,7 @@ export const Route = createFileRoute("/agents")({
   component: AgentsPage,
 });
 
-interface Bal { agent_name: string; total_bill: number; total_received: number; balance_due: number; }
+interface Bal { agent_name: string; total_bill: number; total_received: number; balance_due: number; advance_balance: number; }
 
 function AgentsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
