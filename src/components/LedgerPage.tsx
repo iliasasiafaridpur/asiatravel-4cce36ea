@@ -453,7 +453,13 @@ export function LedgerPage({ module: mod }: Props) {
       map.set(k, cur);
     }
     return Array.from(map.entries())
-      .map(([key, v]) => ({ key, bill: v.bill, paid: v.paid, due: v.bill - v.paid }))
+      .map(([key, v]) => ({
+        key,
+        bill: v.bill,
+        paid: v.paid,
+        due: Math.max(v.bill - v.paid, 0),
+        advance: Math.max(v.paid - v.bill, 0),
+      }))
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol]);
 
