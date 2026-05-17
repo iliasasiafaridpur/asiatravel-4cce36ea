@@ -15,9 +15,10 @@ import {
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
+import { generateNextId } from "@/lib/idgen";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
 } from "lucide-react";
 
 export const Route = createFileRoute("/accounts")({
@@ -83,9 +84,11 @@ function AccountsPage() {
 
   // Dialog forms
   const [handOpen, setHandOpen] = useState(false);
-  const [expOpen, setExpOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualTab, setManualTab] = useState<"income" | "expense">("income");
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
+  const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
 
   const reload = useCallback(async (quiet = false) => {
     if (!user?.id) return;
@@ -266,8 +269,45 @@ function AccountsPage() {
     if (error) return toast.error(error.message);
     toast.success("✓ খরচ সংরক্ষিত");
     setEForm({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
-    setExpOpen(false);
+    setManualOpen(false);
     void reload(true);
+  };
+
+  // Save manual income (payment_receipts with source="manual")
+  const saveManualIncome = async () => {
+    if (!user?.id) return toast.error("লগ-ইন করুন");
+    const amt = Number(iForm.amount);
+    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    try {
+      const receiptId = await generateNextId({
+        key: "_rcpt", label: "", short: "", table: "payment_receipts",
+        idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+      });
+      const me = displayName(profile, user);
+      const { error } = await supabase.from("payment_receipts").insert({
+        receipt_id: receiptId,
+        entry_date: iForm.entry_date,
+        service_type: "Manual",
+        service_table: null,
+        service_row_id: null,
+        ref_id: null,
+        passenger_name: iForm.passenger_name || "Manual Entry",
+        amount: amt,
+        method: iForm.method,
+        source: "manual",
+        remarks: iForm.remarks || null,
+        received_by: user.id,
+        received_by_name: me,
+        created_by: user.id,
+      } as never);
+      if (error) return toast.error(error.message);
+      toast.success("✓ আয় সংরক্ষিত");
+      setIForm({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
+      setManualOpen(false);
+      void reload(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const deleteHand = async (id: string): Promise<void> => {
@@ -510,47 +550,85 @@ ${node.innerHTML.replace(
               </DialogContent>
             </Dialog>
 
-            <Dialog open={expOpen} onOpenChange={setExpOpen}>
+            <Dialog open={manualOpen} onOpenChange={setManualOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="secondary" className="gap-1.5 h-9">
-                  <Receipt className="h-4 w-4" /> খরচ যোগ
+                  <PencilLine className="h-4 w-4" /> ম্যানুয়াল এন্ট্রি
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>নতুন খরচ যোগ করুন</DialogTitle>
-                  <DialogDescription>অফিস বা পরিচালনা সংক্রান্ত খরচ লিপিবদ্ধ করুন।</DialogDescription>
+                  <DialogTitle>ম্যানুয়াল এন্ট্রি</DialogTitle>
+                  <DialogDescription>সরাসরি আয় বা খরচ যোগ করুন।</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">তারিখ</Label>
-                      <Input type="date" value={eForm.entry_date} onChange={(e) => setEForm({ ...eForm, entry_date: e.target.value })} />
+                <Tabs value={manualTab} onValueChange={(v) => setManualTab(v as "income" | "expense")}>
+                  <TabsList className="grid grid-cols-2 w-full">
+                    <TabsTrigger value="income" className="gap-1.5"><ArrowDownLeft className="h-3.5 w-3.5" />ম্যানুয়ালী আয় যোগ</TabsTrigger>
+                    <TabsTrigger value="expense" className="gap-1.5"><ArrowUpRight className="h-3.5 w-3.5" />ম্যানুয়ালী খরচ যোগ</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="income" className="space-y-3 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">তারিখ</Label>
+                        <Input type="date" value={iForm.entry_date} onChange={(e) => setIForm({ ...iForm, entry_date: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">মাধ্যম</Label>
+                        <Select value={iForm.method} onValueChange={(v) => setIForm({ ...iForm, method: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div>
-                      <Label className="text-xs">ক্যাটাগরি</Label>
-                      <Select value={eForm.category} onValueChange={(v) => setEForm({ ...eForm, category: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{EXPENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <Label className="text-xs">উৎস / নাম</Label>
+                      <Input placeholder="যেমন: কাস্টমার নাম বা উৎস" value={iForm.passenger_name} onChange={(e) => setIForm({ ...iForm, passenger_name: e.target.value })} />
                     </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs">উদ্দেশ্য</Label>
-                    <Input placeholder="যেমন: চা-নাস্তা, স্ট্যাম্প" value={eForm.purpose} onChange={(e) => setEForm({ ...eForm, purpose: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">পরিমাণ (৳)</Label>
-                    <Input type="number" inputMode="numeric" placeholder="0" value={eForm.amount} onChange={(e) => setEForm({ ...eForm, amount: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">মন্তব্য</Label>
-                    <Textarea rows={2} placeholder="ঐচ্ছিক" value={eForm.remarks} onChange={(e) => setEForm({ ...eForm, remarks: e.target.value })} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={saveExpense} className="gap-1.5"><Plus className="h-4 w-4" />সংরক্ষণ</Button>
-                </DialogFooter>
+                    <div>
+                      <Label className="text-xs">পরিমাণ (৳)</Label>
+                      <Input type="number" inputMode="numeric" placeholder="0" value={iForm.amount} onChange={(e) => setIForm({ ...iForm, amount: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">মন্তব্য</Label>
+                      <Textarea rows={2} placeholder="ঐচ্ছিক" value={iForm.remarks} onChange={(e) => setIForm({ ...iForm, remarks: e.target.value })} />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={saveManualIncome} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"><Plus className="h-4 w-4" />আয় সংরক্ষণ</Button>
+                    </DialogFooter>
+                  </TabsContent>
+
+                  <TabsContent value="expense" className="space-y-3 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">তারিখ</Label>
+                        <Input type="date" value={eForm.entry_date} onChange={(e) => setEForm({ ...eForm, entry_date: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">ক্যাটাগরি</Label>
+                        <Select value={eForm.category} onValueChange={(v) => setEForm({ ...eForm, category: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{EXPENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">উদ্দেশ্য</Label>
+                      <Input placeholder="যেমন: চা-নাস্তা, স্ট্যাম্প" value={eForm.purpose} onChange={(e) => setEForm({ ...eForm, purpose: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">পরিমাণ (৳)</Label>
+                      <Input type="number" inputMode="numeric" placeholder="0" value={eForm.amount} onChange={(e) => setEForm({ ...eForm, amount: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">মন্তব্য</Label>
+                      <Textarea rows={2} placeholder="ঐচ্ছিক" value={eForm.remarks} onChange={(e) => setEForm({ ...eForm, remarks: e.target.value })} />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={saveExpense} className="gap-1.5"><Plus className="h-4 w-4" />খরচ সংরক্ষণ</Button>
+                    </DialogFooter>
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
           </div>
