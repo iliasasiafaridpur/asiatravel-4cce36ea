@@ -14,6 +14,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
+import {
+  clearStaleAssetRecoveryFlag,
+  isRecoverableAssetError,
+  tryRecoverFromStaleAssets,
+} from "@/lib/stale-asset-recovery";
 
 import appCss from "../styles.css?url";
 
@@ -42,6 +47,14 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+
+  if (isRecoverableAssetError(error) && tryRecoverFromStaleAssets()) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-sm text-muted-foreground">
+        অ্যাপ আপডেট হচ্ছে…
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -98,7 +111,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-512.png" },
       { rel: "icon", href: "/icon-512.png", type: "image/png" },
     ],
@@ -136,6 +148,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [dark, setDark] = useState(true);
   useEffect(() => {
+    clearStaleAssetRecoveryFlag();
     document.body.classList.add("app-ready");
     window.setTimeout(() => document.getElementById("app-loading")?.remove(), 300);
   }, []);
