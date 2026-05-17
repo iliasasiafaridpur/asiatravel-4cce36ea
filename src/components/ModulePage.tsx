@@ -310,6 +310,7 @@ export function ModulePage({ module: mod }: Props) {
           const { error } = await supabase.from(mod.table as never).insert(payload as never);
           if (error) throw error;
           toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+          clearDraft();
           speakModuleEntry(mod.key);
           if (recvAmount > 0) speakReceived(recvAmount);
         }
