@@ -554,7 +554,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title={moduleFilter === "tickets" ? "Top Airlines" : "Top Countries"}>
+        <ChartCard title={moduleFilter === "tickets" ? "Top Airlines" : "Top Countries"} tint={CARD_TINTS[4]}>
           {topGroup.length === 0 ? <Empty loading={isLoading} /> : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topGroup} layout="vertical" margin={{ left: 8 }}>
