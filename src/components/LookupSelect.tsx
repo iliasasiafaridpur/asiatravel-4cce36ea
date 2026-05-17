@@ -25,6 +25,8 @@ const LABELS: Record<string, string> = {
   status_delivery: "Status",
   status: "Status",
   ledger_service_type: "Service Type",
+  payment_method: "মাধ্যম",
+  expense_category: "ক্যাটাগরি",
 };
 
 interface Props {

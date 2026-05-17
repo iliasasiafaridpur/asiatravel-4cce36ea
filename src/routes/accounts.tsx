@@ -13,6 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { LookupSelect } from "@/components/LookupSelect";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import { generateNextId } from "@/lib/idgen";
@@ -575,10 +576,7 @@ ${node.innerHTML.replace(
                       </div>
                       <div>
                         <Label className="text-xs">মাধ্যম</Label>
-                        <Select value={iForm.method} onValueChange={(v) => setIForm({ ...iForm, method: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>{METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                        </Select>
+                        <LookupSelect kind="payment_method" defaults={METHODS} value={iForm.method} onChange={(v) => setIForm({ ...iForm, method: v })} />
                       </div>
                     </div>
                     <div>
@@ -606,10 +604,7 @@ ${node.innerHTML.replace(
                       </div>
                       <div>
                         <Label className="text-xs">ক্যাটাগরি</Label>
-                        <Select value={eForm.category} onValueChange={(v) => setEForm({ ...eForm, category: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>{EXPENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                        </Select>
+                        <LookupSelect kind="expense_category" defaults={EXPENSE_CATEGORIES} value={eForm.category} onChange={(v) => setEForm({ ...eForm, category: v })} />
                       </div>
                     </div>
                     <div>
