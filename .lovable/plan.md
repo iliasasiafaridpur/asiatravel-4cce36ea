@@ -1,51 +1,100 @@
-# Advance Payment & Wallet System
+# Activity Hub — Implementation Plan
 
-দুই দিকেই (Vendor ও Agency/Customer) Advance Wallet যোগ করব, যাতে booking ছাড়াও টাকা নেওয়া/দেওয়া যায় এবং নতুন booking এলে wallet থেকে auto adjust হয়।
+A central monitoring dashboard that tracks every event, transaction and user action across the system. No quick-action buttons — pure observation, filtering, and analytics.
 
-## 1. Database (একটি migration)
+---
 
-বর্তমানে `vendor_ledger` / `agency_ledger`-এ already `service_type`, `total_payable`/`total_bill`, `paid_amount`/`received_amount` কলাম আছে — wallet balance এগুলো থেকেই derived (SUM)। আলাদা wallet table দরকার নেই; শুধু **ADVANCE** টাইপের entry আর কয়েকটা helper function/trigger চাই।
+## 1. Database — new `activity_logs` table + auto-capture triggers
 
-### A. Advance entry pattern
-- **Vendor advance (আমরা vendor কে advance দিচ্ছি)**: `vendor_ledger` row যেখানে `service_type='ADVANCE'`, `total_payable=0`, `paid_amount=<amount>` → balance negative হয়ে advance credit তৈরি করে।
-- **Agency advance (agent আমাদের advance দিচ্ছে)**: `agency_ledger` row যেখানে `service_type='ADVANCE'`, `total_bill=0`, `received_amount=<amount>` → received বেশি, bill কম → negative due মানে advance।
+Currently there is no audit table, so events cannot be reconstructed reliably from existing rows (deletes leave no trace, updates overwrite history). We add a dedicated log table and database triggers that automatically write to it whenever rows change in the operational tables.
 
-### B. Two new RPC functions
-```sql
-get_vendor_wallet(vendor_name) → { advance_balance, payable_due }
-get_agent_wallet(agent_name)   → { advance_balance, current_due }
+**New table `public.activity_logs`** (columns):
+- `actor_id` (uuid) — who did it (auth.uid())
+- `actor_name`, `actor_role` — snapshot for fast display
+- `action` — enum-like text: `CREATED | UPDATED | DELETED | PAYMENT_RECEIVED | HANDOVER | EXPENSE`
+- `module` — `tickets | bmet | saudi_visa | kuwait_visa | vendor_ledger | agency_ledger | payment | handover | expense | passenger | agent | vendor`
+- `entity_id` (text) — e.g. ticket_id, bmet_id, receipt_id
+- `entity_label` — human summary (e.g. "Passport AB123 → Submitting")
+- `summary` — full sentence ("Imran updated status of Passport AB123 to Submitting")
+- `changes` (jsonb) — diff of changed fields for UPDATEs
+- `amount` (numeric, nullable) — for payments/expenses
+- `created_at` (timestamptz)
+
+**RLS:** `authenticated` SELECT (all staff see all logs — this is an internal back-office app). INSERT only via SECURITY DEFINER trigger function. No UPDATE/DELETE for anyone.
+
+**Triggers** on: `tickets`, `bmet_cards`, `saudi_visas`, `kuwait_visas`, `vendor_ledger`, `agency_ledger`, `payment_receipts`, `cash_handovers`, `cash_expenses`, `passengers`, `agents`, `vendors`.
+
+A single shared `log_activity()` function:
+- reads `auth.uid()` + profile name/role
+- computes action (INSERT/UPDATE/DELETE → CREATED/UPDATED/DELETED; special-case payment_receipts → PAYMENT_RECEIVED, cash_handovers → HANDOVER, cash_expenses → EXPENSE)
+- builds `summary` from per-table key columns
+- writes diff for UPDATEs (only changed columns)
+
+**Realtime:** `ALTER PUBLICATION supabase_realtime ADD TABLE public.activity_logs;`
+
+---
+
+## 2. New route `/activity-hub` + sidebar entry
+
+`src/routes/activity-hub.tsx` (file-based route, added to sidebar under monitoring/admin area).
+
+---
+
+## 3. Page layout
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Activity Hub                          [Live ●]  [Refresh]  │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─ User Productivity (Today) ──┐ ┌─ Hourly Traffic ─────┐  │
+│  │  Bar chart: actions / user   │ │ Line chart: per hour │  │
+│  └──────────────────────────────┘ └──────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│  [User ▾] [Module ▾] [Action ▾] [Date: Today/Week/Custom]   │
+│  [Search…]                                                  │
+├─────────────────────────────────────────────────────────────┤
+│  Timeline feed (infinite scroll, 50 per page)               │
+│   ● Avatar  Imran (Staff)   [UPDATED] tickets               │
+│     Updated status of Passport AB123 → Submitting           │
+│     18 May 2026, 10:15 AM                                   │
+│   ● ...                                                     │
+└─────────────────────────────────────────────────────────────┘
 ```
-যেখানে `advance_balance = GREATEST(paid - payable, 0)` এবং `due = GREATEST(payable - paid, 0)`।
 
-### C. Auto-adjustment trigger
-`sync_vendor_ledger` / `sync_agency_ledger` trigger-এ extension: নতুন booking insert হলে সংশ্লিষ্ট vendor/agent-এর advance balance check করে অটোমেটিক `paid_amount` / `received_amount`-এ allocate করব (advance balance যত আছে তত পর্যন্ত)। বাকিটা স্বাভাবিকভাবে due হবে।
+**Components:**
+- **Charts:** Recharts `BarChart` (per-user today) and `LineChart` (hourly volume today). Uses semantic tokens (`hsl(var(--primary))`, etc.) — dark/light compatible.
+- **Filters:** shadcn `Select` for User (from profiles), Module, Action; `Popover + Calendar` for custom date range; quick chips for Today / Yesterday / Week.
+- **Feed:** Card list with color-coded badges per action (green=CREATED, blue=UPDATED, red=DELETED, emerald=PAYMENT_RECEIVED, amber=EXPENSE, violet=HANDOVER). Uses the locked row-tint palette for soft alternating rows. Avatar = initials of actor.
+- **Realtime:** `supabase.channel('activity_logs').on('postgres_changes', INSERT)` prepends new entries live with a subtle slide-in.
+- **Pagination:** Initial 50, "Load more" button + IntersectionObserver for infinite scroll.
 
-বিদ্যমান source-table receive কলাম (tickets.received ইত্যাদি) overwrite করব না — শুধু ledger row-এর `paid_amount`/`received_amount` বাড়িয়ে দেব এবং `remarks`-এ "Auto-adjusted from advance: ৳X" লিখব। এতে cash drawer / source form-এর সাথে কোনো conflict হবে না।
+---
 
-## 2. UI Changes
+## 4. Data flow
 
-### A. `src/components/LedgerPage.tsx` — Pay/Receive dialog
-- "Mark as Advance Payment" checkbox যোগ করব।
-- Checked থাকলে: কোনো specific booking select করতে হবে না; শুধু amount + method + remarks নিয়ে একটি `service_type='ADVANCE'` ledger row insert করবে এবং cash drawer mirror (payment_receipts / cash_expenses) লিখবে।
-- Group header-এ এখন যে balance দেখায় তার পাশে **"Advance: ৳X"** badge (positive হলে সবুজ)।
+- Initial load: query `activity_logs` filtered + ordered `created_at desc limit 50`.
+- Filters re-query on change (debounced 250ms for search).
+- Charts: separate queries grouped by `actor_name` and by hour bucket (client-side reduce of last 24h rows).
+- New rows pushed via realtime channel merge into the head of the feed (if they pass current filters).
 
-### B. `src/routes/vendors.tsx` ও `src/routes/agents.tsx` — list table
-- নতুন কলাম: **Advance Balance** (সবুজ, যদি > 0)। `get_vendor_balances` / `get_agent_balances` RPC-তে `total_advance` যোগ করব।
+---
 
-### C. New booking form (tickets/bmet/saudi/kuwait)
-কোনো UI change দরকার নেই — trigger নিজেই auto-adjust করবে। তবে toast দেখাব: "৳X advance থেকে adjust হয়েছে"।  
-*(এটা optional — চাইলে পরে যোগ করব। প্রথম iteration-এ skip করব যাতে scope ছোট থাকে।)*
+## 5. Files to create / edit
 
-## 3. Files to change
+**Create:**
+- Migration: `activity_logs` table + RLS + `log_activity()` function + 12 triggers + realtime publication.
+- `src/routes/activity-hub.tsx` — full page.
+- `src/components/activity/ActivityFeed.tsx`, `ActivityFilters.tsx`, `ActivityCharts.tsx` (split for clarity).
 
-1. **migration** — `get_vendor_wallet`, `get_agent_wallet` functions; `get_vendor_balances` / `get_agent_balances` -এ advance কলাম যোগ; `sync_*_ledger` trigger-এ advance auto-allocate logic।
-2. **`src/components/LedgerPage.tsx`** — Advance checkbox + advance-mode submit branch + group header-এ advance badge।
-3. **`src/routes/vendors.tsx`** ও **`src/routes/agents.tsx`** — Advance Balance কলাম।
+**Edit:**
+- `src/components/AppSidebar.tsx` — add "Activity Hub" link.
 
-## টেকনিক্যাল নোট
-- Advance allocation FIFO — আগে যে booking-এ due আছে সেখান থেকে নয়, বরং নতুন booking insert হওয়ার সময়েই pre-fill হবে। পুরাতন due আলাদাভাবে আগের "Pay" flow দিয়েই clear করতে হবে (যেটা ইতিমধ্যে আছে)।
-- Advance balance কখনো negative হবে না — UI-তে only positive value show করব।
-- RLS-এ change নেই; existing `authenticated` policies কাজ করবে।
-- কোনো নতুন column বা table যোগ করছি না — শুধু `service_type` value হিসেবে `'ADVANCE'` ব্যবহার করছি, তাই data migration লাগবে না।
+---
 
-Approve করলে migration আগে চালাব, তারপর UI updates করব।
+## Notes
+
+- Existing tables are not modified — triggers are purely additive.
+- Historical actions (before this migration) cannot be reconstructed; the feed starts from deployment time. This is called out in an empty-state note on the page for the first hours after release.
+- No write actions are exposed on this page per your explicit requirement.
+
+Reply **approve** to proceed (I'll run the migration first, wait for your confirmation, then build the UI).
