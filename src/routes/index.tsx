@@ -568,7 +568,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="Accounts Methods">
+        <ChartCard title="Accounts Methods" tint={CARD_TINTS[5]}>
           {cashSummary.byMethod.length === 0 ? <Empty loading={isLoading} text="কোনো Accounts নেই" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
