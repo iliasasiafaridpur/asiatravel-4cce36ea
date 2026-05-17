@@ -355,19 +355,16 @@ function DashboardPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Hero header */}
-      <div
-        className="rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-primary-foreground"
-        style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}
-      >
+      <div className="rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card border border-border/60 shadow-sm">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <Zap className="h-6 w-6" /> Smart Dashboard
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-foreground">
+            <Zap className="h-6 w-6 text-cyan-400" /> Smart Dashboard
           </h1>
-          <p className="text-sm opacity-90 mt-1">রিয়েল-টাইম আপডেট • সব মডিউলের সম্পূর্ণ সারাংশ</p>
+          <p className="text-sm text-muted-foreground mt-1">রিয়েল-টাইম আপডেট • সব মডিউলের সম্পূর্ণ সারাংশ</p>
         </div>
         <div className="flex gap-2">
           <Link to="/action-board">
-            <Button size="sm" variant="secondary" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
+            <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
           </Link>
         </div>
       </div>
