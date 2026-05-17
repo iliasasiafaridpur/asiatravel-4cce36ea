@@ -507,7 +507,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="মডিউল অনুযায়ী এন্ট্রি">
+        <ChartCard title="মডিউল অনুযায়ী এন্ট্রি" tint={CARD_TINTS[1]}>
           {pieModule.length === 0 ? <Empty loading={isLoading} /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
