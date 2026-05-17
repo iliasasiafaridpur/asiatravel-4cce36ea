@@ -24,14 +24,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     setMounted(true);
-    const fallback = window.setTimeout(() => { if (active) setLoading(false); }, 2500);
+    const fallback = window.setTimeout(() => { if (active) setLoading(false); }, 900);
 
     const checkActive = async (s: Session | null) => {
       if (!s?.user) { setActiveChecked(true); return; }
       try {
         const query = supabase.from("profiles")
           .select("is_active,full_name").eq("user_id", s.user.id).maybeSingle();
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000));
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 2500));
         const { data } = (await Promise.race([query, timeout])) as { data: { is_active?: boolean } | null };
         const isActive = data?.is_active ?? false;
         if (!isActive) {
