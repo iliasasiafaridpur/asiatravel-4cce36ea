@@ -56,6 +56,9 @@ function ActionBoardPage() {
 
   const mod = moduleByKey(category)!;
 
+  // Auto-save draft per category
+  const { clear: clearDraft } = useFormDraft(`action-board:${category}`, form, setForm, true);
+
   // Keep entry_by in sync once the user/profile resolves
   useEffect(() => {
     setForm((prev) => (prev.entry_by && prev.entry_by !== "User" ? prev : { ...prev, entry_by: me }));
