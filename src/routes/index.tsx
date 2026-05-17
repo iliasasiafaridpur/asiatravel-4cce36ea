@@ -650,17 +650,18 @@ function AutoFitText({ text, max, min = 10, className }: { text: string; max: nu
   );
 }
 
-function GradientStat({ label, sublabel, value, icon: Icon, from, to, money, large }: {
+function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }: {
   label: string; sublabel?: string; value: number; icon: React.ComponentType<{ className?: string }>;
-  from: string; to: string; money?: boolean; large?: boolean;
+  from: string; to?: string; money?: boolean; large?: boolean;
 }) {
   const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
+  // Derive a soft accent color from the legacy `from` prop (e.g. "from-emerald-500" -> "text-emerald-400")
+  const accent = from.replace("from-", "text-").replace(/-\d{3}$/, "-400");
   return (
     <div
       className={cn(
-        "rounded-xl text-white shadow-lg bg-gradient-to-br min-w-0 h-full flex flex-col",
+        "rounded-xl bg-card border border-border/60 shadow-sm min-w-0 h-full flex flex-col",
         large ? "p-4 sm:p-5" : "p-4",
-        from, to
       )}
       title={text}
     >
@@ -668,27 +669,25 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, to, money, lar
         <div className="flex-1 min-w-0">
           {large ? (
             <>
-              <AutoFitText text={label} max={22} min={11} className="font-semibold uppercase tracking-wide" />
+              <AutoFitText text={label} max={22} min={11} className="font-semibold uppercase tracking-wide text-muted-foreground" />
               {sublabel && (
                 <div className="mt-1">
-                  <AutoFitText text={sublabel} max={22} min={11} className="font-semibold uppercase tracking-wide opacity-95" />
+                  <AutoFitText text={sublabel} max={22} min={11} className="font-semibold uppercase tracking-wide text-muted-foreground/80" />
                 </div>
               )}
             </>
           ) : (
             <>
-              <p className="text-xs uppercase tracking-wide opacity-95 leading-tight truncate font-semibold">{label}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground leading-tight truncate font-semibold">{label}</p>
               {sublabel && (
-                <p className="text-[11px] tracking-wide opacity-90 leading-tight truncate font-medium mt-0.5">{sublabel}</p>
+                <p className="text-[11px] tracking-wide text-muted-foreground/80 leading-tight truncate font-medium mt-0.5">{sublabel}</p>
               )}
             </>
           )}
         </div>
-        <div className={cn("rounded-lg bg-white/20 flex items-center justify-center shrink-0", large ? "h-10 w-10" : "h-9 w-9")}>
-          <Icon className={large ? "h-5 w-5" : "h-4 w-4"} />
-        </div>
+        <Icon className={cn(accent, "shrink-0", large ? "h-5 w-5" : "h-4 w-4")} />
       </div>
-      <div className="mt-auto pt-3">
+      <div className={cn("mt-auto pt-3", accent)}>
         <AutoFitText text={text} max={large ? 44 : 28} min={10} />
       </div>
     </div>
