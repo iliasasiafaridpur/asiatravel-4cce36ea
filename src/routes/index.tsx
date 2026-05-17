@@ -540,7 +540,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="Per-User Entries (কে কত এন্ট্রি দিয়েছে)">
+        <ChartCard title="Per-User Entries (কে কত এন্ট্রি দিয়েছে)" tint={CARD_TINTS[3]}>
           {userEntries.length === 0 ? <Empty loading={isLoading} text="ইউজার-ভিত্তিক ডাটা নেই" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
