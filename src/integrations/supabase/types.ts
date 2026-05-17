@@ -14,51 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      activity_logs: {
-        Row: {
-          action: string
-          actor_id: string | null
-          actor_name: string | null
-          actor_role: string | null
-          amount: number | null
-          changes: Json | null
-          created_at: string
-          entity_id: string | null
-          entity_label: string | null
-          id: string
-          module: string
-          summary: string
-        }
-        Insert: {
-          action: string
-          actor_id?: string | null
-          actor_name?: string | null
-          actor_role?: string | null
-          amount?: number | null
-          changes?: Json | null
-          created_at?: string
-          entity_id?: string | null
-          entity_label?: string | null
-          id?: string
-          module: string
-          summary: string
-        }
-        Update: {
-          action?: string
-          actor_id?: string | null
-          actor_name?: string | null
-          actor_role?: string | null
-          amount?: number | null
-          changes?: Json | null
-          created_at?: string
-          entity_id?: string | null
-          entity_label?: string | null
-          id?: string
-          module?: string
-          summary?: string
-        }
-        Relationships: []
-      }
       agency_ledger: {
         Row: {
           agent_name: string
