@@ -151,6 +151,8 @@ export function LedgerPage({ module: mod }: Props) {
   const [payMode, setPayMode] = useState<"fifo" | "specific">("fifo");
   // For specific mode: rowId -> amount string
   const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
+  // Advance payment toggle: when true, skip booking allocation and just record an ADVANCE entry
+  const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
 
   const PAYMENT_METHODS = [
     "Cash",
