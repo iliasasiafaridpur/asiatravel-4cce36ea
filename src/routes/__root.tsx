@@ -126,10 +126,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         <div id="app-loading"><div className="sp" />লোড হচ্ছে…</div>
         {children}
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function(){function r(){document.body.classList.add('app-ready');setTimeout(function(){var el=document.getElementById('app-loading');if(el)el.remove();},300);}
-          if(document.readyState==='complete')r();else window.addEventListener('load',r);})();
-        ` }} />
         <Scripts />
       </body>
     </html>
@@ -139,6 +135,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [dark, setDark] = useState(true);
+  useEffect(() => {
+    document.body.classList.add("app-ready");
+    window.setTimeout(() => document.getElementById("app-loading")?.remove(), 300);
+  }, []);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
   return (
