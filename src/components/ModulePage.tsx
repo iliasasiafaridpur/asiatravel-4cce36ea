@@ -101,6 +101,14 @@ export function ModulePage({ module: mod }: Props) {
   const columns = useMemo(() => selectColumns(mod), [mod]);
   const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
 
+  // Auto-save draft for NEW entries only (not while editing existing rows)
+  const { clear: clearDraft } = useFormDraft(
+    `module:${mod.key}:new`,
+    form,
+    setForm,
+    openForm && !editing,
+  );
+
   // Hydrate from localStorage cache instantly (offline-first)
   useEffect(() => {
     try {
