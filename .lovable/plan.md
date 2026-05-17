@@ -1,65 +1,51 @@
+# Advance Payment & Wallet System
 
-# Dual Payment Allocation: Auto-FIFO + Bill-by-Bill
+দুই দিকেই (Vendor ও Agency/Customer) Advance Wallet যোগ করব, যাতে booking ছাড়াও টাকা নেওয়া/দেওয়া যায় এবং নতুন booking এলে wallet থেকে auto adjust হয়।
 
-Add two payment modes to both Vendor Ledger and Agency/Customer Ledger so that lump-sum payments either auto-distribute across oldest bookings or apply only to specifically picked bookings.
+## 1. Database (একটি migration)
 
-## What changes for the user
+বর্তমানে `vendor_ledger` / `agency_ledger`-এ already `service_type`, `total_payable`/`total_bill`, `paid_amount`/`received_amount` কলাম আছে — wallet balance এগুলো থেকেই derived (SUM)। আলাদা wallet table দরকার নেই; শুধু **ADVANCE** টাইপের entry আর কয়েকটা helper function/trigger চাই।
 
-In `/vendor-ledger` and `/agency-ledger`, the existing "পেমেন্ট পরিশোধ / গ্রহণ" dialog (opened from the per-group "Pay" button) gets a **mode switcher** at the top:
+### A. Advance entry pattern
+- **Vendor advance (আমরা vendor কে advance দিচ্ছি)**: `vendor_ledger` row যেখানে `service_type='ADVANCE'`, `total_payable=0`, `paid_amount=<amount>` → balance negative হয়ে advance credit তৈরি করে।
+- **Agency advance (agent আমাদের advance দিচ্ছে)**: `agency_ledger` row যেখানে `service_type='ADVANCE'`, `total_bill=0`, `received_amount=<amount>` → received বেশি, bill কম → negative due মানে advance।
 
-1. **Auto FIFO (পুরাতন থেকে নতুন)** — default
-   - Show agent/vendor name + total outstanding
-   - One amount field (e.g. 75,000)
-   - Live preview table below: which bookings will be touched, how much each gets, what stays due
-   - On submit, allocate oldest → newest until amount runs out
+### B. Two new RPC functions
+```sql
+get_vendor_wallet(vendor_name) → { advance_balance, payable_due }
+get_agent_wallet(agent_name)   → { advance_balance, current_due }
+```
+যেখানে `advance_balance = GREATEST(paid - payable, 0)` এবং `due = GREATEST(payable - paid, 0)`।
 
-2. **Bill-by-Bill (নির্দিষ্ট বিল)**
-   - Checklist of all unpaid bookings for that agent/vendor (oldest first), each with: date, ref id, passenger, bill, paid, due, and an editable amount field
-   - User ticks the bookings to pay and adjusts per-line amounts (defaults to that line's due)
-   - Total of selected lines shown at bottom; submit pays exactly those
+### C. Auto-adjustment trigger
+`sync_vendor_ledger` / `sync_agency_ledger` trigger-এ extension: নতুন booking insert হলে সংশ্লিষ্ট vendor/agent-এর advance balance check করে অটোমেটিক `paid_amount` / `received_amount`-এ allocate করব (advance balance যত আছে তত পর্যন্ত)। বাকিটা স্বাভাবিকভাবে due হবে।
 
-Both modes use the same Method (Cash/bKash/…), Date, Remarks fields already in the dialog.
+বিদ্যমান source-table receive কলাম (tickets.received ইত্যাদি) overwrite করব না — শুধু ledger row-এর `paid_amount`/`received_amount` বাড়িয়ে দেব এবং `remarks`-এ "Auto-adjusted from advance: ৳X" লিখব। এতে cash drawer / source form-এর সাথে কোনো conflict হবে না।
 
-The single-row "Pay" button on each table row keeps working as today (it's effectively a one-line Bill-by-Bill).
+## 2. UI Changes
 
-## Allocation rules
+### A. `src/components/LedgerPage.tsx` — Pay/Receive dialog
+- "Mark as Advance Payment" checkbox যোগ করব।
+- Checked থাকলে: কোনো specific booking select করতে হবে না; শুধু amount + method + remarks নিয়ে একটি `service_type='ADVANCE'` ledger row insert করবে এবং cash drawer mirror (payment_receipts / cash_expenses) লিখবে।
+- Group header-এ এখন যে balance দেখায় তার পাশে **"Advance: ৳X"** badge (positive হলে সবুজ)।
 
-A "booking" = any ledger row for the selected agent/vendor where `service_type != 'PAYMENT'` and `bill - paid > 0`, sorted by `entry_date ASC, created_at ASC`.
+### B. `src/routes/vendors.tsx` ও `src/routes/agents.tsx` — list table
+- নতুন কলাম: **Advance Balance** (সবুজ, যদি > 0)। `get_vendor_balances` / `get_agent_balances` RPC-তে `total_advance` যোগ করব।
 
-- **FIFO**: walk the sorted list; for each booking take `min(remaining_amount, line_due)`, stop when `remaining_amount == 0`. If amount exceeds total due, block with an error (no overpayment).
-- **Bill-by-Bill**: per selected line, validate `0 < line_amount ≤ line_due`. Sum is the total payment.
-- After allocation, each affected booking's `paid_amount` / `received_amount` is increased by its share.
+### C. New booking form (tickets/bmet/saudi/kuwait)
+কোনো UI change দরকার নেই — trigger নিজেই auto-adjust করবে। তবে toast দেখাব: "৳X advance থেকে adjust হয়েছে"।  
+*(এটা optional — চাইলে পরে যোগ করব। প্রথম iteration-এ skip করব যাতে scope ছোট থাকে।)*
 
-## Data layer
+## 3. Files to change
 
-Per allocation we:
+1. **migration** — `get_vendor_wallet`, `get_agent_wallet` functions; `get_vendor_balances` / `get_agent_balances` -এ advance কলাম যোগ; `sync_*_ledger` trigger-এ advance auto-allocate logic।
+2. **`src/components/LedgerPage.tsx`** — Advance checkbox + advance-mode submit branch + group header-এ advance badge।
+3. **`src/routes/vendors.tsx`** ও **`src/routes/agents.tsx`** — Advance Balance কলাম।
 
-1. For each affected booking row in `agency_ledger` / `vendor_ledger`:
-   - If the row has `source_table` + `source_id` (auto-synced from tickets/bmet/saudi/kuwait), update the **source service row's** receive column (`received` / `received_amount` / `received_vendor`). The existing `sync_agency_ledger` / `sync_vendor_ledger` triggers will refresh the ledger row.
-   - Otherwise (manual ledger entry), update the ledger row's `paidCol` directly.
+## টেকনিক্যাল নোট
+- Advance allocation FIFO — আগে যে booking-এ due আছে সেখান থেকে নয়, বরং নতুন booking insert হওয়ার সময়েই pre-fill হবে। পুরাতন due আলাদাভাবে আগের "Pay" flow দিয়েই clear করতে হবে (যেটা ইতিমধ্যে আছে)।
+- Advance balance কখনো negative হবে না — UI-তে only positive value show করব।
+- RLS-এ change নেই; existing `authenticated` policies কাজ করবে।
+- কোনো নতুন column বা table যোগ করছি না — শুধু `service_type` value হিসেবে `'ADVANCE'` ব্যবহার করছি, তাই data migration লাগবে না।
 
-2. Mirror the **total** payment into the cash drawer exactly once:
-   - Agency → insert one `payment_receipts` row (source: `agency_ledger`, method, remarks, received_by)
-   - Vendor → insert one `cash_expenses` row (category `Vendor Payment`, purpose `Vendor: <name>`)
-
-3. Insert one `remarks`-tagged log line on the oldest touched ledger row (or a small JSON in remarks) listing which refs got how much, so audit history survives.
-
-No schema migration is required — all needed columns already exist (`source_table`, `source_id`, `entry_date`, `created_at`, the per-source receive columns).
-
-## Files to change
-
-- `src/components/LedgerPage.tsx`
-  - Add `payMode: "fifo" | "specific"` state and `selectedLines: Map<rowId, amount>` state
-  - Replace the body of the existing payment Dialog (around the `payOpen` block, ~lines 1100+) with a Tabs UI: FIFO tab (current single amount + preview table) and Bill-by-Bill tab (checklist table)
-  - Add helper `getOpenBookings(groupKey)` that returns sorted unpaid rows from `rows`
-  - Replace `submitPayment` group-level branch (lines 587–662) with `submitFifo()` and `submitSpecific()` that loop the allocation, do the source-row updates, then write the single cash-drawer mirror entry
-  - Keep `payRow` (row-specific) path unchanged
-
-No other files need to change. The row-level "Pay" button, totals, filters, CSV export, and DB triggers stay as-is.
-
-## Technical notes
-
-- All updates run client-side via the existing `supabase` browser client (RLS already permits authenticated CRUD on these tables).
-- Allocation loops use `Promise.all` per-booking updates for speed but wrap in try/catch so a partial failure surfaces to the user via toast (DB triggers keep ledger consistent regardless).
-- Live preview in FIFO mode recomputes whenever `payAmount` changes — pure UI, no DB calls.
-- Bill-by-Bill table reuses the existing shadcn `<Table>` + `<Checkbox>` components.
+Approve করলে migration আগে চালাব, তারপর UI updates করব।
