@@ -36,16 +36,34 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "agency-ledger": Users, "vendor-ledger": Truck,
 };
 
+// Soft pastel colors matching the 7 stat cards palette
+// (slate, emerald, cyan, orange, violet, fuchsia, amber)
 const MODULE_COLORS: Record<string, string> = {
-  tickets: "hsl(217 91% 60%)",
-  bmet: "hsl(160 84% 45%)",
-  "saudi-visa": "hsl(27 96% 55%)",
-  "kuwait-visa": "hsl(280 65% 60%)",
+  tickets: "#67e8f9",       // cyan-300
+  bmet: "#6ee7b7",          // emerald-300
+  "saudi-visa": "#fdba74",  // orange-300
+  "kuwait-visa": "#c4b5fd", // violet-300
 };
 
 const PIE_COLORS = [
-  "hsl(217 91% 60%)", "hsl(160 84% 45%)", "hsl(27 96% 55%)", "hsl(280 65% 60%)",
-  "hsl(190 80% 50%)", "hsl(0 84% 60%)", "hsl(48 96% 53%)",
+  "#67e8f9", // cyan-300
+  "#6ee7b7", // emerald-300
+  "#fdba74", // orange-300
+  "#c4b5fd", // violet-300
+  "#f0abfc", // fuchsia-300
+  "#fcd34d", // amber-300
+  "#cbd5e1", // slate-300
+];
+
+// Tints for ChartCard / shortcut cards — same family as the 7 stat cards
+const CARD_TINTS = [
+  "bg-cyan-500/24 border-cyan-400/40",
+  "bg-emerald-500/24 border-emerald-400/40",
+  "bg-orange-500/24 border-orange-400/40",
+  "bg-violet-500/24 border-violet-400/40",
+  "bg-fuchsia-500/24 border-fuchsia-400/40",
+  "bg-amber-500/24 border-amber-400/40",
+  "bg-slate-500/24 border-slate-400/40",
 ];
 
 type Row = {
@@ -441,22 +459,21 @@ function DashboardPage() {
 
       {/* Module shortcuts */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {TARGET_MODULES.map((m) => {
+        {TARGET_MODULES.map((m, i) => {
           const Icon = ICONS[m.key] ?? ClipboardList;
           const count = filtered.filter((r) => r.module === m.key).length;
+          const tint = CARD_TINTS[i % CARD_TINTS.length];
           return (
             <Link key={m.key} to={`/${m.key}` as string}>
-              <Card className="hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{m.label}</p>
-                    <p className="text-xl font-bold mt-0.5">{count}</p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLORS[m.key]}22`, color: MODULE_COLORS[m.key] }}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className={cn("rounded-xl border shadow-sm p-4 flex items-center justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer", tint)}>
+                <div>
+                  <p className="text-xs text-muted-foreground">{m.label}</p>
+                  <p className="text-xl font-bold mt-0.5">{count}</p>
+                </div>
+                <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: `${MODULE_COLORS[m.key]}33`, color: MODULE_COLORS[m.key] }}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
             </Link>
           );
         })}
@@ -464,18 +481,18 @@ function DashboardPage() {
 
       {/* Trend + Pie */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ChartCard title="মাসিক বিক্রি ও রিসিভ (Trend)" className="lg:col-span-2">
+        <ChartCard title="মাসিক বিক্রি ও রিসিভ (Trend)" className="lg:col-span-2" tint={CARD_TINTS[0]}>
           {monthlyTrend.length === 0 ? <Empty loading={isLoading} /> : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyTrend}>
                 <defs>
                   <linearGradient id="g-sold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(160 84% 45%)" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="hsl(160 84% 45%)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#6ee7b7" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="g-recv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#67e8f9" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#67e8f9" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -483,14 +500,14 @@ function DashboardPage() {
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Area type="monotone" dataKey="sold" stroke="hsl(160 84% 45%)" fill="url(#g-sold)" name="Sold" />
-                <Area type="monotone" dataKey="received" stroke="hsl(217 91% 60%)" fill="url(#g-recv)" name="Received" />
+                <Area type="monotone" dataKey="sold" stroke="#6ee7b7" fill="url(#g-sold)" name="Sold" />
+                <Area type="monotone" dataKey="received" stroke="#67e8f9" fill="url(#g-recv)" name="Received" />
               </AreaChart>
             </ResponsiveContainer>
           )}
         </ChartCard>
 
-        <ChartCard title="মডিউল অনুযায়ী এন্ট্রি">
+        <ChartCard title="মডিউল অনুযায়ী এন্ট্রি" tint={CARD_TINTS[1]}>
           {pieModule.length === 0 ? <Empty loading={isLoading} /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -507,7 +524,7 @@ function DashboardPage() {
 
       {/* User stats + Top groups */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Per-User Received Amount (কে কত টাকা রিসিভ করেছে)">
+        <ChartCard title="Per-User Received Amount (কে কত টাকা রিসিভ করেছে)" tint={CARD_TINTS[2]}>
           {userReceived.length === 0 ? <Empty loading={isLoading} text="এখনো কেউ টাকা রিসিভ করেনি" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={userReceived}>
@@ -523,7 +540,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="Per-User Entries (কে কত এন্ট্রি দিয়েছে)">
+        <ChartCard title="Per-User Entries (কে কত এন্ট্রি দিয়েছে)" tint={CARD_TINTS[3]}>
           {userEntries.length === 0 ? <Empty loading={isLoading} text="ইউজার-ভিত্তিক ডাটা নেই" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -537,7 +554,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard title={moduleFilter === "tickets" ? "Top Airlines" : "Top Countries"}>
+        <ChartCard title={moduleFilter === "tickets" ? "Top Airlines" : "Top Countries"} tint={CARD_TINTS[4]}>
           {topGroup.length === 0 ? <Empty loading={isLoading} /> : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topGroup} layout="vertical" margin={{ left: 8 }}>
@@ -545,13 +562,13 @@ function DashboardPage() {
                 <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
                 <Tooltip />
-                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="hsl(160 84% 45%)" />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="#6ee7b7" />
               </BarChart>
             </ResponsiveContainer>
           )}
         </ChartCard>
 
-        <ChartCard title="Accounts Methods">
+        <ChartCard title="Accounts Methods" tint={CARD_TINTS[5]}>
           {cashSummary.byMethod.length === 0 ? <Empty loading={isLoading} text="কোনো Accounts নেই" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -568,7 +585,7 @@ function DashboardPage() {
 
       {/* Recent + Recent cash */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
+        <Card className={cn(CARD_TINTS[6])}>
           <CardHeader><CardTitle className="text-base">সাম্প্রতিক এন্ট্রি</CardTitle></CardHeader>
           <CardContent>
             {recent.length === 0 ? (
@@ -595,7 +612,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={cn(CARD_TINTS[1])}>
           <CardHeader><CardTitle className="text-base">সাম্প্রতিক Accounts</CardTitle></CardHeader>
           <CardContent>
             {cashSummary.recent.length === 0 ? (
@@ -705,12 +722,12 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
   );
 }
 
-function ChartCard({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
+function ChartCard({ title, children, className, tint }: { title: string; children: React.ReactNode; className?: string; tint?: string }) {
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
-      <CardContent className="h-64">{children}</CardContent>
-    </Card>
+    <div className={cn("rounded-xl border shadow-sm", tint ?? "bg-card border-border/60", className)}>
+      <div className="p-4 pb-2"><h3 className="text-sm font-semibold">{title}</h3></div>
+      <div className="px-4 pb-4 h-64">{children}</div>
+    </div>
   );
 }
 
