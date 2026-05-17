@@ -655,12 +655,22 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
   from: string; to?: string; money?: boolean; large?: boolean;
 }) {
   const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
-  // Derive a soft accent color from the legacy `from` prop (e.g. "from-emerald-500" -> "text-emerald-400")
-  const accent = from.replace("from-", "text-").replace(/-\d{3}$/, "-400");
+  // Explicit lookup so Tailwind JIT can detect full class strings.
+  const palette: Record<string, { accent: string; border: string }> = {
+    "from-sky-500":     { accent: "text-slate-200",   border: "border-slate-500/40" },
+    "from-blue-500":    { accent: "text-cyan-300",    border: "border-cyan-400/40" },
+    "from-emerald-500": { accent: "text-emerald-300", border: "border-emerald-400/40" },
+    "from-violet-500":  { accent: "text-emerald-300", border: "border-emerald-400/40" },
+    "from-fuchsia-500": { accent: "text-emerald-300", border: "border-emerald-400/40" },
+    "from-rose-500":    { accent: "text-orange-300",  border: "border-orange-400/40" },
+    "from-amber-500":   { accent: "text-amber-300",   border: "border-amber-400/40" },
+  };
+  const { accent, border } = palette[from] ?? { accent: "text-foreground", border: "border-border/60" };
   return (
     <div
       className={cn(
-        "rounded-xl bg-card border border-border/60 shadow-sm min-w-0 h-full flex flex-col",
+        "rounded-xl bg-card border shadow-sm min-w-0 h-full flex flex-col",
+        border,
         large ? "p-4 sm:p-5" : "p-4",
       )}
       title={text}
