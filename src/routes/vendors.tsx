@@ -11,7 +11,7 @@ export const Route = createFileRoute("/vendors")({
   component: VendorsPage,
 });
 
-interface Bal { vendor_name: string; total_payable: number; total_paid: number; balance_due: number; }
+interface Bal { vendor_name: string; total_payable: number; total_paid: number; balance_due: number; advance_balance: number; }
 
 function VendorsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
