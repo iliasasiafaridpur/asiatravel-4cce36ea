@@ -611,7 +611,7 @@ ${node.innerHTML.replace(
                       <Textarea rows={2} placeholder="ঐচ্ছিক" value={iForm.remarks} onChange={(e) => setIForm({ ...iForm, remarks: e.target.value })} />
                     </div>
                     <DialogFooter>
-                      <Button onClick={saveManualIncome} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"><Plus className="h-4 w-4" />আয় সংরক্ষণ</Button>
+                      <Button onClick={saveManualIncome} disabled={savingIncome} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"><Plus className="h-4 w-4" />{savingIncome ? "সংরক্ষণ হচ্ছে..." : "আয় সংরক্ষণ"}</Button>
                     </DialogFooter>
                   </TabsContent>
 
