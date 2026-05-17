@@ -722,12 +722,12 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
   );
 }
 
-function ChartCard({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
+function ChartCard({ title, children, className, tint }: { title: string; children: React.ReactNode; className?: string; tint?: string }) {
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
-      <CardContent className="h-64">{children}</CardContent>
-    </Card>
+    <div className={cn("rounded-xl border shadow-sm", tint ?? "bg-card border-border/60", className)}>
+      <div className="p-4 pb-2"><h3 className="text-sm font-semibold">{title}</h3></div>
+      <div className="px-4 pb-4 h-64">{children}</div>
+    </div>
   );
 }
 
