@@ -585,7 +585,7 @@ function DashboardPage() {
 
       {/* Recent + Recent cash */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
+        <Card className={cn(CARD_TINTS[6])}>
           <CardHeader><CardTitle className="text-base">সাম্প্রতিক এন্ট্রি</CardTitle></CardHeader>
           <CardContent>
             {recent.length === 0 ? (
@@ -612,7 +612,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={cn(CARD_TINTS[1])}>
           <CardHeader><CardTitle className="text-base">সাম্প্রতিক Accounts</CardTitle></CardHeader>
           <CardContent>
             {cashSummary.recent.length === 0 ? (
