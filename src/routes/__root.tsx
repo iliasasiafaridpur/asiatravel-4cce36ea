@@ -125,18 +125,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Critical inline CSS — prevents unstyled flash while Tailwind CSS loads */}
+        {/* Critical inline CSS — keeps the SSR page readable before Tailwind CSS loads */}
         <style dangerouslySetInnerHTML={{ __html: `
           html,body{margin:0;background:#0f172a;color:#e5e7eb;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
-          #app-loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#94a3b8;font-size:14px;z-index:9999;transition:opacity .25s}
-          .app-ready #app-loading{opacity:0;pointer-events:none}
-          @keyframes spin{to{transform:rotate(360deg)}}
-          #app-loading .sp{width:28px;height:28px;border:3px solid #334155;border-top-color:#67e8f9;border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}
         ` }} />
         <HeadContent />
       </head>
       <body>
-        <div id="app-loading"><div className="sp" />লোড হচ্ছে…</div>
         {children}
         <Scripts />
       </body>
@@ -149,8 +144,6 @@ function RootComponent() {
   const [dark, setDark] = useState(true);
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
-    document.body.classList.add("app-ready");
-    window.setTimeout(() => document.getElementById("app-loading")?.remove(), 300);
   }, []);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 

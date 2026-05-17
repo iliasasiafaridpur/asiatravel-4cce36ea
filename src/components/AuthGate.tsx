@@ -16,18 +16,15 @@ function phoneToEmail(phone: string) {
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeChecked, setActiveChecked] = useState(false);
+  const [activeChecked, setActiveChecked] = useState(true);
 
   useEffect(() => {
     let active = true;
-    setMounted(true);
-    const fallback = window.setTimeout(() => { if (active) setLoading(false); }, 900);
 
     const checkActive = async (s: Session | null) => {
-      if (!s?.user) { setActiveChecked(true); return; }
+      if (!s?.user) { if (active) setActiveChecked(true); return; }
+      if (active) setActiveChecked(false);
       try {
         const query = supabase.from("profiles")
           .select("is_active,full_name").eq("user_id", s.user.id).maybeSingle();
@@ -49,30 +46,22 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active) return;
-      window.clearTimeout(fallback);
       setSession(session);
-      setLoading(false);
       void checkActive(session);
+    }).catch((err) => {
+      console.error("session check failed", err);
+      if (active) { setSession(null); setActiveChecked(true); }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!active) return;
       setSession(s);
-      setLoading(false);
-      if (event === "SIGNED_IN") void checkActive(s);
+      if (event === "SIGNED_IN") { setActiveChecked(false); void checkActive(s); }
       if (event === "SIGNED_OUT") setActiveChecked(true);
     });
 
-    return () => { active = false; window.clearTimeout(fallback); subscription.unsubscribe(); };
+    return () => { active = false; subscription.unsubscribe(); };
   }, []);
-
-  if (!mounted || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-        Loading…
-      </div>
-    );
-  }
 
   if (!session || !activeChecked) {
     if (session && !activeChecked) {
