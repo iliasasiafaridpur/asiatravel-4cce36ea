@@ -269,8 +269,45 @@ function AccountsPage() {
     if (error) return toast.error(error.message);
     toast.success("✓ খরচ সংরক্ষিত");
     setEForm({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
-    setExpOpen(false);
+    setManualOpen(false);
     void reload(true);
+  };
+
+  // Save manual income (payment_receipts with source="manual")
+  const saveManualIncome = async () => {
+    if (!user?.id) return toast.error("লগ-ইন করুন");
+    const amt = Number(iForm.amount);
+    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    try {
+      const receiptId = await generateNextId({
+        key: "_rcpt", label: "", short: "", table: "payment_receipts",
+        idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+      });
+      const me = displayName(profile, user);
+      const { error } = await supabase.from("payment_receipts").insert({
+        receipt_id: receiptId,
+        entry_date: iForm.entry_date,
+        service_type: "Manual",
+        service_table: null,
+        service_row_id: null,
+        ref_id: null,
+        passenger_name: iForm.passenger_name || "Manual Entry",
+        amount: amt,
+        method: iForm.method,
+        source: "manual",
+        remarks: iForm.remarks || null,
+        received_by: user.id,
+        received_by_name: me,
+        created_by: user.id,
+      } as never);
+      if (error) return toast.error(error.message);
+      toast.success("✓ আয় সংরক্ষিত");
+      setIForm({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
+      setManualOpen(false);
+      void reload(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const deleteHand = async (id: string): Promise<void> => {
