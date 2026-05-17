@@ -11,6 +11,7 @@ import { Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import { speakModuleEntry, speakReceived } from "@/lib/voice";
 
 export const Route = createFileRoute("/action-board")({
@@ -54,6 +55,9 @@ function ActionBoardPage() {
   const savingRef = useRef(false);
 
   const mod = moduleByKey(category)!;
+
+  // Auto-save draft per category
+  const { clear: clearDraft } = useFormDraft(`action-board:${category}`, form, setForm, true);
 
   // Keep entry_by in sync once the user/profile resolves
   useEffect(() => {
@@ -114,6 +118,7 @@ function ActionBoardPage() {
       toast.success(`Saved: ${newId}`);
       speakModuleEntry(mod.key);
       if (recvAmount > 0) speakReceived(recvAmount);
+      clearDraft();
       setForm(emptyForm(category, me));
     } catch (e) {
       window.clearTimeout(timeout);

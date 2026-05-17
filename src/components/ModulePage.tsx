@@ -27,6 +27,7 @@ import {
 import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
@@ -99,6 +100,14 @@ export function ModulePage({ module: mod }: Props) {
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
   const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
+
+  // Auto-save draft for NEW entries only (not while editing existing rows)
+  const { clear: clearDraft } = useFormDraft(
+    `module:${mod.key}:new`,
+    form,
+    setForm,
+    openForm && !editing,
+  );
 
   // Hydrate from localStorage cache instantly (offline-first)
   useEffect(() => {
@@ -301,6 +310,7 @@ export function ModulePage({ module: mod }: Props) {
           const { error } = await supabase.from(mod.table as never).insert(payload as never);
           if (error) throw error;
           toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+          clearDraft();
           speakModuleEntry(mod.key);
           if (recvAmount > 0) speakReceived(recvAmount);
         }
