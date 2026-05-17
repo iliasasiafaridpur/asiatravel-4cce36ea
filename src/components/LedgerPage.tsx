@@ -1769,8 +1769,45 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             )}
 
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) */}
+            {/* Mark as Advance Payment toggle (bulk mode only) */}
             {!payRow && payTarget && (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2.5">
+                <Checkbox
+                  id="payAsAdvance"
+                  checked={payAsAdvance}
+                  onCheckedChange={(c) => {
+                    setPayAsAdvance(!!c);
+                    if (c) { setPayAmount(""); setSelectedLines({}); }
+                  }}
+                />
+                <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
+                  Mark as Advance Payment
+                  <span className="block text-[11px] text-muted-foreground font-normal">
+                    কোনো বুকিং-এর সাথে যুক্ত না করে advance হিসেবে রাখুন — পরের বুকিং থেকে auto adjust হবে
+                  </span>
+                </Label>
+              </div>
+            )}
+
+            {/* Advance amount input (when advance toggle ON) */}
+            {!payRow && payTarget && payAsAdvance && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Advance Amount <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="h-10 text-lg font-semibold tabular-nums"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance */}
+            {!payRow && payTarget && !payAsAdvance && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
