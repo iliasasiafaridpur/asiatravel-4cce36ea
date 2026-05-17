@@ -562,7 +562,7 @@ function DashboardPage() {
                 <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
                 <Tooltip />
-                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="hsl(160 84% 45%)" />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="#6ee7b7" />
               </BarChart>
             </ResponsiveContainer>
           )}
