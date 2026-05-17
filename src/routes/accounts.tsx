@@ -229,59 +229,73 @@ function AccountsPage() {
 
   // Save handover
   const saveHandover = async () => {
+    if (savingHandover) return;
     if (!user?.id) return toast.error("লগ-ইন করুন");
     const amt = Number(hForm.amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-    const { data: idData, error: idErr } = await supabase.rpc("next_module_id" as never, { _prefix: "HND", _table: "cash_handovers", _column: "handover_id" } as never);
-    if (idErr) return toast.error(idErr.message);
-    const { error } = await supabase.from("cash_handovers").insert({
-      handover_id: idData as unknown as string,
-      entry_date: hForm.entry_date,
-      from_user: user.id,
-      from_name: displayName(profile, user),
-      to_name: hForm.to_name,
-      amount: amt,
-      method: hForm.method,
-      remarks: hForm.remarks || null,
-      created_by: user.id,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("✓ জমা সংরক্ষিত");
-    setHForm({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
-    setHandOpen(false);
-    void reload(true);
+    setSavingHandover(true);
+    try {
+      const { data: idData, error: idErr } = await supabase.rpc("next_module_id" as never, { _prefix: "HND", _table: "cash_handovers", _column: "handover_id" } as never);
+      if (idErr) return toast.error(idErr.message);
+      const { error } = await supabase.from("cash_handovers").insert({
+        handover_id: idData as unknown as string,
+        entry_date: hForm.entry_date,
+        from_user: user.id,
+        from_name: displayName(profile, user),
+        to_name: hForm.to_name,
+        amount: amt,
+        method: hForm.method,
+        remarks: hForm.remarks || null,
+        created_by: user.id,
+      });
+      if (error) return toast.error(error.message);
+      toast.success("✓ জমা সংরক্ষিত");
+      setHForm({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
+      setHandOpen(false);
+      void reload(true);
+    } finally {
+      setSavingHandover(false);
+    }
   };
 
   // Save expense
   const saveExpense = async () => {
+    if (savingExpense) return;
     if (!user?.id) return toast.error("লগ-ইন করুন");
     const amt = Number(eForm.amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-    const { data: idData, error: idErr } = await supabase.rpc("next_module_id" as never, { _prefix: "EXP", _table: "cash_expenses", _column: "expense_id" } as never);
-    if (idErr) return toast.error(idErr.message);
-    const { error } = await supabase.from("cash_expenses").insert({
-      expense_id: idData as unknown as string,
-      entry_date: eForm.entry_date,
-      spent_by: user.id,
-      spent_by_name: displayName(profile, user),
-      category: eForm.category,
-      purpose: eForm.purpose || null,
-      amount: amt,
-      remarks: eForm.remarks || null,
-      created_by: user.id,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("✓ খরচ সংরক্ষিত");
-    setEForm({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
-    setManualOpen(false);
-    void reload(true);
+    setSavingExpense(true);
+    try {
+      const { data: idData, error: idErr } = await supabase.rpc("next_module_id" as never, { _prefix: "EXP", _table: "cash_expenses", _column: "expense_id" } as never);
+      if (idErr) return toast.error(idErr.message);
+      const { error } = await supabase.from("cash_expenses").insert({
+        expense_id: idData as unknown as string,
+        entry_date: eForm.entry_date,
+        spent_by: user.id,
+        spent_by_name: displayName(profile, user),
+        category: eForm.category,
+        purpose: eForm.purpose || null,
+        amount: amt,
+        remarks: eForm.remarks || null,
+        created_by: user.id,
+      });
+      if (error) return toast.error(error.message);
+      toast.success("✓ খরচ সংরক্ষিত");
+      setEForm({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
+      setManualOpen(false);
+      void reload(true);
+    } finally {
+      setSavingExpense(false);
+    }
   };
 
   // Save manual income (payment_receipts with source="manual")
   const saveManualIncome = async () => {
+    if (savingIncome) return;
     if (!user?.id) return toast.error("লগ-ইন করুন");
     const amt = Number(iForm.amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    setSavingIncome(true);
     try {
       const receiptId = await generateNextId({
         key: "_rcpt", label: "", short: "", table: "payment_receipts",
@@ -311,6 +325,10 @@ function AccountsPage() {
       void reload(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSavingIncome(false);
+    }
+  };
     }
   };
 
