@@ -481,7 +481,7 @@ function DashboardPage() {
 
       {/* Trend + Pie */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ChartCard title="মাসিক বিক্রি ও রিসিভ (Trend)" className="lg:col-span-2">
+        <ChartCard title="মাসিক বিক্রি ও রিসিভ (Trend)" className="lg:col-span-2" tint={CARD_TINTS[0]}>
           {monthlyTrend.length === 0 ? <Empty loading={isLoading} /> : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyTrend}>
