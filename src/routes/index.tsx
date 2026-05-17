@@ -655,12 +655,15 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
   from: string; to?: string; money?: boolean; large?: boolean;
 }) {
   const text = `${money ? "৳ " : ""}${value.toLocaleString()}`;
-  // Derive a soft accent color from the legacy `from` prop (e.g. "from-emerald-500" -> "text-emerald-400")
-  const accent = from.replace("from-", "text-").replace(/-\d{3}$/, "-400");
+  // Derive base color name from legacy `from` prop (e.g. "from-emerald-500" -> "emerald")
+  const base = from.replace(/^from-/, "").replace(/-\d{3}$/, "");
+  const accent = `text-${base}-400`;
+  const borderColor = `border-${base}-400/40`;
   return (
     <div
       className={cn(
-        "rounded-xl bg-card border border-border/60 shadow-sm min-w-0 h-full flex flex-col",
+        "rounded-xl bg-card border shadow-sm min-w-0 h-full flex flex-col",
+        borderColor,
         large ? "p-4 sm:p-5" : "p-4",
       )}
       title={text}
