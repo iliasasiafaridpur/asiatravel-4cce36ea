@@ -639,7 +639,7 @@ ${node.innerHTML.replace(
                       <Textarea rows={2} placeholder="ঐচ্ছিক" value={eForm.remarks} onChange={(e) => setEForm({ ...eForm, remarks: e.target.value })} />
                     </div>
                     <DialogFooter>
-                      <Button onClick={saveExpense} className="gap-1.5"><Plus className="h-4 w-4" />খরচ সংরক্ষণ</Button>
+                      <Button onClick={saveExpense} disabled={savingExpense} className="gap-1.5"><Plus className="h-4 w-4" />{savingExpense ? "সংরক্ষণ হচ্ছে..." : "খরচ সংরক্ষণ"}</Button>
                     </DialogFooter>
                   </TabsContent>
                 </Tabs>
