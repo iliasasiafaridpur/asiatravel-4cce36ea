@@ -487,12 +487,12 @@ function DashboardPage() {
               <AreaChart data={monthlyTrend}>
                 <defs>
                   <linearGradient id="g-sold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(160 84% 45%)" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="hsl(160 84% 45%)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#6ee7b7" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="g-recv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#67e8f9" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#67e8f9" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -500,8 +500,8 @@ function DashboardPage() {
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Area type="monotone" dataKey="sold" stroke="hsl(160 84% 45%)" fill="url(#g-sold)" name="Sold" />
-                <Area type="monotone" dataKey="received" stroke="hsl(217 91% 60%)" fill="url(#g-recv)" name="Received" />
+                <Area type="monotone" dataKey="sold" stroke="#6ee7b7" fill="url(#g-sold)" name="Sold" />
+                <Area type="monotone" dataKey="received" stroke="#67e8f9" fill="url(#g-recv)" name="Received" />
               </AreaChart>
             </ResponsiveContainer>
           )}
