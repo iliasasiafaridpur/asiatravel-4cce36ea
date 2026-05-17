@@ -524,7 +524,7 @@ function DashboardPage() {
 
       {/* User stats + Top groups */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Per-User Received Amount (কে কত টাকা রিসিভ করেছে)">
+        <ChartCard title="Per-User Received Amount (কে কত টাকা রিসিভ করেছে)" tint={CARD_TINTS[2]}>
           {userReceived.length === 0 ? <Empty loading={isLoading} text="এখনো কেউ টাকা রিসিভ করেনি" /> : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={userReceived}>
