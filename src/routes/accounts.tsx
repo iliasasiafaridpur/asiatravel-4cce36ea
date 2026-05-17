@@ -84,9 +84,11 @@ function AccountsPage() {
 
   // Dialog forms
   const [handOpen, setHandOpen] = useState(false);
-  const [expOpen, setExpOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualTab, setManualTab] = useState<"income" | "expense">("income");
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
+  const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
 
   const reload = useCallback(async (quiet = false) => {
     if (!user?.id) return;
