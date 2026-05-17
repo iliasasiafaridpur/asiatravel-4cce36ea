@@ -329,8 +329,6 @@ function AccountsPage() {
       setSavingIncome(false);
     }
   };
-    }
-  };
 
   const deleteHand = async (id: string): Promise<void> => {
     const { error } = await supabase.from("cash_handovers").delete().eq("id", id);
