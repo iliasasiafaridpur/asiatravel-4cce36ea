@@ -36,16 +36,34 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "agency-ledger": Users, "vendor-ledger": Truck,
 };
 
+// Soft pastel colors matching the 7 stat cards palette
+// (slate, emerald, cyan, orange, violet, fuchsia, amber)
 const MODULE_COLORS: Record<string, string> = {
-  tickets: "hsl(217 91% 60%)",
-  bmet: "hsl(160 84% 45%)",
-  "saudi-visa": "hsl(27 96% 55%)",
-  "kuwait-visa": "hsl(280 65% 60%)",
+  tickets: "#67e8f9",       // cyan-300
+  bmet: "#6ee7b7",          // emerald-300
+  "saudi-visa": "#fdba74",  // orange-300
+  "kuwait-visa": "#c4b5fd", // violet-300
 };
 
 const PIE_COLORS = [
-  "hsl(217 91% 60%)", "hsl(160 84% 45%)", "hsl(27 96% 55%)", "hsl(280 65% 60%)",
-  "hsl(190 80% 50%)", "hsl(0 84% 60%)", "hsl(48 96% 53%)",
+  "#67e8f9", // cyan-300
+  "#6ee7b7", // emerald-300
+  "#fdba74", // orange-300
+  "#c4b5fd", // violet-300
+  "#f0abfc", // fuchsia-300
+  "#fcd34d", // amber-300
+  "#cbd5e1", // slate-300
+];
+
+// Tints for ChartCard / shortcut cards — same family as the 7 stat cards
+const CARD_TINTS = [
+  "bg-cyan-500/24 border-cyan-400/40",
+  "bg-emerald-500/24 border-emerald-400/40",
+  "bg-orange-500/24 border-orange-400/40",
+  "bg-violet-500/24 border-violet-400/40",
+  "bg-fuchsia-500/24 border-fuchsia-400/40",
+  "bg-amber-500/24 border-amber-400/40",
+  "bg-slate-500/24 border-slate-400/40",
 ];
 
 type Row = {
