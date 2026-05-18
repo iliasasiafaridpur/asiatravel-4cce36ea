@@ -61,6 +61,7 @@ export type Database = {
       }
       agency_ledger: {
         Row: {
+          advance_applied: number
           agent_name: string
           country_route: string | null
           created_at: string
@@ -84,6 +85,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advance_applied?: number
           agent_name: string
           country_route?: string | null
           created_at?: string
@@ -107,6 +109,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advance_applied?: number
           agent_name?: string
           country_route?: string | null
           created_at?: string
@@ -933,6 +936,7 @@ export type Database = {
       }
       vendor_ledger: {
         Row: {
+          advance_applied: number
           country_route: string | null
           created_at: string
           created_by: string | null
@@ -956,6 +960,7 @@ export type Database = {
           vendor_name: string
         }
         Insert: {
+          advance_applied?: number
           country_route?: string | null
           created_at?: string
           created_by?: string | null
@@ -979,6 +984,7 @@ export type Database = {
           vendor_name: string
         }
         Update: {
+          advance_applied?: number
           country_route?: string | null
           created_at?: string
           created_by?: string | null
@@ -1129,6 +1135,14 @@ export type Database = {
       }
       recalc_account_balance: {
         Args: { _account_id: string }
+        Returns: undefined
+      }
+      recalculate_agent_advance: {
+        Args: { _agent_name: string }
+        Returns: undefined
+      }
+      recalculate_vendor_advance: {
+        Args: { _vendor_name: string }
         Returns: undefined
       }
     }
