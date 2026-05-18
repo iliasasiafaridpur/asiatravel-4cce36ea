@@ -165,7 +165,6 @@ export function LedgerPage({ module: mod }: Props) {
     "Other",
   ];
   const loadingRef = useRef(false);
-  const cacheKey = `cache_v4_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
   const groupField = mod.groupBy?.field ?? "agent_name";
@@ -190,22 +189,6 @@ export function LedgerPage({ module: mod }: Props) {
     );
     return { ...mod, fields };
   }, [mod, form.service_type]);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      if (raw) {
-        const cached = JSON.parse(raw) as Row[];
-        if (Array.isArray(cached)) {
-          setRows(cached);
-          setLoading(false);
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mod.table]);
-
   const load = useCallback(async () => {
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -219,17 +202,12 @@ export function LedgerPage({ module: mod }: Props) {
       if (error) throw error;
       const list = (data as unknown as Row[]) ?? [];
       setRows(list);
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(list));
-      } catch {
-        /* ignore */
-      }
     } catch (e) {
       toast.error("লোড সমস্যা: " + errMsg(e));
     }
     loadingRef.current = false;
     setLoading(false);
-  }, [mod.table, columns, cacheKey]);
+  }, [mod.table, columns]);
 
   useEffect(() => {
     void load();
