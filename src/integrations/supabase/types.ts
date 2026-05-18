@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_code: string
+          allow_negative: boolean
+          created_at: string
+          current_balance: number
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          opening_balance: number
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          allow_negative?: boolean
+          created_at?: string
+          current_balance?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          opening_balance?: number
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          allow_negative?: boolean
+          created_at?: string
+          current_balance?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          opening_balance?: number
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agency_ledger: {
         Row: {
           agent_name: string
@@ -196,6 +241,7 @@ export type Database = {
       }
       cash_expenses: {
         Row: {
+          account_id: string | null
           amount: number
           category: string
           created_at: string
@@ -212,6 +258,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           category?: string
           created_at?: string
@@ -228,6 +275,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string
           created_at?: string
@@ -243,10 +291,19 @@ export type Database = {
           spent_by_name?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cash_expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cash_handovers: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           created_by: string | null
@@ -261,6 +318,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           created_by?: string | null
@@ -275,6 +333,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           created_by?: string | null
@@ -288,7 +347,134 @@ export type Database = {
           to_name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cash_handovers_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_cash_closings: {
+        Row: {
+          account_id: string
+          actual_closing: number
+          closed_at: string
+          closed_by: string | null
+          closing_date: string
+          created_at: string
+          discrepancy: number | null
+          expected_closing: number
+          id: string
+          is_locked: boolean
+          notes: string | null
+          opening_balance: number
+          total_paid: number
+          total_received: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          actual_closing?: number
+          closed_at?: string
+          closed_by?: string | null
+          closing_date: string
+          created_at?: string
+          discrepancy?: number | null
+          expected_closing?: number
+          id?: string
+          is_locked?: boolean
+          notes?: string | null
+          opening_balance?: number
+          total_paid?: number
+          total_received?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          actual_closing?: number
+          closed_at?: string
+          closed_by?: string | null
+          closing_date?: string
+          created_at?: string
+          discrepancy?: number | null
+          expected_closing?: number
+          id?: string
+          is_locked?: boolean
+          notes?: string | null
+          opening_balance?: number
+          total_paid?: number
+          total_received?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_cash_closings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fund_transfers: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          from_account_id: string
+          id: string
+          remarks: string | null
+          to_account_id: string
+          transfer_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          from_account_id: string
+          id?: string
+          remarks?: string | null
+          to_account_id: string
+          transfer_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          from_account_id?: string
+          id?: string
+          remarks?: string | null
+          to_account_id?: string
+          transfer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fund_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kuwait_visas: {
         Row: {
@@ -421,6 +607,7 @@ export type Database = {
       }
       payment_receipts: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           created_by: string | null
@@ -440,6 +627,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           created_by?: string | null
@@ -459,6 +647,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           created_by?: string | null
@@ -477,7 +666,15 @@ export type Database = {
           source?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -911,6 +1108,10 @@ export type Database = {
       next_simple_id: {
         Args: { _column: string; _prefix: string; _table: string }
         Returns: string
+      }
+      recalc_account_balance: {
+        Args: { _account_id: string }
+        Returns: undefined
       }
     }
     Enums: {
