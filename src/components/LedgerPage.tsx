@@ -759,7 +759,7 @@ export function LedgerPage({ module: mod }: Props) {
         for (const e of entries) {
           const r = rowById.get(e.id);
           if (!r) return toast.error("বিল খুঁজে পাওয়া যায়নি");
-          const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
           if (e.amt > due + 0.001)
             return toast.error(
               `${String(r[mod.idColumn] ?? "")} — Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${due})`,
@@ -785,7 +785,7 @@ export function LedgerPage({ module: mod }: Props) {
       if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
       const list = openBookingsFor(payTarget);
       const totalDue = list.reduce(
-        (s, r) => s + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0),
+        (s, r) => s + (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)),
         0,
       );
       if (amt > totalDue + 0.001)
@@ -796,7 +796,7 @@ export function LedgerPage({ module: mod }: Props) {
       const parts: string[] = [];
       for (const r of list) {
         if (remaining <= 0.0001) break;
-        const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+        const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
         await applyAllocationToRow(r, take);
