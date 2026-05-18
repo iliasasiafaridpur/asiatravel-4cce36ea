@@ -71,6 +71,7 @@ export type Database = {
           mobile: string | null
           passenger_name: string | null
           passport: string | null
+          payment_date: string | null
           payment_method: string
           profit: number | null
           received_amount: number | null
@@ -93,6 +94,7 @@ export type Database = {
           mobile?: string | null
           passenger_name?: string | null
           passport?: string | null
+          payment_date?: string | null
           payment_method?: string
           profit?: number | null
           received_amount?: number | null
@@ -115,6 +117,7 @@ export type Database = {
           mobile?: string | null
           passenger_name?: string | null
           passport?: string | null
+          payment_date?: string | null
           payment_method?: string
           profit?: number | null
           received_amount?: number | null
@@ -178,6 +181,7 @@ export type Database = {
           notes: string | null
           passenger_name: string
           passport: string | null
+          payment_date: string | null
           received_amount: number | null
           received_by: string | null
           received_date: string | null
@@ -203,6 +207,7 @@ export type Database = {
           notes?: string | null
           passenger_name: string
           passport?: string | null
+          payment_date?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -228,6 +233,7 @@ export type Database = {
           notes?: string | null
           passenger_name?: string
           passport?: string | null
+          payment_date?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -492,6 +498,7 @@ export type Database = {
           notes: string | null
           passenger_name: string
           passport: string | null
+          payment_date: string | null
           received: number | null
           received_by: string | null
           sold_price: number | null
@@ -516,6 +523,7 @@ export type Database = {
           notes?: string | null
           passenger_name: string
           passport?: string | null
+          payment_date?: string | null
           received?: number | null
           received_by?: string | null
           sold_price?: number | null
@@ -540,6 +548,7 @@ export type Database = {
           notes?: string | null
           passenger_name?: string
           passport?: string | null
+          payment_date?: string | null
           received?: number | null
           received_by?: string | null
           sold_price?: number | null
@@ -730,6 +739,7 @@ export type Database = {
           notes: string | null
           passenger_name: string
           passport: string | null
+          payment_date: string | null
           received_amount: number | null
           received_by: string | null
           received_vendor: number | null
@@ -766,6 +776,7 @@ export type Database = {
           notes?: string | null
           passenger_name: string
           passport?: string | null
+          payment_date?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_vendor?: number | null
@@ -802,6 +813,7 @@ export type Database = {
           notes?: string | null
           passenger_name?: string
           passport?: string | null
+          payment_date?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_vendor?: number | null
@@ -835,6 +847,7 @@ export type Database = {
           notes: string | null
           passenger_name: string
           passport: string | null
+          payment_date: string | null
           pnr: string | null
           received: number | null
           received_by: string | null
@@ -859,6 +872,7 @@ export type Database = {
           notes?: string | null
           passenger_name: string
           passport?: string | null
+          payment_date?: string | null
           pnr?: string | null
           received?: number | null
           received_by?: string | null
@@ -883,6 +897,7 @@ export type Database = {
           notes?: string | null
           passenger_name?: string
           passport?: string | null
+          payment_date?: string | null
           pnr?: string | null
           received?: number | null
           received_by?: string | null
@@ -928,6 +943,7 @@ export type Database = {
           paid_amount: number | null
           passenger_name: string | null
           passport: string | null
+          payment_date: string | null
           payment_method: string
           profit: number | null
           received_by: string | null
@@ -950,6 +966,7 @@ export type Database = {
           paid_amount?: number | null
           passenger_name?: string | null
           passport?: string | null
+          payment_date?: string | null
           payment_method?: string
           profit?: number | null
           received_by?: string | null
@@ -972,6 +989,7 @@ export type Database = {
           paid_amount?: number | null
           passenger_name?: string | null
           passport?: string | null
+          payment_date?: string | null
           payment_method?: string
           profit?: number | null
           received_by?: string | null
