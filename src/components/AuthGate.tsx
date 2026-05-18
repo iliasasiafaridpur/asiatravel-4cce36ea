@@ -17,58 +17,48 @@ function phoneToEmail(phone: string) {
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [activeChecked, setActiveChecked] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     let active = true;
 
+    // Background activation check — does NOT block UI.
     const checkActive = async (s: Session | null) => {
-      if (!s?.user) { if (active) setActiveChecked(true); return; }
-      if (active) setActiveChecked(false);
+      if (!s?.user) return;
       try {
-        const query = supabase.from("profiles")
-          .select("is_active,full_name").eq("user_id", s.user.id).maybeSingle();
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 2500));
-        const { data } = (await Promise.race([query, timeout])) as { data: { is_active?: boolean } | null };
-        const isActive = data?.is_active ?? false;
-        if (!isActive) {
+        const { data } = await supabase.from("profiles")
+          .select("is_active").eq("user_id", s.user.id).maybeSingle();
+        if (!active) return;
+        if (data && data.is_active === false) {
           toast.error("আপনার অ্যাকাউন্ট এখনো Admin দ্বারা activate হয়নি");
           await supabase.auth.signOut();
-          if (active) { setSession(null); setActiveChecked(true); }
-          return;
         }
-        if (active) setActiveChecked(true);
       } catch (err) {
-        console.error("profile check failed", err);
-        if (active) setActiveChecked(true);
+        console.warn("profile check failed (non-blocking)", err);
       }
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active) return;
       setSession(session);
+      setAuthReady(true);
       void checkActive(session);
-    }).catch((err) => {
-      console.error("session check failed", err);
-      if (active) { setSession(null); setActiveChecked(true); }
-    });
+    }).catch(() => { if (active) { setSession(null); setAuthReady(true); } });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!active) return;
       setSession(s);
-      if (event === "SIGNED_IN") { setActiveChecked(false); void checkActive(s); }
-      if (event === "SIGNED_OUT") setActiveChecked(true);
+      setAuthReady(true);
+      if (event === "SIGNED_IN") void checkActive(s);
     });
 
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
-  if (!session || !activeChecked) {
-    if (session && !activeChecked) {
-      return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Verifying…</div>;
-    }
-    return <LoginScreen />;
+  if (!authReady) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
+  if (!session) return <LoginScreen />;
   return <>{children}</>;
 }
 
