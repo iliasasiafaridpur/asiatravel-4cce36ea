@@ -380,9 +380,25 @@ function DashboardPage() {
             <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)] w-fit">
               ASIA TRAVEL
             </h1>
-            <h2 className="font-black uppercase text-foreground/90 leading-[0.95] tracking-tight text-[clamp(1.25rem,4.45vw,3.18rem)] w-fit">
-              MANAGEMENT SYSTEM
-            </h2>
+            <svg
+              viewBox="0 0 100 16"
+              preserveAspectRatio="xMidYMid meet"
+              className="block w-full text-foreground/90"
+              aria-label="MANAGEMENT SYSTEM"
+            >
+              <text
+                x="0"
+                y="13"
+                textLength="100"
+                lengthAdjust="spacingAndGlyphs"
+                fontSize="14"
+                fontWeight="900"
+                fill="currentColor"
+                style={{ fontFamily: "inherit", letterSpacing: "-0.02em" }}
+              >
+                MANAGEMENT SYSTEM
+              </text>
+            </svg>
           </div>
           <div className="flex md:justify-end md:flex-shrink-0">
             <DigitalClock />
