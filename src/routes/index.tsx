@@ -380,7 +380,7 @@ function DashboardPage() {
             <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)]">
               ASIA TRAVEL
             </h1>
-            <h2 className="font-extrabold uppercase text-foreground/90 leading-tight tracking-wide text-[clamp(0.9rem,2.5vw,1.75rem)]">
+            <h2 className="font-black uppercase text-foreground/90 leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)]">
               MANAGEMENT SYSTEM
             </h2>
           </div>
