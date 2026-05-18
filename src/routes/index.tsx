@@ -376,11 +376,14 @@ function DashboardPage() {
       {/* Hero header */}
       <div className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4 bg-card border border-border/60 shadow-sm">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-6">
-          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1">
-            <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)]">
+          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1 w-fit">
+            <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)] w-fit">
               ASIA TRAVEL
             </h1>
-            <h2 className="font-black uppercase text-foreground/90 leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)]">
+            <h2
+              className="font-extrabold uppercase text-foreground/90 leading-tight text-[clamp(0.9rem,2.5vw,1.75rem)] w-full"
+              style={{ textAlign: "justify", textAlignLast: "justify" }}
+            >
               MANAGEMENT SYSTEM
             </h2>
           </div>
