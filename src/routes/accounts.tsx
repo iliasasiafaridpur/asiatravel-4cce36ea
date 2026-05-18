@@ -336,6 +336,12 @@ function AccountsPage() {
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
+  const deleteRecv = async (id: string): Promise<void> => {
+    const { error } = await supabase.from("payment_receipts").delete().eq("id", id);
+    if (error) { toast.error("ডিলেট ব্যর্থ: " + error.message); return; }
+    toast.success("ডিলেট সম্পন্ন");
+    await reload(true);
+  };
   const deleteExp = async (id: string): Promise<void> => {
     const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
