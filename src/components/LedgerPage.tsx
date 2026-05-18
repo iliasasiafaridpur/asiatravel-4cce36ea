@@ -795,27 +795,28 @@ export function LedgerPage({ module: mod }: Props) {
   };
 
   const submit = async () => {
+    if (saving) return; // Prevent double-submit race
+    // Capture edit state at submit-time to guarantee Update vs Insert routing
+    const editRow = editing;
+    const editId = editRow?.id;
+    const isEdit = !!editId;
     setSaving(true);
-    const payload: Record<string, unknown> = {};
-    for (const field of mod.fields) {
-      const v = form[field.name];
-      if (field.type === "number") payload[field.name] = Number(v) || 0;
-      else if (field.type === "boolean") payload[field.name] = Boolean(v);
-      else if (field.type === "date") payload[field.name] = v ? v : null;
-      else payload[field.name] = v ?? null;
-    }
-    if (user?.id && !editing) (payload as Record<string, unknown>).created_by = user.id;
-
-    const isEdit = !!editing;
-    const editId = editing?.id;
-    const finalId = !isEdit ? await generateNextId(mod) : undefined;
-    if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
-
-    setOpenForm(false);
-    setSaving(false);
-
     try {
+      const payload: Record<string, unknown> = {};
+      for (const field of mod.fields) {
+        const v = form[field.name];
+        if (field.type === "number") payload[field.name] = Number(v) || 0;
+        else if (field.type === "boolean") payload[field.name] = Boolean(v);
+        else if (field.type === "date") payload[field.name] = v ? v : null;
+        else payload[field.name] = v ?? null;
+      }
+      if (user?.id && !isEdit) (payload as Record<string, unknown>).created_by = user.id;
+
+      const finalId = !isEdit ? await generateNextId(mod) : undefined;
+      if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
+
       if (isEdit && editId) {
+        // STRICT: existing row — UPDATE only, never insert
         const { error } = await supabase
           .from(mod.table as never)
           .update(payload as never)
@@ -823,13 +824,18 @@ export function LedgerPage({ module: mod }: Props) {
         if (error) throw error;
         toast.success("আপডেট হয়েছে");
       } else {
+        // No id → INSERT new
         const { error } = await supabase.from(mod.table as never).insert(payload as never);
         if (error) throw error;
         toast.success(`✓ যোগ হয়েছে: ${finalId}`);
       }
+      setOpenForm(false);
+      setEditing(null);
       void load();
     } catch (e) {
       toast.error("সমস্যা: " + errMsg(e));
+    } finally {
+      setSaving(false);
     }
   };
 
