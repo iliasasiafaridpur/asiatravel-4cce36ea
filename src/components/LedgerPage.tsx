@@ -1373,6 +1373,10 @@ export function LedgerPage({ module: mod }: Props) {
                         : isPayment
                           ? "💵"
                           : "•";
+                  const adjusted = advanceAdjustedRows.get(r.id);
+                  const displayPaid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
+                  const displayDue = adjusted?.displayDue ?? Math.max(bal, 0);
+                  const appliedAdvance = adjusted?.applied ?? 0;
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
