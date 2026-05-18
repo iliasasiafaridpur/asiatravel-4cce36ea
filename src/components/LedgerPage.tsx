@@ -945,8 +945,9 @@ export function LedgerPage({ module: mod }: Props) {
     const rowsHtml = filtered
       .map((r, i) => {
         const bill = Number(r[billCol] ?? 0);
-        const paid = Number(r[paidCol] ?? 0);
-        const due = bill - paid;
+        const adjusted = advanceAdjustedRows.get(r.id);
+        const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
+        const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0), 0);
         const srcId = String(r.source_id ?? "");
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
@@ -964,9 +965,7 @@ export function LedgerPage({ module: mod }: Props) {
         const dueCell =
           due > 0
             ? `<span style="color:#dc2626;font-weight:700">${fmt(due)}</span>`
-            : due === 0
-              ? `<span style="color:#059669">Paid</span>`
-              : `<span style="color:#d97706">Adv ${fmt(Math.abs(due))}</span>`;
+            : `<span style="color:#059669">Paid</span>`;
         return `<tr>
 <td>${i + 1}</td>
 <td>${formatDate(r.entry_date as string | null)}<div style="font-size:10px;color:#666">${String(r[mod.idColumn] ?? "")}</div></td>
