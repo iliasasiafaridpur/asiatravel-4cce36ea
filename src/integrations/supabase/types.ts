@@ -26,6 +26,7 @@ export type Database = {
           mobile: string | null
           passenger_name: string | null
           passport: string | null
+          payment_method: string
           profit: number | null
           received_amount: number | null
           received_by: string | null
@@ -47,6 +48,7 @@ export type Database = {
           mobile?: string | null
           passenger_name?: string | null
           passport?: string | null
+          payment_method?: string
           profit?: number | null
           received_amount?: number | null
           received_by?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           mobile?: string | null
           passenger_name?: string | null
           passport?: string | null
+          payment_method?: string
           profit?: number | null
           received_amount?: number | null
           received_by?: string | null
@@ -200,6 +203,8 @@ export type Database = {
           entry_date: string
           expense_id: string
           id: string
+          linked_source_id: string | null
+          linked_source_table: string | null
           purpose: string | null
           remarks: string | null
           spent_by: string | null
@@ -214,6 +219,8 @@ export type Database = {
           entry_date?: string
           expense_id: string
           id?: string
+          linked_source_id?: string | null
+          linked_source_table?: string | null
           purpose?: string | null
           remarks?: string | null
           spent_by?: string | null
@@ -228,6 +235,8 @@ export type Database = {
           entry_date?: string
           expense_id?: string
           id?: string
+          linked_source_id?: string | null
+          linked_source_table?: string | null
           purpose?: string | null
           remarks?: string | null
           spent_by?: string | null
@@ -722,6 +731,7 @@ export type Database = {
           paid_amount: number | null
           passenger_name: string | null
           passport: string | null
+          payment_method: string
           profit: number | null
           received_by: string | null
           remarks: string | null
@@ -743,6 +753,7 @@ export type Database = {
           paid_amount?: number | null
           passenger_name?: string | null
           passport?: string | null
+          payment_method?: string
           profit?: number | null
           received_by?: string | null
           remarks?: string | null
@@ -764,6 +775,7 @@ export type Database = {
           paid_amount?: number | null
           passenger_name?: string | null
           passport?: string | null
+          payment_method?: string
           profit?: number | null
           received_by?: string | null
           remarks?: string | null
