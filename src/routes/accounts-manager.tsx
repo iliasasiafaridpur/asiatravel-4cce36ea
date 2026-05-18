@@ -583,7 +583,7 @@ function ClosingTab({ isAdmin }: { isAdmin: boolean }) {
                   <td className="p-2 text-center">{c.is_locked ? "🔒" : "—"}</td>
                   <td className="p-2 text-right">
                     {isAdmin && (
-                      <ConfirmDeleteButton onConfirm={() => removeClosing(c.id)} description={`Unlock message={`Unlock & delete ${formatDate(c.closing_date)} closing for ${accountName(c.account_id)}?`} delete ${formatDate(c.closing_date)} closing for ${accountName(c.account_id)}?`} />
+                      <ConfirmDeleteButton onConfirm={() => removeClosing(c.id)} description={`Unlock & delete ${formatDate(c.closing_date)} closing for ${accountName(c.account_id)}?`} />
                     )}
                   </td>
                 </tr>
