@@ -1503,19 +1503,24 @@ export function LedgerPage({ module: mod }: Props) {
                           ৳ {Number(r[billCol] ?? 0).toLocaleString()}
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          {isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}
+                          {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()}
                         </div>
+                        {appliedAdvance > 0 && (
+                          <div className="text-[11px] text-muted-foreground">
+                            Advance Adjusted: {appliedAdvance.toLocaleString()}
+                          </div>
+                        )}
                         <div className="text-xs">
-                          {bal > 0 ? (
+                          {displayDue > 0 ? (
                             <button
                               type="button"
-                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
+                              onClick={() => (isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue))}
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
-                              Due: {bal.toLocaleString()} <Wallet className="h-3 w-3" />
+                              Due: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />
                             </button>
-                          ) : bal === 0 ? (
+                          ) : bal >= 0 || appliedAdvance > 0 ? (
                             <Badge
                               variant="outline"
                               className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]"
