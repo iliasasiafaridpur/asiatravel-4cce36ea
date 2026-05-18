@@ -462,7 +462,14 @@ export function LedgerPage({ module: mod }: Props) {
         paid += Number(r[paidCol] ?? 0);
       }
     }
-    return { bill, paid, advance, due: Math.max(bill - paid, 0) };
+    const billDueRaw = Math.max(bill - paid, 0);
+    const applied = Math.min(advance, billDueRaw);
+    return {
+      bill,
+      paid: paid + applied,
+      advance: advance - applied,
+      due: billDueRaw - applied,
+    };
   }, [filtered, billCol, paidCol]);
 
   const groupSummary = useMemo(() => {
@@ -479,13 +486,17 @@ export function LedgerPage({ module: mod }: Props) {
       map.set(k, cur);
     }
     return Array.from(map.entries())
-      .map(([key, v]) => ({
-        key,
-        bill: v.bill,
-        paid: v.paid,
-        due: Math.max(v.bill - v.paid, 0),
-        advance: v.advance,
-      }))
+      .map(([key, v]) => {
+        const billDueRaw = Math.max(v.bill - v.paid, 0);
+        const applied = Math.min(v.advance, billDueRaw);
+        return {
+          key,
+          bill: v.bill,
+          paid: v.paid + applied,
+          due: billDueRaw - applied,
+          advance: v.advance - applied,
+        };
+      })
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol]);
 
