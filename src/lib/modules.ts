@@ -161,6 +161,12 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         section: "agency",
       },
+      {
+        name: "payment_date",
+        label: "Payment Date",
+        type: "date",
+        section: "agency",
+      },
       // 3) Vendor information
       {
         name: "vendor_bought",
@@ -295,6 +301,12 @@ export const MODULES: ModuleSchema[] = [
         label: "Received Amount",
         type: "number",
         showInList: true,
+        section: "agency",
+      },
+      {
+        name: "payment_date",
+        label: "Payment Date",
+        type: "date",
         section: "agency",
       },
       // 3) Vendor information
@@ -467,6 +479,12 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         section: "agency",
       },
+      {
+        name: "payment_date",
+        label: "Payment Date",
+        type: "date",
+        section: "agency",
+      },
       // 3) Vendor
       { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
@@ -553,6 +571,12 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         section: "agency",
       },
+      {
+        name: "payment_date",
+        label: "Payment Date",
+        type: "date",
+        section: "agency",
+      },
       { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
@@ -605,6 +629,7 @@ export const MODULES: ModuleSchema[] = [
       },
       { name: "total_bill", label: "Total Bill", type: "number", showInList: true },
       { name: "received_amount", label: "Received", type: "number", showInList: true },
+      { name: "payment_date", label: "Payment Date", type: "date" },
       {
         name: "payment_method",
         label: "Payment Method (Cash/Bank)",
@@ -678,6 +703,7 @@ export const MODULES: ModuleSchema[] = [
       },
       { name: "total_payable", label: "Total Payable", type: "number", showInList: true },
       { name: "paid_amount", label: "Paid", type: "number", showInList: true },
+      { name: "payment_date", label: "Payment Date", type: "date" },
       {
         name: "payment_method",
         label: "Payment Method (Cash/Bank)",
