@@ -671,7 +671,7 @@ export function LedgerPage({ module: mod }: Props) {
     const list = openBookingsFor(payTarget);
     const out: Array<{ row: Row; alloc: number; due: number }> = [];
     for (const r of list) {
-      const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+      const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
       if (remaining <= 0.0001) {
         out.push({ row: r, alloc: 0, due });
         continue;
@@ -681,7 +681,7 @@ export function LedgerPage({ module: mod }: Props) {
       remaining -= take;
     }
     return out;
-  }, [payAmount, payTarget, payRow, openBookingsFor, billCol, paidCol]);
+  }, [payAmount, payTarget, payRow, openBookingsFor, billCol, paidCol, advanceAdjustedRows]);
 
   const specificTotal = useMemo(() => {
     let t = 0;
