@@ -380,10 +380,7 @@ function DashboardPage() {
             <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)] w-fit">
               ASIA TRAVEL
             </h1>
-            <h2
-              className="font-extrabold uppercase text-foreground/90 leading-tight text-[clamp(0.9rem,2.5vw,1.75rem)] w-full"
-              style={{ textAlign: "justify", textAlignLast: "justify" }}
-            >
+            <h2 className="font-black uppercase text-foreground/90 leading-[0.95] tracking-tight text-[clamp(1.25rem,4.45vw,3.18rem)] w-fit">
               MANAGEMENT SYSTEM
             </h2>
           </div>
