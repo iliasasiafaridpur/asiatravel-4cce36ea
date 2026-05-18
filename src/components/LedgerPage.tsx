@@ -165,7 +165,6 @@ export function LedgerPage({ module: mod }: Props) {
     "Other",
   ];
   const loadingRef = useRef(false);
-  const cacheKey = `cache_v4_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
   const groupField = mod.groupBy?.field ?? "agent_name";
@@ -190,22 +189,6 @@ export function LedgerPage({ module: mod }: Props) {
     );
     return { ...mod, fields };
   }, [mod, form.service_type]);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      if (raw) {
-        const cached = JSON.parse(raw) as Row[];
-        if (Array.isArray(cached)) {
-          setRows(cached);
-          setLoading(false);
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mod.table]);
-
   const load = useCallback(async () => {
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -219,17 +202,12 @@ export function LedgerPage({ module: mod }: Props) {
       if (error) throw error;
       const list = (data as unknown as Row[]) ?? [];
       setRows(list);
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(list));
-      } catch {
-        /* ignore */
-      }
     } catch (e) {
       toast.error("লোড সমস্যা: " + errMsg(e));
     }
     loadingRef.current = false;
     setLoading(false);
-  }, [mod.table, columns, cacheKey]);
+  }, [mod.table, columns]);
 
   useEffect(() => {
     void load();
@@ -391,6 +369,45 @@ export function LedgerPage({ module: mod }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
+  const advanceAdjustedRows = useMemo(() => {
+    const byGroup = new Map<string, Row[]>();
+    const advanceByGroup = new Map<string, number>();
+    for (const r of rows) {
+      const k = String(r[groupField] ?? "");
+      if (isAdvanceRow(r)) {
+        advanceByGroup.set(k, (advanceByGroup.get(k) ?? 0) + Number(r[paidCol] ?? 0));
+      } else {
+        const list = byGroup.get(k) ?? [];
+        list.push(r);
+        byGroup.set(k, list);
+      }
+    }
+
+    const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
+    for (const [k, list] of byGroup.entries()) {
+      let remainingAdvance = advanceByGroup.get(k) ?? 0;
+      const ordered = [...list].sort((a, b) => {
+        const ad = String(a.entry_date ?? "");
+        const bd = String(b.entry_date ?? "");
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        const ac = String(a.created_at ?? "");
+        const bc = String(b.created_at ?? "");
+        return ac < bc ? -1 : 1;
+      });
+      for (const r of ordered) {
+        const rawDue = Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+        const applied = Math.min(remainingAdvance, rawDue);
+        remainingAdvance -= applied;
+        adjusted.set(r.id, {
+          applied,
+          displayPaid: Number(r[paidCol] ?? 0) + applied,
+          displayDue: rawDue - applied,
+        });
+      }
+    }
+    return adjusted;
+  }, [rows, groupField, billCol, paidCol]);
+
   // Net due per group: bill rows minus payments, then advance wallet auto-applied.
   const dueByGroup = useMemo(() => {
     const billDue = new Map<string, number>();
@@ -527,21 +544,13 @@ export function LedgerPage({ module: mod }: Props) {
     setOpenForm(true);
   };
 
-  // Compute outstanding for any group key from ALL rows (not filtered).
+  // Compute outstanding for any group key from ALL rows after advance auto-adjustment.
   const dueForGroup = useCallback(
     (key: string) => {
       if (!key) return 0;
-      let bill = 0,
-        paid = 0;
-      for (const r of rows) {
-        if (String(r[groupField] ?? "") !== key) continue;
-        if (String(r.service_type ?? "").toUpperCase() === "ADVANCE") continue;
-        bill += Number(r[billCol] ?? 0);
-        paid += Number(r[paidCol] ?? 0);
-      }
-      return bill - paid;
+      return dueByGroup.get(key) ?? 0;
     },
-    [rows, groupField, billCol, paidCol],
+    [dueByGroup],
   );
 
   // Open bookings for a group: only rows with positive balance, excluding payment-only entries,
@@ -553,7 +562,8 @@ export function LedgerPage({ module: mod }: Props) {
         (r) =>
           String(r[groupField] ?? "") === key &&
           String(r.service_type ?? "").toUpperCase() !== "PAYMENT" &&
-          Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) > 0.0001,
+          !isAdvanceRow(r) &&
+          (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)) > 0.0001,
       );
       list.sort((a, b) => {
         const ad = String(a.entry_date ?? "");
@@ -565,7 +575,7 @@ export function LedgerPage({ module: mod }: Props) {
       });
       return list;
     },
-    [rows, groupField, billCol, paidCol],
+    [rows, groupField, billCol, paidCol, advanceAdjustedRows],
   );
 
   const openPayment = (groupKey: string, dueAmount: number) => {
@@ -661,7 +671,7 @@ export function LedgerPage({ module: mod }: Props) {
     const list = openBookingsFor(payTarget);
     const out: Array<{ row: Row; alloc: number; due: number }> = [];
     for (const r of list) {
-      const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+      const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
       if (remaining <= 0.0001) {
         out.push({ row: r, alloc: 0, due });
         continue;
@@ -671,7 +681,7 @@ export function LedgerPage({ module: mod }: Props) {
       remaining -= take;
     }
     return out;
-  }, [payAmount, payTarget, payRow, openBookingsFor, billCol, paidCol]);
+  }, [payAmount, payTarget, payRow, openBookingsFor, billCol, paidCol, advanceAdjustedRows]);
 
   const specificTotal = useMemo(() => {
     let t = 0;
@@ -749,7 +759,7 @@ export function LedgerPage({ module: mod }: Props) {
         for (const e of entries) {
           const r = rowById.get(e.id);
           if (!r) return toast.error("বিল খুঁজে পাওয়া যায়নি");
-          const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
           if (e.amt > due + 0.001)
             return toast.error(
               `${String(r[mod.idColumn] ?? "")} — Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${due})`,
@@ -775,7 +785,7 @@ export function LedgerPage({ module: mod }: Props) {
       if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
       const list = openBookingsFor(payTarget);
       const totalDue = list.reduce(
-        (s, r) => s + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0),
+        (s, r) => s + (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)),
         0,
       );
       if (amt > totalDue + 0.001)
@@ -786,7 +796,7 @@ export function LedgerPage({ module: mod }: Props) {
       const parts: string[] = [];
       for (const r of list) {
         if (remaining <= 0.0001) break;
-        const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+        const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
         await applyAllocationToRow(r, take);
@@ -889,7 +899,9 @@ export function LedgerPage({ module: mod }: Props) {
     ];
     const lines = [headers.join(",")];
     for (const r of filtered) {
-      const bal = balanceOf(r);
+      const adjusted = advanceAdjustedRows.get(r.id);
+      const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
+      const due = adjusted?.displayDue ?? Math.max(balanceOf(r), 0);
       const vals = [
         r[mod.idColumn],
         r.entry_date,
@@ -898,8 +910,8 @@ export function LedgerPage({ module: mod }: Props) {
         r.service_type,
         r.country_route,
         r[billCol],
-        r[paidCol],
-        bal,
+        paid,
+        due,
         r.remarks,
       ].map((v) => {
         const s = String(v ?? "");
@@ -933,8 +945,9 @@ export function LedgerPage({ module: mod }: Props) {
     const rowsHtml = filtered
       .map((r, i) => {
         const bill = Number(r[billCol] ?? 0);
-        const paid = Number(r[paidCol] ?? 0);
-        const due = bill - paid;
+        const adjusted = advanceAdjustedRows.get(r.id);
+        const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
+        const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0), 0);
         const srcId = String(r.source_id ?? "");
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
@@ -952,9 +965,7 @@ export function LedgerPage({ module: mod }: Props) {
         const dueCell =
           due > 0
             ? `<span style="color:#dc2626;font-weight:700">${fmt(due)}</span>`
-            : due === 0
-              ? `<span style="color:#059669">Paid</span>`
-              : `<span style="color:#d97706">Adv ${fmt(Math.abs(due))}</span>`;
+            : `<span style="color:#059669">Paid</span>`;
         return `<tr>
 <td>${i + 1}</td>
 <td>${formatDate(r.entry_date as string | null)}<div style="font-size:10px;color:#666">${String(r[mod.idColumn] ?? "")}</div></td>
@@ -1356,6 +1367,10 @@ export function LedgerPage({ module: mod }: Props) {
                         : isPayment
                           ? "💵"
                           : "•";
+                  const adjusted = advanceAdjustedRows.get(r.id);
+                  const displayPaid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
+                  const displayDue = adjusted?.displayDue ?? Math.max(bal, 0);
+                  const appliedAdvance = adjusted?.applied ?? 0;
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
@@ -1482,19 +1497,24 @@ export function LedgerPage({ module: mod }: Props) {
                           ৳ {Number(r[billCol] ?? 0).toLocaleString()}
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          {isAgency ? "Recv" : "Paid"}: {Number(r[paidCol] ?? 0).toLocaleString()}
+                          {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()}
                         </div>
+                        {appliedAdvance > 0 && (
+                          <div className="text-[11px] text-muted-foreground">
+                            Advance Adjusted: {appliedAdvance.toLocaleString()}
+                          </div>
+                        )}
                         <div className="text-xs">
-                          {bal > 0 ? (
+                          {displayDue > 0 ? (
                             <button
                               type="button"
-                              onClick={() => (isAgency ? openPaymentForRow(r, bal) : openPayment(String(r[groupField] ?? ""), bal))}
+                              onClick={() => (isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue))}
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
-                              Due: {bal.toLocaleString()} <Wallet className="h-3 w-3" />
+                              Due: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />
                             </button>
-                          ) : bal === 0 ? (
+                          ) : bal >= 0 || appliedAdvance > 0 ? (
                             <Badge
                               variant="outline"
                               className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]"
@@ -1936,7 +1956,7 @@ export function LedgerPage({ module: mod }: Props) {
                       </TableHeader>
                       <TableBody>
                         {openBookingsFor(payTarget).map((r) => {
-                          const due = Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+                          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
                           const checked = r.id in selectedLines;
                           return (
                             <TableRow key={r.id}>
