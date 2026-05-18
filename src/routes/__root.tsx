@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+const ORBITRON_LINK = { rel: "preconnect", href: "https://fonts.googleapis.com" };
+const ORBITRON_LINK2 = { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" };
+const ORBITRON_CSS = { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" };
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -109,11 +112,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/qOyCu4HoHOUZ6podTkawyCuD4wB3/social-images/social-1778501361157-Blue___White_Simple_Travel_Agency_Logo.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/qOyCu4HoHOUZ6podTkawyCuD4wB3/social-images/social-1778501361157-Blue___White_Simple_Travel_Agency_Logo.webp" },
     ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "apple-touch-icon", href: "/icon-512.png" },
-      { rel: "icon", href: "/icon-512.png", type: "image/png" },
-    ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        ORBITRON_LINK,
+        ORBITRON_LINK2,
+        ORBITRON_CSS,
+        { rel: "apple-touch-icon", href: "/icon-512.png" },
+        { rel: "icon", href: "/icon-512.png", type: "image/png" },
+      ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
