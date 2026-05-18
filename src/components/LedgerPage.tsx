@@ -899,7 +899,9 @@ export function LedgerPage({ module: mod }: Props) {
     ];
     const lines = [headers.join(",")];
     for (const r of filtered) {
-      const bal = balanceOf(r);
+      const adjusted = advanceAdjustedRows.get(r.id);
+      const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
+      const due = adjusted?.displayDue ?? Math.max(balanceOf(r), 0);
       const vals = [
         r[mod.idColumn],
         r.entry_date,
@@ -908,8 +910,8 @@ export function LedgerPage({ module: mod }: Props) {
         r.service_type,
         r.country_route,
         r[billCol],
-        r[paidCol],
-        bal,
+        paid,
+        due,
         r.remarks,
       ].map((v) => {
         const s = String(v ?? "");
