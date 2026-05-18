@@ -670,6 +670,7 @@ export function LedgerPage({ module: mod }: Props) {
           service_type: "ADVANCE",
           [billCol]: 0,
           [paidCol]: amt,
+          payment_method: payMethod,
           remarks: `Advance ${isAgency ? "Received" : "Paid"} · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
           created_by: user?.id ?? null,
         };
