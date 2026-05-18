@@ -391,14 +391,25 @@ export function LedgerPage({ module: mod }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
-  // Net due per group across BILL rows only. ADVANCE wallet is tracked separately.
+  // Net due per group: bill rows minus payments, then advance wallet auto-applied.
   const dueByGroup = useMemo(() => {
-    const m = new Map<string, number>();
+    const billDue = new Map<string, number>();
+    const adv = new Map<string, number>();
     for (const r of rows) {
-      if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
-      m.set(k, (m.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
+      if (isAdvanceRow(r)) {
+        adv.set(k, (adv.get(k) ?? 0) + Number(r[paidCol] ?? 0));
+      } else {
+        billDue.set(k, (billDue.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
+      }
     }
+    const m = new Map<string, number>();
+    const keys = new Set<string>([...billDue.keys(), ...adv.keys()]);
+    keys.forEach((k) => {
+      const d = Math.max(billDue.get(k) ?? 0, 0);
+      const a = adv.get(k) ?? 0;
+      m.set(k, Math.max(d - a, 0));
+    });
     return m;
   }, [rows, groupField, billCol, paidCol]);
 
