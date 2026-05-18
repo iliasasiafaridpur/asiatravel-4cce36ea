@@ -16,6 +16,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   PieChart, Pie, Legend, AreaChart, Area,
 } from "recharts";
+import { DigitalClock } from "@/components/DigitalClock";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
