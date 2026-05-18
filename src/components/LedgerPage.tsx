@@ -544,21 +544,13 @@ export function LedgerPage({ module: mod }: Props) {
     setOpenForm(true);
   };
 
-  // Compute outstanding for any group key from ALL rows (not filtered).
+  // Compute outstanding for any group key from ALL rows after advance auto-adjustment.
   const dueForGroup = useCallback(
     (key: string) => {
       if (!key) return 0;
-      let bill = 0,
-        paid = 0;
-      for (const r of rows) {
-        if (String(r[groupField] ?? "") !== key) continue;
-        if (String(r.service_type ?? "").toUpperCase() === "ADVANCE") continue;
-        bill += Number(r[billCol] ?? 0);
-        paid += Number(r[paidCol] ?? 0);
-      }
-      return bill - paid;
+      return dueByGroup.get(key) ?? 0;
     },
-    [rows, groupField, billCol, paidCol],
+    [dueByGroup],
   );
 
   // Open bookings for a group: only rows with positive balance, excluding payment-only entries,
@@ -570,7 +562,8 @@ export function LedgerPage({ module: mod }: Props) {
         (r) =>
           String(r[groupField] ?? "") === key &&
           String(r.service_type ?? "").toUpperCase() !== "PAYMENT" &&
-          Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) > 0.0001,
+          !isAdvanceRow(r) &&
+          (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)) > 0.0001,
       );
       list.sort((a, b) => {
         const ad = String(a.entry_date ?? "");
@@ -582,7 +575,7 @@ export function LedgerPage({ module: mod }: Props) {
       });
       return list;
     },
-    [rows, groupField, billCol, paidCol],
+    [rows, groupField, billCol, paidCol, advanceAdjustedRows],
   );
 
   const openPayment = (groupKey: string, dueAmount: number) => {
