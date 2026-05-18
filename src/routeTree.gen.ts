@@ -21,6 +21,7 @@ import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
 import { Route as ActionBoardRouteImport } from './routes/action-board'
+import { Route as AccountsManagerRouteImport } from './routes/accounts-manager'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as AccountingRouteImport } from './routes/accounting'
 import { Route as IndexRouteImport } from './routes/index'
@@ -85,6 +86,11 @@ const ActionBoardRoute = ActionBoardRouteImport.update({
   path: '/action-board',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountsManagerRoute = AccountsManagerRouteImport.update({
+  id: '/accounts-manager',
+  path: '/accounts-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountsRoute = AccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
+  '/accounts-manager': typeof AccountsManagerRoute
   '/action-board': typeof ActionBoardRoute
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
+  '/accounts-manager': typeof AccountsManagerRoute
   '/action-board': typeof ActionBoardRoute
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
+  '/accounts-manager': typeof AccountsManagerRoute
   '/action-board': typeof ActionBoardRoute
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accounting'
     | '/accounts'
+    | '/accounts-manager'
     | '/action-board'
     | '/agency-ledger'
     | '/agents'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accounting'
     | '/accounts'
+    | '/accounts-manager'
     | '/action-board'
     | '/agency-ledger'
     | '/agents'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accounting'
     | '/accounts'
+    | '/accounts-manager'
     | '/action-board'
     | '/agency-ledger'
     | '/agents'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountingRoute: typeof AccountingRoute
   AccountsRoute: typeof AccountsRoute
+  AccountsManagerRoute: typeof AccountsManagerRoute
   ActionBoardRoute: typeof ActionBoardRoute
   AgencyLedgerRoute: typeof AgencyLedgerRoute
   AgentsRoute: typeof AgentsRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActionBoardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accounts-manager': {
+      id: '/accounts-manager'
+      path: '/accounts-manager'
+      fullPath: '/accounts-manager'
+      preLoaderRoute: typeof AccountsManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accounts': {
       id: '/accounts'
       path: '/accounts'
@@ -339,6 +359,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountingRoute: AccountingRoute,
   AccountsRoute: AccountsRoute,
+  AccountsManagerRoute: AccountsManagerRoute,
   ActionBoardRoute: ActionBoardRoute,
   AgencyLedgerRoute: AgencyLedgerRoute,
   AgentsRoute: AgentsRoute,
