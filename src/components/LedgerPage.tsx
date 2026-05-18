@@ -84,6 +84,7 @@ function selectColumns(mod: ModuleSchema): string {
   if (mod.key === "agency-ledger" || mod.key === "vendor-ledger") {
     cols.add("source_id");
     cols.add("source_table");
+    cols.add("advance_applied");
   }
   mod.fields.forEach((field) => cols.add(field.name));
   return Array.from(cols).join(",");
@@ -370,63 +371,30 @@ export function LedgerPage({ module: mod }: Props) {
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
   const advanceAdjustedRows = useMemo(() => {
-    const byGroup = new Map<string, Row[]>();
-    const advanceByGroup = new Map<string, number>();
-    for (const r of rows) {
-      const k = String(r[groupField] ?? "");
-      if (isAdvanceRow(r)) {
-        advanceByGroup.set(k, (advanceByGroup.get(k) ?? 0) + Number(r[paidCol] ?? 0));
-      } else {
-        const list = byGroup.get(k) ?? [];
-        list.push(r);
-        byGroup.set(k, list);
-      }
-    }
-
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
-    for (const [k, list] of byGroup.entries()) {
-      let remainingAdvance = advanceByGroup.get(k) ?? 0;
-      const ordered = [...list].sort((a, b) => {
-        const ad = String(a.entry_date ?? "");
-        const bd = String(b.entry_date ?? "");
-        if (ad !== bd) return ad < bd ? -1 : 1;
-        const ac = String(a.created_at ?? "");
-        const bc = String(b.created_at ?? "");
-        return ac < bc ? -1 : 1;
+    for (const r of rows) {
+      if (isAdvanceRow(r)) continue;
+      const applied = Number(r.advance_applied ?? 0);
+      const cashPaid = Number(r[paidCol] ?? 0);
+      adjusted.set(r.id, {
+        applied,
+        displayPaid: cashPaid + applied,
+        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - applied, 0),
       });
-      for (const r of ordered) {
-        const rawDue = Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
-        const applied = Math.min(remainingAdvance, rawDue);
-        remainingAdvance -= applied;
-        adjusted.set(r.id, {
-          applied,
-          displayPaid: Number(r[paidCol] ?? 0) + applied,
-          displayDue: rawDue - applied,
-        });
-      }
     }
     return adjusted;
-  }, [rows, groupField, billCol, paidCol]);
+  }, [rows, billCol, paidCol]);
 
-  // Net due per group: bill rows minus payments, then advance wallet auto-applied.
+  // Net due per group: bill rows minus cash payment and persisted advance adjustment.
   const dueByGroup = useMemo(() => {
-    const billDue = new Map<string, number>();
-    const adv = new Map<string, number>();
+    const due = new Map<string, number>();
     for (const r of rows) {
+      if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
-      if (isAdvanceRow(r)) {
-        adv.set(k, (adv.get(k) ?? 0) + Number(r[paidCol] ?? 0));
-      } else {
-        billDue.set(k, (billDue.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
-      }
+      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - Number(r.advance_applied ?? 0), 0));
     }
     const m = new Map<string, number>();
-    const keys = new Set<string>([...billDue.keys(), ...adv.keys()]);
-    keys.forEach((k) => {
-      const d = Math.max(billDue.get(k) ?? 0, 0);
-      const a = adv.get(k) ?? 0;
-      m.set(k, Math.max(d - a, 0));
-    });
+    due.forEach((v, k) => m.set(k, Math.max(v, 0)));
     return m;
   }, [rows, groupField, billCol, paidCol]);
 
@@ -470,48 +438,49 @@ export function LedgerPage({ module: mod }: Props) {
   const totals = useMemo(() => {
     let bill = 0,
       paid = 0,
+      cashPaid = 0,
+      applied = 0,
       advance = 0;
     for (const r of filtered) {
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
       } else {
         bill += Number(r[billCol] ?? 0);
-        paid += Number(r[paidCol] ?? 0);
+        cashPaid += Number(r[paidCol] ?? 0);
+        applied += Number(r.advance_applied ?? 0);
       }
     }
-    const billDueRaw = Math.max(bill - paid, 0);
-    const applied = Math.min(advance, billDueRaw);
+    paid = cashPaid + applied;
     return {
       bill,
-      paid: paid + applied,
-      advance: advance - applied,
-      due: billDueRaw - applied,
+      paid,
+      advance: Math.max(advance - applied, 0),
+      due: Math.max(bill - paid, 0),
     };
   }, [filtered, billCol, paidCol]);
 
   const groupSummary = useMemo(() => {
-    const map = new Map<string, { bill: number; paid: number; advance: number }>();
+    const map = new Map<string, { bill: number; cashPaid: number; applied: number; advance: number }>();
     for (const r of filtered) {
       const k = String(r[groupField] ?? "—") || "—";
-      const cur = map.get(k) ?? { bill: 0, paid: 0, advance: 0 };
+      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, applied: 0, advance: 0 };
       if (isAdvanceRow(r)) {
         cur.advance += Number(r[paidCol] ?? 0);
       } else {
         cur.bill += Number(r[billCol] ?? 0);
-        cur.paid += Number(r[paidCol] ?? 0);
+        cur.cashPaid += Number(r[paidCol] ?? 0);
+        cur.applied += Number(r.advance_applied ?? 0);
       }
       map.set(k, cur);
     }
     return Array.from(map.entries())
       .map(([key, v]) => {
-        const billDueRaw = Math.max(v.bill - v.paid, 0);
-        const applied = Math.min(v.advance, billDueRaw);
         return {
           key,
           bill: v.bill,
-          paid: v.paid + applied,
-          due: billDueRaw - applied,
-          advance: v.advance - applied,
+          paid: v.cashPaid + v.applied,
+          due: Math.max(v.bill - v.cashPaid - v.applied, 0),
+          advance: Math.max(v.advance - v.applied, 0),
         };
       })
       .sort((a, b) => b.due - a.due);
