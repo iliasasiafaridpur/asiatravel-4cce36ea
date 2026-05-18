@@ -768,6 +768,16 @@ export function LedgerPage({ module: mod }: Props) {
 
   const submit = async () => {
     if (saving) return; // Prevent double-submit race
+    // Mandatory-field validation (e.g. Vendor/Agent name, Payment Method)
+    for (const fld of mod.fields) {
+      if (!fld.required) continue;
+      const v = form[fld.name];
+      const empty = v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+      if (empty) {
+        toast.error(`⚠ আবশ্যিক: "${fld.label}" পূরণ করুন`);
+        return;
+      }
+    }
     // Capture edit state at submit-time to guarantee Update vs Insert routing
     const editRow = editing;
     const editId = editRow?.id;
