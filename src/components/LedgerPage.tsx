@@ -387,10 +387,15 @@ export function LedgerPage({ module: mod }: Props) {
 
   const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
 
-  // Net due per group across ALL rows — payments offset bills.
+  // ADVANCE rows are a standalone wallet — never net them against bill rows.
+  const isAdvanceRow = (r: Row) =>
+    String(r.service_type ?? "").toUpperCase() === "ADVANCE";
+
+  // Net due per group across BILL rows only. ADVANCE wallet is tracked separately.
   const dueByGroup = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of rows) {
+      if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
       m.set(k, (m.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
     }
@@ -436,21 +441,30 @@ export function LedgerPage({ module: mod }: Props) {
 
   const totals = useMemo(() => {
     let bill = 0,
-      paid = 0;
+      paid = 0,
+      advance = 0;
     for (const r of filtered) {
-      bill += Number(r[billCol] ?? 0);
-      paid += Number(r[paidCol] ?? 0);
+      if (isAdvanceRow(r)) {
+        advance += Number(r[paidCol] ?? 0);
+      } else {
+        bill += Number(r[billCol] ?? 0);
+        paid += Number(r[paidCol] ?? 0);
+      }
     }
-    return { bill, paid, due: bill - paid };
+    return { bill, paid, advance, due: Math.max(bill - paid, 0) };
   }, [filtered, billCol, paidCol]);
 
   const groupSummary = useMemo(() => {
-    const map = new Map<string, { bill: number; paid: number }>();
+    const map = new Map<string, { bill: number; paid: number; advance: number }>();
     for (const r of filtered) {
       const k = String(r[groupField] ?? "—") || "—";
-      const cur = map.get(k) ?? { bill: 0, paid: 0 };
-      cur.bill += Number(r[billCol] ?? 0);
-      cur.paid += Number(r[paidCol] ?? 0);
+      const cur = map.get(k) ?? { bill: 0, paid: 0, advance: 0 };
+      if (isAdvanceRow(r)) {
+        cur.advance += Number(r[paidCol] ?? 0);
+      } else {
+        cur.bill += Number(r[billCol] ?? 0);
+        cur.paid += Number(r[paidCol] ?? 0);
+      }
       map.set(k, cur);
     }
     return Array.from(map.entries())
@@ -459,7 +473,7 @@ export function LedgerPage({ module: mod }: Props) {
         bill: v.bill,
         paid: v.paid,
         due: Math.max(v.bill - v.paid, 0),
-        advance: Math.max(v.paid - v.bill, 0),
+        advance: v.advance,
       }))
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol]);
@@ -499,6 +513,7 @@ export function LedgerPage({ module: mod }: Props) {
         paid = 0;
       for (const r of rows) {
         if (String(r[groupField] ?? "") !== key) continue;
+        if (String(r.service_type ?? "").toUpperCase() === "ADVANCE") continue;
         bill += Number(r[billCol] ?? 0);
         paid += Number(r[paidCol] ?? 0);
       }
