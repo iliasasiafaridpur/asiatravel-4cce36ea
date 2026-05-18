@@ -336,6 +336,12 @@ function AccountsPage() {
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
+  const deleteRecv = async (id: string): Promise<void> => {
+    const { error } = await supabase.from("payment_receipts").delete().eq("id", id);
+    if (error) { toast.error("ডিলেট ব্যর্থ: " + error.message); return; }
+    toast.success("ডিলেট সম্পন্ন");
+    await reload(true);
+  };
   const deleteExp = async (id: string): Promise<void> => {
     const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -941,16 +947,17 @@ ${node.innerHTML.replace(
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
                           <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
                         </div>
-                        <p className="text-[11px] text-muted-foreground break-words">
-                          {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>}
-          </CardContent></Card>
-        </TabsContent>
+                         <p className="text-[11px] text-muted-foreground break-words">
+                           {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                         </p>
+                       </div>
+                       <ConfirmDeleteButton onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
+                     </div>
+                   );
+                 })}
+               </div>}
+           </CardContent></Card>
+         </TabsContent>
 
         {/* Expense */}
         <TabsContent value="expense" className="mt-3">
