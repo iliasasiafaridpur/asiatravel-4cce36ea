@@ -117,7 +117,7 @@ function AccountsTab({ isAdmin }: { isAdmin: boolean }) {
 
   const openCreate = async () => {
     setEditing(null);
-    const code = await generateNextId("ACC", "accounts", "account_code", { monthly: false });
+    const code = await (await supabase.rpc("next_simple_id" as never, { _prefix: "ACC", _table: "accounts", _column: "account_code" } as never)).data as unknown as string;
     setForm({ account_code: code, name: "", type: "cash", opening_balance: 0, allow_negative: false, is_active: true, notes: "" });
     setOpenForm(true);
   };
@@ -217,7 +217,7 @@ function AccountsTab({ isAdmin }: { isAdmin: boolean }) {
                     {isAdmin && (
                       <div className="flex justify-end gap-1">
                         <Button size="sm" variant="outline" onClick={() => openEdit(a)}>Edit</Button>
-                        <ConfirmDeleteButton onConfirm={() => remove(a.id)} message={`Delete account "${a.name}"?`} />
+                        <ConfirmDeleteButton onConfirm={() => remove(a.id)} description={`Delete account "${a.name}"?`} />
                       </div>
                     )}
                   </td>
@@ -316,7 +316,7 @@ function TransfersTab() {
     if (!form.amount || form.amount <= 0) { toast.error("Amount must be greater than zero"); return; }
     setSaving(true);
     try {
-      const transfer_id = await generateNextId("FT", "fund_transfers", "transfer_id", { monthly: true });
+      const transfer_id = await (await supabase.rpc("next_module_id" as never, { _prefix: "FT", _table: "fund_transfers", _column: "transfer_id" } as never)).data as unknown as string;
       const { error } = await supabase.from("fund_transfers").insert({
         transfer_id, entry_date: form.entry_date,
         from_account_id: form.from_account_id, to_account_id: form.to_account_id,
@@ -376,7 +376,7 @@ function TransfersTab() {
                   <td className="p-2 text-right tabular-nums font-medium">{fmt(t.amount)}</td>
                   <td className="p-2 text-muted-foreground">{t.remarks ?? ""}</td>
                   <td className="p-2 text-right">
-                    <ConfirmDeleteButton onConfirm={() => remove(t.id)} message={`Delete transfer ${t.transfer_id}?`} />
+                    <ConfirmDeleteButton onConfirm={() => remove(t.id)} description={`Delete transfer ${t.transfer_id}?`} />
                   </td>
                 </tr>
               ))}
@@ -583,7 +583,7 @@ function ClosingTab({ isAdmin }: { isAdmin: boolean }) {
                   <td className="p-2 text-center">{c.is_locked ? "🔒" : "—"}</td>
                   <td className="p-2 text-right">
                     {isAdmin && (
-                      <ConfirmDeleteButton onConfirm={() => removeClosing(c.id)} message={`Unlock & delete ${formatDate(c.closing_date)} closing for ${accountName(c.account_id)}?`} />
+                      <ConfirmDeleteButton onConfirm={() => removeClosing(c.id)} description={`Unlock message={`Unlock & delete ${formatDate(c.closing_date)} closing for ${accountName(c.account_id)}?`} delete ${formatDate(c.closing_date)} closing for ${accountName(c.account_id)}?`} />
                     )}
                   </td>
                 </tr>
