@@ -441,21 +441,30 @@ export function LedgerPage({ module: mod }: Props) {
 
   const totals = useMemo(() => {
     let bill = 0,
-      paid = 0;
+      paid = 0,
+      advance = 0;
     for (const r of filtered) {
-      bill += Number(r[billCol] ?? 0);
-      paid += Number(r[paidCol] ?? 0);
+      if (isAdvanceRow(r)) {
+        advance += Number(r[paidCol] ?? 0);
+      } else {
+        bill += Number(r[billCol] ?? 0);
+        paid += Number(r[paidCol] ?? 0);
+      }
     }
-    return { bill, paid, due: bill - paid };
+    return { bill, paid, advance, due: Math.max(bill - paid, 0) };
   }, [filtered, billCol, paidCol]);
 
   const groupSummary = useMemo(() => {
-    const map = new Map<string, { bill: number; paid: number }>();
+    const map = new Map<string, { bill: number; paid: number; advance: number }>();
     for (const r of filtered) {
       const k = String(r[groupField] ?? "—") || "—";
-      const cur = map.get(k) ?? { bill: 0, paid: 0 };
-      cur.bill += Number(r[billCol] ?? 0);
-      cur.paid += Number(r[paidCol] ?? 0);
+      const cur = map.get(k) ?? { bill: 0, paid: 0, advance: 0 };
+      if (isAdvanceRow(r)) {
+        cur.advance += Number(r[paidCol] ?? 0);
+      } else {
+        cur.bill += Number(r[billCol] ?? 0);
+        cur.paid += Number(r[paidCol] ?? 0);
+      }
       map.set(k, cur);
     }
     return Array.from(map.entries())
@@ -464,7 +473,7 @@ export function LedgerPage({ module: mod }: Props) {
         bill: v.bill,
         paid: v.paid,
         due: Math.max(v.bill - v.paid, 0),
-        advance: Math.max(v.paid - v.bill, 0),
+        advance: v.advance,
       }))
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol]);
