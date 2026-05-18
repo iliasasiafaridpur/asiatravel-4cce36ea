@@ -607,6 +607,12 @@ export function LedgerPage({ module: mod }: Props) {
         .eq("id", row.id);
       if (uErr) throw uErr;
     }
+    // Propagate the selected payment method to the ledger row so the
+    // cash-sync trigger records the right Cash/Bank category.
+    await supabase
+      .from(mod.table as never)
+      .update({ payment_method: payMethod } as never)
+      .eq("id", row.id);
   };
 
   // Live FIFO allocation preview for the current payAmount.
