@@ -1908,8 +1908,8 @@ export function LedgerPage({ module: mod }: Props) {
                           <TableHead className="w-8"></TableHead>
                           <TableHead className="text-xs">Date / ID</TableHead>
                           <TableHead className="text-xs">Passenger</TableHead>
-                          <TableHead className="text-right text-xs">Due</TableHead>
-                          <TableHead className="text-right text-xs w-32">Pay Amount</TableHead>
+                          <TableHead className="text-right text-xs">Due / বাকি</TableHead>
+                          <TableHead className="text-right text-xs w-32">Paying Now / এখন দিচ্ছি</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
