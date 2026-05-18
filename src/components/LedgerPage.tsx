@@ -438,19 +438,23 @@ export function LedgerPage({ module: mod }: Props) {
   const totals = useMemo(() => {
     let bill = 0,
       paid = 0,
+      cashPaid = 0,
+      applied = 0,
       advance = 0;
     for (const r of filtered) {
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
       } else {
         bill += Number(r[billCol] ?? 0);
-        paid += Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0);
+        cashPaid += Number(r[paidCol] ?? 0);
+        applied += Number(r.advance_applied ?? 0);
       }
     }
+    paid = cashPaid + applied;
     return {
       bill,
       paid,
-      advance: Math.max(advance - (paid - filtered.filter((r) => !isAdvanceRow(r)).reduce((s, r) => s + Number(r[paidCol] ?? 0), 0)), 0),
+      advance: Math.max(advance - applied, 0),
       due: Math.max(bill - paid, 0),
     };
   }, [filtered, billCol, paidCol]);
