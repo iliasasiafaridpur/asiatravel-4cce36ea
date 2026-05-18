@@ -678,6 +678,13 @@ export const MODULES: ModuleSchema[] = [
       },
       { name: "total_payable", label: "Total Payable", type: "number", showInList: true },
       { name: "paid_amount", label: "Paid", type: "number", showInList: true },
+      {
+        name: "payment_method",
+        label: "Payment Method (Cash/Bank)",
+        type: "select",
+        options: ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Other"],
+        required: true,
+      },
       { name: "profit", label: "Profit", type: "number", showInList: true },
       { name: "remarks", label: "Remarks", type: "textarea" },
     ],
