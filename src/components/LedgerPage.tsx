@@ -213,6 +213,7 @@ export function LedgerPage({ module: mod }: Props) {
       const { data, error } = await supabase
         .from(mod.table as never)
         .select(columns)
+        .order("entry_date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
