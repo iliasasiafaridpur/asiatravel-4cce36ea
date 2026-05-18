@@ -138,6 +138,7 @@ export function ModulePage({ module: mod }: Props) {
         supabase
           .from(mod.table as never)
           .select(columns)
+          .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(250),
         new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 6500)),
