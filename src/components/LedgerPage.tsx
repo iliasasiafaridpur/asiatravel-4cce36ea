@@ -391,14 +391,25 @@ export function LedgerPage({ module: mod }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
-  // Net due per group across BILL rows only. ADVANCE wallet is tracked separately.
+  // Net due per group: bill rows minus payments, then advance wallet auto-applied.
   const dueByGroup = useMemo(() => {
-    const m = new Map<string, number>();
+    const billDue = new Map<string, number>();
+    const adv = new Map<string, number>();
     for (const r of rows) {
-      if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
-      m.set(k, (m.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
+      if (isAdvanceRow(r)) {
+        adv.set(k, (adv.get(k) ?? 0) + Number(r[paidCol] ?? 0));
+      } else {
+        billDue.set(k, (billDue.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
+      }
     }
+    const m = new Map<string, number>();
+    const keys = new Set<string>([...billDue.keys(), ...adv.keys()]);
+    keys.forEach((k) => {
+      const d = Math.max(billDue.get(k) ?? 0, 0);
+      const a = adv.get(k) ?? 0;
+      m.set(k, Math.max(d - a, 0));
+    });
     return m;
   }, [rows, groupField, billCol, paidCol]);
 
@@ -451,7 +462,14 @@ export function LedgerPage({ module: mod }: Props) {
         paid += Number(r[paidCol] ?? 0);
       }
     }
-    return { bill, paid, advance, due: Math.max(bill - paid, 0) };
+    const billDueRaw = Math.max(bill - paid, 0);
+    const applied = Math.min(advance, billDueRaw);
+    return {
+      bill,
+      paid: paid + applied,
+      advance: advance - applied,
+      due: billDueRaw - applied,
+    };
   }, [filtered, billCol, paidCol]);
 
   const groupSummary = useMemo(() => {
@@ -468,13 +486,17 @@ export function LedgerPage({ module: mod }: Props) {
       map.set(k, cur);
     }
     return Array.from(map.entries())
-      .map(([key, v]) => ({
-        key,
-        bill: v.bill,
-        paid: v.paid,
-        due: Math.max(v.bill - v.paid, 0),
-        advance: v.advance,
-      }))
+      .map(([key, v]) => {
+        const billDueRaw = Math.max(v.bill - v.paid, 0);
+        const applied = Math.min(v.advance, billDueRaw);
+        return {
+          key,
+          bill: v.bill,
+          paid: v.paid + applied,
+          due: billDueRaw - applied,
+          advance: v.advance - applied,
+        };
+      })
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol]);
 
