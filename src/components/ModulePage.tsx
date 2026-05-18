@@ -247,6 +247,10 @@ export function ModulePage({ module: mod }: Props) {
 
   const submit = async () => {
     if (saving) return; // Prevent double-submit
+    // Capture edit state at submit-time so re-renders can't lose the ID
+    const editRow = editing;
+    const editId = editRow?.id;
+    const isEdit = !!editId;
     setSaving(true);
     try {
       // Build payload, coerce types, drop empty optional dates.
@@ -265,7 +269,7 @@ export function ModulePage({ module: mod }: Props) {
       const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
 
       if (user?.id) {
-        if (!editing) (payload as Record<string, unknown>).created_by = user.id;
+        if (!isEdit) (payload as Record<string, unknown>).created_by = user.id;
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
       if (hasField("entry_by") && (!payload.entry_by || payload.entry_by === "User")) (payload as Record<string, unknown>).entry_by = me;
@@ -275,25 +279,32 @@ export function ModulePage({ module: mod }: Props) {
         if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
       }
 
-      const isEdit = !!editing;
-      const editId = editing?.id;
+      // Only generate a fresh ID for NEW rows. Never overwrite the id of an existing row.
       const finalId = !isEdit ? await generateNextId(mod) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
 
       if (isEdit && editId) {
-        const { error } = await supabase.from(mod.table as never).update(payload as never).eq("id", editId);
+        // STRICT EDIT PATH: UPDATE only — never insert a new row.
+        // Make sure no stray id column is in the payload that would target a different row.
+        delete (payload as Record<string, unknown>).id;
+        const { error } = await supabase
+          .from(mod.table as never)
+          .update(payload as never)
+          .eq("id", editId);
         if (error) throw error;
         setOpenForm(false);
+        setEditing(null);
         toast.success("আপডেট হয়েছে");
-        const prevStatus = String(editing?.status ?? "");
+        const prevStatus = String(editRow?.status ?? "");
         const newStatus = String((payload as Record<string, unknown>).status ?? "");
         if (newStatus && newStatus !== prevStatus && /deliver/i.test(newStatus)) {
           speakDelivery(String((payload as Record<string, unknown>).passenger_name ?? ""));
         }
-        if (recvAmount > 0 && Number(editing?.received ?? editing?.received_amount ?? editing?.paid_amount ?? 0) !== recvAmount) {
+        if (recvAmount > 0 && Number(editRow?.received ?? editRow?.received_amount ?? editRow?.paid_amount ?? 0) !== recvAmount) {
           speakReceived(recvAmount);
         }
       } else {
+        // INSERT PATH: only when no editing id was captured.
         const { error } = await supabase.from(mod.table as never).insert(payload as never);
         if (error) throw error;
         setOpenForm(false);
