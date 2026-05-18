@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { toast } from "sonner";
 import { Wallet, Plus, ArrowLeftRight, Lock, RefreshCw } from "lucide-react";
-import { generateNextId } from "@/lib/idgen";
+
 import { formatDate } from "@/lib/modules";
 
 export const Route = createFileRoute("/accounts-manager")({
