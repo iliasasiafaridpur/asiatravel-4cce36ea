@@ -636,47 +636,12 @@ export function LedgerPage({ module: mod }: Props) {
   }, [selectedLines]);
 
   // Write a single cash-drawer mirror entry for a bulk allocation.
-  const writeCashMirror = async (totalAmt: number, refId: string, allocSummary: string) => {
-    if (!user?.id) return;
-    const me = displayName(profile, user);
-    if (isAgency) {
-      const rid = await generateNextId({
-        key: "_rcpt", label: "", short: "", table: "payment_receipts",
-        idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
-      });
-      const { error } = await supabase.from("payment_receipts").insert({
-        receipt_id: rid,
-        entry_date: payDate,
-        service_type: "Agency Receive",
-        ref_id: refId,
-        passenger_name: payTarget,
-        amount: totalAmt,
-        method: payMethod,
-        source: "agency_ledger",
-        remarks: `${payRemarks ? payRemarks + " · " : ""}Alloc: ${allocSummary}`,
-        received_by: user.id,
-        received_by_name: me,
-        created_by: user.id,
-      } as never);
-      if (error) console.warn("payment_receipts mirror failed:", error);
-    } else {
-      const eid = await generateNextId({
-        key: "_exp", label: "", short: "", table: "cash_expenses",
-        idColumn: "expense_id", idPrefix: "EXP", monthlyId: true, fields: [],
-      });
-      const { error } = await supabase.from("cash_expenses").insert({
-        expense_id: eid,
-        entry_date: payDate,
-        category: "Vendor Payment",
-        purpose: `Vendor: ${payTarget}`,
-        amount: totalAmt,
-        remarks: `${payMethod}${payRemarks ? " · " + payRemarks : ""} · Alloc: ${allocSummary}`,
-        spent_by: user.id,
-        spent_by_name: me,
-        created_by: user.id,
-      } as never);
-      if (error) console.warn("cash_expenses mirror failed:", error);
-    }
+  // NOTE: Cash mirror is now handled automatically by database triggers
+  // (sync_vendor_payment_to_cash / sync_agent_receipt_to_cash) so manual
+  // insert into payment_receipts / cash_expenses is no longer needed.
+  // Kept as a no-op for backward compatibility with existing call sites.
+  const writeCashMirror = async (_totalAmt: number, _refId: string, _allocSummary: string) => {
+    return;
   };
 
   const submitPayment = async () => {
