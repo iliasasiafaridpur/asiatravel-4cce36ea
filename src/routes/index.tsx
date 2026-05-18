@@ -375,16 +375,18 @@ function DashboardPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Hero header */}
       <div className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4 bg-card border border-border/60 shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-6 flex-wrap">
-          <div className="flex flex-col w-fit">
-            <h1 className="text-2xl sm:text-4xl font-black text-foreground leading-none tracking-tight whitespace-nowrap">
-              Asia Travel
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-6">
+          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1">
+            <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)]">
+              ASIA TRAVEL
             </h1>
-            <h2 className="text-lg sm:text-xl font-bold text-foreground leading-tight whitespace-nowrap">
-              Management system
+            <h2 className="font-extrabold uppercase text-foreground/90 leading-tight tracking-wide text-[clamp(0.9rem,2.5vw,1.75rem)]">
+              MANAGEMENT SYSTEM
             </h2>
           </div>
-          <DigitalClock />
+          <div className="flex md:justify-end md:flex-shrink-0">
+            <DigitalClock />
+          </div>
         </div>
         <div className="flex justify-end">
           <Link to="/action-board">
