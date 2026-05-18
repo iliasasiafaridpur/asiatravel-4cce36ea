@@ -374,17 +374,19 @@ function DashboardPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Hero header */}
-      <div className="rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-3 bg-card border border-border/60 shadow-sm">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-foreground">
-            <Zap className="h-6 w-6 text-cyan-400" /> Smart Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">রিয়েল-টাইম আপডেট • সব মডিউলের সম্পূর্ণ সারাংশ</p>
-        </div>
-        <div className="flex justify-center">
+      <div className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4 bg-card border border-border/60 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-6 flex-wrap">
+          <div className="flex flex-col w-fit">
+            <h1 className="text-2xl sm:text-4xl font-black text-foreground leading-none tracking-tight whitespace-nowrap">
+              Asia Travel
+            </h1>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground leading-tight whitespace-nowrap">
+              Management system
+            </h2>
+          </div>
           <DigitalClock />
         </div>
-        <div className="flex-1 min-w-0 flex justify-end">
+        <div className="flex justify-end">
           <Link to="/action-board">
             <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
           </Link>
