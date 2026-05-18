@@ -513,6 +513,7 @@ export function LedgerPage({ module: mod }: Props) {
         paid = 0;
       for (const r of rows) {
         if (String(r[groupField] ?? "") !== key) continue;
+        if (String(r.service_type ?? "").toUpperCase() === "ADVANCE") continue;
         bill += Number(r[billCol] ?? 0);
         paid += Number(r[paidCol] ?? 0);
       }
