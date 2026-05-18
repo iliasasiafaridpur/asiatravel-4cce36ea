@@ -1849,9 +1849,9 @@ export function LedgerPage({ module: mod }: Props) {
                           <TableRow>
                             <TableHead className="text-xs">Date / ID</TableHead>
                             <TableHead className="text-xs">Passenger</TableHead>
-                            <TableHead className="text-right text-xs">Due</TableHead>
-                            <TableHead className="text-right text-xs">Pay</TableHead>
-                            <TableHead className="text-right text-xs">After</TableHead>
+                            <TableHead className="text-right text-xs">Due / বাকি</TableHead>
+                            <TableHead className="text-right text-xs">Paying Now / এখন দিচ্ছি</TableHead>
+                            <TableHead className="text-right text-xs">Remaining / অবশিষ্ট</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1877,11 +1877,11 @@ export function LedgerPage({ module: mod }: Props) {
                               </TableCell>
                               <TableCell className="text-right tabular-nums text-xs">
                                 {alloc >= due ? (
-                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">Paid</Badge>
+                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">✓ Cleared</Badge>
                                 ) : alloc > 0 ? (
-                                  <span className="text-amber-600">Partial: {(due - alloc).toLocaleString()}</span>
+                                  <span className="text-amber-600 font-semibold">৳ {(due - alloc).toLocaleString()} due</span>
                                 ) : (
-                                  <span className="text-muted-foreground">{due.toLocaleString()}</span>
+                                  <span className="text-rose-500">৳ {due.toLocaleString()} due</span>
                                 )}
                               </TableCell>
                             </TableRow>
@@ -1908,8 +1908,8 @@ export function LedgerPage({ module: mod }: Props) {
                           <TableHead className="w-8"></TableHead>
                           <TableHead className="text-xs">Date / ID</TableHead>
                           <TableHead className="text-xs">Passenger</TableHead>
-                          <TableHead className="text-right text-xs">Due</TableHead>
-                          <TableHead className="text-right text-xs w-32">Pay Amount</TableHead>
+                          <TableHead className="text-right text-xs">Due / বাকি</TableHead>
+                          <TableHead className="text-right text-xs w-32">Paying Now / এখন দিচ্ছি</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
