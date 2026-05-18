@@ -387,10 +387,15 @@ export function LedgerPage({ module: mod }: Props) {
 
   const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
 
-  // Net due per group across ALL rows — payments offset bills.
+  // ADVANCE rows are a standalone wallet — never net them against bill rows.
+  const isAdvanceRow = (r: Row) =>
+    String(r.service_type ?? "").toUpperCase() === "ADVANCE";
+
+  // Net due per group across BILL rows only. ADVANCE wallet is tracked separately.
   const dueByGroup = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of rows) {
+      if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
       m.set(k, (m.get(k) ?? 0) + Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0));
     }
