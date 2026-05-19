@@ -462,8 +462,8 @@ ${node.innerHTML.replace(
             <div className="flex items-center gap-1.5 flex-1 basis-full sm:basis-auto min-w-[240px]">
               <div className="relative flex-1">
                 <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="date"
+                <DateInput
+                  
                   value={dateFrom}
                   max={dateTo || undefined}
                   onChange={(e) => setDateFrom(e.target.value)}
@@ -474,8 +474,8 @@ ${node.innerHTML.replace(
               <span className="text-muted-foreground text-xs">→</span>
               <div className="relative flex-1">
                 <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="date"
+                <DateInput
+                  
                   value={dateTo}
                   min={dateFrom || undefined}
                   onChange={(e) => setDateTo(e.target.value)}
