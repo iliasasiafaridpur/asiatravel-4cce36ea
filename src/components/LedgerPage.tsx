@@ -154,6 +154,8 @@ export function LedgerPage({ module: mod }: Props) {
   const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
   // Advance payment toggle: when true, skip booking allocation and just record an ADVANCE entry
   const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
+  // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
+  const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
 
   const PAYMENT_METHODS = [
     "Cash",
