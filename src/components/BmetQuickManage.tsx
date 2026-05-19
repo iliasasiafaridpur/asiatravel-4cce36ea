@@ -61,7 +61,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const submit = async () => {
     const ids = Array.from(selected);
     if (ids.length === 0) { toast.error("কমপক্ষে একটি রেকর্ড সিলেক্ট করুন"); return; }
-    if (!vendor.trim()) { toast.error("Vendor সিলেক্ট করুন"); return; }
+    if (mode === "send" && !vendor.trim()) { toast.error("Vendor সিলেক্ট করুন"); return; }
 
     setSaving(true);
     try {
