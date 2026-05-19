@@ -307,13 +307,14 @@ export function ModulePage({ module: mod }: Props) {
         }
       } else {
         // INSERT PATH: only when no editing id was captured.
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
         setOpenForm(false);
-        toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+        if (!offline) {
+          toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+          speakModuleEntry(mod.key);
+          if (recvAmount > 0) speakReceived(recvAmount);
+        }
         clearDraft();
-        speakModuleEntry(mod.key);
-        if (recvAmount > 0) speakReceived(recvAmount);
       }
       void load();
     } catch (e: unknown) {
