@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Search } from "lucide-react";
+import { Save, Search, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { FormSections } from "@/components/ModulePage";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -172,7 +172,19 @@ function ActionBoardPage() {
             <FormSections mod={mod} form={form} setForm={setForm} />
           </div>
 
-          <div className="flex justify-end pt-2 border-t border-border">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                clearDraft();
+                setForm(emptyForm(category, me));
+                toast.success("ফর্ম খালি করা হয়েছে");
+              }}
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" /> CLEAR
+            </Button>
             <Button onClick={save} disabled={saving} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
               <Save className="h-4 w-4" /> {saving ? "Saving..." : "SAVE DATA"}
             </Button>
