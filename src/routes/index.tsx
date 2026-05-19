@@ -376,10 +376,7 @@ function DashboardPage() {
       {/* Hero header */}
       <div className="rounded-2xl p-3 sm:p-4 flex flex-col gap-2 bg-card border border-border/60 shadow-sm">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-4">
-          <div className="flex md:justify-start md:flex-shrink-0">
-            <DigitalClock />
-          </div>
-          <div className="flex flex-col min-w-0 w-full max-w-[19rem]">
+          <div className="flex flex-col min-w-0 w-full max-w-[19rem] md:flex-shrink-0">
             <h1 className="sr-only">ASIA TRAVELS MANAGEMENT SYSTEM</h1>
             <svg
               viewBox="0 0 100 22"
@@ -412,6 +409,9 @@ function DashboardPage() {
                 MANAGEMENT SYSTEM
               </text>
             </svg>
+          </div>
+          <div className="flex md:justify-center md:flex-1">
+            <DigitalClock />
           </div>
           <div className="flex md:justify-end md:flex-shrink-0">
             <Link to="/action-board">
