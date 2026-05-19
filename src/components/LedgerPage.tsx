@@ -571,6 +571,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayMode("fifo");
     setSelectedLines({});
     setPayAsAdvance(false);
+    setPayAsMdDeposit(false);
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
