@@ -152,6 +152,9 @@ function RootComponent() {
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
     void import("@/lib/register-sw").then(({ registerOfflineSW }) => registerOfflineSW());
+    void import("@/lib/global-fetch-interceptor").then(({ installGlobalFetchInterceptor }) =>
+      installGlobalFetchInterceptor(),
+    );
   }, []);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
