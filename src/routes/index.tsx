@@ -374,9 +374,12 @@ function DashboardPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Hero header */}
-      <div className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4 bg-card border border-border/60 shadow-sm">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-6">
-          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1 w-full max-w-[25.5rem]">
+      <div className="rounded-2xl p-3 sm:p-4 flex flex-col gap-2 bg-card border border-border/60 shadow-sm">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-4">
+          <div className="flex md:justify-start md:flex-shrink-0">
+            <DigitalClock />
+          </div>
+          <div className="flex flex-col min-w-0 w-full max-w-[19rem]">
             <h1 className="sr-only">ASIA TRAVELS MANAGEMENT SYSTEM</h1>
             <svg
               viewBox="0 0 100 22"
@@ -411,15 +414,13 @@ function DashboardPage() {
             </svg>
           </div>
           <div className="flex md:justify-end md:flex-shrink-0">
-            <DigitalClock />
+            <Link to="/action-board">
+              <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
+            </Link>
           </div>
         </div>
-        <div className="flex justify-end">
-          <Link to="/action-board">
-            <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
-          </Link>
-        </div>
       </div>
+
 
       {/* Filters */}
       <Card>
