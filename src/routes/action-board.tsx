@@ -112,12 +112,13 @@ function ActionBoardPage() {
 
       const newId = await generateNextId(mod);
       payload[mod.idColumn] = newId;
-      const { error } = await supabase.from(mod.table as never).insert(payload as never);
-      if (error) throw error;
+      const { offline } = await resilientInsert(mod.table, payload);
       window.clearTimeout(timeout);
-      toast.success(`Saved: ${newId}`);
-      speakModuleEntry(mod.key);
-      if (recvAmount > 0) speakReceived(recvAmount);
+      if (!offline) {
+        toast.success(`Saved: ${newId}`);
+        speakModuleEntry(mod.key);
+        if (recvAmount > 0) speakReceived(recvAmount);
+      }
       clearDraft();
       setForm(emptyForm(category, me));
     } catch (e) {
