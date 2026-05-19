@@ -253,6 +253,7 @@ export const MODULES: ModuleSchema[] = [
         label: "Country",
         type: "text",
         showInList: true,
+        filterable: true,
         lookup: "country",
         section: "passenger",
       },
