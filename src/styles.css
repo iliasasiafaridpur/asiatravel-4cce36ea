@@ -161,6 +161,35 @@
 .dark .row-tint-4 { background-color: oklch(0.26 0.025 160) !important; color: oklch(0.96 0.01 240) !important; }
 .dark .row-tint-5 { background-color: oklch(0.26 0.025 90) !important; color: oklch(0.96 0.01 240) !important; }
 
+/* Make the native date/time picker indicator clearly visible */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="week"]::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  /* Tint to primary blue so the icon stands out on light & dark backgrounds */
+  filter: invert(34%) sepia(94%) saturate(1352%) hue-rotate(202deg) brightness(95%) contrast(95%);
+  padding: 2px;
+  border-radius: 4px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover,
+input[type="week"]::-webkit-calendar-picker-indicator:hover {
+  background-color: hsl(var(--accent) / 0.4);
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="month"]::-webkit-calendar-picker-indicator,
+.dark input[type="week"]::-webkit-calendar-picker-indicator {
+  /* Lighter cyan tint for dark mode */
+  filter: invert(70%) sepia(60%) saturate(500%) hue-rotate(170deg) brightness(110%) contrast(95%);
+}
+
 @media print {
   body { background: white !important; background-image: none !important; color: black !important; }
   aside, nav, [data-sidebar], header.app-header { display: none !important; }
