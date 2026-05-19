@@ -15,14 +15,32 @@ function phoneToEmail(phone: string) {
   return `${clean}@asiatravel.local`;
 }
 
+// Best-effort synchronous check: is there ANY supabase auth token in
+// localStorage? If yes, we optimistically render children instead of a
+// blank "Loading…" screen while supabase.auth.getSession() resolves.
+function hasStoredSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) {
+        const v = window.localStorage.getItem(k);
+        if (v && v.length > 10) return true;
+      }
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
 export function AuthGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  // Optimistic: if a token exists locally, treat as ready immediately.
+  const [authReady, setAuthReady] = useState<boolean>(() => hasStoredSession());
+  const [optimisticSession] = useState<boolean>(() => hasStoredSession());
 
   useEffect(() => {
     let active = true;
 
-    // Background activation check — does NOT block UI.
     const checkActive = async (s: Session | null) => {
       if (!s?.user) return;
       try {
@@ -55,7 +73,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
+  // If we have a stored token, render children optimistically — the real
+  // session resolves in the background, and any 401s are handled per-query.
   if (!authReady) {
+    if (optimisticSession) return <>{children}</>;
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) return <LoginScreen />;
