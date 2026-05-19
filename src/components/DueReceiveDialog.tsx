@@ -230,23 +230,34 @@ export function DueReceiveDialog({
     setSaving(true);
     try {
       const me = displayName(profile, user);
-      // 1) update service row received column
+      // 1) update service row received column (resilient — queues if offline)
       const newRecv = selected.received + amt;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
       upd.received_by = user.id;
-      const { error: e1 } = await supabase
-        .from(selected.service.table as never)
-        .update(upd as never)
-        .eq("id", selected.id);
-      if (e1) throw e1;
+      const updRes = await resilientUpdate(
+        selected.service.table,
+        { id: selected.id },
+        upd,
+      );
 
       // 2) insert payment_receipts entry (history) — multiple allowed per row
-      const receiptId = await generateNextId({
-        key: "_rcpt", label: "", short: "", table: "payment_receipts",
-        idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
-      });
-      const { error: e2 } = await supabase.from("payment_receipts").insert({
+      // Generate receipt id locally if offline, server-style otherwise.
+      let receiptId: string;
+      try {
+        receiptId = await generateNextId({
+          key: "_rcpt", label: "", short: "", table: "payment_receipts",
+          idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+        });
+      } catch (e) {
+        if (!isNetworkError(e)) throw e;
+        const d = new Date();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yy = String(d.getFullYear()).slice(-2);
+        receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+      }
+
+      const insRes = await resilientInsert("payment_receipts", {
         receipt_id: receiptId,
         entry_date: new Date().toISOString().slice(0, 10),
         service_type: selected.service.type,
@@ -260,12 +271,14 @@ export function DueReceiveDialog({
         remarks: remarks || null,
         received_by: user.id,
         received_by_name: me,
-      } as never);
-      if (e2) throw e2;
+      });
 
-      toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+      const wasOffline = updRes.offline || insRes.offline;
+      if (!wasOffline) {
+        toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+      }
 
-      // update local state
+      // update local state (optimistic — same whether online or queued)
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
           ? { ...r, received: newRecv, due: r.sold - newRecv }
@@ -273,15 +286,18 @@ export function DueReceiveDialog({
       );
       const updated: DueRow = { ...selected, received: newRecv, due: selected.sold - newRecv };
       if (updated.due <= 0) {
-        // ফুল পেমেন্ট — ডায়লগ বন্ধ
         handleClose(false);
       } else {
         setSelected(updated);
-        setTab("history");
+        setTab(wasOffline ? "pay" : "history");
         setAmount("");
       }
     } catch (e) {
-      toast.error("সমস্যা: " + errMsg(e));
+      if (isNetworkError(e)) {
+        toast.success("ইন্টারনেট নেই! ডাটাটি কম্পিউটারে সুরক্ষিতভাবে অটো-সেভ করা হয়েছে।", { duration: 4000 });
+      } else {
+        toast.error("সমস্যা: " + errMsg(e));
+      }
     } finally {
       setSaving(false);
     }
