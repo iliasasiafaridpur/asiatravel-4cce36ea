@@ -92,14 +92,12 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
 
     setSaving(true);
     try {
-      let patch: Record<string, unknown> = {};
-      if (mode === "send") {
-        patch = { vendor_bought: vendor, vendor_sent_date: todayIso(), status: "File Process" };
-      } else if (mode === "ready") {
-        patch = { status: "Card Ready" };
-      } else {
-        patch = { status: "Ready For Delivery", received_date: todayIso() };
-      }
+      const patch =
+        mode === "send"
+          ? { vendor_bought: vendor, vendor_sent_date: todayIso(), status: "File Process" }
+          : mode === "ready"
+          ? { status: "Card Ready" }
+          : { status: "Ready For Delivery", received_date: todayIso() };
 
       const { error } = await supabase.from("bmet_cards").update(patch).in("id", ids);
       if (error) throw error;
