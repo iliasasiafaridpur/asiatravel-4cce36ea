@@ -168,14 +168,16 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
             </Table>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between pt-2 border-t">
-            <div className="space-y-1.5 flex-1 max-w-md">
-              <Label className="text-sm font-medium">Vendor</Label>
-              <LookupSelect kind="vendor" value={vendor} onChange={setVendor} compact />
-            </div>
+          <div className={`flex flex-col sm:flex-row gap-3 sm:items-end pt-2 border-t ${mode === "send" ? "sm:justify-between" : "sm:justify-end"}`}>
+            {mode === "send" && (
+              <div className="space-y-1.5 flex-1 max-w-md">
+                <Label className="text-sm font-medium">Vendor</Label>
+                <LookupSelect kind="vendor" value={vendor} onChange={setVendor} compact />
+              </div>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>বাতিল</Button>
-              <Button onClick={submit} disabled={saving || selected.size === 0 || !vendor}>
+              <Button onClick={submit} disabled={saving || selected.size === 0 || (mode === "send" && !vendor)}>
                 {saving ? "প্রসেস হচ্ছে..." : (mode === "send" ? "Send" : "Receive Summary")}
               </Button>
             </div>
