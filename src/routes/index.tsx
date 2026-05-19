@@ -376,25 +376,35 @@ function DashboardPage() {
       {/* Hero header */}
       <div className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4 bg-card border border-border/60 shadow-sm">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-6">
-          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1 w-fit">
-            <h1 className="font-black uppercase text-foreground leading-[0.95] tracking-tight text-[clamp(2rem,7vw,5rem)] w-fit">
-              ASIA TRAVEL
-            </h1>
+          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1 w-full max-w-[34rem]">
+            <h1 className="sr-only">ASIA TRAVELS MANAGEMENT SYSTEM</h1>
             <svg
-              viewBox="0 0 100 16"
+              viewBox="0 0 100 22"
               preserveAspectRatio="xMidYMid meet"
-              className="block w-full text-foreground/90"
-              aria-label="MANAGEMENT SYSTEM"
+              className="block w-full text-foreground"
+              aria-hidden="true"
             >
               <text
                 x="0"
-                y="13"
+                y="11"
                 textLength="100"
                 lengthAdjust="spacingAndGlyphs"
-                fontSize="14"
+                fontSize="13"
                 fontWeight="900"
                 fill="currentColor"
-                style={{ fontFamily: "inherit", letterSpacing: "-0.02em" }}
+                style={{ fontFamily: "inherit" }}
+              >
+                ASIA TRAVELS
+              </text>
+              <text
+                x="0"
+                y="21"
+                textLength="100"
+                lengthAdjust="spacingAndGlyphs"
+                fontSize="9"
+                fontWeight="900"
+                fill="currentColor"
+                style={{ fontFamily: "inherit" }}
               >
                 MANAGEMENT SYSTEM
               </text>
