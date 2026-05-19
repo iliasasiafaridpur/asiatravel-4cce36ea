@@ -39,7 +39,7 @@ export interface DateInputProps {
 }
 
 export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
-  ({ value, onChange, className, placeholder, id, disabled }, ref) => {
+  ({ value, onChange, className, placeholder, id, disabled, min, max, ...rest }, ref) => {
     const [open, setOpen] = React.useState(false);
     const selected = isoToDate(value);
     const display = toDMY(value);
