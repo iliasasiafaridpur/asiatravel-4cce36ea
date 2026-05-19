@@ -1,6 +1,7 @@
 import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, type ModuleSchema, type Field } from "@/lib/modules";
 import { LookupSelect } from "@/components/LookupSelect";
