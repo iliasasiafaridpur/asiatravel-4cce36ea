@@ -151,6 +151,7 @@ function RootComponent() {
   const [dark, setDark] = useState(true);
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
+    void import("@/lib/register-sw").then(({ registerOfflineSW }) => registerOfflineSW());
   }, []);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
