@@ -1637,13 +1637,26 @@ export function LedgerPage({ module: mod }: Props) {
               );
             })()}
           <FormSections mod={formMod} form={form} setForm={setForm} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenForm(false)}>
-              বাতিল
+          <DialogFooter className="sm:justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setForm(emptyForm(mod));
+                toast.success("ফর্ম খালি করা হয়েছে");
+              }}
+              className="gap-1.5"
+            >
+              <RotateCcw className="h-4 w-4" /> CLEAR
             </Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving ? "সেভ হচ্ছে..." : "সেভ"}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setOpenForm(false)}>
+                বাতিল
+              </Button>
+              <Button onClick={submit} disabled={saving}>
+                {saving ? "সেভ হচ্ছে..." : "সেভ"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
