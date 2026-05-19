@@ -59,16 +59,31 @@ export const getRouter = () => {
   });
 
   // Persist react-query cache to localStorage so navigation between pages
-  // renders instantly from cache on next visit.
+  // renders instantly from cache on next visit. Keep this BOUNDED — a huge
+  // cache freezes the main thread on first paint.
   if (typeof window !== "undefined") {
     void import("@tanstack/query-sync-storage-persister").then(({ createSyncStoragePersister }) => {
       void import("@tanstack/react-query-persist-client").then(({ persistQueryClient }) => {
         try {
+          // Hard-cap stored cache to ~1.5 MB; drop if exceeded to avoid jank.
+          const MAX_BYTES = 1_500_000;
+          const persister = createSyncStoragePersister({
+            storage: window.localStorage,
+            key: "rq_cache_v2",
+            serialize: (data) => {
+              const s = JSON.stringify(data);
+              return s.length > MAX_BYTES ? "" : s;
+            },
+            deserialize: (s) => (s ? JSON.parse(s) : undefined),
+          });
+          // One-time cleanup of older cache key
+          try { window.localStorage.removeItem("rq_cache_v1"); } catch { /* ignore */ }
           persistQueryClient({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             queryClient: queryClient as any,
-            persister: createSyncStoragePersister({ storage: window.localStorage, key: "rq_cache_v1" }),
-            maxAge: 24 * 60 * 60 * 1000,
+            persister,
+            maxAge: 6 * 60 * 60 * 1000, // 6h is plenty; was 24h
+            buster: "v2",
           });
         } catch { /* persistence is best-effort */ }
       });
