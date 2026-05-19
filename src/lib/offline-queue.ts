@@ -1,7 +1,7 @@
-// Offline-resilient insert queue. Stored in localStorage so it survives
-// PC shutdown / browser restart. Source of truth for auto-sync. A JSON
-// backup file is also downloaded to the user's Downloads folder as a
-// human-readable safety net (browsers cannot read it back automatically).
+// Offline-resilient insert/update queue. Stored in localStorage so it
+// survives PC shutdown / browser restart. Source of truth for auto-sync.
+// A JSON backup file is also downloaded to the user's Downloads folder as
+// a human-readable safety net.
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,10 +9,15 @@ import { toast } from "sonner";
 const STORAGE_KEY = "offline_queue_v1";
 const EVT = "offline-queue:updated";
 
+export type QueueOp = "insert" | "update";
+
 export type QueueItem = {
   id: string;
+  op?: QueueOp; // default: insert (back-compat)
   table: string;
   payload: Record<string, unknown>;
+  /** For updates: equality filters, e.g. { id: "..." } */
+  match?: Record<string, unknown>;
   created_at: string; // ISO
   attempts: number;
   last_error?: string;
@@ -60,7 +65,7 @@ function downloadBackup(item: QueueItem) {
   } catch { /* ignore download failure */ }
 }
 
-function isNetworkError(e: unknown): boolean {
+export function isNetworkError(e: unknown): boolean {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
   if (e instanceof TypeError) return true; // fetch failed
   const msg = (e as { message?: string } | null)?.message?.toLowerCase() ?? "";
@@ -85,7 +90,7 @@ export async function resilientInsert(
     const { error } = await (supabase.from(table as any) as any).insert(payload);
     if (error) {
       if (isNetworkError(error)) {
-        enqueue(table, payload);
+        enqueue({ op: "insert", table, payload });
         return { offline: true };
       }
       throw error;
@@ -93,18 +98,52 @@ export async function resilientInsert(
     return { offline: false };
   } catch (e) {
     if (isNetworkError(e)) {
-      enqueue(table, payload);
+      enqueue({ op: "insert", table, payload });
       return { offline: true };
     }
     throw e;
   }
 }
 
-function enqueue(table: string, payload: Record<string, unknown>) {
+/**
+ * Update that survives network failures. `match` is an equality filter map.
+ */
+export async function resilientUpdate(
+  table: string,
+  match: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Promise<{ offline: boolean }> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = (supabase.from(table as any) as any).update(patch);
+    for (const [k, v] of Object.entries(match)) q = q.eq(k, v);
+    const { error } = await q;
+    if (error) {
+      if (isNetworkError(error)) {
+        enqueue({ op: "update", table, payload: patch, match });
+        return { offline: true };
+      }
+      throw error;
+    }
+    return { offline: false };
+  } catch (e) {
+    if (isNetworkError(e)) {
+      enqueue({ op: "update", table, payload: patch, match });
+      return { offline: true };
+    }
+    throw e;
+  }
+}
+
+function enqueue(
+  partial: Pick<QueueItem, "table" | "payload"> & Partial<Pick<QueueItem, "op" | "match">>,
+) {
   const item: QueueItem = {
     id: uid(),
-    table,
-    payload,
+    op: partial.op ?? "insert",
+    table: partial.table,
+    payload: partial.payload,
+    match: partial.match,
     created_at: new Date().toISOString(),
     attempts: 0,
   };
@@ -116,6 +155,17 @@ function enqueue(table: string, payload: Record<string, unknown>) {
 }
 
 let draining = false;
+
+async function runItem(item: QueueItem) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const t: any = supabase.from(item.table as any);
+  if ((item.op ?? "insert") === "update") {
+    let q = t.update(item.payload);
+    for (const [k, v] of Object.entries(item.match ?? {})) q = q.eq(k, v);
+    return q;
+  }
+  return t.insert(item.payload);
+}
 
 export async function drainQueue(
   onProgress?: (remaining: number, total: number) => void,
@@ -129,15 +179,13 @@ export async function drainQueue(
     while (q.length > 0) {
       const item = q[0];
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from(item.table as any) as any).insert(item.payload);
+        const { error } = await runItem(item);
         if (error) {
           if (isNetworkError(error)) throw error; // stop draining; retry later
           // Real DB error — drop after marking. Keep going.
           item.attempts += 1;
           item.last_error = (error as { message?: string }).message ?? String(error);
           failed += 1;
-          // Remove poisoned record so it doesn't block sync forever
           const all = read().filter((x) => x.id !== item.id);
           write(all);
         } else {
@@ -146,10 +194,7 @@ export async function drainQueue(
           write(all);
         }
       } catch (e) {
-        if (isNetworkError(e)) {
-          // Network died mid-drain — bail; will retry on next online event.
-          break;
-        }
+        if (isNetworkError(e)) break;
         failed += 1;
         const all = read().filter((x) => x.id !== item.id);
         write(all);
