@@ -700,9 +700,8 @@ export function LedgerPage({ module: mod }: Props) {
           remarks: `MD Sir External Deposit${payRemarks ? " · " + payRemarks : ""}`,
           created_by: user?.id ?? null,
         };
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
-        toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
         setPayOpen(false);
         void load();
         return;
