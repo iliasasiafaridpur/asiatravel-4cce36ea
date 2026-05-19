@@ -73,6 +73,13 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
               onChange?.({ target: { value: d ? dateToIso(d) : "" } });
               if (d) setOpen(false);
             }}
+            disabled={(d) => {
+              const minD = isoToDate(min);
+              const maxD = isoToDate(max);
+              if (minD && d < minD) return true;
+              if (maxD && d > maxD) return true;
+              return false;
+            }}
             captionLayout="dropdown"
             initialFocus
             className="p-3 pointer-events-auto"
