@@ -1,6 +1,8 @@
 import * as React from "react";
-import { Calendar } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 function toDMY(iso: string | undefined | null): string {
@@ -10,105 +12,95 @@ function toDMY(iso: string | undefined | null): string {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-function parseDMY(text: string): string | null {
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text.trim());
-  if (!m) return null;
-  const dd = m[1].padStart(2, "0");
-  const mm = m[2].padStart(2, "0");
-  const yyyy = m[3];
-  const d = Number(dd), mo = Number(mm), y = Number(yyyy);
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900) return null;
-  return `${yyyy}-${mm}-${dd}`;
+function isoToDate(iso: string | undefined | null): Date | undefined {
+  if (!iso) return undefined;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return undefined;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
-export interface DateInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "onChange" | "value"> {
+function dateToIso(d: Date): string {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${da}`;
+}
+
+export interface DateInputProps {
   value?: string;
   onChange?: (e: { target: { value: string } }) => void;
+  className?: string;
+  placeholder?: string;
+  id?: string;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  "aria-label"?: string;
 }
 
-export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
-  ({ value, onChange, className, placeholder, ...rest }, ref) => {
-    const [text, setText] = React.useState<string>(toDMY(value));
-    const pickerRef = React.useRef<HTMLInputElement>(null);
-
-    React.useEffect(() => {
-      setText(toDMY(value));
-    }, [value]);
-
-    const emit = (iso: string) => {
-      onChange?.({ target: { value: iso } });
-    };
-
-    const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const t = e.target.value;
-      setText(t);
-      if (t === "") { emit(""); return; }
-      const iso = parseDMY(t);
-      if (iso) emit(iso);
-    };
-
-    const handleBlur = () => {
-      if (text === "") return;
-      const iso = parseDMY(text);
-      if (iso) setText(toDMY(iso));
-      else setText(toDMY(value));
-    };
-
-    const openPicker = () => {
-      const el = pickerRef.current;
-      if (!el) return;
-      // @ts-ignore showPicker may not be typed
-      if (typeof el.showPicker === "function") el.showPicker();
-      else el.click();
-    };
+export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
+  ({ value, onChange, className, placeholder, id, disabled, min, max, ...rest }, ref) => {
+    const [open, setOpen] = React.useState(false);
+    const selected = isoToDate(value);
+    const display = toDMY(value);
 
     return (
-      <div className="relative w-full">
-        <Input
-          ref={ref}
-          type="text"
-          inputMode="numeric"
-          value={text}
-          onChange={handleTextChange}
-          onBlur={handleBlur}
-          onClick={openPicker}
-          onFocus={openPicker}
-          readOnly
-          placeholder={placeholder ?? "DD/MM/YYYY"}
-          className={cn("pr-10 cursor-pointer", className)}
-          {...rest}
-        />
-        <button
-          type="button"
-          onClick={openPicker}
-          tabIndex={-1}
-          aria-label="Pick date"
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-primary hover:text-primary/80"
-        >
-          <Calendar className="h-4 w-4" />
-        </button>
-        <input
-          ref={pickerRef}
-          type="date"
-          value={value ?? ""}
-          onChange={(e) => {
-            setText(toDMY(e.target.value));
-            emit(e.target.value);
-          }}
-          tabIndex={-1}
-          aria-hidden
-          style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            width: 0,
-            height: 0,
-            opacity: 0,
-            pointerEvents: "none",
-          }}
-        />
-      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            ref={ref}
+            id={id}
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            className={cn(
+              "h-9 w-full justify-between font-normal px-3 cursor-pointer",
+              !display && "text-muted-foreground",
+              className,
+            )}
+            {...rest}
+          >
+
+            <span>{display || placeholder || "DD/MM/YYYY"}</span>
+            <CalendarIcon className="h-4 w-4 text-primary opacity-80" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(d) => {
+              onChange?.({ target: { value: d ? dateToIso(d) : "" } });
+              if (d) setOpen(false);
+            }}
+            disabled={(d) => {
+              const minD = isoToDate(min);
+              const maxD = isoToDate(max);
+              if (minD && d < minD) return true;
+              if (maxD && d > maxD) return true;
+              return false;
+            }}
+            captionLayout="dropdown"
+            initialFocus
+            className="p-3 pointer-events-auto"
+          />
+          {value ? (
+            <div className="flex justify-end border-t p-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onChange?.({ target: { value: "" } });
+                  setOpen(false);
+                }}
+              >
+                Clear
+              </Button>
+            </div>
+          ) : null}
+        </PopoverContent>
+      </Popover>
     );
   },
 );
