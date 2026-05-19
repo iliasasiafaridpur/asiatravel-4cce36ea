@@ -728,10 +728,11 @@ export function LedgerPage({ module: mod }: Props) {
           created_by: user?.id ?? null,
         };
         if (isAgency) payload.received_by = user?.id ?? null;
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
-        await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
-        toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) {
+          await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
+          toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+        }
         setPayOpen(false);
         void load();
         return;
