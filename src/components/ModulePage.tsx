@@ -66,6 +66,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
+    else if (field.lookup === "sub_agency") f[field.name] = "Self";
     else f[field.name] = "";
   }
   return f;
@@ -430,6 +431,7 @@ export function ModulePage({ module: mod }: Props) {
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+              {r.notes ? <div className="text-[11px] text-muted-foreground italic mt-1 max-w-[220px] whitespace-pre-wrap"><span className="opacity-60">Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
@@ -478,6 +480,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {r.notes ? <div className="text-[11px] text-muted-foreground italic mt-1 max-w-[220px] whitespace-pre-wrap"><span className="opacity-60">Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
@@ -528,6 +531,7 @@ export function ModulePage({ module: mod }: Props) {
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+              {r.notes ? <div className="text-[11px] text-muted-foreground italic mt-1 max-w-[220px] whitespace-pre-wrap"><span className="opacity-60">Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
@@ -590,9 +594,26 @@ export function ModulePage({ module: mod }: Props) {
             </DialogHeader>
             <FormSections mod={mod} form={form} setForm={setForm} />
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
-              <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
+            <DialogFooter className="sm:justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const f = emptyForm(mod);
+                  if (mod.fields.some((fld) => fld.name === "entry_by")) {
+                    f.entry_by = displayName(profile, user);
+                  }
+                  setForm(f);
+                  toast.success("ফর্ম খালি করা হয়েছে");
+                }}
+                className="gap-1.5"
+              >
+                <RotateCcw className="h-4 w-4" /> CLEAR
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
+                <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>

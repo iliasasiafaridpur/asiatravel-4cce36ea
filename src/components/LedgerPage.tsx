@@ -76,6 +76,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
     if (field.type === "number") f[field.name] = 0;
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
+    else if (field.lookup === "sub_agency") f[field.name] = "Self";
     else f[field.name] = "";
   }
   return f;
@@ -1636,13 +1637,26 @@ export function LedgerPage({ module: mod }: Props) {
               );
             })()}
           <FormSections mod={formMod} form={form} setForm={setForm} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenForm(false)}>
-              বাতিল
+          <DialogFooter className="sm:justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setForm(emptyForm(mod));
+                toast.success("ফর্ম খালি করা হয়েছে");
+              }}
+              className="gap-1.5"
+            >
+              <RotateCcw className="h-4 w-4" /> CLEAR
             </Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving ? "সেভ হচ্ছে..." : "সেভ"}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setOpenForm(false)}>
+                বাতিল
+              </Button>
+              <Button onClick={submit} disabled={saving}>
+                {saving ? "সেভ হচ্ছে..." : "সেভ"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

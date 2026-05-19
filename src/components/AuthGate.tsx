@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plane, LogOut } from "lucide-react";
+import { Plane, LogOut, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 
@@ -114,6 +114,7 @@ function LoginScreen() {
 function LoginForm() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -137,8 +138,21 @@ function LoginForm() {
       </div>
       <div className="space-y-1">
         <Label htmlFor="pw">পাসওয়ার্ড</Label>
-        <Input id="pw" type="password" required value={password}
-          onChange={(e) => setPassword(e.target.value)} />
+        <div className="relative">
+          <Input id="pw" type={showPw ? "text" : "password"} required value={password}
+            className="pr-10"
+            onChange={(e) => setPassword(e.target.value)} />
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            tabIndex={-1}
+            aria-label={showPw ? "Hide password" : "Show password"}
+            title={showPw ? "Hide password" : "Show password"}
+          >
+            {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy ? "Signing in…" : "Sign In"}
