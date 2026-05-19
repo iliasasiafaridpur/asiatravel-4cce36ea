@@ -1,6 +1,7 @@
 import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, type ModuleSchema, type Field } from "@/lib/modules";
 import { LookupSelect } from "@/components/LookupSelect";
@@ -699,9 +700,8 @@ export function LedgerPage({ module: mod }: Props) {
           remarks: `MD Sir External Deposit${payRemarks ? " · " + payRemarks : ""}`,
           created_by: user?.id ?? null,
         };
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
-        toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
         setPayOpen(false);
         void load();
         return;
@@ -728,10 +728,11 @@ export function LedgerPage({ module: mod }: Props) {
           created_by: user?.id ?? null,
         };
         if (isAgency) payload.received_by = user?.id ?? null;
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
-        await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
-        toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) {
+          await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
+          toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+        }
         setPayOpen(false);
         void load();
         return;
@@ -860,9 +861,8 @@ export function LedgerPage({ module: mod }: Props) {
         toast.success("আপডেট হয়েছে");
       } else {
         // No id → INSERT new
-        const { error } = await supabase.from(mod.table as never).insert(payload as never);
-        if (error) throw error;
-        toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) toast.success(`✓ যোগ হয়েছে: ${finalId}`);
       }
       setOpenForm(false);
       setEditing(null);

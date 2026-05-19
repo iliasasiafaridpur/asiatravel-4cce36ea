@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { supabase } from "@/integrations/supabase/client";
+import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -112,12 +113,13 @@ function ActionBoardPage() {
 
       const newId = await generateNextId(mod);
       payload[mod.idColumn] = newId;
-      const { error } = await supabase.from(mod.table as never).insert(payload as never);
-      if (error) throw error;
+      const { offline } = await resilientInsert(mod.table, payload);
       window.clearTimeout(timeout);
-      toast.success(`Saved: ${newId}`);
-      speakModuleEntry(mod.key);
-      if (recvAmount > 0) speakReceived(recvAmount);
+      if (!offline) {
+        toast.success(`Saved: ${newId}`);
+        speakModuleEntry(mod.key);
+        if (recvAmount > 0) speakReceived(recvAmount);
+      }
       clearDraft();
       setForm(emptyForm(category, me));
     } catch (e) {
