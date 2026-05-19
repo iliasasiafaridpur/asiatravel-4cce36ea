@@ -9,7 +9,7 @@ import { toast } from "sonner";
 const STORAGE_KEY = "offline_queue_v1";
 const EVT = "offline-queue:updated";
 
-export type QueueOp = "insert" | "update";
+export type QueueOp = "insert" | "update" | "raw";
 
 export type QueueItem = {
   id: string;
@@ -18,6 +18,13 @@ export type QueueItem = {
   payload: Record<string, unknown>;
   /** For updates: equality filters, e.g. { id: "..." } */
   match?: Record<string, unknown>;
+  /** For raw HTTP replay (global fetch interceptor) */
+  raw?: {
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body: string | null;
+  };
   created_at: string; // ISO
   attempts: number;
   last_error?: string;
@@ -74,6 +81,14 @@ export function isNetworkError(e: unknown): boolean {
 
 function uid() {
   return `q_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+let lastToastAt = 0;
+function offlineToast() {
+  const now = Date.now();
+  if (now - lastToastAt < 1500) return; // de-dupe rapid bursts
+  lastToastAt = now;
+  toast.success("ইন্টারনেট নেই! ডাটাটি কম্পিউটারে সুরক্ষিতভাবে অটো-সেভ করা হয়েছে।", { duration: 4000 });
 }
 
 /**
@@ -136,14 +151,17 @@ export async function resilientUpdate(
 }
 
 function enqueue(
-  partial: Pick<QueueItem, "table" | "payload"> & Partial<Pick<QueueItem, "op" | "match">>,
+  partial:
+    | (Pick<QueueItem, "table" | "payload"> & Partial<Pick<QueueItem, "op" | "match">>)
+    | { op: "raw"; table: string; payload: Record<string, unknown>; raw: QueueItem["raw"] },
 ) {
   const item: QueueItem = {
     id: uid(),
     op: partial.op ?? "insert",
     table: partial.table,
     payload: partial.payload,
-    match: partial.match,
+    match: (partial as { match?: Record<string, unknown> }).match,
+    raw: (partial as { raw?: QueueItem["raw"] }).raw,
     created_at: new Date().toISOString(),
     attempts: 0,
   };
@@ -151,12 +169,32 @@ function enqueue(
   q.push(item);
   write(q);
   downloadBackup(item);
-  toast.success("ইন্টারনেট নেই! ডাটাটি কম্পিউটারে সুরক্ষিতভাবে অটো-সেভ করা হয়েছে।", { duration: 4000 });
+  offlineToast();
+}
+
+/** Public: enqueue a raw HTTP request (used by global fetch interceptor). */
+export function enqueueRaw(
+  table: string,
+  payload: Record<string, unknown>,
+  raw: NonNullable<QueueItem["raw"]>,
+) {
+  enqueue({ op: "raw", table, payload, raw });
 }
 
 let draining = false;
 
 async function runItem(item: QueueItem) {
+  if (item.op === "raw" && item.raw) {
+    const res = await fetch(item.raw.url, {
+      method: item.raw.method,
+      headers: item.raw.headers,
+      body: item.raw.body,
+    });
+    if (!res.ok) {
+      return { error: { message: `HTTP ${res.status}: ${await res.text().catch(() => "")}` } };
+    }
+    return { error: null };
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t: any = supabase.from(item.table as any);
   if ((item.op ?? "insert") === "update") {
