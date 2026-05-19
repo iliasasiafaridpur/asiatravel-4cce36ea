@@ -11,5 +11,5 @@ export const statusStyle: Record<Status, string> = {
 };
 
 export function formatDate(date: string | Date) {
-  return format(new Date(date), "dd/MM/yyyy");
+  return format(new Date(date), "dd-MMM-yyyy").toUpperCase();
 }
