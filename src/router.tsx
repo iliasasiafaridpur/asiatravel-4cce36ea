@@ -44,7 +44,35 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 
 export const getRouter = () => {
   installStaleAssetRecoveryListeners();
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Stale-While-Revalidate: serve cache instantly, refetch in background
+        staleTime: 30_000,
+        gcTime: 24 * 60 * 60 * 1000, // keep cache for 24h
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        retry: 1,
+      },
+    },
+  });
+
+  // Persist react-query cache to localStorage so navigation between pages
+  // renders instantly from cache on next visit.
+  if (typeof window !== "undefined") {
+    void import("@tanstack/query-sync-storage-persister").then(({ createSyncStoragePersister }) => {
+      void import("@tanstack/react-query-persist-client").then(({ persistQueryClient }) => {
+        try {
+          persistQueryClient({
+            queryClient,
+            persister: createSyncStoragePersister({ storage: window.localStorage, key: "rq_cache_v1" }),
+            maxAge: 24 * 60 * 60 * 1000,
+          });
+        } catch { /* persistence is best-effort */ }
+      });
+    });
+  }
 
   const router = createRouter({
     routeTree,
