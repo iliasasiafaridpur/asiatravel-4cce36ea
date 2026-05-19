@@ -108,11 +108,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
           >
             <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
               <RadioGroupItem value="send" id="qm-send" />
-              <span className="text-sm font-medium">একাধিক BMET vendor কে Send করো</span>
+              <span className="text-sm font-medium">একাধিক BMET, vendor কে Send করো</span>
             </label>
             <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
               <RadioGroupItem value="receive" id="qm-recv" />
-              <span className="text-sm font-medium">একাধিক BMET vendor থেকে Receive করো</span>
+              <span className="text-sm font-medium">একাধিক BMET, vendor থেকে Receive করো</span>
             </label>
           </RadioGroup>
 
