@@ -675,6 +675,37 @@ export function LedgerPage({ module: mod }: Props) {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
     try {
+      // ---------- MD Sir External Deposit (vendor advance, no cash/bank impact) ----------
+      if (payAsMdDeposit && !payRow && !isAgency) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        const ledgerId = await generateNextId({
+          key: mod.key, label: "", short: "", table: mod.table,
+          idColumn: mod.idColumn, idPrefix: "VDL",
+          monthlyId: true, fields: [],
+        });
+        const payload: Record<string, unknown> = {
+          [mod.idColumn]: ledgerId,
+          entry_date: payDate,
+          [groupField]: payTarget,
+          service_type: "ADVANCE",
+          [billCol]: 0,
+          [paidCol]: amt,
+          payment_method: "MD Sir Deposit",
+          // Setting source_table makes sync_vendor_payment_to_cash skip the
+          // cash_expenses mirror — so system Cash/Bank balances are untouched.
+          source_table: "md_deposit",
+          remarks: `MD Sir External Deposit${payRemarks ? " · " + payRemarks : ""}`,
+          created_by: user?.id ?? null,
+        };
+        const { error } = await supabase.from(mod.table as never).insert(payload as never);
+        if (error) throw error;
+        toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
+        setPayOpen(false);
+        void load();
+        return;
+      }
+
       // ---------- Advance Payment (no booking allocation) ----------
       if (payAsAdvance && !payRow) {
         const amt = Number(payAmount);
