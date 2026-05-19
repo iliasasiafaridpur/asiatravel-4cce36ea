@@ -177,6 +177,7 @@ function RootComponent() {
           </div>
         </SidebarProvider>
       </AuthGate>
+      <OfflineSyncManager />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
