@@ -60,7 +60,7 @@ const STATUS_VISA = [
   "Delivered",
   "Cancelled",
 ];
-const STATUS_BMET = ["File Process", "Card Ready", "Ready for Delivery", "Delivered"];
+const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Ready For Delivery"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
