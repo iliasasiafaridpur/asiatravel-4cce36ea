@@ -531,6 +531,7 @@ export function ModulePage({ module: mod }: Props) {
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+              {r.notes ? <div className="text-[11px] text-muted-foreground italic mt-1 max-w-[220px] whitespace-pre-wrap"><span className="opacity-60">Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
