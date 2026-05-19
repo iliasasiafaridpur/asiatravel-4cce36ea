@@ -1827,7 +1827,7 @@ export function LedgerPage({ module: mod }: Props) {
                   checked={payAsAdvance}
                   onCheckedChange={(c) => {
                     setPayAsAdvance(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); }
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); }
                   }}
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
@@ -1839,11 +1839,31 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             )}
 
-            {/* Advance amount input (when advance toggle ON) */}
-            {!payRow && payTarget && payAsAdvance && (
+            {/* Mark as Vendor Deposit From MD Sir — vendor ledger only, bulk mode */}
+            {!payRow && payTarget && !isAgency && (
+              <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5">
+                <Checkbox
+                  id="payAsMdDeposit"
+                  checked={payAsMdDeposit}
+                  onCheckedChange={(c) => {
+                    setPayAsMdDeposit(!!c);
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); }
+                  }}
+                />
+                <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
+                  Mark as Vendor Deposit From MD Sir
+                  <span className="block text-[11px] text-muted-foreground font-normal">
+                    Vendor কে Advance Deposit করুন- লেজারের বাহিরের টাকা থেকে। (Cash/Bank balance অপরিবর্তিত থাকবে)
+                  </span>
+                </Label>
+              </div>
+            )}
+
+            {/* Advance amount input (when advance OR MD deposit toggle ON) */}
+            {!payRow && payTarget && (payAsAdvance || payAsMdDeposit) && (
               <div className="space-y-1.5">
                 <Label className="text-xs">
-                  Advance Amount <span className="text-rose-500">*</span>
+                  {payAsMdDeposit ? "MD Sir Deposit Amount" : "Advance Amount"} <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   type="number"
@@ -1856,8 +1876,8 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             )}
 
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance */}
-            {!payRow && payTarget && !payAsAdvance && (
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance/MD deposit */}
+            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
