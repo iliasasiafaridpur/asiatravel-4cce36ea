@@ -623,54 +623,53 @@ export function ModulePage({ module: mod }: Props) {
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {hasDateFilter && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Start Date</Label>
-                    <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-base" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">End Date</Label>
-                    <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-base" />
-                  </div>
-                </>
-              )}
-              {filterFields.map((f) => {
-                const opts = Array.from(new Set([
-                  ...(f.lookupDefaults ?? []),
-                  ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
-                ])).sort();
-                return (
-                  <div key={f.name} className="space-y-1.5">
-                    <Label className="text-sm font-medium">{f.label}</Label>
-                    <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
-                      <SelectTrigger className="h-10 text-base"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="inline-flex flex-wrap gap-2 items-center">
+                {hasDateFilter && (
+                  <>
+                    <div className="space-y-1 w-36">
+                      <Label className="text-xs font-medium">Start Date</Label>
+                      <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 text-base" />
+                    </div>
+                    <div className="space-y-1 w-36">
+                      <Label className="text-xs font-medium">End Date</Label>
+                      <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 text-base" />
+                    </div>
+                  </>
+                )}
+                {filterFields.map((f) => {
+                  const opts = Array.from(new Set([
+                    ...(f.lookupDefaults ?? []),
+                    ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
+                  ])).sort();
+                  return (
+                    <div key={f.name} className="space-y-1 w-36">
+                      <Label className="text-xs font-medium">{f.label}</Label>
+                      <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
+                        <SelectTrigger className="h-9 text-base"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">সব {f.label}</SelectItem>
+                          {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
+                {mod.statuses && (
+                  <div className="space-y-1 w-36">
+                    <Label className="text-xs font-medium">Status</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-9 text-base"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">সব {f.label}</SelectItem>
-                        {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        <SelectItem value="all">সব Status</SelectItem>
+                        {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                );
-              })}
-              {mod.statuses && (
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Status</Label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-10 text-base"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">সব Status</SelectItem>
-                      {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-1.5 flex flex-col">
-                <Label className="text-sm font-medium opacity-0 hidden sm:block">.</Label>
-                <div className="flex gap-2">
+                )}
+                <div className="flex items-center gap-2">
                   {mod.computed?.some((c) => c.name === "balance") && (
-                    <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-10 gap-1.5 flex-1">
+                    <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 gap-1.5">
                       <Wallet className="h-4 w-4" /> শুধু Due
                     </Button>
                   )}
@@ -681,16 +680,18 @@ export function ModulePage({ module: mod }: Props) {
                       setSearch(""); setStatusFilter("all"); setFieldFilters({});
                       setDueOnly(false); setStartDate(""); setEndDate("");
                     }}
-                    className="h-10 gap-1.5"
+                    className="h-9 gap-1.5"
                     title="Reset"
                   >
                     <RotateCcw className="h-4 w-4" /> Reset
                   </Button>
-                  {mod.key === "bmet" && (
-                    <BmetQuickManage rows={rows} onChanged={() => load(true)} />
-                  )}
                 </div>
               </div>
+              {mod.key === "bmet" && (
+                <div className="shrink-0 ml-auto">
+                  <BmetQuickManage rows={rows} onChanged={() => load(true)} />
+                </div>
+              )}
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
