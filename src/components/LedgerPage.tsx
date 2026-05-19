@@ -154,6 +154,8 @@ export function LedgerPage({ module: mod }: Props) {
   const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
   // Advance payment toggle: when true, skip booking allocation and just record an ADVANCE entry
   const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
+  // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
+  const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -553,6 +555,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayMode("fifo");
     setSelectedLines({});
     setPayAsAdvance(false);
+    setPayAsMdDeposit(false);
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -568,6 +571,7 @@ export function LedgerPage({ module: mod }: Props) {
     setPayMode("fifo");
     setSelectedLines({});
     setPayAsAdvance(false);
+    setPayAsMdDeposit(false);
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
@@ -671,6 +675,37 @@ export function LedgerPage({ module: mod }: Props) {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
     try {
+      // ---------- MD Sir External Deposit (vendor advance, no cash/bank impact) ----------
+      if (payAsMdDeposit && !payRow && !isAgency) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        const ledgerId = await generateNextId({
+          key: mod.key, label: "", short: "", table: mod.table,
+          idColumn: mod.idColumn, idPrefix: "VDL",
+          monthlyId: true, fields: [],
+        });
+        const payload: Record<string, unknown> = {
+          [mod.idColumn]: ledgerId,
+          entry_date: payDate,
+          [groupField]: payTarget,
+          service_type: "ADVANCE",
+          [billCol]: 0,
+          [paidCol]: amt,
+          payment_method: "MD Sir Deposit",
+          // Setting source_table makes sync_vendor_payment_to_cash skip the
+          // cash_expenses mirror — so system Cash/Bank balances are untouched.
+          source_table: "md_deposit",
+          remarks: `MD Sir External Deposit${payRemarks ? " · " + payRemarks : ""}`,
+          created_by: user?.id ?? null,
+        };
+        const { error } = await supabase.from(mod.table as never).insert(payload as never);
+        if (error) throw error;
+        toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
+        setPayOpen(false);
+        void load();
+        return;
+      }
+
       // ---------- Advance Payment (no booking allocation) ----------
       if (payAsAdvance && !payRow) {
         const amt = Number(payAmount);
@@ -1792,7 +1827,7 @@ export function LedgerPage({ module: mod }: Props) {
                   checked={payAsAdvance}
                   onCheckedChange={(c) => {
                     setPayAsAdvance(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); }
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); }
                   }}
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
@@ -1804,11 +1839,31 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             )}
 
-            {/* Advance amount input (when advance toggle ON) */}
-            {!payRow && payTarget && payAsAdvance && (
+            {/* Mark as Vendor Deposit From MD Sir — vendor ledger only, bulk mode */}
+            {!payRow && payTarget && !isAgency && (
+              <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5">
+                <Checkbox
+                  id="payAsMdDeposit"
+                  checked={payAsMdDeposit}
+                  onCheckedChange={(c) => {
+                    setPayAsMdDeposit(!!c);
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); }
+                  }}
+                />
+                <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
+                  Mark as Vendor Deposit From MD Sir
+                  <span className="block text-[11px] text-muted-foreground font-normal">
+                    Vendor কে Advance Deposit করুন- লেজারের বাহিরের টাকা থেকে। (Cash/Bank balance অপরিবর্তিত থাকবে)
+                  </span>
+                </Label>
+              </div>
+            )}
+
+            {/* Advance amount input (when advance OR MD deposit toggle ON) */}
+            {!payRow && payTarget && (payAsAdvance || payAsMdDeposit) && (
               <div className="space-y-1.5">
                 <Label className="text-xs">
-                  Advance Amount <span className="text-rose-500">*</span>
+                  {payAsMdDeposit ? "MD Sir Deposit Amount" : "Advance Amount"} <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   type="number"
@@ -1821,8 +1876,8 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             )}
 
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance */}
-            {!payRow && payTarget && !payAsAdvance && (
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance/MD deposit */}
+            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
