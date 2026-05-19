@@ -60,7 +60,7 @@ const STATUS_VISA = [
   "Delivered",
   "Cancelled",
 ];
-const STATUS_BMET = ["File Process", "Card Ready", "Ready for Delivery", "Delivered"];
+const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Ready For Delivery"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
@@ -372,13 +372,12 @@ export const MODULES: ModuleSchema[] = [
     ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
-      if (r.delivery_date) return "Delivered";
-      if (r.received_date) return "Ready for Delivery";
+      if (r.received_date) return "Ready For Delivery";
       // If user manually picked "Card Ready", keep it (it falls between vendor_sent and received_date)
       const cur = String(r.status ?? "");
       if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
       if (r.vendor_sent_date) return "File Process";
-      return cur || undefined;
+      return cur || "NEW";
     },
   },
   {
