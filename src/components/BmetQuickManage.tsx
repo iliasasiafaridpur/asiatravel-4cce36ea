@@ -35,7 +35,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     if (mode === "send") {
       return rows.filter((r) => !r.vendor_sent_date);
     }
-    return rows.filter((r) => !r.received_date);
+    return rows.filter((r) => r.vendor_sent_date && !r.received_date);
   }, [rows, mode]);
 
   const allChecked = list.length > 0 && list.every((r) => selected.has(r.id));
