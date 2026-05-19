@@ -58,7 +58,9 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
               !display && "text-muted-foreground",
               className,
             )}
+            {...rest}
           >
+
             <span>{display || placeholder || "DD/MM/YYYY"}</span>
             <CalendarIcon className="h-4 w-4 text-primary opacity-80" />
           </Button>
