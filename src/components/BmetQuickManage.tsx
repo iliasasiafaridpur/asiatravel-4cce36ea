@@ -15,7 +15,7 @@ import { LookupSelect } from "@/components/LookupSelect";
 import { Zap } from "lucide-react";
 
 type Row = Record<string, unknown> & { id: string };
-type Mode = "send" | "receive";
+type Mode = "send" | "ready" | "receive";
 
 interface Props {
   rows: Row[];
@@ -23,6 +23,27 @@ interface Props {
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
+  {
+    value: "send",
+    title: "একাধিক BMET, vendor কে Send করো",
+    sub: '"NEW" Status থেকে "File Process" Status করা হবে।',
+    btn: "Send",
+  },
+  {
+    value: "ready",
+    title: "একাধিক BMET, vendor এর কাছে Ready হয়েছে।",
+    sub: '"File Process" Status থেকে "Card Ready" Status করা হবে।',
+    btn: "Card Ready",
+  },
+  {
+    value: "receive",
+    title: "একাধিক BMET, vendor এর Ready Card থেকে Receive করো।",
+    sub: '"Card Ready" Status থেকে "Ready For Delivery" Status করা হবে, ম্যানুয়াল এন্ট্রি Done।',
+    btn: "Receive BMET",
+  },
+];
 
 export function BmetQuickManage({ rows, onChanged }: Props) {
   const [open, setOpen] = useState(false);
@@ -35,7 +56,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     if (mode === "send") {
       return rows.filter((r) => !r.vendor_sent_date);
     }
-    return rows.filter((r) => r.vendor_sent_date && !r.received_date);
+    if (mode === "ready") {
+      return rows.filter((r) => r.vendor_sent_date && r.status !== "Card Ready" && r.status !== "Ready For Delivery" && !r.received_date);
+    }
+    // receive
+    return rows.filter((r) => r.status === "Card Ready" && !r.received_date);
   }, [rows, mode]);
 
   const allChecked = list.length > 0 && list.every((r) => selected.has(r.id));
@@ -58,6 +83,8 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
 
   const handleModeChange = (m: Mode) => { setMode(m); reset(); };
 
+  const currentOption = OPTIONS.find((o) => o.value === mode)!;
+
   const submit = async () => {
     const ids = Array.from(selected);
     if (ids.length === 0) { toast.error("কমপক্ষে একটি রেকর্ড সিলেক্ট করুন"); return; }
@@ -65,9 +92,14 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
 
     setSaving(true);
     try {
-      const patch = mode === "send"
-        ? { vendor_bought: vendor, vendor_sent_date: todayIso() }
-        : { received_date: todayIso(), status: "Card Ready" };
+      let patch: Record<string, unknown> = {};
+      if (mode === "send") {
+        patch = { vendor_bought: vendor, vendor_sent_date: todayIso(), status: "File Process" };
+      } else if (mode === "ready") {
+        patch = { status: "Card Ready" };
+      } else {
+        patch = { status: "Ready For Delivery", received_date: todayIso() };
+      }
 
       const { error } = await supabase.from("bmet_cards").update(patch).in("id", ids);
       if (error) throw error;
@@ -104,22 +136,24 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
           <RadioGroup
             value={mode}
             onValueChange={(v) => handleModeChange(v as Mode)}
-            className="grid sm:grid-cols-2 gap-3"
+            className="grid grid-cols-1 md:grid-cols-3 gap-3"
           >
-            <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
-              <RadioGroupItem value="send" id="qm-send" />
-              <span className="text-sm font-medium">একাধিক BMET, vendor কে Send করো</span>
-            </label>
-            <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
-              <RadioGroupItem value="receive" id="qm-recv" />
-              <span className="text-sm font-medium">একাধিক BMET, vendor থেকে Receive করো</span>
-            </label>
+            {OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                className={`flex items-start gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40 ${mode === opt.value ? "border-primary bg-muted/30" : ""}`}
+              >
+                <RadioGroupItem value={opt.value} id={`qm-${opt.value}`} className="mt-1" />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium leading-snug">{opt.title}</span>
+                  <span className="text-xs text-muted-foreground leading-snug">{opt.sub}</span>
+                </div>
+              </label>
+            ))}
           </RadioGroup>
 
           <div className="text-sm text-muted-foreground">
-            মোট {list.length} টি রেকর্ড পাওয়া গেছে
-            {mode === "send" ? " (Vendor Sent Date খালি)" : " (Received Date খালি)"}
-            · সিলেক্টেড: {selected.size}
+            মোট {list.length} টি রেকর্ড পাওয়া গেছে · সিলেক্টেড: {selected.size}
           </div>
 
           <div className="border rounded-md overflow-x-auto max-h-[50vh] overflow-y-auto">
@@ -178,7 +212,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>বাতিল</Button>
               <Button onClick={submit} disabled={saving || selected.size === 0 || (mode === "send" && !vendor)}>
-                {saving ? "প্রসেস হচ্ছে..." : (mode === "send" ? "Send" : "Receive Summary")}
+                {saving ? "প্রসেস হচ্ছে..." : currentOption.btn}
               </Button>
             </div>
           </div>
