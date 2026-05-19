@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
@@ -603,11 +604,11 @@ export function ModulePage({ module: mod }: Props) {
                 <>
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Start Date</Label>
-                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-base" />
+                    <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-base" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">End Date</Label>
-                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-base" />
+                    <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-base" />
                   </div>
                 </>
               )}

@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -542,7 +543,7 @@ ${node.innerHTML.replace(
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">তারিখ</Label>
-                      <Input type="date" value={hForm.entry_date} onChange={(e) => setHForm({ ...hForm, entry_date: e.target.value })} />
+                      <DateInput value={hForm.entry_date} onChange={(e) => setHForm({ ...hForm, entry_date: e.target.value })} />
                     </div>
                     <div>
                       <Label className="text-xs">প্রাপক</Label>
@@ -597,7 +598,7 @@ ${node.innerHTML.replace(
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-xs">তারিখ</Label>
-                        <Input type="date" value={iForm.entry_date} onChange={(e) => setIForm({ ...iForm, entry_date: e.target.value })} />
+                        <DateInput value={iForm.entry_date} onChange={(e) => setIForm({ ...iForm, entry_date: e.target.value })} />
                       </div>
                       <div>
                         <Label className="text-xs">মাধ্যম</Label>
@@ -625,7 +626,7 @@ ${node.innerHTML.replace(
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-xs">তারিখ</Label>
-                        <Input type="date" value={eForm.entry_date} onChange={(e) => setEForm({ ...eForm, entry_date: e.target.value })} />
+                        <DateInput value={eForm.entry_date} onChange={(e) => setEForm({ ...eForm, entry_date: e.target.value })} />
                       </div>
                       <div>
                         <Label className="text-xs">ক্যাটাগরি</Label>
