@@ -157,9 +157,13 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     if (hidden.length) effectiveDefaults = effectiveDefaults.filter((d) => !hidden.includes(d));
   } catch { /* ignore */ }
 
-  // Merge effective defaults + DB options + current value (de-duped, defaults first)
+  // Always-present built-ins per kind (cannot be hidden/removed)
+  const alwaysOn: string[] = kind === "sub_agency" ? ["Self"] : [];
+
+  // Merge always-on + effective defaults + DB options + current value (de-duped, always-on first)
   const merged: string[] = [];
   const seen = new Set<string>();
+  for (const v of alwaysOn) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   for (const v of effectiveDefaults) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   for (const v of options) { if (!seen.has(v)) { merged.push(v); seen.add(v); } }
   if (value && !seen.has(value)) merged.unshift(value);
