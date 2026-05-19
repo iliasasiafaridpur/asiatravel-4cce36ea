@@ -72,8 +72,11 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           value={text}
           onChange={handleTextChange}
           onBlur={handleBlur}
+          onClick={openPicker}
+          onFocus={openPicker}
+          readOnly
           placeholder={placeholder ?? "DD/MM/YYYY"}
-          className={cn("pr-10", className)}
+          className={cn("pr-10 cursor-pointer", className)}
           {...rest}
         />
         <button

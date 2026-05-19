@@ -253,6 +253,7 @@ export const MODULES: ModuleSchema[] = [
         label: "Country",
         type: "text",
         showInList: true,
+        filterable: true,
         lookup: "country",
         section: "passenger",
       },
@@ -290,9 +291,10 @@ export const MODULES: ModuleSchema[] = [
       // 2) Sub Agency / Reference & price
       {
         name: "agency_sold",
-        label: "Sub Agency / Reference",
+        label: "Agency",
         type: "text",
         showInList: true,
+        filterable: true,
         lookup: "sub_agency",
         section: "agency",
       },
@@ -315,6 +317,7 @@ export const MODULES: ModuleSchema[] = [
         label: "Vendor",
         type: "text",
         showInList: true,
+        filterable: true,
         lookup: "vendor",
         section: "vendor",
       },
