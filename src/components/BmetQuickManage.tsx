@@ -61,7 +61,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const submit = async () => {
     const ids = Array.from(selected);
     if (ids.length === 0) { toast.error("কমপক্ষে একটি রেকর্ড সিলেক্ট করুন"); return; }
-    if (!vendor.trim()) { toast.error("Vendor সিলেক্ট করুন"); return; }
+    if (mode === "send" && !vendor.trim()) { toast.error("Vendor সিলেক্ট করুন"); return; }
 
     setSaving(true);
     try {
@@ -108,11 +108,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
           >
             <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
               <RadioGroupItem value="send" id="qm-send" />
-              <span className="text-sm font-medium">একাধিক BMET vendor কে Send করো</span>
+              <span className="text-sm font-medium">একাধিক BMET, vendor কে Send করো</span>
             </label>
             <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
               <RadioGroupItem value="receive" id="qm-recv" />
-              <span className="text-sm font-medium">একাধিক BMET vendor থেকে Receive করো</span>
+              <span className="text-sm font-medium">একাধিক BMET, vendor থেকে Receive করো</span>
             </label>
           </RadioGroup>
 
@@ -168,14 +168,16 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
             </Table>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between pt-2 border-t">
-            <div className="space-y-1.5 flex-1 max-w-md">
-              <Label className="text-sm font-medium">Vendor</Label>
-              <LookupSelect kind="vendor" value={vendor} onChange={setVendor} compact />
-            </div>
+          <div className={`flex flex-col sm:flex-row gap-3 sm:items-end pt-2 border-t ${mode === "send" ? "sm:justify-between" : "sm:justify-end"}`}>
+            {mode === "send" && (
+              <div className="space-y-1.5 flex-1 max-w-md">
+                <Label className="text-sm font-medium">Vendor</Label>
+                <LookupSelect kind="vendor" value={vendor} onChange={setVendor} compact />
+              </div>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>বাতিল</Button>
-              <Button onClick={submit} disabled={saving || selected.size === 0 || !vendor}>
+              <Button onClick={submit} disabled={saving || selected.size === 0 || (mode === "send" && !vendor)}>
                 {saving ? "প্রসেস হচ্ছে..." : (mode === "send" ? "Send" : "Receive Summary")}
               </Button>
             </div>
