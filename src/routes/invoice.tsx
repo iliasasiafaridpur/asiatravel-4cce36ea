@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,7 +154,7 @@ function InvoicePage() {
         <CardContent className="p-3 sm:p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
-            <div><Label>Invoice Date</Label><Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
+            <div><Label>Invoice Date</Label><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
             <div><Label>PNR / Booking Ref</Label><Input value={pnr} onChange={(e) => setPnr(e.target.value)} className="mt-1.5" /></div>
           </div>
 
@@ -261,7 +262,7 @@ function InvoicePage() {
                     </div>
                     <div className="col-span-6 sm:col-span-3">
                       <Label className="text-xs">Date</Label>
-                      <Input type="date" value={it.date ?? ""} onChange={(e) => updateItem(it.uid, { date: e.target.value })} />
+                      <DateInput value={it.date ?? ""} onChange={(e) => updateItem(it.uid, { date: e.target.value })} />
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                       <Label className="text-xs">Qty</Label>

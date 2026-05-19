@@ -6,6 +6,7 @@
 //       type text check (type in ('received','expense','handover')),
 //       amount numeric, category text, description text, created_at timestamptz default now())
 
+import { DateInput } from "@/components/ui/date-input";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -235,7 +236,7 @@ function ReceiveTab({ users, onAddUser, onSubmit }: {
           </Select>
         </div>
         <div><Label>Amount</Label><Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} /></div>
-        <div><Label>Date</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+        <div><Label>Date</Label><DateInput value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="md:col-span-2"><Label>Description</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
         <div className="md:col-span-2">
           <Button onClick={() => { onSubmit(userId, amount, category, description, date); setAmount(0); setDescription(""); }} className="w-full">Save Received</Button>
@@ -263,7 +264,7 @@ function ExpenseTab({ onSubmit }: { onSubmit: (amount: number, category: string,
           </Select>
         </div>
         <div><Label>Amount</Label><Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} /></div>
-        <div><Label>Date</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+        <div><Label>Date</Label><DateInput value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="md:col-span-2"><Label>Description</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
         <div className="md:col-span-2">
           <Button onClick={() => { onSubmit(amount, category, description, date); setAmount(0); setDescription(""); }} className="w-full">Save Expense</Button>
@@ -303,7 +304,7 @@ function HandoverTab({ users, onSubmit }: {
           </div>
         </div>
         <div><Label>Handover Amount</Label><Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} /></div>
-        <div><Label>Date</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+        <div><Label>Date</Label><DateInput value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="md:col-span-2"><Label>Description</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
         <div className="md:col-span-2">
           <Button onClick={() => { onSubmit(userId, amount, description, date); setAmount(0); setDescription(""); }} className="w-full">Save Hand-over</Button>
@@ -361,8 +362,8 @@ function LedgerTab({ users, txs }: { users: AcctUser[]; txs: Transaction[] }) {
       <CardHeader className="pb-2"><CardTitle className="text-base">Ledger & Tracking ({filtered.length})</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          <div><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-          <div><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          <div><Label>From</Label><DateInput value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div><Label>To</Label><DateInput value={to} onChange={(e) => setTo(e.target.value)} /></div>
           <div>
             <Label>User</Label>
             <Select value={userFilter} onValueChange={setUserFilter}>

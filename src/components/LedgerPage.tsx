@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateNextId } from "@/lib/idgen";
@@ -1060,8 +1061,8 @@ export function LedgerPage({ module: mod }: Props) {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Start Date</Label>
-                <Input
-                  type="date"
+                <DateInput
+                  
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="h-10 text-base"
@@ -1069,8 +1070,8 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">End Date</Label>
-                <Input
-                  type="date"
+                <DateInput
+                  
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="h-10 text-base"
@@ -1758,8 +1759,8 @@ export function LedgerPage({ module: mod }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Date</Label>
-                <Input
-                  type="date"
+                <DateInput
+                  
                   value={payDate}
                   onChange={(e) => setPayDate(e.target.value)}
                   className="h-10"
