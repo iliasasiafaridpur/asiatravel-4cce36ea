@@ -33,6 +33,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+import { BmetQuickManage } from "@/components/BmetQuickManage";
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
@@ -685,6 +686,9 @@ export function ModulePage({ module: mod }: Props) {
                   >
                     <RotateCcw className="h-4 w-4" /> Reset
                   </Button>
+                  {mod.key === "bmet" && (
+                    <BmetQuickManage rows={rows} onChanged={() => load(true)} />
+                  )}
                 </div>
               </div>
             </div>
