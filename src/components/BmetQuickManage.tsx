@@ -65,7 +65,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
 
     setSaving(true);
     try {
-      const patch: Record<string, unknown> = mode === "send"
+      const patch = mode === "send"
         ? { vendor_bought: vendor, vendor_sent_date: todayIso() }
         : { received_date: todayIso(), status: "Card Ready" };
 
