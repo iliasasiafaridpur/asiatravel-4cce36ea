@@ -64,7 +64,7 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
     };
 
     return (
-      <div className={cn("relative", className)}>
+      <div className="relative w-full">
         <Input
           ref={ref}
           type="text"
@@ -73,7 +73,7 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           onChange={handleTextChange}
           onBlur={handleBlur}
           placeholder={placeholder ?? "DD/MM/YYYY"}
-          className="pr-10"
+          className={cn("pr-10", className)}
           {...rest}
         />
         <button
