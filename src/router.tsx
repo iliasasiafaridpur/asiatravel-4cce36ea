@@ -65,7 +65,8 @@ export const getRouter = () => {
       void import("@tanstack/react-query-persist-client").then(({ persistQueryClient }) => {
         try {
           persistQueryClient({
-            queryClient,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            queryClient: queryClient as any,
             persister: createSyncStoragePersister({ storage: window.localStorage, key: "rq_cache_v1" }),
             maxAge: 24 * 60 * 60 * 1000,
           });
