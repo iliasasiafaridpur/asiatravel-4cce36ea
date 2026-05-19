@@ -686,6 +686,9 @@ export function ModulePage({ module: mod }: Props) {
                   >
                     <RotateCcw className="h-4 w-4" /> Reset
                   </Button>
+                  {mod.key === "bmet" && (
+                    <BmetQuickManage rows={rows} onChanged={() => load(true)} />
+                  )}
                 </div>
               </div>
             </div>
