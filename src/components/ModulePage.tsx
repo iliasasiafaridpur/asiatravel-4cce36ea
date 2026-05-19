@@ -66,6 +66,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
     else if (field.type === "boolean") f[field.name] = false;
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
+    else if (field.lookup === "sub_agency") f[field.name] = "Self";
     else f[field.name] = "";
   }
   return f;
