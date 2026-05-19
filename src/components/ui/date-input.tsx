@@ -33,6 +33,9 @@ export interface DateInputProps {
   placeholder?: string;
   id?: string;
   disabled?: boolean;
+  min?: string;
+  max?: string;
+  "aria-label"?: string;
 }
 
 export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
