@@ -376,7 +376,7 @@ function DashboardPage() {
       {/* Hero header */}
       <div className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4 bg-card border border-border/60 shadow-sm">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-6">
-          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1 w-full max-w-[34rem]">
+          <div className="flex flex-col min-w-0 md:basis-1/2 md:flex-1 w-full max-w-[25.5rem]">
             <h1 className="sr-only">ASIA TRAVELS MANAGEMENT SYSTEM</h1>
             <svg
               viewBox="0 0 100 22"
