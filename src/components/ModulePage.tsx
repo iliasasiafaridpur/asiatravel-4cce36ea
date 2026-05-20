@@ -741,21 +741,23 @@ export function ModulePage({ module: mod }: Props) {
             <FormSections mod={mod} form={form} setForm={setForm} />
 
             <DialogFooter className="sm:justify-between gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  const f = emptyForm(mod);
-                  if (mod.fields.some((fld) => fld.name === "entry_by")) {
-                    f.entry_by = displayName(profile, user);
-                  }
-                  setForm(f);
-                  toast.success("ফর্ম খালি করা হয়েছে");
-                }}
-                className="gap-1.5"
-              >
-                <RotateCcw className="h-4 w-4" /> CLEAR
-              </Button>
+              {!editing ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const f = emptyForm(mod);
+                    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+                      f.entry_by = displayName(profile, user);
+                    }
+                    setForm(f);
+                    toast.success("ফর্ম খালি করা হয়েছে");
+                  }}
+                  className="gap-1.5"
+                >
+                  <RotateCcw className="h-4 w-4" /> CLEAR
+                </Button>
+              ) : <div />}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
                 <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
