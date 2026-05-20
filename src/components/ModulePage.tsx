@@ -75,6 +75,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
   for (const field of mod.fields) {
     if (field.type === "number") f[field.name] = 0;
     else if (field.type === "boolean") f[field.name] = false;
+    else if (field.name === "status" && mod.statuses?.length) f[field.name] = mod.statuses[0];
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
     else if (field.lookup === "sub_agency") f[field.name] = "Self";
@@ -279,6 +280,9 @@ export function ModulePage({ module: mod }: Props) {
         else if (field.type === "boolean") payload[field.name] = Boolean(v);
         else if (field.type === "date") payload[field.name] = v ? v : null;
         else payload[field.name] = v ?? null;
+      }
+      if (hasField("status") && mod.statuses?.length && !payload.status) {
+        payload.status = mod.statuses[0];
       }
 
       const me = displayName(profile, user);
