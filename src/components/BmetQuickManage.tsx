@@ -103,6 +103,28 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
 
       const { error } = await supabase.from("bmet_cards").update(patch).in("id", ids);
       if (error) throw error;
+
+      // Persist any edited cost prices for the selected rows
+      const costUpdates = ids
+        .map((id) => {
+          const raw = costPrices[id];
+          if (raw === undefined || raw === "") return null;
+          const n = Number(raw);
+          if (Number.isNaN(n)) return null;
+          const original = Number(rows.find((r) => r.id === id)?.cost_price ?? 0);
+          if (n === original) return null;
+          return { id, cost_price: n };
+        })
+        .filter(Boolean) as { id: string; cost_price: number }[];
+
+      if (costUpdates.length) {
+        await Promise.all(
+          costUpdates.map((u) =>
+            supabase.from("bmet_cards").update({ cost_price: u.cost_price }).eq("id", u.id),
+          ),
+        );
+      }
+
       toast.success(`${ids.length}টি রেকর্ড আপডেট হয়েছে`);
       reset();
       setOpen(false);
