@@ -26,7 +26,10 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
@@ -97,6 +100,8 @@ export function ModulePage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
+  const [vendorPrompt, setVendorPrompt] = useState<{ row: Row } | null>(null);
+  const [vendorPromptValue, setVendorPromptValue] = useState<string>("");
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
@@ -340,7 +345,64 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
-  // Ledger group-due click → open new entry pre-filled with that group's name + payment = due amount
+  // Inline status change from the table badge dropdown.
+  // Handles vendor prompt for "File Process", auto-dates for "Pending Delivery",
+  // and routes through Due Receive when "Delivered" with outstanding balance.
+  const applyStatusChange = useCallback(async (row: Row, newStatus: string, extra?: Record<string, unknown>) => {
+    const hasField = (n: string) => mod.fields.some((f) => f.name === n);
+    const currentStatus = String(row.status ?? "");
+    if (currentStatus === newStatus && !extra) return;
+
+    // CASE C: Delivered with outstanding due → open Due Receive modal
+    if (newStatus === "Delivered") {
+      const due = computeValue(row, "balance");
+      const svc = DUE_SERVICE_KEY[mod.key];
+      if (due > 0 && svc) {
+        setDuePreselect({ serviceKey: svc, rowId: row.id });
+        return;
+      }
+    }
+
+    const payload: Record<string, unknown> = { status: newStatus, ...extra };
+
+    // CASE A: File Process → vendor + vendor_sent_date
+    if (newStatus === "File Process" && hasField("vendor_sent_date")) {
+      payload.vendor_sent_date = todayIso();
+    }
+    // CASE B: Pending Delivery → received_date
+    if (newStatus === "Pending Delivery" && hasField("received_date")) {
+      payload.received_date = todayIso();
+    }
+    // Delivered (no due) → delivery_date
+    if (newStatus === "Delivered" && hasField("delivery_date") && !row.delivery_date) {
+      payload.delivery_date = todayIso();
+    }
+
+    try {
+      const { error } = await supabase
+        .from(mod.table as never)
+        .update(payload as never)
+        .eq("id", row.id);
+      if (error) throw error;
+      toast.success(`Status: ${newStatus}`);
+      if (newStatus === "Delivered") speakDelivery(String(row.passenger_name ?? ""));
+      void load(false);
+    } catch (e) {
+      toast.error("Status আপডেট করা যায়নি: " + errMsg(e));
+    }
+  }, [mod, computeValue, load]);
+
+  const handleStatusSelect = useCallback((row: Row, newStatus: string) => {
+    // CASE A entrypoint: prompt for vendor first
+    if (newStatus === "File Process" && mod.fields.some((f) => f.name === "vendor_bought")) {
+      setVendorPromptValue(String(row.vendor_bought ?? ""));
+      setVendorPrompt({ row });
+      return;
+    }
+    void applyStatusChange(row, newStatus);
+  }, [mod, applyStatusChange]);
+
+
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
     if (!mod.groupBy) return;
     setEditing(null);
@@ -384,38 +446,68 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    // Single unified badge — returns delivery-aware badge for service modules,
-    // otherwise falls back to the generic status badge. Never renders two badges.
+    // Single unified badge — interactive dropdown when mod.statuses exists.
+    // Click → choose new status → triggers automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "");
       if (!status) return null;
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
-      if (isServiceMod) {
-        const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
-        if (status === "Delivered") {
-          return (
-            <div className="mt-1">
-              <Badge className={computedDue > 0
-                ? "bg-orange-500 text-white border-transparent hover:bg-orange-500/90"
-                : "bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90"}>
-                {computedDue > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
-              </Badge>
-            </div>
-          );
-        }
-        if (status === "Pending Delivery") {
-          return (
-            <div className="mt-1">
-              <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30">
-                📦 Pending Delivery
-              </Badge>
-            </div>
-          );
-        }
+      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+
+      let badgeNode: React.ReactNode;
+      if (isServiceMod && status === "Delivered") {
+        badgeNode = (
+          <Badge className={computedDue > 0
+            ? "bg-orange-500 text-white border-transparent hover:bg-orange-500/90 cursor-pointer"
+            : "bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90 cursor-pointer"}>
+            {computedDue > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
+            <ChevronDown className="ml-1 h-3 w-3 opacity-80" />
+          </Badge>
+        );
+      } else if (isServiceMod && status === "Pending Delivery") {
+        badgeNode = (
+          <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30 cursor-pointer">
+            📦 Pending Delivery
+            <ChevronDown className="ml-1 h-3 w-3 opacity-80" />
+          </Badge>
+        );
+      } else {
+        badgeNode = (
+          <Badge variant="outline" className={`${statusBadgeClass(status)} cursor-pointer`}>
+            {status}
+            <ChevronDown className="ml-1 h-3 w-3 opacity-80" />
+          </Badge>
+        );
       }
+
+      if (!mod.statuses || mod.statuses.length === 0) {
+        return <div className="mt-1">{badgeNode}</div>;
+      }
+
       return (
         <div className="mt-1">
-          <Badge variant="outline" className={statusBadgeClass(status)}>{status}</Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="inline-flex items-center" title="Status পরিবর্তন করুন">
+                {badgeNode}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel className="text-xs">Status পরিবর্তন</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {mod.statuses.map((s) => (
+                <DropdownMenuItem
+                  key={s}
+                  disabled={s === status}
+                  onClick={() => handleStatusSelect(r, s)}
+                  className="flex items-center gap-2"
+                >
+                  <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
+                  {s === status && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       );
     };
@@ -609,7 +701,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue]);
+  }, [mod, computeValue, handleStatusSelect]);
 
   return (
     <div className="space-y-4">
@@ -928,6 +1020,38 @@ export function ModulePage({ module: mod }: Props) {
         onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
         preselect={duePreselect}
       />
+
+      <Dialog open={!!vendorPrompt} onOpenChange={(o) => { if (!o) setVendorPrompt(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Vendor নির্বাচন করুন</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>Vendor (যাকে File পাঠাচ্ছেন)</Label>
+            <LookupSelect kind="vendor" value={vendorPromptValue} onChange={setVendorPromptValue} />
+            <p className="text-xs text-muted-foreground">
+              Status "File Process" হবে ও Vendor Sent Date = আজকের তারিখ সেট হবে।
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVendorPrompt(null)}>বাতিল</Button>
+            <Button
+              onClick={async () => {
+                if (!vendorPrompt) return;
+                if (!vendorPromptValue.trim()) {
+                  toast.error("Vendor নির্বাচন করুন");
+                  return;
+                }
+                const row = vendorPrompt.row;
+                setVendorPrompt(null);
+                await applyStatusChange(row, "File Process", { vendor_bought: vendorPromptValue.trim() });
+              }}
+            >
+              নিশ্চিত করুন
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
