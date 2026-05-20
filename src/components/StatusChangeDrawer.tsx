@@ -48,11 +48,13 @@ export interface StatusChangeRequest {
   hasVendorSentDate: boolean;
   hasReceivedDate: boolean;
   hasDeliveryDate: boolean;
+  /** Per-module ordered status list. Falls back to BMET-style order. */
+  statusOrder?: string[];
 }
 
-function idxOf(s: string): number {
-  const i = STATUS_ORDER.indexOf(s);
-  return i < 0 ? 0 : i;
+function idxOfIn(order: string[], s: string): number {
+  const i = order.findIndex((x) => eq(x, s));
+  return i;
 }
 
 export function StatusChangeDrawer({
