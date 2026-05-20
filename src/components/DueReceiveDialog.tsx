@@ -46,6 +46,8 @@ interface DueRow {
   due: number;
   entryDate: string;
   extra: string;       // country / road / etc.
+  agencySold: string;  // agent name for ledger routing
+  deliveryDate: string | null;
 }
 
 interface ReceiptRow {
