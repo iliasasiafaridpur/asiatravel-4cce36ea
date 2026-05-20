@@ -88,6 +88,7 @@ export function DueReceiveDialog({
 
   // payment form
   const [amount, setAmount] = useState<string>("");
+  const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -136,6 +137,7 @@ export function DueReceiveDialog({
       setSelected(row);
       setTab("pay");
       setAmount(String(row.due));
+      setDiscount("");
       setMethod("Cash");
       setRemarks("");
       setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
@@ -219,6 +221,7 @@ export function DueReceiveDialog({
     setSelected(row);
     setTab("pay");
     setAmount(String(row.due));
+    setDiscount("");
     setMethod("Cash");
     setRemarks("");
     setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
@@ -261,11 +264,13 @@ export function DueReceiveDialog({
 
   const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
-    const amt = Number(amount);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    const amt = Number(amount) || 0;
+    const disc = Math.max(0, Number(discount) || 0);
+    if (amt <= 0 && disc <= 0) return toast.error("সঠিক টাকার পরিমাণ অথবা ডিসকাউন্ট দিন");
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
 
-    const excess = Math.max(0, amt - selected.due);
+    const effectiveDue = Math.max(0, selected.due - disc);
+    const excess = Math.max(0, amt - effectiveDue);
     const appliedToDue = amt - excess;
 
     if (excess > 0) {
@@ -285,10 +290,12 @@ export function DueReceiveDialog({
       const me = displayName(profile, user);
       const today = todayIso();
 
-      // 1) update service row received column — cap at sold (so due → 0 on excess)
+      // 1) update service row — apply payment to received, apply discount by reducing sold_price
       const newRecv = selected.received + appliedToDue;
+      const newSold = selected.sold - disc;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
+      if (disc > 0) upd.sold_price = newSold;
       upd.received_by = user.id;
       if (withDelivery) {
         upd.delivery_date = today;
@@ -315,9 +322,11 @@ export function DueReceiveDialog({
         receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
       }
 
-      const receiptRemarks = excess > 0
-        ? `${remarks ? remarks + " · " : ""}অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`
-        : (remarks || null);
+      const remarkParts: string[] = [];
+      if (remarks) remarkParts.push(remarks);
+      if (disc > 0) remarkParts.push(`Discount ৳${disc.toLocaleString()} প্রয়োগ`);
+      if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
+      const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
       const insRes = await resilientInsert("payment_receipts", {
         receipt_id: receiptId,
@@ -382,15 +391,17 @@ export function DueReceiveDialog({
       }
 
       // update local state
+      const newSoldLocal = selected.sold - disc;
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
-          ? { ...r, received: newRecv, due: r.sold - newRecv }
+          ? { ...r, sold: newSoldLocal, received: newRecv, due: newSoldLocal - newRecv }
           : r)).filter((r) => r.due > 0)
       );
       const updated: DueRow = {
         ...selected,
+        sold: newSoldLocal,
         received: newRecv,
-        due: selected.sold - newRecv,
+        due: newSoldLocal - newRecv,
         deliveryDate: upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate,
       };
       if (updated.due <= 0) {
@@ -399,6 +410,7 @@ export function DueReceiveDialog({
         setSelected(updated);
         setTab(wasOffline ? "pay" : "history");
         setAmount("");
+        setDiscount("");
       }
     } catch (e) {
       if (isNetworkError(e)) {
@@ -498,7 +510,7 @@ export function DueReceiveDialog({
 
 
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <Label>Amount</Label>
                     <Input
@@ -506,14 +518,15 @@ export function DueReceiveDialog({
                       value={amount} onChange={(e) => setAmount(e.target.value)}
                       className="mt-1.5 text-lg font-semibold"
                     />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Due: {selected.due.toLocaleString()} — অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
-                    </p>
-                    {Number(amount) > selected.due && (
-                      <p className="text-[11px] text-amber-600 font-semibold mt-1">
-                        অতিরিক্ত: ৳{(Number(amount) - selected.due).toLocaleString()} → {selected.agencySold || "(no agency)"}
-                      </p>
-                    )}
+                  </div>
+                  <div>
+                    <Label>Discount</Label>
+                    <Input
+                      type="number" inputMode="decimal" min={0}
+                      value={discount} onChange={(e) => setDiscount(e.target.value)}
+                      className="mt-1.5 text-lg font-semibold"
+                      placeholder="0"
+                    />
                   </div>
                   <div>
                     <Label>Method</Label>
@@ -527,6 +540,16 @@ export function DueReceiveDialog({
                     </Select>
                   </div>
                 </div>
+                <div className="text-[11px] text-muted-foreground -mt-1">
+                  Due: {selected.due.toLocaleString()}
+                  {Number(discount) > 0 && <> · Discount: ৳{Number(discount).toLocaleString()} · Effective Due: ৳{Math.max(0, selected.due - Number(discount)).toLocaleString()}</>}
+                  {" "}— অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
+                </div>
+                {Number(amount) > Math.max(0, selected.due - (Number(discount) || 0)) && (
+                  <p className="text-[11px] text-amber-600 font-semibold -mt-2">
+                    অতিরিক্ত: ৳{(Number(amount) - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
+                  </p>
+                )}
                 <div>
                   <Label>Remarks</Label>
                   <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1.5" placeholder="মন্তব্য (ঐচ্ছিক)" />
@@ -536,8 +559,7 @@ export function DueReceiveDialog({
                   <Button
                     onClick={() => submitPayment(false)}
                     disabled={saving}
-                    variant="secondary"
-                    className="gap-2"
+                    className="gap-2 bg-amber-500 hover:bg-amber-600 text-white"
                   >
                     <Wallet className="h-4 w-4" />
                     {saving ? "সেভ হচ্ছে…" : "Rece: Payment Without-Delivery"}

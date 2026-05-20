@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -33,14 +34,14 @@ const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
   },
   {
     value: "ready",
-    title: "একাধিক BMET, vendor এর কাছে Ready হয়েছে।",
-    sub: '"File Process" Status থেকে "Card Ready" Status করা হবে।',
+    title: "BMET, Vendor এর কাছে Ready হয়েছে।",
+    sub: 'স্টাটাস পরিবর্তন - File Process থেকে Card Ready করা হবে।',
     btn: "Card Ready",
   },
   {
     value: "receive",
-    title: "একাধিক BMET, vendor এর Ready Card থেকে Receive করো।",
-    sub: '"Card Ready" Status থেকে "Pending Delivery" Status করা হবে, ম্যানুয়াল এন্ট্রি Done।',
+    title: "BMET, Vendor থেকে Receive করা হবে।",
+    sub: 'স্টাটাস পরিবর্তন - Card Ready থেকে Pending Delivery করা হবে। ও খাতায় লেখা হয়েছে।',
     btn: "Receive BMET",
   },
 ];
@@ -50,6 +51,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [mode, setMode] = useState<Mode>("send");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [vendor, setVendor] = useState<string>("");
+  const [costPrices, setCostPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const list = useMemo(() => {
@@ -79,7 +81,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     setSelected(next);
   };
 
-  const reset = () => { setSelected(new Set()); setVendor(""); };
+  const reset = () => { setSelected(new Set()); setVendor(""); setCostPrices({}); };
 
   const handleModeChange = (m: Mode) => { setMode(m); reset(); };
 
@@ -101,6 +103,28 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
 
       const { error } = await supabase.from("bmet_cards").update(patch).in("id", ids);
       if (error) throw error;
+
+      // Persist any edited cost prices for the selected rows
+      const costUpdates = ids
+        .map((id) => {
+          const raw = costPrices[id];
+          if (raw === undefined || raw === "") return null;
+          const n = Number(raw);
+          if (Number.isNaN(n)) return null;
+          const original = Number(rows.find((r) => r.id === id)?.cost_price ?? 0);
+          if (n === original) return null;
+          return { id, cost_price: n };
+        })
+        .filter(Boolean) as { id: string; cost_price: number }[];
+
+      if (costUpdates.length) {
+        await Promise.all(
+          costUpdates.map((u) =>
+            supabase.from("bmet_cards").update({ cost_price: u.cost_price }).eq("id", u.id),
+          ),
+        );
+      }
+
       toast.success(`${ids.length}টি রেকর্ড আপডেট হয়েছে`);
       reset();
       setOpen(false);
@@ -168,15 +192,17 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   <TableHead>Date</TableHead>
                   <TableHead>Passenger</TableHead>
                   <TableHead>Passport</TableHead>
+                  <TableHead>Mobile</TableHead>
                   <TableHead>Country</TableHead>
                   <TableHead>Current Vendor</TableHead>
+                  <TableHead className="w-32">Cost Price</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       কোনো রেকর্ড পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
@@ -191,8 +217,20 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     <TableCell>{String(r.entry_date ?? "")}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
                     <TableCell>{String(r.passport ?? "")}</TableCell>
+                    <TableCell>{String(r.mobile ?? "")}</TableCell>
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
                     <TableCell>{String(r.vendor_bought ?? "")}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        value={costPrices[r.id] ?? (r.cost_price != null ? String(r.cost_price) : "")}
+                        onChange={(e) => setCostPrices((p) => ({ ...p, [r.id]: e.target.value }))}
+                        className="h-8 w-28 text-sm"
+                        placeholder="0"
+                      />
+                    </TableCell>
                     <TableCell>{String(r.status ?? "")}</TableCell>
                   </TableRow>
                 ))}
