@@ -232,29 +232,74 @@ export function DueReceiveDialog({
     }
   };
 
+  const saveDeliveryStatus = async (next: "Pending" | "Delivered") => {
+    if (!selected) return;
+    setDeliveryStatus(next);
+    setSavingDelivery(true);
+    try {
+      const newDate = next === "Delivered" ? todayIso() : null;
+      await resilientUpdate(
+        selected.service.table,
+        { id: selected.id },
+        { delivery_date: newDate },
+      );
+      setSelected({ ...selected, deliveryDate: newDate });
+      setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: newDate } : r));
+      toast.success(next === "Delivered" ? "✓ Service Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
+    } catch (e) {
+      if (isNetworkError(e)) {
+        toast.success("ইন্টারনেট নেই! ডেলিভারি স্ট্যাটাস অটো-সেভ হয়েছে।");
+      } else {
+        toast.error("সমস্যা: " + errMsg(e));
+      }
+    } finally {
+      setSavingDelivery(false);
+    }
+  };
+
   const submitPayment = async () => {
     if (!selected) return;
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-    if (amt > selected.due) return toast.error(`Due এর চেয়ে বেশি দেওয়া যাবে না (Due: ${selected.due})`);
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
+
+    const excess = Math.max(0, amt - selected.due);
+    const appliedToDue = amt - excess;
+
+    if (excess > 0) {
+      const agentName = selected.agencySold?.trim();
+      if (!agentName) {
+        return toast.error("এই বুকিং-এ কোনো Agency নেই — অতিরিক্ত টাকা Advance হিসেবে রাখা যাবে না।");
+      }
+      const ok = window.confirm(
+        `আপনি বকেয়া বিলের চেয়ে অতিরিক্ত ৳${excess.toLocaleString()} টাকা ইনপুট দিয়েছেন। ` +
+        `অতিরিক্ত টাকাটি Agent "${agentName}" এর লেজারে Advance হিসাবে যুক্ত হবে। আপনি কি নিশ্চিত?`
+      );
+      if (!ok) return;
+    }
 
     setSaving(true);
     try {
       const me = displayName(profile, user);
-      // 1) update service row received column (resilient — queues if offline)
-      const newRecv = selected.received + amt;
+      const today = todayIso();
+
+      // 1) update service row received column — cap at sold (so due → 0 on excess)
+      const newRecv = selected.received + appliedToDue;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
       upd.received_by = user.id;
+      if (deliveryStatus === "Delivered" && !selected.deliveryDate) {
+        upd.delivery_date = today;
+      } else if (deliveryStatus === "Pending" && selected.deliveryDate) {
+        upd.delivery_date = null;
+      }
       const updRes = await resilientUpdate(
         selected.service.table,
         { id: selected.id },
         upd,
       );
 
-      // 2) insert payment_receipts entry (history) — multiple allowed per row
-      // Generate receipt id locally if offline, server-style otherwise.
+      // 2) insert payment_receipts entry — record the full cash received
       let receiptId: string;
       try {
         receiptId = await generateNextId({
@@ -269,9 +314,13 @@ export function DueReceiveDialog({
         receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
       }
 
+      const receiptRemarks = excess > 0
+        ? `${remarks ? remarks + " · " : ""}অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`
+        : (remarks || null);
+
       const insRes = await resilientInsert("payment_receipts", {
         receipt_id: receiptId,
-        entry_date: new Date().toISOString().slice(0, 10),
+        entry_date: today,
         service_type: selected.service.type,
         service_table: selected.service.table,
         service_row_id: selected.id,
@@ -280,23 +329,69 @@ export function DueReceiveDialog({
         amount: amt,
         method,
         source: "due",
-        remarks: remarks || null,
+        remarks: receiptRemarks,
         received_by: user.id,
         received_by_name: me,
       });
 
-      const wasOffline = updRes.offline || insRes.offline;
-      if (!wasOffline) {
-        toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+      // 3) if excess → route to agency_ledger as Advance Received
+      let ledgerOffline = false;
+      if (excess > 0 && selected.agencySold) {
+        let ledgerId: string;
+        try {
+          ledgerId = await generateNextId({
+            key: "agency-ledger", label: "", short: "", table: "agency_ledger",
+            idColumn: "ledger_id", idPrefix: "AGL", monthlyId: true, fields: [],
+          });
+        } catch (e) {
+          if (!isNetworkError(e)) throw e;
+          const d = new Date();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const yy = String(d.getFullYear()).slice(-2);
+          ledgerId = `AGL-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+        }
+        const ledRes = await resilientInsert("agency_ledger", {
+          ledger_id: ledgerId,
+          entry_date: today,
+          agent_name: selected.agencySold,
+          passenger_name: selected.passenger,
+          passport: selected.passport || null,
+          mobile: selected.mobile || null,
+          service_type: "ADVANCE",
+          total_bill: 0,
+          received_amount: excess,
+          advance_applied: 0,
+          payment_method: method,
+          source_table: "due_excess",
+          source_id: selected.id,
+          remarks: `Advance Received · Due Receive excess from ${selected.refId} (${selected.service.type})${remarks ? " · " + remarks : ""}`,
+          created_by: user.id,
+          received_by: user.id,
+        });
+        ledgerOffline = ledRes.offline;
       }
 
-      // update local state (optimistic — same whether online or queued)
+      const wasOffline = updRes.offline || insRes.offline || ledgerOffline;
+      if (!wasOffline) {
+        if (excess > 0) {
+          toast.success(`✓ Due Cleared (৳${appliedToDue.toLocaleString()}) + Advance ৳${excess.toLocaleString()} → ${selected.agencySold}`);
+        } else {
+          toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+        }
+      }
+
+      // update local state
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
           ? { ...r, received: newRecv, due: r.sold - newRecv }
           : r)).filter((r) => r.due > 0)
       );
-      const updated: DueRow = { ...selected, received: newRecv, due: selected.sold - newRecv };
+      const updated: DueRow = {
+        ...selected,
+        received: newRecv,
+        due: selected.sold - newRecv,
+        deliveryDate: upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate,
+      };
       if (updated.due <= 0) {
         handleClose(false);
       } else {
