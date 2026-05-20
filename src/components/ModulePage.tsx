@@ -416,6 +416,7 @@ export function ModulePage({ module: mod }: Props) {
       hasVendorSentDate: hasField("vendor_sent_date"),
       hasReceivedDate: hasField("received_date"),
       hasDeliveryDate: hasField("delivery_date"),
+      statusOrder: mod.statuses,
     });
   }, [mod]);
 
@@ -512,17 +513,20 @@ export function ModulePage({ module: mod }: Props) {
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel className="text-xs">Status পরিবর্তন</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {mod.statuses.map((s) => (
-                <DropdownMenuItem
-                  key={s}
-                  disabled={s === status}
-                  onClick={() => handleStatusSelect(r, s)}
-                  className="flex items-center gap-2"
-                >
-                  <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
-                  {s === status && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
-                </DropdownMenuItem>
-              ))}
+              {mod.statuses.map((s) => {
+                const isCurrent = s.toLowerCase() === status.toLowerCase();
+                return (
+                  <DropdownMenuItem
+                    key={s}
+                    disabled={isCurrent}
+                    onClick={() => handleStatusSelect(r, s)}
+                    className="flex items-center gap-2"
+                  >
+                    <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
+                    {isCurrent && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -740,21 +744,23 @@ export function ModulePage({ module: mod }: Props) {
             <FormSections mod={mod} form={form} setForm={setForm} />
 
             <DialogFooter className="sm:justify-between gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  const f = emptyForm(mod);
-                  if (mod.fields.some((fld) => fld.name === "entry_by")) {
-                    f.entry_by = displayName(profile, user);
-                  }
-                  setForm(f);
-                  toast.success("ফর্ম খালি করা হয়েছে");
-                }}
-                className="gap-1.5"
-              >
-                <RotateCcw className="h-4 w-4" /> CLEAR
-              </Button>
+              {!editing ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const f = emptyForm(mod);
+                    if (mod.fields.some((fld) => fld.name === "entry_by")) {
+                      f.entry_by = displayName(profile, user);
+                    }
+                    setForm(f);
+                    toast.success("ফর্ম খালি করা হয়েছে");
+                  }}
+                  className="gap-1.5"
+                >
+                  <RotateCcw className="h-4 w-4" /> CLEAR
+                </Button>
+              ) : <div />}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
                 <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
@@ -1146,9 +1152,14 @@ function FormField({ field, value, onChange }: {
           <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
           <span className="ml-2 text-sm text-muted-foreground">Yes</span>
         </div>
+      ) : field.type === "date" ? (
+        <DateInput
+          value={strVal}
+          onChange={(e) => onChange(e.target.value)}
+        />
       ) : (
         <Input
-          type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+          type={field.type === "number" ? "number" : "text"}
           inputMode={field.type === "number" ? "decimal" : undefined}
           value={
             field.type === "number"
