@@ -1062,6 +1062,13 @@ export function ModulePage({ module: mod }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PassengerProfileDrawer
+        open={!!profileRow}
+        onOpenChange={(v) => { if (!v) setProfileRow(null); }}
+        row={profileRow}
+        serviceTable={mod.table}
+      />
     </div>
   );
 }
