@@ -418,7 +418,7 @@ export function DueReceiveDialog({
         sold: newSoldLocal,
         received: newRecv,
         due: newSoldLocal - newRecv,
-        deliveryDate: upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate,
+        deliveryDate: withDelivery ? today : (upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate),
       };
       if (updated.due <= 0) {
         handleClose(false);
