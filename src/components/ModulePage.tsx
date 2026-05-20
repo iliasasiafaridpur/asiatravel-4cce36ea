@@ -568,7 +568,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
-              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+              
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
