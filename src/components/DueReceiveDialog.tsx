@@ -23,6 +23,8 @@ const SERVICES = [
   { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No" },
 ] as const;
 
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
 type Service = typeof SERVICES[number];
 
 export interface DueReceivePreselect {
