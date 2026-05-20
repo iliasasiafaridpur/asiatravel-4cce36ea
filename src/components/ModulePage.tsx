@@ -345,7 +345,64 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
-  // Ledger group-due click → open new entry pre-filled with that group's name + payment = due amount
+  // Inline status change from the table badge dropdown.
+  // Handles vendor prompt for "File Process", auto-dates for "Pending Delivery",
+  // and routes through Due Receive when "Delivered" with outstanding balance.
+  const applyStatusChange = useCallback(async (row: Row, newStatus: string, extra?: Record<string, unknown>) => {
+    const hasField = (n: string) => mod.fields.some((f) => f.name === n);
+    const currentStatus = String(row.status ?? "");
+    if (currentStatus === newStatus && !extra) return;
+
+    // CASE C: Delivered with outstanding due → open Due Receive modal
+    if (newStatus === "Delivered") {
+      const due = computeValue(row, "balance");
+      const svc = DUE_SERVICE_KEY[mod.key];
+      if (due > 0 && svc) {
+        setDuePreselect({ serviceKey: svc, rowId: row.id });
+        return;
+      }
+    }
+
+    const payload: Record<string, unknown> = { status: newStatus, ...extra };
+
+    // CASE A: File Process → vendor + vendor_sent_date
+    if (newStatus === "File Process" && hasField("vendor_sent_date")) {
+      payload.vendor_sent_date = todayIso();
+    }
+    // CASE B: Pending Delivery → received_date
+    if (newStatus === "Pending Delivery" && hasField("received_date")) {
+      payload.received_date = todayIso();
+    }
+    // Delivered (no due) → delivery_date
+    if (newStatus === "Delivered" && hasField("delivery_date") && !row.delivery_date) {
+      payload.delivery_date = todayIso();
+    }
+
+    try {
+      const { error } = await supabase
+        .from(mod.table as never)
+        .update(payload as never)
+        .eq("id", row.id);
+      if (error) throw error;
+      toast.success(`Status: ${newStatus}`);
+      if (newStatus === "Delivered") speakDelivery(String(row.passenger_name ?? ""));
+      void load(false);
+    } catch (e) {
+      toast.error("Status আপডেট করা যায়নি: " + errMsg(e));
+    }
+  }, [mod, computeValue, load]);
+
+  const handleStatusSelect = (row: Row, newStatus: string) => {
+    // CASE A entrypoint: prompt for vendor first
+    if (newStatus === "File Process" && mod.fields.some((f) => f.name === "vendor_bought")) {
+      setVendorPromptValue(String(row.vendor_bought ?? ""));
+      setVendorPrompt({ row });
+      return;
+    }
+    void applyStatusChange(row, newStatus);
+  };
+
+
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
     if (!mod.groupBy) return;
     setEditing(null);
