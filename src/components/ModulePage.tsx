@@ -568,7 +568,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
-              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+              
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
@@ -627,12 +627,14 @@ export function ModulePage({ module: mod }: Props) {
             const cost = Number(r.cost_price ?? 0);
             const due = sold - recv;
             const profit = sold - cost;
+            const st = String(r.status ?? "");
+            const showProfit = st === "Pending Delivery" || st === "Delivered";
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
                 <div className="text-xs">{dueBtn(r, due)}</div>
-                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+                {showProfit ? <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
           }},
@@ -678,12 +680,14 @@ export function ModulePage({ module: mod }: Props) {
             const cost = Number(r.cost_price ?? 0);
             const due = sold - recv;
             const profit = sold - cost;
+            const st = String(r.status ?? "");
+            const showProfit = st === "Pending Delivery" || st === "Delivered";
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
                 <div className="text-xs">{dueBtn(r, due)}</div>
-                <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div>
+                {showProfit ? <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
           }},
