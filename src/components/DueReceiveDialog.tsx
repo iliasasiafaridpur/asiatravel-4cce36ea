@@ -88,6 +88,7 @@ export function DueReceiveDialog({
 
   // payment form
   const [amount, setAmount] = useState<string>("");
+  const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
   const [saving, setSaving] = useState(false);
