@@ -494,15 +494,50 @@ export function DueReceiveDialog({
               </TabsList>
 
               <TabsContent value="pay" className="space-y-3 pt-3">
+                {/* Delivery Status — independent of payment */}
+                <div className="rounded-md border bg-muted/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <Label className="text-sm">Delivery Status</Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      যেকোনো সময় Delivered করা যাবে — Due বাকি থাকলেও।
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={deliveryStatus}
+                      onValueChange={(v) => saveDeliveryStatus(v as "Pending" | "Delivered")}
+                      disabled={savingDelivery}
+                    >
+                      <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">⏳ Pending Delivery</SelectItem>
+                        <SelectItem value="Delivered">✅ Service Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {selected.deliveryDate && (
+                      <span className="text-[11px] text-emerald-600 whitespace-nowrap">
+                        on {formatDate(selected.deliveryDate)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label>Amount</Label>
                     <Input
-                      type="number" inputMode="decimal" min={0} max={selected.due}
+                      type="number" inputMode="decimal" min={0}
                       value={amount} onChange={(e) => setAmount(e.target.value)}
                       className="mt-1.5 text-lg font-semibold"
                     />
-                    <p className="text-[11px] text-muted-foreground mt-1">সর্বোচ্চ {selected.due.toLocaleString()} (একাধিকবারেও দেওয়া যাবে)</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Due: {selected.due.toLocaleString()} — অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
+                    </p>
+                    {Number(amount) > selected.due && (
+                      <p className="text-[11px] text-amber-600 font-semibold mt-1">
+                        অতিরিক্ত: ৳{(Number(amount) - selected.due).toLocaleString()} → {selected.agencySold || "(no agency)"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label>Method</Label>
