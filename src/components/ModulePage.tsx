@@ -37,6 +37,7 @@ import { PassportScanner, type PassportFields } from "@/components/PassportScann
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
+import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
