@@ -21,8 +21,9 @@ import { speakDelivery } from "@/lib/voice";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const STATUS_ORDER = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
+const DEFAULT_STATUS_ORDER = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 const todayIso = () => new Date().toISOString().slice(0, 10);
+const eq = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 function errMsg(e: unknown): string {
   if (e instanceof Error) return e.message;
