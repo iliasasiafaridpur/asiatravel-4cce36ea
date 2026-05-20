@@ -137,6 +137,7 @@ export function DueReceiveDialog({
       setSelected(row);
       setTab("pay");
       setAmount(String(row.due));
+      setDiscount("");
       setMethod("Cash");
       setRemarks("");
       setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
