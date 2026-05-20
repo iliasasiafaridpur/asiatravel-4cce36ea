@@ -110,9 +110,13 @@ export function StatusChangeDrawer({
     const currentStatus = String(request.row.status ?? "") || (requestOrder[0] ?? "");
     setTargetStatus(request.newStatus || currentStatus);
     setVendor(String(request.row.vendor_bought ?? ""));
-    setAmount(isDeliveredWithDue ? String(due) : "");
+    setAmount("");
     setMethod("Cash");
     setRemarks("");
+  }, [request]);
+
+  useEffect(() => {
+    setAmount(isDeliveredWithDue ? String(due) : "");
   }, [request, isDeliveredWithDue, due]);
 
   if (!request) return null;
