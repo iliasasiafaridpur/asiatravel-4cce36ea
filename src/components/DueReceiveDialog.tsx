@@ -314,8 +314,8 @@ export function DueReceiveDialog({
       if (disc > 0) upd.sold_price = newSold;
       upd.received_by = user.id;
       if (withDelivery) {
-        upd.delivery_date = today;
-        upd.status = "Delivered";
+        if (selected.service.hasDelivery) upd.delivery_date = today;
+        upd.status = selected.service.deliveredStatus;
       }
       const updRes = await resilientUpdate(
         selected.service.table,
