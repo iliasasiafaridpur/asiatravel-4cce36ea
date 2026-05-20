@@ -384,22 +384,39 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    const deliveryBadge = (r: Row) => {
+    const deliveryBadge = (r: Row, due?: number) => {
       // Only show for service-delivery modules
       if (!["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key)) return null;
-      const delivered = !!r.delivery_date;
-      return (
-        <div className="mt-1">
-          <Badge
-            variant="outline"
-            className={delivered
-              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300"
-              : "bg-muted text-muted-foreground border-muted-foreground/20"}
-          >
-            {delivered ? "✅ Service Delivered" : "⏳ Pending Delivery"}
-          </Badge>
-        </div>
-      );
+      const status = String(r.status ?? "");
+      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+      if (status === "Delivered") {
+        if (computedDue > 0) {
+          return (
+            <div className="mt-1">
+              <Badge className="bg-orange-500 text-white border-transparent hover:bg-orange-500/90">
+                ⚠️ Delivered with Due
+              </Badge>
+            </div>
+          );
+        }
+        return (
+          <div className="mt-1">
+            <Badge className="bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90">
+              ✅ Delivered
+            </Badge>
+          </div>
+        );
+      }
+      if (status === "Pending Delivery") {
+        return (
+          <div className="mt-1">
+            <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30">
+              📦 Pending Delivery
+            </Badge>
+          </div>
+        );
+      }
+      return null;
     };
     const dueBtn = (r: Row, due: number) => {
       const svc = DUE_SERVICE_KEY[mod.key];
