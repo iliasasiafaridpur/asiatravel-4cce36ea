@@ -151,7 +151,7 @@ export function DueReceiveDialog({
         for (const s of SERVICES) {
           const { data, error } = await supabase
             .from(s.table as never)
-            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}`)
+            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
             .order("created_at", { ascending: false })
             .limit(500);
           if (error) continue;
@@ -170,6 +170,8 @@ export function DueReceiveDialog({
               sold, received: recv, due,
               entryDate: String(r.entry_date ?? ""),
               extra: String(r[s.extraCol] ?? ""),
+              agencySold: String(r.agency_sold ?? ""),
+              deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
             });
           }
         }
