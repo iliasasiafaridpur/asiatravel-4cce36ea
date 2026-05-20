@@ -238,17 +238,19 @@ export function DueReceiveDialog({
     setSavingDelivery(true);
     try {
       const newDate = next === "Delivered" ? todayIso() : null;
+      const patch: Record<string, unknown> = { delivery_date: newDate };
+      if (next === "Delivered") patch.status = "Delivered";
       await resilientUpdate(
         selected.service.table,
         { id: selected.id },
-        { delivery_date: newDate },
+        patch,
       );
       setSelected({ ...selected, deliveryDate: newDate });
       setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: newDate } : r));
-      toast.success(next === "Delivered" ? "✓ Service Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
+      toast.success(next === "Delivered" ? "✓ Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
     } catch (e) {
       if (isNetworkError(e)) {
-        toast.success("ইন্টারনেট নেই! ডেলিভারি স্ট্যাটাস অটো-সেভ হয়েছে।");
+        toast.success("ইন্টারনেট নেই! স্ট্যাটাস অটো-সেভ হয়েছে।");
       } else {
         toast.error("সমস্যা: " + errMsg(e));
       }
@@ -494,10 +496,10 @@ export function DueReceiveDialog({
               </TabsList>
 
               <TabsContent value="pay" className="space-y-3 pt-3">
-                {/* Delivery Status — independent of payment */}
+                {/* Unified Status — single source of truth. Can mark Delivered anytime, even with due. */}
                 <div className="rounded-md border bg-muted/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <Label className="text-sm">Delivery Status</Label>
+                    <Label className="text-sm">Status</Label>
                     <p className="text-[11px] text-muted-foreground">
                       যেকোনো সময় Delivered করা যাবে — Due বাকি থাকলেও।
                     </p>
@@ -508,10 +510,12 @@ export function DueReceiveDialog({
                       onValueChange={(v) => saveDeliveryStatus(v as "Pending" | "Delivered")}
                       disabled={savingDelivery}
                     >
-                      <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Pending">⏳ Pending Delivery</SelectItem>
-                        <SelectItem value="Delivered">✅ Service Delivered</SelectItem>
+                        <SelectItem value="Delivered">
+                          {selected.due > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     {selected.deliveryDate && (
@@ -521,6 +525,7 @@ export function DueReceiveDialog({
                     )}
                   </div>
                 </div>
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
