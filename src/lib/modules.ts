@@ -147,6 +147,7 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         lookup: "sub_agency",
         section: "agency",
+        filterable: true,
       },
       {
         name: "received",
