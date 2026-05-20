@@ -214,6 +214,65 @@ export function StatusChangeDrawer({
         });
       }
 
+      // Vendor Ledger automation — credit Cost on entering "Pending Delivery",
+      // reverse on leaving it backward.
+      try {
+        if (crossesIntoPD && costPrice > 0 && vendorName) {
+          // Avoid duplicates if a prior entry exists for this source row.
+          const { data: existing } = await supabase
+            .from("vendor_ledger")
+            .select("id")
+            .eq("source_table", request.table)
+            .eq("source_id", request.row.id)
+            .limit(1);
+          if (!existing || existing.length === 0) {
+            let ledgerId: string;
+            try {
+              ledgerId = await generateNextId({
+                key: "_vdl", label: "", short: "", table: "vendor_ledger",
+                idColumn: "ledger_id", idPrefix: "VDL", monthlyId: true, fields: [],
+              });
+            } catch {
+              const d = new Date();
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const yy = String(d.getFullYear()).slice(-2);
+              ledgerId = `VDL-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+            }
+            const passport = String(request.row.passport ?? "");
+            const pname = String(request.row.passenger_name ?? "");
+            await resilientInsert("vendor_ledger", {
+              ledger_id: ledgerId,
+              entry_date: todayIso(),
+              vendor_name: vendorName,
+              passenger_name: pname,
+              passport: passport || null,
+              mobile: String(request.row.mobile ?? "") || null,
+              service_type: request.serviceType,
+              country_route: String(request.row.country_name ?? request.row.country_route ?? "") || null,
+              total_payable: costPrice,
+              paid_amount: 0,
+              advance_applied: 0,
+              payment_method: "Cash",
+              source_table: request.table,
+              source_id: request.row.id,
+              remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${todayIso()})`,
+              created_by: user?.id ?? null,
+            });
+          }
+        } else if (crossesOutOfPD) {
+          await supabase
+            .from("vendor_ledger")
+            .delete()
+            .eq("source_table", request.table)
+            .eq("source_id", request.row.id);
+        }
+      } catch (le) {
+        // Don't block status change on ledger errors; surface a warning.
+        if (!isNetworkError(le)) {
+          toast.warning("Vendor ledger update failed: " + errMsg(le));
+        }
+      }
+
       toast.success(`Status: ${next}`);
       if (next === "Delivered") speakDelivery(String(request.row.passenger_name ?? ""));
       onApplied();
