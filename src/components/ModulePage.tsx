@@ -110,8 +110,7 @@ export function ModulePage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
-  const [vendorPrompt, setVendorPrompt] = useState<{ row: Row } | null>(null);
-  const [vendorPromptValue, setVendorPromptValue] = useState<string>("");
+  const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
