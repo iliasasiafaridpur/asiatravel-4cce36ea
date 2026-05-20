@@ -1149,9 +1149,14 @@ function FormField({ field, value, onChange }: {
           <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
           <span className="ml-2 text-sm text-muted-foreground">Yes</span>
         </div>
+      ) : field.type === "date" ? (
+        <DateInput
+          value={strVal}
+          onChange={(e) => onChange(e.target.value)}
+        />
       ) : (
         <Input
-          type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+          type={field.type === "number" ? "number" : "text"}
           inputMode={field.type === "number" ? "decimal" : undefined}
           value={
             field.type === "number"
