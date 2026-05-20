@@ -254,15 +254,18 @@ export function DueReceiveDialog({
     setSavingDelivery(true);
     try {
       const newDate = next === "Delivered" ? todayIso() : null;
-      const patch: Record<string, unknown> = { delivery_date: newDate };
-      if (next === "Delivered") patch.status = "Delivered";
+      const s = selected.service;
+      const patch: Record<string, unknown> = {};
+      if (s.hasDelivery) patch.delivery_date = newDate;
+      patch.status = next === "Delivered" ? s.deliveredStatus : "Pending";
       await resilientUpdate(
-        selected.service.table,
+        s.table,
         { id: selected.id },
         patch,
       );
-      setSelected({ ...selected, deliveryDate: newDate });
-      setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: newDate } : r));
+      const localDate = s.hasDelivery ? newDate : (next === "Delivered" ? todayIso() : null);
+      setSelected({ ...selected, deliveryDate: localDate });
+      setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: localDate } : r));
       toast.success(next === "Delivered" ? "✓ Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
     } catch (e) {
       if (isNetworkError(e)) {
