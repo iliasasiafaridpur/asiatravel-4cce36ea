@@ -33,14 +33,14 @@ const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
   },
   {
     value: "ready",
-    title: "একাধিক BMET, vendor এর কাছে Ready হয়েছে।",
-    sub: '"File Process" Status থেকে "Card Ready" Status করা হবে।',
+    title: "BMET, Vendor এর কাছে Ready হয়েছে।",
+    sub: 'স্টাটাস পরিবর্তন - File Process থেকে Card Ready করা হবে।',
     btn: "Card Ready",
   },
   {
     value: "receive",
-    title: "একাধিক BMET, vendor এর Ready Card থেকে Receive করো।",
-    sub: '"Card Ready" Status থেকে "Pending Delivery" Status করা হবে, ম্যানুয়াল এন্ট্রি Done।',
+    title: "BMET, Vendor থেকে Receive করা হবে।",
+    sub: 'স্টাটাস পরিবর্তন - Card Ready থেকে Pending Delivery করা হবে। ও খাতায় লেখা হয়েছে।',
     btn: "Receive BMET",
   },
 ];
