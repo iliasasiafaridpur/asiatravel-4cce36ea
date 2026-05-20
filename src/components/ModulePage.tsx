@@ -1046,37 +1046,12 @@ export function ModulePage({ module: mod }: Props) {
         preselect={duePreselect}
       />
 
-      <Dialog open={!!vendorPrompt} onOpenChange={(o) => { if (!o) setVendorPrompt(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Vendor নির্বাচন করুন</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label>Vendor (যাকে File পাঠাচ্ছেন)</Label>
-            <LookupSelect kind="vendor" value={vendorPromptValue} onChange={setVendorPromptValue} />
-            <p className="text-xs text-muted-foreground">
-              Status "File Process" হবে ও Vendor Sent Date = আজকের তারিখ সেট হবে।
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setVendorPrompt(null)}>বাতিল</Button>
-            <Button
-              onClick={async () => {
-                if (!vendorPrompt) return;
-                if (!vendorPromptValue.trim()) {
-                  toast.error("Vendor নির্বাচন করুন");
-                  return;
-                }
-                const row = vendorPrompt.row;
-                setVendorPrompt(null);
-                await applyStatusChange(row, "File Process", { vendor_bought: vendorPromptValue.trim() });
-              }}
-            >
-              নিশ্চিত করুন
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <StatusChangeDrawer
+        request={statusChange}
+        onClose={() => setStatusChange(null)}
+        onApplied={() => void load(false)}
+      />
+
 
       <PassengerProfileDrawer
         open={!!profileRow}
