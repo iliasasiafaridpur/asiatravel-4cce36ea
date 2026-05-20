@@ -51,16 +51,8 @@ export interface ModuleSchema {
 
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
 const STATUS_TICKET = ["ISSUE", "DELIVERED"];
-const STATUS_VISA = [
-  "NEW",
-  "File Process",
-  "Medical",
-  "MOFA",
-  "Visa Issued",
-  "Pending Delivery",
-  "Delivered",
-  "Cancelled",
-];
+// Visa modules now share BMET's exact hierarchy per product requirement.
+const STATUS_VISA = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
