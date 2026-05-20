@@ -50,13 +50,14 @@ export interface ModuleSchema {
 }
 
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
+const STATUS_TICKET = ["ISSUE", "DELIVERED"];
 const STATUS_VISA = [
-  "Pending",
-  "Applied",
+  "NEW",
+  "File Process",
   "Medical",
-  "Finger",
   "MOFA",
   "Visa Issued",
+  "Pending Delivery",
   "Delivered",
   "Cancelled",
 ];
