@@ -17,10 +17,11 @@ import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
-  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route" },
-  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country" },
-  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type" },
-  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No" },
+  // hasDelivery=false means the table has no `delivery_date` column; delivery is tracked via status alone.
+  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route", hasDelivery: false, deliveredStatus: "DELIVERED" },
+  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country", hasDelivery: true,  deliveredStatus: "Delivered" },
+  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type", hasDelivery: true,  deliveredStatus: "Delivered" },
+  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No", hasDelivery: true,  deliveredStatus: "Delivered" },
 ] as const;
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -101,15 +102,21 @@ export function DueReceiveDialog({
 
   // Helper — fetch a single row by id from a given service
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
+    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
     const { data, error } = await supabase
       .from(s.table as never)
-      .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
+      .select(cols)
       .eq("id", rowId)
       .maybeSingle();
     if (error || !data) return null;
     const r = data as unknown as Record<string, unknown>;
     const sold = Number(r.sold_price ?? 0);
     const recv = Number(r[s.recvCol] ?? 0);
+    const statusStr = String(r.status ?? "");
+    const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
+    const deliveryDate = s.hasDelivery
+      ? (r.delivery_date ? String(r.delivery_date) : null)
+      : (deliveredByStatus ? String(r.entry_date ?? todayIso()) : null);
     return {
       service: s,
       id: String(r.id),
@@ -121,7 +128,7 @@ export function DueReceiveDialog({
       entryDate: String(r.entry_date ?? ""),
       extra: String(r[s.extraCol] ?? ""),
       agencySold: String(r.agency_sold ?? ""),
-      deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
+      deliveryDate,
     };
   };
 
@@ -154,9 +161,10 @@ export function DueReceiveDialog({
       try {
         const all: DueRow[] = [];
         for (const s of SERVICES) {
+          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
           const { data, error } = await supabase
             .from(s.table as never)
-            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
+            .select(cols)
             .order("created_at", { ascending: false })
             .limit(500);
           if (error) continue;
@@ -165,6 +173,11 @@ export function DueReceiveDialog({
             const recv = Number(r[s.recvCol] ?? 0);
             const due = sold - recv;
             if (due <= 0) continue;
+            const statusStr = String(r.status ?? "");
+            const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
+            const deliveryDate = s.hasDelivery
+              ? (r.delivery_date ? String(r.delivery_date) : null)
+              : (deliveredByStatus ? String(r.entry_date ?? todayIso()) : null);
             all.push({
               service: s,
               id: String(r.id),
@@ -176,7 +189,7 @@ export function DueReceiveDialog({
               entryDate: String(r.entry_date ?? ""),
               extra: String(r[s.extraCol] ?? ""),
               agencySold: String(r.agency_sold ?? ""),
-              deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
+              deliveryDate,
             });
           }
         }
@@ -241,15 +254,18 @@ export function DueReceiveDialog({
     setSavingDelivery(true);
     try {
       const newDate = next === "Delivered" ? todayIso() : null;
-      const patch: Record<string, unknown> = { delivery_date: newDate };
-      if (next === "Delivered") patch.status = "Delivered";
+      const s = selected.service;
+      const patch: Record<string, unknown> = {};
+      if (s.hasDelivery) patch.delivery_date = newDate;
+      patch.status = next === "Delivered" ? s.deliveredStatus : "Pending";
       await resilientUpdate(
-        selected.service.table,
+        s.table,
         { id: selected.id },
         patch,
       );
-      setSelected({ ...selected, deliveryDate: newDate });
-      setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: newDate } : r));
+      const localDate = s.hasDelivery ? newDate : (next === "Delivered" ? todayIso() : null);
+      setSelected({ ...selected, deliveryDate: localDate });
+      setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: localDate } : r));
       toast.success(next === "Delivered" ? "✓ Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
     } catch (e) {
       if (isNetworkError(e)) {
@@ -298,8 +314,8 @@ export function DueReceiveDialog({
       if (disc > 0) upd.sold_price = newSold;
       upd.received_by = user.id;
       if (withDelivery) {
-        upd.delivery_date = today;
-        upd.status = "Delivered";
+        if (selected.service.hasDelivery) upd.delivery_date = today;
+        upd.status = selected.service.deliveredStatus;
       }
       const updRes = await resilientUpdate(
         selected.service.table,
@@ -402,7 +418,7 @@ export function DueReceiveDialog({
         sold: newSoldLocal,
         received: newRecv,
         due: newSoldLocal - newRecv,
-        deliveryDate: upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate,
+        deliveryDate: withDelivery ? today : (upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate),
       };
       if (updated.due <= 0) {
         handleClose(false);
