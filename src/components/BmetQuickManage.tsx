@@ -40,7 +40,7 @@ const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
   {
     value: "receive",
     title: "একাধিক BMET, vendor এর Ready Card থেকে Receive করো।",
-    sub: '"Card Ready" Status থেকে "Ready For Delivery" Status করা হবে, ম্যানুয়াল এন্ট্রি Done।',
+    sub: '"Card Ready" Status থেকে "Pending Delivery" Status করা হবে, ম্যানুয়াল এন্ট্রি Done।',
     btn: "Receive BMET",
   },
 ];
@@ -57,7 +57,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
       return rows.filter((r) => !r.vendor_sent_date);
     }
     if (mode === "ready") {
-      return rows.filter((r) => r.vendor_sent_date && r.status !== "Card Ready" && r.status !== "Ready For Delivery" && !r.received_date);
+      return rows.filter((r) => r.status === "File Process");
     }
     // receive
     return rows.filter((r) => r.status === "Card Ready" && !r.received_date);
@@ -97,7 +97,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
           ? { vendor_bought: vendor, vendor_sent_date: todayIso(), status: "File Process" }
           : mode === "ready"
           ? { status: "Card Ready" }
-          : { status: "Ready For Delivery", received_date: todayIso() };
+          : { status: "Pending Delivery", received_date: todayIso() };
 
       const { error } = await supabase.from("bmet_cards").update(patch).in("id", ids);
       if (error) throw error;
