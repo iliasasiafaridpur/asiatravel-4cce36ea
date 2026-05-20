@@ -391,15 +391,17 @@ export function DueReceiveDialog({
       }
 
       // update local state
+      const newSoldLocal = selected.sold - disc;
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
-          ? { ...r, received: newRecv, due: r.sold - newRecv }
+          ? { ...r, sold: newSoldLocal, received: newRecv, due: newSoldLocal - newRecv }
           : r)).filter((r) => r.due > 0)
       );
       const updated: DueRow = {
         ...selected,
+        sold: newSoldLocal,
         received: newRecv,
-        due: selected.sold - newRecv,
+        due: newSoldLocal - newRecv,
         deliveryDate: upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate,
       };
       if (updated.due <= 0) {
@@ -408,6 +410,7 @@ export function DueReceiveDialog({
         setSelected(updated);
         setTab(wasOffline ? "pay" : "history");
         setAmount("");
+        setDiscount("");
       }
     } catch (e) {
       if (isNetworkError(e)) {
