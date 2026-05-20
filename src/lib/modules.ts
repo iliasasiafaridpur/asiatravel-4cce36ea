@@ -467,9 +467,12 @@ export const MODULES: ModuleSchema[] = [
         name: "agency_sold",
         label: "Sub Agency / Reference",
         type: "text",
+        showInList: true,
+        filterable: true,
         lookup: "sub_agency",
         section: "agency",
       },
+
       {
         name: "received_amount",
         label: "Received Amount",
