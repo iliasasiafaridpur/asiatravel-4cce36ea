@@ -192,15 +192,17 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   <TableHead>Date</TableHead>
                   <TableHead>Passenger</TableHead>
                   <TableHead>Passport</TableHead>
+                  <TableHead>Mobile</TableHead>
                   <TableHead>Country</TableHead>
                   <TableHead>Current Vendor</TableHead>
+                  <TableHead className="w-32">Cost Price</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       কোনো রেকর্ড পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
@@ -215,8 +217,20 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     <TableCell>{String(r.entry_date ?? "")}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
                     <TableCell>{String(r.passport ?? "")}</TableCell>
+                    <TableCell>{String(r.mobile ?? "")}</TableCell>
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
                     <TableCell>{String(r.vendor_bought ?? "")}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        value={costPrices[r.id] ?? (r.cost_price != null ? String(r.cost_price) : "")}
+                        onChange={(e) => setCostPrices((p) => ({ ...p, [r.id]: e.target.value }))}
+                        className="h-8 w-28 text-sm"
+                        placeholder="0"
+                      />
+                    </TableCell>
                     <TableCell>{String(r.status ?? "")}</TableCell>
                   </TableRow>
                 ))}
