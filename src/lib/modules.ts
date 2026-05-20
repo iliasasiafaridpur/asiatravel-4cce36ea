@@ -487,7 +487,8 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       // 3) Vendor
-      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
+      { name: "vendor_bought", label: "Vendor", type: "text", showInList: true, filterable: true, lookup: "vendor", section: "vendor" },
+
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
       { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", section: "vendor" },
       {
