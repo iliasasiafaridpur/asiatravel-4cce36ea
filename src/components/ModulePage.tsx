@@ -202,7 +202,9 @@ export function ModulePage({ module: mod }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
-    if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
+    if (statusFilter !== "all") {
+      xs = xs.filter((r) => (String(r.status ?? "") || (mod.statuses?.[0] ?? "")) === statusFilter);
+    }
     for (const [name, val] of Object.entries(fieldFilters)) {
       if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
     }
@@ -216,7 +218,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses]);
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
