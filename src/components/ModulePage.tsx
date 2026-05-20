@@ -403,14 +403,21 @@ export function ModulePage({ module: mod }: Props) {
   }, [mod, computeValue, load]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string) => {
-    // CASE A entrypoint: prompt for vendor first
-    if (newStatus === "File Process" && mod.fields.some((f) => f.name === "vendor_bought")) {
-      setVendorPromptValue(String(row.vendor_bought ?? ""));
-      setVendorPrompt({ row });
-      return;
-    }
-    void applyStatusChange(row, newStatus);
-  }, [mod, applyStatusChange]);
+    const hasField = (n: string) => mod.fields.some((f) => f.name === n);
+    const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
+    setStatusChange({
+      row,
+      newStatus,
+      table: mod.table,
+      recvCol: meta.recvCol,
+      serviceType: meta.serviceType,
+      refId: String(row[mod.idColumn] ?? ""),
+      hasVendorField: hasField("vendor_bought"),
+      hasVendorSentDate: hasField("vendor_sent_date"),
+      hasReceivedDate: hasField("received_date"),
+      hasDeliveryDate: hasField("delivery_date"),
+    });
+  }, [mod]);
 
 
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
