@@ -392,7 +392,7 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod, computeValue, load]);
 
-  const handleStatusSelect = (row: Row, newStatus: string) => {
+  const handleStatusSelect = useCallback((row: Row, newStatus: string) => {
     // CASE A entrypoint: prompt for vendor first
     if (newStatus === "File Process" && mod.fields.some((f) => f.name === "vendor_bought")) {
       setVendorPromptValue(String(row.vendor_bought ?? ""));
@@ -400,7 +400,7 @@ export function ModulePage({ module: mod }: Props) {
       return;
     }
     void applyStatusChange(row, newStatus);
-  };
+  }, [mod, applyStatusChange]);
 
 
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
