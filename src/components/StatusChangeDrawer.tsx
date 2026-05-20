@@ -290,7 +290,7 @@ export function StatusChangeDrawer({
       }
 
       toast.success(`Status: ${next}`);
-      if (next === "Delivered") speakDelivery(String(request.row.passenger_name ?? ""));
+      if (isDeliveredAny) speakDelivery(String(request.row.passenger_name ?? ""));
       onApplied();
       onClose();
     } catch (e) {
