@@ -531,10 +531,24 @@ export function DueReceiveDialog({
                   <Label>Remarks</Label>
                   <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1.5" placeholder="মন্তব্য (ঐচ্ছিক)" />
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-2">
                   <Button variant="outline" onClick={() => handleClose(false)}>বাতিল</Button>
-                  <Button onClick={submitPayment} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-                    <Wallet className="h-4 w-4" /> {saving ? "সেভ হচ্ছে…" : "Receive Payment"}
+                  <Button
+                    onClick={() => submitPayment(false)}
+                    disabled={saving}
+                    variant="secondary"
+                    className="gap-2"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {saving ? "সেভ হচ্ছে…" : "Rece: Payment Without-Delivery"}
+                  </Button>
+                  <Button
+                    onClick={() => submitPayment(true)}
+                    disabled={saving}
+                    className="bg-emerald-600 hover:bg-emerald-700 gap-2 text-white"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {saving ? "সেভ হচ্ছে…" : "Rece: Payment With-Delivery"}
                   </Button>
                 </DialogFooter>
               </TabsContent>
