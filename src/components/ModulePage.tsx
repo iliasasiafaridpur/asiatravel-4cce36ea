@@ -513,17 +513,20 @@ export function ModulePage({ module: mod }: Props) {
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel className="text-xs">Status পরিবর্তন</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {mod.statuses.map((s) => (
-                <DropdownMenuItem
-                  key={s}
-                  disabled={s === status}
-                  onClick={() => handleStatusSelect(r, s)}
-                  className="flex items-center gap-2"
-                >
-                  <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
-                  {s === status && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
-                </DropdownMenuItem>
-              ))}
+              {mod.statuses.map((s) => {
+                const isCurrent = s.toLowerCase() === status.toLowerCase();
+                return (
+                  <DropdownMenuItem
+                    key={s}
+                    disabled={isCurrent}
+                    onClick={() => handleStatusSelect(r, s)}
+                    className="flex items-center gap-2"
+                  >
+                    <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
+                    {isCurrent && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
