@@ -290,11 +290,9 @@ export function DueReceiveDialog({
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
       upd.received_by = user.id;
-      if (deliveryStatus === "Delivered" && !selected.deliveryDate) {
+      if (withDelivery) {
         upd.delivery_date = today;
         upd.status = "Delivered";
-      } else if (deliveryStatus === "Pending" && selected.deliveryDate) {
-        upd.delivery_date = null;
       }
       const updRes = await resilientUpdate(
         selected.service.table,
