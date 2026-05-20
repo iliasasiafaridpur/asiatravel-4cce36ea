@@ -322,9 +322,11 @@ export function DueReceiveDialog({
         receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
       }
 
-      const receiptRemarks = excess > 0
-        ? `${remarks ? remarks + " · " : ""}অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`
-        : (remarks || null);
+      const remarkParts: string[] = [];
+      if (remarks) remarkParts.push(remarks);
+      if (disc > 0) remarkParts.push(`Discount ৳${disc.toLocaleString()} প্রয়োগ`);
+      if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
+      const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
       const insRes = await resilientInsert("payment_receipts", {
         receipt_id: receiptId,
