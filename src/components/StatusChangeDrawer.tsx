@@ -417,7 +417,7 @@ export function StatusChangeDrawer({
           )}
 
           {/* Delivered with no due → simple confirmation note */}
-          {next === "Delivered" && due === 0 && (
+          {isDeliveredAny && due === 0 && (
             <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
               ✅ বকেয়া নেই — Status "Delivered" হবে ও Delivery Date আজকের তারিখ সেট হবে।
             </div>
