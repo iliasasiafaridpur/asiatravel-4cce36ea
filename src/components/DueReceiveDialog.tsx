@@ -510,7 +510,7 @@ export function DueReceiveDialog({
 
 
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <Label>Amount</Label>
                     <Input
@@ -518,14 +518,15 @@ export function DueReceiveDialog({
                       value={amount} onChange={(e) => setAmount(e.target.value)}
                       className="mt-1.5 text-lg font-semibold"
                     />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Due: {selected.due.toLocaleString()} — অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
-                    </p>
-                    {Number(amount) > selected.due && (
-                      <p className="text-[11px] text-amber-600 font-semibold mt-1">
-                        অতিরিক্ত: ৳{(Number(amount) - selected.due).toLocaleString()} → {selected.agencySold || "(no agency)"}
-                      </p>
-                    )}
+                  </div>
+                  <div>
+                    <Label>Discount</Label>
+                    <Input
+                      type="number" inputMode="decimal" min={0}
+                      value={discount} onChange={(e) => setDiscount(e.target.value)}
+                      className="mt-1.5 text-lg font-semibold"
+                      placeholder="0"
+                    />
                   </div>
                   <div>
                     <Label>Method</Label>
@@ -539,6 +540,16 @@ export function DueReceiveDialog({
                     </Select>
                   </div>
                 </div>
+                <div className="text-[11px] text-muted-foreground -mt-1">
+                  Due: {selected.due.toLocaleString()}
+                  {Number(discount) > 0 && <> · Discount: ৳{Number(discount).toLocaleString()} · Effective Due: ৳{Math.max(0, selected.due - Number(discount)).toLocaleString()}</>}
+                  {" "}— অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
+                </div>
+                {Number(amount) > Math.max(0, selected.due - (Number(discount) || 0)) && (
+                  <p className="text-[11px] text-amber-600 font-semibold -mt-2">
+                    অতিরিক্ত: ৳{(Number(amount) - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
+                  </p>
+                )}
                 <div>
                   <Label>Remarks</Label>
                   <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1.5" placeholder="মন্তব্য (ঐচ্ছিক)" />
@@ -548,8 +559,7 @@ export function DueReceiveDialog({
                   <Button
                     onClick={() => submitPayment(false)}
                     disabled={saving}
-                    variant="secondary"
-                    className="gap-2"
+                    className="gap-2 bg-amber-500 hover:bg-amber-600 text-white"
                   >
                     <Wallet className="h-4 w-4" />
                     {saving ? "সেভ হচ্ছে…" : "Rece: Payment Without-Delivery"}
