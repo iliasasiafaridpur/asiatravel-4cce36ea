@@ -109,6 +109,16 @@ export function StatusChangeDrawer({
   if (next === "Pending Delivery" && request.hasReceivedDate) {
     forwardEffects.push("Received Date (Vendor থেকে) = আজকের তারিখ সেট হবে।");
   }
+  const currentIdx = idxOf(current);
+  const _targetIdx = idxOf(next);
+  const pdIdx = idxOf("Pending Delivery");
+  const costPrice = Number(request.row.cost_price ?? 0);
+  const vendorName = String(request.row.vendor_bought ?? "").trim();
+  const crossesIntoPD = direction === "forward" && currentIdx < pdIdx && _targetIdx >= pdIdx;
+  const crossesOutOfPD = direction === "backward" && currentIdx >= pdIdx && _targetIdx < pdIdx;
+  if (crossesIntoPD && costPrice > 0 && vendorName) {
+    forwardEffects.push(`Vendor "${vendorName}" এর খাতায় ৳${costPrice.toLocaleString()} Cost Credit হবে।`);
+  }
   if (next === "Delivered" && request.hasDeliveryDate) {
     forwardEffects.push("Delivery Date = আজকের তারিখ সেট হবে।");
   }
@@ -118,10 +128,13 @@ export function StatusChangeDrawer({
 
   // Backward fields to clear / recalc
   const backwardClears: string[] = [];
-  const targetIdx = idxOf(next);
+  const targetIdx = _targetIdx;
   if (targetIdx < idxOf("File Process") && request.hasVendorSentDate) backwardClears.push("Vendor Sent Date");
   if (targetIdx < idxOf("Pending Delivery") && request.hasReceivedDate) backwardClears.push("Received Date");
   if (targetIdx < idxOf("Delivered") && request.hasDeliveryDate) backwardClears.push("Delivery Date");
+  if (crossesOutOfPD && costPrice > 0) {
+    backwardClears.push(`Vendor "${vendorName || "—"}" এর খাতা থেকে ৳${costPrice.toLocaleString()} Cost entry রিভার্স হবে`);
+  }
 
   const apply = async () => {
     if (!user?.id && isDeliveredWithDue) {
