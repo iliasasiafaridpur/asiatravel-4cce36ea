@@ -384,22 +384,39 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    const deliveryBadge = (r: Row) => {
+    const deliveryBadge = (r: Row, due?: number) => {
       // Only show for service-delivery modules
       if (!["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key)) return null;
-      const delivered = !!r.delivery_date;
-      return (
-        <div className="mt-1">
-          <Badge
-            variant="outline"
-            className={delivered
-              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300"
-              : "bg-muted text-muted-foreground border-muted-foreground/20"}
-          >
-            {delivered ? "✅ Service Delivered" : "⏳ Pending Delivery"}
-          </Badge>
-        </div>
-      );
+      const status = String(r.status ?? "");
+      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+      if (status === "Delivered") {
+        if (computedDue > 0) {
+          return (
+            <div className="mt-1">
+              <Badge className="bg-orange-500 text-white border-transparent hover:bg-orange-500/90">
+                ⚠️ Delivered with Due
+              </Badge>
+            </div>
+          );
+        }
+        return (
+          <div className="mt-1">
+            <Badge className="bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90">
+              ✅ Delivered
+            </Badge>
+          </div>
+        );
+      }
+      if (status === "Pending Delivery") {
+        return (
+          <div className="mt-1">
+            <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30">
+              📦 Pending Delivery
+            </Badge>
+          </div>
+        );
+      }
+      return null;
     };
     const dueBtn = (r: Row, due: number) => {
       const svc = DUE_SERVICE_KEY[mod.key];
@@ -594,7 +611,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod]);
+  }, [mod, computeValue]);
 
   return (
     <div className="space-y-4">
@@ -643,17 +660,17 @@ export function ModulePage({ module: mod }: Props) {
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 items-center justify-between">
-              <div className="inline-flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-end justify-between">
+              <div className="flex flex-wrap gap-2 items-end">
                 {hasDateFilter && (
                   <>
-                    <div className="space-y-1 w-36">
+                    <div className="space-y-1 w-32">
                       <Label className="text-xs font-medium">Start Date</Label>
-                      <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 text-base" />
+                      <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 px-2 text-sm" />
                     </div>
-                    <div className="space-y-1 w-36">
+                    <div className="space-y-1 w-32">
                       <Label className="text-xs font-medium">End Date</Label>
-                      <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 text-base" />
+                      <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 px-2 text-sm" />
                     </div>
                   </>
                 )}
@@ -663,10 +680,10 @@ export function ModulePage({ module: mod }: Props) {
                     ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
                   ])).sort();
                   return (
-                    <div key={f.name} className="space-y-1 w-36">
+                    <div key={f.name} className="space-y-1 w-32">
                       <Label className="text-xs font-medium">{f.label}</Label>
                       <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
-                        <SelectTrigger className="h-9 text-base"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+                        <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">সব {f.label}</SelectItem>
                           {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -676,10 +693,10 @@ export function ModulePage({ module: mod }: Props) {
                   );
                 })}
                 {mod.statuses && (
-                  <div className="space-y-1 w-36">
+                  <div className="space-y-1 w-32">
                     <Label className="text-xs font-medium">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="h-9 text-base"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-9 px-2 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">সব Status</SelectItem>
                         {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -687,28 +704,26 @@ export function ModulePage({ module: mod }: Props) {
                     </Select>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  {mod.computed?.some((c) => c.name === "balance") && (
-                    <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 gap-1.5">
-                      <Wallet className="h-4 w-4" /> শুধু Due
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setSearch(""); setStatusFilter("all"); setFieldFilters({});
-                      setDueOnly(false); setStartDate(""); setEndDate("");
-                    }}
-                    className="h-9 gap-1.5"
-                    title="Reset"
-                  >
-                    <RotateCcw className="h-4 w-4" /> Reset
+                {mod.computed?.some((c) => c.name === "balance") && (
+                  <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 px-2.5 gap-1.5">
+                    <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
-                </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setSearch(""); setStatusFilter("all"); setFieldFilters({});
+                    setDueOnly(false); setStartDate(""); setEndDate("");
+                  }}
+                  className="h-9 px-2.5 gap-1.5"
+                  title="Reset"
+                >
+                  <RotateCcw className="h-4 w-4" /> Reset
+                </Button>
               </div>
               {mod.key === "bmet" && (
-                <div className="shrink-0 ml-auto">
+                <div className="shrink-0">
                   <BmetQuickManage rows={rows} onChanged={() => load(true)} />
                 </div>
               )}
