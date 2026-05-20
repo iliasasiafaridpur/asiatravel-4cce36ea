@@ -497,35 +497,7 @@ export function DueReceiveDialog({
               </TabsList>
 
               <TabsContent value="pay" className="space-y-3 pt-3">
-                {/* Unified Status — single source of truth. Can mark Delivered anytime, even with due. */}
-                <div className="rounded-md border bg-muted/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div>
-                    <Label className="text-sm">Status</Label>
-                    <p className="text-[11px] text-muted-foreground">
-                      যেকোনো সময় Delivered করা যাবে — Due বাকি থাকলেও।
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={deliveryStatus}
-                      onValueChange={(v) => saveDeliveryStatus(v as "Pending" | "Delivered")}
-                      disabled={savingDelivery}
-                    >
-                      <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">⏳ Pending Delivery</SelectItem>
-                        <SelectItem value="Delivered">
-                          {selected.due > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {selected.deliveryDate && (
-                      <span className="text-[11px] text-emerald-600 whitespace-nowrap">
-                        on {formatDate(selected.deliveryDate)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+
 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
