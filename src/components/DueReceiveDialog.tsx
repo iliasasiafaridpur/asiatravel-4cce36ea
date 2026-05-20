@@ -17,10 +17,11 @@ import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
-  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route" },
-  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country" },
-  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type" },
-  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No" },
+  // hasDelivery=false means the table has no `delivery_date` column; delivery is tracked via status alone.
+  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route", hasDelivery: false, deliveredStatus: "DELIVERED" },
+  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country", hasDelivery: true,  deliveredStatus: "Delivered" },
+  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type", hasDelivery: true,  deliveredStatus: "Delivered" },
+  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No", hasDelivery: true,  deliveredStatus: "Delivered" },
 ] as const;
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
