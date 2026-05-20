@@ -80,7 +80,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     setSelected(next);
   };
 
-  const reset = () => { setSelected(new Set()); setVendor(""); };
+  const reset = () => { setSelected(new Set()); setVendor(""); setCostPrices({}); };
 
   const handleModeChange = (m: Mode) => { setMode(m); reset(); };
 
