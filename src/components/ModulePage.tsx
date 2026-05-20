@@ -38,6 +38,15 @@ import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
+
+// Map module table → (received column, service-type label) used by StatusChangeDrawer
+const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
+  tickets: { recvCol: "received", serviceType: "Ticket" },
+  bmet_cards: { recvCol: "received_amount", serviceType: "BMET Card" },
+  saudi_visas: { recvCol: "received_amount", serviceType: "Saudi Visa" },
+  kuwait_visas: { recvCol: "received", serviceType: "Kuwait Visa" },
+};
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
@@ -101,8 +110,7 @@ export function ModulePage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
-  const [vendorPrompt, setVendorPrompt] = useState<{ row: Row } | null>(null);
-  const [vendorPromptValue, setVendorPromptValue] = useState<string>("");
+  const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadingRef = useRef(false);
@@ -395,14 +403,21 @@ export function ModulePage({ module: mod }: Props) {
   }, [mod, computeValue, load]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string) => {
-    // CASE A entrypoint: prompt for vendor first
-    if (newStatus === "File Process" && mod.fields.some((f) => f.name === "vendor_bought")) {
-      setVendorPromptValue(String(row.vendor_bought ?? ""));
-      setVendorPrompt({ row });
-      return;
-    }
-    void applyStatusChange(row, newStatus);
-  }, [mod, applyStatusChange]);
+    const hasField = (n: string) => mod.fields.some((f) => f.name === n);
+    const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
+    setStatusChange({
+      row,
+      newStatus,
+      table: mod.table,
+      recvCol: meta.recvCol,
+      serviceType: meta.serviceType,
+      refId: String(row[mod.idColumn] ?? ""),
+      hasVendorField: hasField("vendor_bought"),
+      hasVendorSentDate: hasField("vendor_sent_date"),
+      hasReceivedDate: hasField("received_date"),
+      hasDeliveryDate: hasField("delivery_date"),
+    });
+  }, [mod]);
 
 
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
@@ -1031,37 +1046,12 @@ export function ModulePage({ module: mod }: Props) {
         preselect={duePreselect}
       />
 
-      <Dialog open={!!vendorPrompt} onOpenChange={(o) => { if (!o) setVendorPrompt(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Vendor নির্বাচন করুন</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label>Vendor (যাকে File পাঠাচ্ছেন)</Label>
-            <LookupSelect kind="vendor" value={vendorPromptValue} onChange={setVendorPromptValue} />
-            <p className="text-xs text-muted-foreground">
-              Status "File Process" হবে ও Vendor Sent Date = আজকের তারিখ সেট হবে।
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setVendorPrompt(null)}>বাতিল</Button>
-            <Button
-              onClick={async () => {
-                if (!vendorPrompt) return;
-                if (!vendorPromptValue.trim()) {
-                  toast.error("Vendor নির্বাচন করুন");
-                  return;
-                }
-                const row = vendorPrompt.row;
-                setVendorPrompt(null);
-                await applyStatusChange(row, "File Process", { vendor_bought: vendorPromptValue.trim() });
-              }}
-            >
-              নিশ্চিত করুন
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <StatusChangeDrawer
+        request={statusChange}
+        onClose={() => setStatusChange(null)}
+        onApplied={() => void load(false)}
+      />
+
 
       <PassengerProfileDrawer
         open={!!profileRow}
