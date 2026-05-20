@@ -138,6 +138,7 @@ export function DueReceiveDialog({
       setAmount(String(row.due));
       setMethod("Cash");
       setRemarks("");
+      setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
     })();
     return () => { cancelled = true; };
   }, [open, preselect?.serviceKey, preselect?.rowId]);
