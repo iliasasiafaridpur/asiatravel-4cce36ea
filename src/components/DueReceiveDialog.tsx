@@ -161,9 +161,10 @@ export function DueReceiveDialog({
       try {
         const all: DueRow[] = [];
         for (const s of SERVICES) {
+          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
           const { data, error } = await supabase
             .from(s.table as never)
-            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
+            .select(cols)
             .order("created_at", { ascending: false })
             .limit(500);
           if (error) continue;
@@ -172,6 +173,11 @@ export function DueReceiveDialog({
             const recv = Number(r[s.recvCol] ?? 0);
             const due = sold - recv;
             if (due <= 0) continue;
+            const statusStr = String(r.status ?? "");
+            const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
+            const deliveryDate = s.hasDelivery
+              ? (r.delivery_date ? String(r.delivery_date) : null)
+              : (deliveredByStatus ? String(r.entry_date ?? todayIso()) : null);
             all.push({
               service: s,
               id: String(r.id),
@@ -183,7 +189,7 @@ export function DueReceiveDialog({
               entryDate: String(r.entry_date ?? ""),
               extra: String(r[s.extraCol] ?? ""),
               agencySold: String(r.agency_sold ?? ""),
-              deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
+              deliveryDate,
             });
           }
         }
