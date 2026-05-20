@@ -78,6 +78,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "ticket_id",
     idPrefix: "TKT",
     monthlyId: true,
+    statuses: STATUS_TICKET,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
