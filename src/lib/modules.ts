@@ -60,7 +60,7 @@ const STATUS_VISA = [
   "Delivered",
   "Cancelled",
 ];
-const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Ready For Delivery"];
+const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 
 const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
@@ -372,9 +372,9 @@ export const MODULES: ModuleSchema[] = [
     ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
-      if (r.received_date) return "Ready For Delivery";
-      // If user manually picked "Card Ready", keep it (it falls between vendor_sent and received_date)
+      if (r.delivery_date) return "Delivered";
       const cur = String(r.status ?? "");
+      if (r.received_date) return "Pending Delivery";
       if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
       if (r.vendor_sent_date) return "File Process";
       return cur || "NEW";
@@ -812,7 +812,13 @@ export function statusBadgeClass(status?: string | null): string {
     case "Finger":
     case "MOFA":
     case "Ready":
+    case "File Process":
+    case "Card Ready":
       return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30";
+    case "Pending Delivery":
+      return "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30";
+    case "NEW":
+      return "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30";
     case "Cancelled":
       return "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30";
     default:
