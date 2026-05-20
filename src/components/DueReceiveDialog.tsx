@@ -102,15 +102,21 @@ export function DueReceiveDialog({
 
   // Helper — fetch a single row by id from a given service
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
+    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
     const { data, error } = await supabase
       .from(s.table as never)
-      .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
+      .select(cols)
       .eq("id", rowId)
       .maybeSingle();
     if (error || !data) return null;
     const r = data as unknown as Record<string, unknown>;
     const sold = Number(r.sold_price ?? 0);
     const recv = Number(r[s.recvCol] ?? 0);
+    const statusStr = String(r.status ?? "");
+    const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
+    const deliveryDate = s.hasDelivery
+      ? (r.delivery_date ? String(r.delivery_date) : null)
+      : (deliveredByStatus ? String(r.entry_date ?? todayIso()) : null);
     return {
       service: s,
       id: String(r.id),
@@ -122,7 +128,7 @@ export function DueReceiveDialog({
       entryDate: String(r.entry_date ?? ""),
       extra: String(r[s.extraCol] ?? ""),
       agencySold: String(r.agency_sold ?? ""),
-      deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
+      deliveryDate,
     };
   };
 
