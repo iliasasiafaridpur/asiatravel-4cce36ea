@@ -50,6 +50,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [mode, setMode] = useState<Mode>("send");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [vendor, setVendor] = useState<string>("");
+  const [costPrices, setCostPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const list = useMemo(() => {
