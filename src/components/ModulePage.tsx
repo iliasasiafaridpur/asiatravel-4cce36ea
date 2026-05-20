@@ -446,38 +446,68 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    // Single unified badge — returns delivery-aware badge for service modules,
-    // otherwise falls back to the generic status badge. Never renders two badges.
+    // Single unified badge — interactive dropdown when mod.statuses exists.
+    // Click → choose new status → triggers automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "");
       if (!status) return null;
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
-      if (isServiceMod) {
-        const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
-        if (status === "Delivered") {
-          return (
-            <div className="mt-1">
-              <Badge className={computedDue > 0
-                ? "bg-orange-500 text-white border-transparent hover:bg-orange-500/90"
-                : "bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90"}>
-                {computedDue > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
-              </Badge>
-            </div>
-          );
-        }
-        if (status === "Pending Delivery") {
-          return (
-            <div className="mt-1">
-              <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30">
-                📦 Pending Delivery
-              </Badge>
-            </div>
-          );
-        }
+      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+
+      let badgeNode: React.ReactNode;
+      if (isServiceMod && status === "Delivered") {
+        badgeNode = (
+          <Badge className={computedDue > 0
+            ? "bg-orange-500 text-white border-transparent hover:bg-orange-500/90 cursor-pointer"
+            : "bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90 cursor-pointer"}>
+            {computedDue > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
+            <ChevronDown className="ml-1 h-3 w-3 opacity-80" />
+          </Badge>
+        );
+      } else if (isServiceMod && status === "Pending Delivery") {
+        badgeNode = (
+          <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30 cursor-pointer">
+            📦 Pending Delivery
+            <ChevronDown className="ml-1 h-3 w-3 opacity-80" />
+          </Badge>
+        );
+      } else {
+        badgeNode = (
+          <Badge variant="outline" className={`${statusBadgeClass(status)} cursor-pointer`}>
+            {status}
+            <ChevronDown className="ml-1 h-3 w-3 opacity-80" />
+          </Badge>
+        );
       }
+
+      if (!mod.statuses || mod.statuses.length === 0) {
+        return <div className="mt-1">{badgeNode}</div>;
+      }
+
       return (
         <div className="mt-1">
-          <Badge variant="outline" className={statusBadgeClass(status)}>{status}</Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="inline-flex items-center" title="Status পরিবর্তন করুন">
+                {badgeNode}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel className="text-xs">Status পরিবর্তন</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {mod.statuses.map((s) => (
+                <DropdownMenuItem
+                  key={s}
+                  disabled={s === status}
+                  onClick={() => handleStatusSelect(r, s)}
+                  className="flex items-center gap-2"
+                >
+                  <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
+                  {s === status && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       );
     };
