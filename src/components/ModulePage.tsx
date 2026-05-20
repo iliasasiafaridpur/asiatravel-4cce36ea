@@ -416,6 +416,7 @@ export function ModulePage({ module: mod }: Props) {
       hasVendorSentDate: hasField("vendor_sent_date"),
       hasReceivedDate: hasField("received_date"),
       hasDeliveryDate: hasField("delivery_date"),
+      statusOrder: mod.statuses,
     });
   }, [mod]);
 
