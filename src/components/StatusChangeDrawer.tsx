@@ -77,19 +77,29 @@ export function StatusChangeDrawer({
 
   const current = String(request?.row.status ?? "");
   const next = request?.newStatus ?? "";
+  const order = request?.statusOrder && request.statusOrder.length > 0
+    ? request.statusOrder
+    : DEFAULT_STATUS_ORDER;
+  const idxOf = (s: string) => idxOfIn(order, s);
   const direction: "forward" | "backward" | "same" = useMemo(() => {
     if (!request) return "same";
-    const a = idxOf(current);
-    const b = idxOf(next);
+    const a = idxOfIn(order, current);
+    const b = idxOfIn(order, next);
+    if (a < 0 || b < 0) return "forward";
     if (b > a) return "forward";
     if (b < a) return "backward";
     return "same";
-  }, [request, current, next]);
+  }, [request, current, next, order]);
 
   const sold = Number(request?.row.sold_price ?? 0);
   const received = Number(request?.row[request?.recvCol ?? ""] ?? 0);
   const due = Math.max(0, sold - received);
-  const isDeliveredWithDue = next === "Delivered" && due > 0;
+  const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED")
+    ? due > 0
+    : false;
+  const isFileProcess = eq(next, "File Process");
+  const isPendingDelivery = eq(next, "Pending Delivery");
+  const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED");
 
   useEffect(() => {
     if (!request) return;
@@ -103,13 +113,13 @@ export function StatusChangeDrawer({
 
   // Compute the list of side-effects for the change (for messaging).
   const forwardEffects: string[] = [];
-  if (next === "File Process" && request.hasVendorSentDate) {
+  if (isFileProcess && request.hasVendorSentDate) {
     forwardEffects.push("Vendor Sent Date = আজকের তারিখ সেট হবে।");
   }
-  if (next === "File Process" && request.hasVendorField) {
+  if (isFileProcess && request.hasVendorField) {
     forwardEffects.push("নির্বাচিত Vendor রেকর্ডে সংরক্ষণ হবে।");
   }
-  if (next === "Pending Delivery" && request.hasReceivedDate) {
+  if (isPendingDelivery && request.hasReceivedDate) {
     forwardEffects.push("Received Date (Vendor থেকে) = আজকের তারিখ সেট হবে।");
   }
   const currentIdx = idxOf(current);
@@ -117,12 +127,12 @@ export function StatusChangeDrawer({
   const pdIdx = idxOf("Pending Delivery");
   const costPrice = Number(request.row.cost_price ?? 0);
   const vendorName = String(request.row.vendor_bought ?? "").trim();
-  const crossesIntoPD = direction === "forward" && currentIdx < pdIdx && _targetIdx >= pdIdx;
-  const crossesOutOfPD = direction === "backward" && currentIdx >= pdIdx && _targetIdx < pdIdx;
+  const crossesIntoPD = pdIdx >= 0 && direction === "forward" && currentIdx < pdIdx && _targetIdx >= pdIdx;
+  const crossesOutOfPD = pdIdx >= 0 && direction === "backward" && currentIdx >= pdIdx && _targetIdx < pdIdx;
   if (crossesIntoPD && costPrice > 0 && vendorName) {
     forwardEffects.push(`Vendor "${vendorName}" এর খাতায় ৳${costPrice.toLocaleString()} Cost Credit হবে।`);
   }
-  if (next === "Delivered" && request.hasDeliveryDate) {
+  if (isDeliveredAny && request.hasDeliveryDate) {
     forwardEffects.push("Delivery Date = আজকের তারিখ সেট হবে।");
   }
   if (isDeliveredWithDue) {
@@ -132,9 +142,11 @@ export function StatusChangeDrawer({
   // Backward fields to clear / recalc
   const backwardClears: string[] = [];
   const targetIdx = _targetIdx;
-  if (targetIdx < idxOf("File Process") && request.hasVendorSentDate) backwardClears.push("Vendor Sent Date");
-  if (targetIdx < idxOf("Pending Delivery") && request.hasReceivedDate) backwardClears.push("Received Date");
-  if (targetIdx < idxOf("Delivered") && request.hasDeliveryDate) backwardClears.push("Delivery Date");
+  const fpIdx = idxOf("File Process");
+  const dlIdx = idxOf("Delivered");
+  if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) backwardClears.push("Vendor Sent Date");
+  if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) backwardClears.push("Received Date");
+  if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) backwardClears.push("Delivery Date");
   if (crossesOutOfPD && costPrice > 0) {
     backwardClears.push(`Vendor "${vendorName || "—"}" এর খাতা থেকে ৳${costPrice.toLocaleString()} Cost entry রিভার্স হবে`);
   }
@@ -144,7 +156,7 @@ export function StatusChangeDrawer({
       toast.error("লগইন প্রয়োজন");
       return;
     }
-    if (next === "File Process" && request.hasVendorField && !vendor.trim()) {
+    if (isFileProcess && request.hasVendorField && !vendor.trim()) {
       toast.error("Vendor নির্বাচন করুন");
       return;
     }
@@ -154,21 +166,22 @@ export function StatusChangeDrawer({
       const patch: Record<string, unknown> = { status: next };
 
       if (direction === "forward") {
-        if (next === "File Process") {
+        if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
           if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
         }
-        if (next === "Pending Delivery" && request.hasReceivedDate) {
+        if (isPendingDelivery && request.hasReceivedDate) {
           patch.received_date = todayIso();
         }
-        if (next === "Delivered" && request.hasDeliveryDate) {
+        if (isDeliveredAny && request.hasDeliveryDate) {
           patch.delivery_date = todayIso();
         }
       } else if (direction === "backward") {
-        if (targetIdx < idxOf("File Process") && request.hasVendorSentDate) patch.vendor_sent_date = null;
-        if (targetIdx < idxOf("Pending Delivery") && request.hasReceivedDate) patch.received_date = null;
-        if (targetIdx < idxOf("Delivered") && request.hasDeliveryDate) patch.delivery_date = null;
+        if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) patch.vendor_sent_date = null;
+        if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) patch.received_date = null;
+        if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) patch.delivery_date = null;
       }
+
 
       // Handle Delivered with due → payment receipt
       let paid = 0;
