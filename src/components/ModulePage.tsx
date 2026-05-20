@@ -38,6 +38,15 @@ import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
+
+// Map module table → (received column, service-type label) used by StatusChangeDrawer
+const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
+  tickets: { recvCol: "received", serviceType: "Ticket" },
+  bmet_cards: { recvCol: "received_amount", serviceType: "BMET Card" },
+  saudi_visas: { recvCol: "received_amount", serviceType: "Saudi Visa" },
+  kuwait_visas: { recvCol: "received", serviceType: "Kuwait Visa" },
+};
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
