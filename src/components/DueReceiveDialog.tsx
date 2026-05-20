@@ -91,6 +91,8 @@ export function DueReceiveDialog({
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState<"Pending" | "Delivered">("Pending");
+  const [savingDelivery, setSavingDelivery] = useState(false);
 
   // history
   const [history, setHistory] = useState<ReceiptRow[]>([]);
