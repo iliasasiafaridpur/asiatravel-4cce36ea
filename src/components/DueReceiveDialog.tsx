@@ -221,6 +221,7 @@ export function DueReceiveDialog({
     setAmount(String(row.due));
     setMethod("Cash");
     setRemarks("");
+    setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
   };
 
   const handleClose = (v: boolean) => {
