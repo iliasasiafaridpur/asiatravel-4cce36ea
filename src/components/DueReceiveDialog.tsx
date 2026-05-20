@@ -292,6 +292,7 @@ export function DueReceiveDialog({
       upd.received_by = user.id;
       if (deliveryStatus === "Delivered" && !selected.deliveryDate) {
         upd.delivery_date = today;
+        upd.status = "Delivered";
       } else if (deliveryStatus === "Pending" && selected.deliveryDate) {
         upd.delivery_date = null;
       }
