@@ -264,11 +264,13 @@ export function DueReceiveDialog({
 
   const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
-    const amt = Number(amount);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    const amt = Number(amount) || 0;
+    const disc = Math.max(0, Number(discount) || 0);
+    if (amt <= 0 && disc <= 0) return toast.error("সঠিক টাকার পরিমাণ অথবা ডিসকাউন্ট দিন");
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
 
-    const excess = Math.max(0, amt - selected.due);
+    const effectiveDue = Math.max(0, selected.due - disc);
+    const excess = Math.max(0, amt - effectiveDue);
     const appliedToDue = amt - excess;
 
     if (excess > 0) {
@@ -288,10 +290,12 @@ export function DueReceiveDialog({
       const me = displayName(profile, user);
       const today = todayIso();
 
-      // 1) update service row received column — cap at sold (so due → 0 on excess)
+      // 1) update service row — apply payment to received, apply discount by reducing sold_price
       const newRecv = selected.received + appliedToDue;
+      const newSold = selected.sold - disc;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
+      if (disc > 0) upd.sold_price = newSold;
       upd.received_by = user.id;
       if (withDelivery) {
         upd.delivery_date = today;
