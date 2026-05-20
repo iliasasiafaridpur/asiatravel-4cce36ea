@@ -328,6 +328,20 @@ export function StatusChangeDrawer({
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <Select value={next} onValueChange={setTargetStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {order.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Status transition visual */}
           <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3">
             <Badge variant="outline" className={statusBadgeClass(current)}>{current || "—"}</Badge>
