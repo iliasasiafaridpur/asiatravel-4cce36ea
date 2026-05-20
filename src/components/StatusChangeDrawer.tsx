@@ -73,13 +73,14 @@ export function StatusChangeDrawer({
   const [amount, setAmount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
+  const [targetStatus, setTargetStatus] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  const current = String(request?.row.status ?? "");
-  const next = request?.newStatus ?? "";
   const order = request?.statusOrder && request.statusOrder.length > 0
     ? request.statusOrder
     : DEFAULT_STATUS_ORDER;
+  const current = String(request?.row.status ?? "") || (order[0] ?? "");
+  const next = targetStatus || request?.newStatus || current;
   const idxOf = (s: string) => idxOfIn(order, s);
   const direction: "forward" | "backward" | "same" = useMemo(() => {
     if (!request) return "same";
@@ -103,10 +104,19 @@ export function StatusChangeDrawer({
 
   useEffect(() => {
     if (!request) return;
+    const requestOrder = request.statusOrder && request.statusOrder.length > 0
+      ? request.statusOrder
+      : DEFAULT_STATUS_ORDER;
+    const currentStatus = String(request.row.status ?? "") || (requestOrder[0] ?? "");
+    setTargetStatus(request.newStatus || currentStatus);
     setVendor(String(request.row.vendor_bought ?? ""));
-    setAmount(isDeliveredWithDue ? String(due) : "");
+    setAmount("");
     setMethod("Cash");
     setRemarks("");
+  }, [request]);
+
+  useEffect(() => {
+    setAmount(isDeliveredWithDue ? String(due) : "");
   }, [request, isDeliveredWithDue, due]);
 
   if (!request) return null;
@@ -322,6 +332,20 @@ export function StatusChangeDrawer({
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <Select value={next} onValueChange={setTargetStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {order.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Status transition visual */}
           <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3">
             <Badge variant="outline" className={statusBadgeClass(current)}>{current || "—"}</Badge>

@@ -26,9 +26,6 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -78,6 +75,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
   for (const field of mod.fields) {
     if (field.type === "number") f[field.name] = 0;
     else if (field.type === "boolean") f[field.name] = false;
+    else if (field.name === "status" && mod.statuses?.length) f[field.name] = mod.statuses[0];
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
     else if (field.lookup === "sub_agency") f[field.name] = "Self";
@@ -204,7 +202,9 @@ export function ModulePage({ module: mod }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
-    if (statusFilter !== "all") xs = xs.filter((r) => r.status === statusFilter);
+    if (statusFilter !== "all") {
+      xs = xs.filter((r) => (String(r.status ?? "") || (mod.statuses?.[0] ?? "")) === statusFilter);
+    }
     for (const [name, val] of Object.entries(fieldFilters)) {
       if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
     }
@@ -218,7 +218,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses]);
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
@@ -282,6 +282,9 @@ export function ModulePage({ module: mod }: Props) {
         else if (field.type === "boolean") payload[field.name] = Boolean(v);
         else if (field.type === "date") payload[field.name] = v ? v : null;
         else payload[field.name] = v ?? null;
+      }
+      if (hasField("status") && mod.statuses?.length && !payload.status) {
+        payload.status = mod.statuses[0];
       }
 
       const me = displayName(profile, user);
@@ -464,11 +467,10 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    // Single unified badge — interactive dropdown when mod.statuses exists.
-    // Click → choose new status → triggers automation (vendor prompt, dates, due modal).
+    // Single unified badge — click opens the right-side confirmation drawer.
+    // The drawer owns the status dropdown + automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
-      const status = String(r.status ?? "");
-      if (!status) return null;
+      const status = String(r.status ?? "") || (mod.statuses?.[0] ?? "");
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
       const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
 
@@ -504,31 +506,18 @@ export function ModulePage({ module: mod }: Props) {
 
       return (
         <div className="mt-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" className="inline-flex items-center" title="Status পরিবর্তন করুন">
-                {badgeNode}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel className="text-xs">Status পরিবর্তন</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {mod.statuses.map((s) => {
-                const isCurrent = s.toLowerCase() === status.toLowerCase();
-                return (
-                  <DropdownMenuItem
-                    key={s}
-                    disabled={isCurrent}
-                    onClick={() => handleStatusSelect(r, s)}
-                    className="flex items-center gap-2"
-                  >
-                    <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
-                    {isCurrent && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            type="button"
+            className="inline-flex items-center"
+            title="Status পরিবর্তন করুন"
+            data-row-noopen
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStatusSelect(r, status);
+            }}
+          >
+            {badgeNode}
+          </button>
         </div>
       );
     };
