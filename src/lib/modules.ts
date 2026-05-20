@@ -563,6 +563,8 @@ export const MODULES: ModuleSchema[] = [
         name: "agency_sold",
         label: "Sub Agency / Reference",
         type: "text",
+        showInList: true,
+        filterable: true,
         lookup: "sub_agency",
         section: "agency",
       },
@@ -579,7 +581,8 @@ export const MODULES: ModuleSchema[] = [
         type: "date",
         section: "agency",
       },
-      { name: "vendor_bought", label: "Vendor", type: "text", lookup: "vendor", section: "vendor" },
+      { name: "vendor_bought", label: "Vendor", type: "text", showInList: true, filterable: true, lookup: "vendor", section: "vendor" },
+
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
