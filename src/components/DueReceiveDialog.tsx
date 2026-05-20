@@ -23,6 +23,8 @@ const SERVICES = [
   { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No" },
 ] as const;
 
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
 type Service = typeof SERVICES[number];
 
 export interface DueReceivePreselect {
@@ -44,6 +46,8 @@ interface DueRow {
   due: number;
   entryDate: string;
   extra: string;       // country / road / etc.
+  agencySold: string;  // agent name for ledger routing
+  deliveryDate: string | null;
 }
 
 interface ReceiptRow {
@@ -87,6 +91,8 @@ export function DueReceiveDialog({
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState<"Pending" | "Delivered">("Pending");
+  const [savingDelivery, setSavingDelivery] = useState(false);
 
   // history
   const [history, setHistory] = useState<ReceiptRow[]>([]);
@@ -96,7 +102,7 @@ export function DueReceiveDialog({
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
     const { data, error } = await supabase
       .from(s.table as never)
-      .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}`)
+      .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
       .eq("id", rowId)
       .maybeSingle();
     if (error || !data) return null;
@@ -113,6 +119,8 @@ export function DueReceiveDialog({
       sold, received: recv, due: sold - recv,
       entryDate: String(r.entry_date ?? ""),
       extra: String(r[s.extraCol] ?? ""),
+      agencySold: String(r.agency_sold ?? ""),
+      deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
     };
   };
 
@@ -130,6 +138,7 @@ export function DueReceiveDialog({
       setAmount(String(row.due));
       setMethod("Cash");
       setRemarks("");
+      setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
     })();
     return () => { cancelled = true; };
   }, [open, preselect?.serviceKey, preselect?.rowId]);
@@ -145,7 +154,7 @@ export function DueReceiveDialog({
         for (const s of SERVICES) {
           const { data, error } = await supabase
             .from(s.table as never)
-            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}`)
+            .select(`id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, delivery_date`)
             .order("created_at", { ascending: false })
             .limit(500);
           if (error) continue;
@@ -164,6 +173,8 @@ export function DueReceiveDialog({
               sold, received: recv, due,
               entryDate: String(r.entry_date ?? ""),
               extra: String(r[s.extraCol] ?? ""),
+              agencySold: String(r.agency_sold ?? ""),
+              deliveryDate: r.delivery_date ? String(r.delivery_date) : null,
             });
           }
         }
@@ -210,6 +221,7 @@ export function DueReceiveDialog({
     setAmount(String(row.due));
     setMethod("Cash");
     setRemarks("");
+    setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
   };
 
   const handleClose = (v: boolean) => {
@@ -220,29 +232,74 @@ export function DueReceiveDialog({
     }
   };
 
+  const saveDeliveryStatus = async (next: "Pending" | "Delivered") => {
+    if (!selected) return;
+    setDeliveryStatus(next);
+    setSavingDelivery(true);
+    try {
+      const newDate = next === "Delivered" ? todayIso() : null;
+      await resilientUpdate(
+        selected.service.table,
+        { id: selected.id },
+        { delivery_date: newDate },
+      );
+      setSelected({ ...selected, deliveryDate: newDate });
+      setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: newDate } : r));
+      toast.success(next === "Delivered" ? "✓ Service Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
+    } catch (e) {
+      if (isNetworkError(e)) {
+        toast.success("ইন্টারনেট নেই! ডেলিভারি স্ট্যাটাস অটো-সেভ হয়েছে।");
+      } else {
+        toast.error("সমস্যা: " + errMsg(e));
+      }
+    } finally {
+      setSavingDelivery(false);
+    }
+  };
+
   const submitPayment = async () => {
     if (!selected) return;
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-    if (amt > selected.due) return toast.error(`Due এর চেয়ে বেশি দেওয়া যাবে না (Due: ${selected.due})`);
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
+
+    const excess = Math.max(0, amt - selected.due);
+    const appliedToDue = amt - excess;
+
+    if (excess > 0) {
+      const agentName = selected.agencySold?.trim();
+      if (!agentName) {
+        return toast.error("এই বুকিং-এ কোনো Agency নেই — অতিরিক্ত টাকা Advance হিসেবে রাখা যাবে না।");
+      }
+      const ok = window.confirm(
+        `আপনি বকেয়া বিলের চেয়ে অতিরিক্ত ৳${excess.toLocaleString()} টাকা ইনপুট দিয়েছেন। ` +
+        `অতিরিক্ত টাকাটি Agent "${agentName}" এর লেজারে Advance হিসাবে যুক্ত হবে। আপনি কি নিশ্চিত?`
+      );
+      if (!ok) return;
+    }
 
     setSaving(true);
     try {
       const me = displayName(profile, user);
-      // 1) update service row received column (resilient — queues if offline)
-      const newRecv = selected.received + amt;
+      const today = todayIso();
+
+      // 1) update service row received column — cap at sold (so due → 0 on excess)
+      const newRecv = selected.received + appliedToDue;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
       upd.received_by = user.id;
+      if (deliveryStatus === "Delivered" && !selected.deliveryDate) {
+        upd.delivery_date = today;
+      } else if (deliveryStatus === "Pending" && selected.deliveryDate) {
+        upd.delivery_date = null;
+      }
       const updRes = await resilientUpdate(
         selected.service.table,
         { id: selected.id },
         upd,
       );
 
-      // 2) insert payment_receipts entry (history) — multiple allowed per row
-      // Generate receipt id locally if offline, server-style otherwise.
+      // 2) insert payment_receipts entry — record the full cash received
       let receiptId: string;
       try {
         receiptId = await generateNextId({
@@ -257,9 +314,13 @@ export function DueReceiveDialog({
         receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
       }
 
+      const receiptRemarks = excess > 0
+        ? `${remarks ? remarks + " · " : ""}অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`
+        : (remarks || null);
+
       const insRes = await resilientInsert("payment_receipts", {
         receipt_id: receiptId,
-        entry_date: new Date().toISOString().slice(0, 10),
+        entry_date: today,
         service_type: selected.service.type,
         service_table: selected.service.table,
         service_row_id: selected.id,
@@ -268,23 +329,69 @@ export function DueReceiveDialog({
         amount: amt,
         method,
         source: "due",
-        remarks: remarks || null,
+        remarks: receiptRemarks,
         received_by: user.id,
         received_by_name: me,
       });
 
-      const wasOffline = updRes.offline || insRes.offline;
-      if (!wasOffline) {
-        toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+      // 3) if excess → route to agency_ledger as Advance Received
+      let ledgerOffline = false;
+      if (excess > 0 && selected.agencySold) {
+        let ledgerId: string;
+        try {
+          ledgerId = await generateNextId({
+            key: "agency-ledger", label: "", short: "", table: "agency_ledger",
+            idColumn: "ledger_id", idPrefix: "AGL", monthlyId: true, fields: [],
+          });
+        } catch (e) {
+          if (!isNetworkError(e)) throw e;
+          const d = new Date();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const yy = String(d.getFullYear()).slice(-2);
+          ledgerId = `AGL-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+        }
+        const ledRes = await resilientInsert("agency_ledger", {
+          ledger_id: ledgerId,
+          entry_date: today,
+          agent_name: selected.agencySold,
+          passenger_name: selected.passenger,
+          passport: selected.passport || null,
+          mobile: selected.mobile || null,
+          service_type: "ADVANCE",
+          total_bill: 0,
+          received_amount: excess,
+          advance_applied: 0,
+          payment_method: method,
+          source_table: "due_excess",
+          source_id: selected.id,
+          remarks: `Advance Received · Due Receive excess from ${selected.refId} (${selected.service.type})${remarks ? " · " + remarks : ""}`,
+          created_by: user.id,
+          received_by: user.id,
+        });
+        ledgerOffline = ledRes.offline;
       }
 
-      // update local state (optimistic — same whether online or queued)
+      const wasOffline = updRes.offline || insRes.offline || ledgerOffline;
+      if (!wasOffline) {
+        if (excess > 0) {
+          toast.success(`✓ Due Cleared (৳${appliedToDue.toLocaleString()}) + Advance ৳${excess.toLocaleString()} → ${selected.agencySold}`);
+        } else {
+          toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+        }
+      }
+
+      // update local state
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
           ? { ...r, received: newRecv, due: r.sold - newRecv }
           : r)).filter((r) => r.due > 0)
       );
-      const updated: DueRow = { ...selected, received: newRecv, due: selected.sold - newRecv };
+      const updated: DueRow = {
+        ...selected,
+        received: newRecv,
+        due: selected.sold - newRecv,
+        deliveryDate: upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate,
+      };
       if (updated.due <= 0) {
         handleClose(false);
       } else {
@@ -387,15 +494,50 @@ export function DueReceiveDialog({
               </TabsList>
 
               <TabsContent value="pay" className="space-y-3 pt-3">
+                {/* Delivery Status — independent of payment */}
+                <div className="rounded-md border bg-muted/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <Label className="text-sm">Delivery Status</Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      যেকোনো সময় Delivered করা যাবে — Due বাকি থাকলেও।
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={deliveryStatus}
+                      onValueChange={(v) => saveDeliveryStatus(v as "Pending" | "Delivered")}
+                      disabled={savingDelivery}
+                    >
+                      <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">⏳ Pending Delivery</SelectItem>
+                        <SelectItem value="Delivered">✅ Service Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {selected.deliveryDate && (
+                      <span className="text-[11px] text-emerald-600 whitespace-nowrap">
+                        on {formatDate(selected.deliveryDate)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label>Amount</Label>
                     <Input
-                      type="number" inputMode="decimal" min={0} max={selected.due}
+                      type="number" inputMode="decimal" min={0}
                       value={amount} onChange={(e) => setAmount(e.target.value)}
                       className="mt-1.5 text-lg font-semibold"
                     />
-                    <p className="text-[11px] text-muted-foreground mt-1">সর্বোচ্চ {selected.due.toLocaleString()} (একাধিকবারেও দেওয়া যাবে)</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Due: {selected.due.toLocaleString()} — অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
+                    </p>
+                    {Number(amount) > selected.due && (
+                      <p className="text-[11px] text-amber-600 font-semibold mt-1">
+                        অতিরিক্ত: ৳{(Number(amount) - selected.due).toLocaleString()} → {selected.agencySold || "(no agency)"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label>Method</Label>

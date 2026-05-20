@@ -384,6 +384,23 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
+    const deliveryBadge = (r: Row) => {
+      // Only show for service-delivery modules
+      if (!["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key)) return null;
+      const delivered = !!r.delivery_date;
+      return (
+        <div className="mt-1">
+          <Badge
+            variant="outline"
+            className={delivered
+              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300"
+              : "bg-muted text-muted-foreground border-muted-foreground/20"}
+          >
+            {delivered ? "✅ Service Delivered" : "⏳ Pending Delivery"}
+          </Badge>
+        </div>
+      );
+    };
     const dueBtn = (r: Row, due: number) => {
       const svc = DUE_SERVICE_KEY[mod.key];
       if (due > 0 && svc) {
@@ -409,6 +426,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+              {deliveryBadge(r)}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -458,6 +476,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+              {deliveryBadge(r)}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -509,6 +528,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
+              {deliveryBadge(r)}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
             </div>
           )},
