@@ -170,6 +170,7 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         lookup: "vendor",
         section: "vendor",
+        filterable: true,
       },
       {
         name: "cost_price",
