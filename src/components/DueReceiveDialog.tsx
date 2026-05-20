@@ -259,7 +259,7 @@ export function DueReceiveDialog({
     }
   };
 
-  const submitPayment = async () => {
+  const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
