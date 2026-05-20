@@ -384,39 +384,40 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    const deliveryBadge = (r: Row, due?: number) => {
-      // Only show for service-delivery modules
-      if (!["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key)) return null;
+    // Single unified badge — returns delivery-aware badge for service modules,
+    // otherwise falls back to the generic status badge. Never renders two badges.
+    const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "");
-      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
-      if (status === "Delivered") {
-        if (computedDue > 0) {
+      if (!status) return null;
+      const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
+      if (isServiceMod) {
+        const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+        if (status === "Delivered") {
           return (
             <div className="mt-1">
-              <Badge className="bg-orange-500 text-white border-transparent hover:bg-orange-500/90">
-                ⚠️ Delivered with Due
+              <Badge className={computedDue > 0
+                ? "bg-orange-500 text-white border-transparent hover:bg-orange-500/90"
+                : "bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90"}>
+                {computedDue > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
               </Badge>
             </div>
           );
         }
-        return (
-          <div className="mt-1">
-            <Badge className="bg-emerald-600 text-white border-transparent hover:bg-emerald-600/90">
-              ✅ Delivered
-            </Badge>
-          </div>
-        );
+        if (status === "Pending Delivery") {
+          return (
+            <div className="mt-1">
+              <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30">
+                📦 Pending Delivery
+              </Badge>
+            </div>
+          );
+        }
       }
-      if (status === "Pending Delivery") {
-        return (
-          <div className="mt-1">
-            <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30">
-              📦 Pending Delivery
-            </Badge>
-          </div>
-        );
-      }
-      return null;
+      return (
+        <div className="mt-1">
+          <Badge variant="outline" className={statusBadgeClass(status)}>{status}</Badge>
+        </div>
+      );
     };
     const dueBtn = (r: Row, due: number) => {
       const svc = DUE_SERVICE_KEY[mod.key];
@@ -442,8 +443,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
-              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
-              {deliveryBadge(r)}
+              {statusOrDeliveryBadge(r)}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -492,8 +492,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
-              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
-              {deliveryBadge(r)}
+              {statusOrDeliveryBadge(r)}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
             </div>
           )},
@@ -544,8 +543,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
-              {r.status ? <div className="mt-1"><Badge variant="outline" className={statusBadgeClass(String(r.status))}>{String(r.status)}</Badge></div> : null}
-              {deliveryBadge(r)}
+              {statusOrDeliveryBadge(r)}
               {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
             </div>
           )},

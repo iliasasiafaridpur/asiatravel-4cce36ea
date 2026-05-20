@@ -259,7 +259,7 @@ export function DueReceiveDialog({
     }
   };
 
-  const submitPayment = async () => {
+  const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
@@ -290,11 +290,9 @@ export function DueReceiveDialog({
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
       upd.received_by = user.id;
-      if (deliveryStatus === "Delivered" && !selected.deliveryDate) {
+      if (withDelivery) {
         upd.delivery_date = today;
         upd.status = "Delivered";
-      } else if (deliveryStatus === "Pending" && selected.deliveryDate) {
-        upd.delivery_date = null;
       }
       const updRes = await resilientUpdate(
         selected.service.table,
@@ -497,35 +495,7 @@ export function DueReceiveDialog({
               </TabsList>
 
               <TabsContent value="pay" className="space-y-3 pt-3">
-                {/* Unified Status — single source of truth. Can mark Delivered anytime, even with due. */}
-                <div className="rounded-md border bg-muted/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div>
-                    <Label className="text-sm">Status</Label>
-                    <p className="text-[11px] text-muted-foreground">
-                      যেকোনো সময় Delivered করা যাবে — Due বাকি থাকলেও।
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={deliveryStatus}
-                      onValueChange={(v) => saveDeliveryStatus(v as "Pending" | "Delivered")}
-                      disabled={savingDelivery}
-                    >
-                      <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">⏳ Pending Delivery</SelectItem>
-                        <SelectItem value="Delivered">
-                          {selected.due > 0 ? "⚠️ Delivered with Due" : "✅ Delivered"}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {selected.deliveryDate && (
-                      <span className="text-[11px] text-emerald-600 whitespace-nowrap">
-                        on {formatDate(selected.deliveryDate)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+
 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -561,10 +531,24 @@ export function DueReceiveDialog({
                   <Label>Remarks</Label>
                   <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1.5" placeholder="মন্তব্য (ঐচ্ছিক)" />
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-2">
                   <Button variant="outline" onClick={() => handleClose(false)}>বাতিল</Button>
-                  <Button onClick={submitPayment} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-                    <Wallet className="h-4 w-4" /> {saving ? "সেভ হচ্ছে…" : "Receive Payment"}
+                  <Button
+                    onClick={() => submitPayment(false)}
+                    disabled={saving}
+                    variant="secondary"
+                    className="gap-2"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {saving ? "সেভ হচ্ছে…" : "Rece: Payment Without-Delivery"}
+                  </Button>
+                  <Button
+                    onClick={() => submitPayment(true)}
+                    disabled={saving}
+                    className="bg-emerald-600 hover:bg-emerald-700 gap-2 text-white"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {saving ? "সেভ হচ্ছে…" : "Rece: Payment With-Delivery"}
                   </Button>
                 </DialogFooter>
               </TabsContent>
