@@ -464,11 +464,10 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
-    // Single unified badge — interactive dropdown when mod.statuses exists.
-    // Click → choose new status → triggers automation (vendor prompt, dates, due modal).
+    // Single unified badge — click opens the right-side confirmation drawer.
+    // The drawer owns the status dropdown + automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
-      const status = String(r.status ?? "");
-      if (!status) return null;
+      const status = String(r.status ?? "") || (mod.statuses?.[0] ?? "");
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
       const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
 
@@ -504,31 +503,18 @@ export function ModulePage({ module: mod }: Props) {
 
       return (
         <div className="mt-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" className="inline-flex items-center" title="Status পরিবর্তন করুন">
-                {badgeNode}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel className="text-xs">Status পরিবর্তন</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {mod.statuses.map((s) => {
-                const isCurrent = s.toLowerCase() === status.toLowerCase();
-                return (
-                  <DropdownMenuItem
-                    key={s}
-                    disabled={isCurrent}
-                    onClick={() => handleStatusSelect(r, s)}
-                    className="flex items-center gap-2"
-                  >
-                    <Badge variant="outline" className={`${statusBadgeClass(s)} pointer-events-none`}>{s}</Badge>
-                    {isCurrent && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            type="button"
+            className="inline-flex items-center"
+            title="Status পরিবর্তন করুন"
+            data-row-noopen
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStatusSelect(r, status);
+            }}
+          >
+            {badgeNode}
+          </button>
         </div>
       );
     };
