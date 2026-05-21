@@ -504,6 +504,7 @@ export type Database = {
           payment_date: string | null
           received: number | null
           received_by: string | null
+          received_date: string | null
           sold_price: number | null
           sponsor_name: string | null
           status: string
@@ -529,6 +530,7 @@ export type Database = {
           payment_date?: string | null
           received?: number | null
           received_by?: string | null
+          received_date?: string | null
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
@@ -554,6 +556,7 @@ export type Database = {
           payment_date?: string | null
           received?: number | null
           received_by?: string | null
+          received_date?: string | null
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
@@ -745,6 +748,7 @@ export type Database = {
           payment_date: string | null
           received_amount: number | null
           received_by: string | null
+          received_date: string | null
           received_vendor: number | null
           rl_no: string | null
           saudi_id: string
@@ -782,6 +786,7 @@ export type Database = {
           payment_date?: string | null
           received_amount?: number | null
           received_by?: string | null
+          received_date?: string | null
           received_vendor?: number | null
           rl_no?: string | null
           saudi_id: string
@@ -819,6 +824,7 @@ export type Database = {
           payment_date?: string | null
           received_amount?: number | null
           received_by?: string | null
+          received_date?: string | null
           received_vendor?: number | null
           rl_no?: string | null
           saudi_id?: string
