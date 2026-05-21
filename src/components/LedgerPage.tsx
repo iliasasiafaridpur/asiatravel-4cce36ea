@@ -1252,7 +1252,7 @@ export function LedgerPage({ module: mod }: Props) {
                     <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Due</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{isAgency ? "Due" : "Due of Vendor"}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
                   </TableRow>
                 </TableHeader>
