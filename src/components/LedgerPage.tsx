@@ -1416,7 +1416,6 @@ export function LedgerPage({ module: mod }: Props) {
                         ? info.sold - info.cost
                         : 0;
                   const status = info?.status ?? "";
-                  const isPending = !!status && /pending|process/i.test(status);
                   return (
                     <div
                       key={r.id}
@@ -1436,9 +1435,9 @@ export function LedgerPage({ module: mod }: Props) {
                         {status && (
                           <Badge
                             variant="outline"
-                            className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
+                            className={cn("mt-1 text-[10px] whitespace-nowrap", statusBadgeClass(status))}
                           >
-                            {isPending ? "Pending" : status}
+                            {status}
                           </Badge>
                         )}
                         {byName && (
@@ -1539,7 +1538,7 @@ export function LedgerPage({ module: mod }: Props) {
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
-                              Due: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />
+                              {isAgency ? "Cus:-Due" : "Ven:-Due"}: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />
                             </button>
                           ) : bal >= 0 || appliedAdvance > 0 ? (
                             <Badge
