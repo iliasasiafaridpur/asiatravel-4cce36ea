@@ -1502,21 +1502,17 @@ export function LedgerPage({ module: mod }: Props) {
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
+                            {typeof info?.cost === "number" && info.cost > 0 && (
+                              <span className="tabular-nums"> · ৳{info.cost.toLocaleString()}</span>
+                            )}
                           </div>
                         )}
                         {!isAgency && info?.agency_sold && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             A: {info.agency_sold}
-                          </div>
-                        )}
-                        {!isAgency && typeof info?.sold === "number" && info.sold > 0 && (
-                          <div className="text-[11px] text-muted-foreground leading-tight tabular-nums">
-                            ৳ {info.sold.toLocaleString()}
-                          </div>
-                        )}
-                        {isAgency && typeof info?.cost === "number" && info.cost > 0 && (
-                          <div className="text-[10px] text-muted-foreground leading-tight tabular-nums">
-                            ৳ {info.cost.toLocaleString()}
+                            {typeof info?.sold === "number" && info.sold > 0 && (
+                              <span className="tabular-nums"> · ৳{info.sold.toLocaleString()}</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1558,14 +1554,20 @@ export function LedgerPage({ module: mod }: Props) {
                             </span>
                           )}
                         </div>
-                        <div
-                          className={cn(
-                            "text-[11px] font-medium",
-                            profit < 0 ? "text-rose-500" : "text-muted-foreground",
-                          )}
-                        >
-                          Profit: {profit.toLocaleString()}
-                        </div>
+                        {typeof info?.cost === "number" && info.cost > 0 && (
+                          <div
+                            className={cn(
+                              "text-[11px] font-medium",
+                              profit < 0
+                                ? "text-rose-500"
+                                : displayDue <= 0 && Number(r[billCol] ?? 0) > 0
+                                  ? "text-emerald-400"
+                                  : "text-amber-400",
+                            )}
+                          >
+                            Profit: {profit.toLocaleString()}
+                          </div>
+                        )}
                       </div>
                       <div className="print:hidden">
                         <div className="flex justify-end gap-0.5 lg:justify-end">
