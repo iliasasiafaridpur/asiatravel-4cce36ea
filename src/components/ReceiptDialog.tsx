@@ -186,7 +186,7 @@ export function ReceiptDialog({
   const jpgFileName = () =>
     `Receipt-${receipt.receiptId}-${(receipt.passengerName || "").replace(/[^a-z0-9]+/gi, "_")}.jpg`;
 
-  const [busy, setBusy] = useState(false);
+
 
   const handleDownloadJpg = async () => {
     setBusy(true);
