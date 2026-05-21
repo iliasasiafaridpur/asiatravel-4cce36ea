@@ -637,14 +637,18 @@ export function ModulePage({ module: mod }: Props) {
             const cost = Number(r.cost_price ?? 0);
             const due = sold - recv;
             const profit = sold - cost;
-            const st = String(r.status ?? "");
-            const showProfit = st === "Pending Delivery" || st === "Delivered";
+            const showProfit = cost > 0;
+            const profitClass = profit < 0
+              ? "text-rose-500"
+              : due <= 0
+                ? "text-emerald-500"
+                : "text-yellow-500";
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
                 <div className="text-xs">{dueBtn(r, due)}</div>
-                {showProfit ? <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div> : null}
+                {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
           }},
@@ -690,14 +694,18 @@ export function ModulePage({ module: mod }: Props) {
             const cost = Number(r.cost_price ?? 0);
             const due = sold - recv;
             const profit = sold - cost;
-            const st = String(r.status ?? "");
-            const showProfit = st === "Pending Delivery" || st === "Delivered";
+            const showProfit = cost > 0;
+            const profitClass = profit < 0
+              ? "text-rose-500"
+              : due <= 0
+                ? "text-emerald-500"
+                : "text-yellow-500";
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
                 <div className="text-xs">{dueBtn(r, due)}</div>
-                {showProfit ? <div className={`text-xs ${profit < 0 ? "text-rose-500" : "text-muted-foreground"}`}>Profit: {fmt(profit)}</div> : null}
+                {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
           }},
