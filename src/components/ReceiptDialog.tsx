@@ -392,6 +392,26 @@ export function ReceiptDialog({
             <Printer className="h-4 w-4" /> Print / PDF
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 min-w-[5.5rem]"
+            onClick={handleDownloadJpg}
+            disabled={busy}
+          >
+            <ImageIcon className="h-4 w-4" /> JPG
+          </Button>
+          {canShareFiles && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 min-w-[7rem]"
+              onClick={handleShareImage}
+              disabled={busy}
+            >
+              <Share2 className="h-4 w-4" /> Share Image
+            </Button>
+          )}
+          <Button
             size="sm"
             className="flex-1 min-w-[7rem] bg-emerald-600 hover:bg-emerald-700 text-white"
             onClick={handleWhatsApp}
