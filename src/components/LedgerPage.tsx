@@ -474,6 +474,20 @@ export function LedgerPage({ module: mod }: Props) {
     };
   }, [filtered, billCol, paidCol]);
 
+  // For vendor-ledger: a bill row from BMET/Saudi/Kuwait modules only contributes
+  // to Total Payable / Due of Vendor once the source customer's status is
+  // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
+  const countsForVendorDue = useCallback(
+    (r: Row) => {
+      if (isAgency) return true;
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+      const info = sourceInfoMap.get(String(r.source_id ?? ""));
+      return !!info?.received_from_vendor;
+    },
+    [isAgency, sourceInfoMap],
+  );
+
   const groupSummary = useMemo(() => {
     const map = new Map<string, { bill: number; cashPaid: number; applied: number; advance: number }>();
     for (const r of filtered) {
@@ -481,7 +495,7 @@ export function LedgerPage({ module: mod }: Props) {
       const cur = map.get(k) ?? { bill: 0, cashPaid: 0, applied: 0, advance: 0 };
       if (isAdvanceRow(r)) {
         cur.advance += Number(r[paidCol] ?? 0);
-      } else {
+      } else if (countsForVendorDue(r)) {
         cur.bill += Number(r[billCol] ?? 0);
         cur.cashPaid += Number(r[paidCol] ?? 0);
         cur.applied += Number(r.advance_applied ?? 0);
@@ -499,7 +513,8 @@ export function LedgerPage({ module: mod }: Props) {
         };
       })
       .sort((a, b) => b.due - a.due);
-  }, [filtered, groupField, billCol, paidCol]);
+  }, [filtered, groupField, billCol, paidCol, countsForVendorDue]);
+
 
   const groupOptions = useMemo(() => {
     const set = new Set<string>();
