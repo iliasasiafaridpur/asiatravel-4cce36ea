@@ -389,8 +389,13 @@ export function StatusChangeDrawer({
                   </div>
                   <div className="space-y-0.5">
                     <Label className="text-[10px] text-amber-600">− Discount</Label>
-                    <Input className="h-8 text-sm" type="number" inputMode="decimal" value={discount}
-                      onChange={(e) => setDiscount(e.target.value)} placeholder="0" />
+                    <Input className="h-8 text-sm text-amber-600" type="number" inputMode="decimal" value={discount}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setDiscount(d);
+                        const dn = Math.max(0, Math.min(due, Number(d) || 0));
+                        setAmount(String(Math.max(0, due - dn)));
+                      }} placeholder="0" />
                   </div>
                   <div className="space-y-0.5">
                     <Label className="text-[10px]">Method</Label>
