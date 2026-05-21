@@ -302,6 +302,7 @@ export function LedgerPage({ module: mod }: Props) {
         sold_price: number | null;
         cost_price: number | null;
         status: string | null;
+        received_date: string | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
         if (b.country_name) cm.set(b.id, b.country_name);
@@ -313,6 +314,8 @@ export function LedgerPage({ module: mod }: Props) {
           sold: b.sold_price ?? undefined,
           cost: b.cost_price ?? undefined,
           status: b.status ?? undefined,
+          received_from_vendor:
+            (b.status ?? "") === "Pending Delivery" && !!b.received_date,
         });
       }
       const vm = new Map<string, string>();
@@ -336,6 +339,7 @@ export function LedgerPage({ module: mod }: Props) {
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
+          received_from_vendor: (v.status ?? "") === "Pending Delivery",
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -348,8 +352,10 @@ export function LedgerPage({ module: mod }: Props) {
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
+          received_from_vendor: (v.status ?? "") === "Pending Delivery",
         });
       }
+
       setTicketFlightMap(fm);
       setTicketRouteMap(rm);
       setBmetCountryMap(cm);
