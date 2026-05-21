@@ -302,52 +302,49 @@ export function StatusChangeDrawer({
         align="start"
         sideOffset={8}
         collisionPadding={12}
-        className="w-80 p-3 max-h-[85vh] overflow-y-auto"
+        className="w-[22rem] p-2.5 max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Passenger meta header */}
-        <div className="rounded-md border bg-muted/40 p-2 mb-3 space-y-0.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <User2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="truncate">{String(row.passenger_name ?? "—")}</span>
+        {/* Passenger meta header — name left, trip info right */}
+        <div className="rounded-md border bg-muted/40 p-2 mb-2 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold">
+              <User2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{String(row.passenger_name ?? "—")}</span>
+            </div>
+            <div className="text-[10px] font-mono text-muted-foreground mt-0.5">{request.refId}</div>
+            {passport && <div className="text-[10px] text-muted-foreground">PP: <span className="font-mono">{passport}</span></div>}
+            {country && <div className="text-[10px] text-muted-foreground truncate">{country}</div>}
           </div>
-          <div className="text-[11px] font-mono text-muted-foreground">{request.refId}</div>
-          {passport && <div className="text-[11px] text-muted-foreground">PP: <span className="font-mono">{passport}</span></div>}
-          {country && <div className="text-[11px] text-muted-foreground">Country: {country}</div>}
           {isTicket && (airline || tripRoad || flightDate) && (
-            <div className="mt-1 pt-1 border-t border-border/60 space-y-0.5">
-              {airline && <div className="text-[11px] text-muted-foreground">✈ Airline: <span className="text-foreground font-medium">{airline}</span></div>}
-              {tripRoad && <div className="text-[11px] text-muted-foreground">Route: <span className="text-foreground font-medium">{tripRoad}</span></div>}
-              {flightDate && <div className="text-[11px] text-muted-foreground">Flight: <span className="text-foreground font-medium">{flightDate}</span></div>}
+            <div className="text-right text-[10px] leading-tight space-y-0.5 shrink-0 max-w-[45%]">
+              {airline && <div>✈ <span className="font-medium text-foreground">{airline}</span></div>}
+              {tripRoad && <div className="text-muted-foreground truncate">{tripRoad}</div>}
+              {flightDate && <div className="text-muted-foreground">{flightDate}</div>}
             </div>
           )}
         </div>
 
-
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Status</Label>
-            <Select value={next} onValueChange={setTargetStatus}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {order.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-2">
+        <div className="space-y-2">
+          <Select value={next} onValueChange={setTargetStatus}>
+            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {order.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center justify-center gap-1.5 rounded-md border bg-muted/40 py-1">
             <Badge variant="outline" className={`${statusBadgeClass(current)} text-[10px]`}>{current || "—"}</Badge>
             {direction === "backward"
-              ? <ArrowLeft className="h-3.5 w-3.5 text-amber-500" />
-              : <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />}
+              ? <ArrowLeft className="h-3 w-3 text-amber-500" />
+              : <ArrowRight className="h-3 w-3 text-muted-foreground" />}
             <Badge variant="outline" className={`${statusBadgeClass(next)} text-[10px]`}>{next}</Badge>
           </div>
 
           {isWarn && (
-            <Alert variant="destructive" className="border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>svg]:text-amber-500 py-2">
-              <AlertTriangle className="h-4 w-4" />
+            <Alert variant="destructive" className="border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>svg]:text-amber-500 py-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
               <AlertTitle className="text-xs">পেছনের Status</AlertTitle>
-              <AlertDescription className="text-[11px] mt-0.5">
+              <AlertDescription className="text-[10px] mt-0.5">
                 {backwardClears.length > 0
                   ? <ul className="list-disc list-inside">{backwardClears.map((c) => <li key={c}>{c}</li>)}</ul>
                   : "শুধু Status পরিবর্তন হবে"}
@@ -356,7 +353,7 @@ export function StatusChangeDrawer({
           )}
 
           {direction === "forward" && forwardEffects.length > 0 && (
-            <div className="rounded-md border bg-emerald-500/5 border-emerald-500/30 p-2 text-[11px]">
+            <div className="rounded-md border bg-emerald-500/5 border-emerald-500/30 p-1.5 text-[10px]">
               <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-0.5">কী ঘটবে:</div>
               <ul className="list-disc list-inside text-foreground/80 space-y-0.5">
                 {forwardEffects.map((c) => <li key={c}>{c}</li>)}
@@ -366,64 +363,63 @@ export function StatusChangeDrawer({
 
           {next === "File Process" && request.hasVendorField && (
             <div className="space-y-1">
-              <Label className="text-xs">Vendor <span className="text-rose-500">*</span></Label>
+              <Label className="text-[10px]">Vendor <span className="text-rose-500">*</span></Label>
               <LookupSelect kind="vendor" value={vendor} onChange={setVendor} />
             </div>
           )}
 
-          {isDeliveredWithDue && (
-            <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Wallet className="h-3.5 w-3.5" /> Due Receive
+          {isDeliveredWithDue && (() => {
+            const payN = Number(amount) || 0;
+            const discN = Number(discount) || 0;
+            const remaining = Math.max(0, due - payN - discN);
+            return (
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> Due Receive</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Sold <span className="font-semibold text-foreground tabular-nums">৳{sold.toLocaleString()}</span>
+                    {" · "}Due <span className="font-semibold text-rose-500 tabular-nums">৳{due.toLocaleString()}</span>
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="space-y-0.5">
+                    <Label className="text-[10px]">Pay *</Label>
+                    <Input className="h-8 text-sm" type="number" inputMode="decimal" value={amount}
+                      onChange={(e) => setAmount(e.target.value)} placeholder="0" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <Label className="text-[10px] text-amber-600">− Discount</Label>
+                    <Input className="h-8 text-sm" type="number" inputMode="decimal" value={discount}
+                      onChange={(e) => setDiscount(e.target.value)} placeholder="0" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <Label className="text-[10px]">Method</Label>
+                    <Select value={method} onValueChange={setMethod}>
+                      <SelectTrigger className="h-8 text-sm px-2"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Bank">Bank</SelectItem>
+                        <SelectItem value="bKash">bKash</SelectItem>
+                        <SelectItem value="Nagad">Nagad</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {(payN > 0 || discN > 0) && (
+                  <div className="text-[10px] flex justify-between items-center px-1 tabular-nums">
+                    <span className="text-muted-foreground">
+                      ৳{due.toLocaleString()} − ৳{payN.toLocaleString()}
+                      {discN > 0 && <> − <span className="text-amber-600">৳{discN.toLocaleString()}</span></>}
+                    </span>
+                    <span>বাকি: <span className={`font-semibold ${remaining > 0 ? "text-rose-500" : "text-emerald-600"}`}>৳{remaining.toLocaleString()}</span></span>
+                  </div>
+                )}
+                <Textarea className="text-xs" rows={1} value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)} placeholder="Remarks (optional)" />
               </div>
-              <div className="grid grid-cols-3 gap-1 text-[10px]">
-                <div className="rounded bg-background p-1.5">
-                  <div className="text-muted-foreground">Sold</div>
-                  <div className="font-semibold tabular-nums">৳{sold.toLocaleString()}</div>
-                </div>
-                <div className="rounded bg-background p-1.5">
-                  <div className="text-muted-foreground">Recv</div>
-                  <div className="font-semibold tabular-nums text-emerald-600">৳{received.toLocaleString()}</div>
-                </div>
-                <div className="rounded bg-background p-1.5">
-                  <div className="text-muted-foreground">Due</div>
-                  <div className="font-semibold tabular-nums text-rose-500">৳{due.toLocaleString()}</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-[10px]">Amount *</Label>
-                  <Input className="h-8 text-sm" type="number" inputMode="decimal" value={amount}
-                    onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px]">Discount</Label>
-                  <Input className="h-8 text-sm" type="number" inputMode="decimal" value={discount}
-                    onChange={(e) => setDiscount(e.target.value)} placeholder="0" />
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <Label className="text-[10px]">Method</Label>
-                  <Select value={method} onValueChange={setMethod}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Cash">Cash</SelectItem>
-                      <SelectItem value="Bank">Bank</SelectItem>
-                      <SelectItem value="bKash">bKash</SelectItem>
-                      <SelectItem value="Nagad">Nagad</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              {(Number(amount) > 0 || Number(discount) > 0) && (
-                <div className="text-[10px] text-muted-foreground flex justify-between px-1">
-                  <span>Pay + Disc: <span className="font-semibold text-foreground tabular-nums">৳{((Number(amount)||0)+(Number(discount)||0)).toLocaleString()}</span></span>
-                  <span>Remaining: <span className={`font-semibold tabular-nums ${Math.max(0, due - (Number(amount)||0) - (Number(discount)||0)) > 0 ? "text-rose-500" : "text-emerald-600"}`}>৳{Math.max(0, due - (Number(amount)||0) - (Number(discount)||0)).toLocaleString()}</span></span>
-                </div>
-              )}
-              <Textarea className="text-xs" rows={2} value={remarks}
-                onChange={(e) => setRemarks(e.target.value)} placeholder="Remarks (optional)" />
-            </div>
-          )}
+            );
+          })()}
+
 
           {isDeliveredAny && due === 0 && (
             <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px]">
