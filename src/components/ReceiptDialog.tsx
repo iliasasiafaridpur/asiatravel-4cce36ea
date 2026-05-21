@@ -157,11 +157,19 @@ export function ReceiptDialog({
   const renderJpegBlob = async (): Promise<Blob | null> => {
     const node = buildPrintableNode();
     try {
+      if (document.fonts?.ready) {
+        try { await document.fonts.ready; } catch { /* ignore */ }
+      }
+      const width = node.offsetWidth || 520;
+      const height = node.offsetHeight;
       const dataUrl = await toJpeg(node, {
         quality: 0.95,
         pixelRatio: 2,
         backgroundColor: "#ffffff",
         cacheBust: true,
+        width,
+        height,
+        style: { transform: "none", opacity: "1" },
       });
       const res = await fetch(dataUrl);
       return await res.blob();
@@ -172,6 +180,7 @@ export function ReceiptDialog({
       node.remove();
     }
   };
+
 
   const jpgFileName = () =>
     `Receipt-${receipt.receiptId}-${(receipt.passengerName || "").replace(/[^a-z0-9]+/gi, "_")}.jpg`;
