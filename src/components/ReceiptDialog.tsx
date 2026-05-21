@@ -1,8 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, MessageCircle, X, Copy } from "lucide-react";
+import { Printer, MessageCircle, X, Copy, Image as ImageIcon, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
 
 export interface ReceiptInfo {
   receiptId: string;
