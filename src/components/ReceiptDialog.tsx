@@ -107,8 +107,12 @@ export function ReceiptDialog({
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(receiptText());
-    toast.success("Receipt text copied");
+    try {
+      await navigator.clipboard.writeText(receiptText());
+      toast.success("Receipt text copied");
+    } catch {
+      toast.error("Copy failed — receipt text select করে copy করুন");
+    }
   };
 
   const handleWhatsApp = () => {
@@ -191,17 +195,17 @@ export function ReceiptDialog({
           </div>
         </div>
 
-        <div className="flex gap-2 p-3 border-t bg-muted/30">
-          <Button variant="outline" size="sm" className="flex-1" onClick={onClose}>
+        <div className="flex flex-wrap gap-2 p-3 border-t bg-muted/30">
+          <Button variant="outline" size="sm" className="flex-1 min-w-[5.5rem]" onClick={onClose}>
             <X className="h-4 w-4" /> বন্ধ
           </Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={handleCopy}>
+          <Button variant="outline" size="sm" className="flex-1 min-w-[5.5rem]" onClick={handleCopy}>
             <Copy className="h-4 w-4" /> Copy
           </Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={handlePrint}>
+          <Button variant="outline" size="sm" className="flex-1 min-w-[7rem]" onClick={handlePrint}>
             <Printer className="h-4 w-4" /> Print / PDF
           </Button>
-          <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleWhatsApp}>
+          <Button size="sm" className="flex-1 min-w-[7rem] bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleWhatsApp}>
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </Button>
         </div>
