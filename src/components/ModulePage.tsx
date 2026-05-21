@@ -1067,6 +1067,8 @@ export function ModulePage({ module: mod }: Props) {
         onOpenChange={(v) => { if (!v) setProfileRow(null); }}
         row={profileRow}
         serviceTable={mod.table}
+        moduleKey={mod.key}
+        statusOrder={mod.statuses}
       />
     </div>
   );
