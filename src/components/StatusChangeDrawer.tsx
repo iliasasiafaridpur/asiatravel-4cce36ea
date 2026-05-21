@@ -106,12 +106,14 @@ export function StatusChangeDrawer({
     setTargetStatus(request.newStatus || currentStatus);
     setVendor(String(request.row.vendor_bought ?? ""));
     setAmount("");
+    setDiscount("");
     setMethod("Cash");
     setRemarks("");
   }, [request]);
 
   useEffect(() => {
     setAmount(isDeliveredWithDue ? String(due) : "");
+    setDiscount("");
   }, [request, isDeliveredWithDue, due]);
 
   if (!request) return null;
