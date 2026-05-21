@@ -1502,21 +1502,17 @@ export function LedgerPage({ module: mod }: Props) {
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
+                            {typeof info?.cost === "number" && info.cost > 0 && (
+                              <span className="tabular-nums"> · ৳{info.cost.toLocaleString()}</span>
+                            )}
                           </div>
                         )}
                         {!isAgency && info?.agency_sold && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             A: {info.agency_sold}
-                          </div>
-                        )}
-                        {!isAgency && typeof info?.sold === "number" && info.sold > 0 && (
-                          <div className="text-[11px] text-muted-foreground leading-tight tabular-nums">
-                            ৳ {info.sold.toLocaleString()}
-                          </div>
-                        )}
-                        {isAgency && typeof info?.cost === "number" && info.cost > 0 && (
-                          <div className="text-[10px] text-muted-foreground leading-tight tabular-nums">
-                            ৳ {info.cost.toLocaleString()}
+                            {typeof info?.sold === "number" && info.sold > 0 && (
+                              <span className="tabular-nums"> · ৳{info.sold.toLocaleString()}</span>
+                            )}
                           </div>
                         )}
                       </div>
