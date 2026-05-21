@@ -66,6 +66,7 @@ export function StatusChangeDrawer({
 
   const [vendor, setVendor] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
+  const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
@@ -105,12 +106,14 @@ export function StatusChangeDrawer({
     setTargetStatus(request.newStatus || currentStatus);
     setVendor(String(request.row.vendor_bought ?? ""));
     setAmount("");
+    setDiscount("");
     setMethod("Cash");
     setRemarks("");
   }, [request]);
 
   useEffect(() => {
     setAmount(isDeliveredWithDue ? String(due) : "");
+    setDiscount("");
   }, [request, isDeliveredWithDue, due]);
 
   if (!request) return null;
@@ -164,43 +167,64 @@ export function StatusChangeDrawer({
       }
 
       let paid = 0;
+      let discAmt = 0;
       if (isDeliveredWithDue) {
-        paid = Math.max(0, Math.min(due, Number(amount) || 0));
-        if (paid <= 0) { setSaving(false); toast.error("সঠিক টাকার পরিমাণ দিন"); return; }
-        patch[request.recvCol] = received + paid;
+        discAmt = Math.max(0, Math.min(due, Number(discount) || 0));
+        const maxPay = Math.max(0, due - discAmt);
+        paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
+        if (paid + discAmt <= 0) { setSaving(false); toast.error("Amount বা Discount দিন"); return; }
+        patch[request.recvCol] = received + paid + discAmt;
         patch.received_by = user!.id;
       }
 
       await resilientUpdate(request.table, { id: request.row.id }, patch);
 
-      if (isDeliveredWithDue && paid > 0) {
+      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
         const me = displayName(profile, user);
-        let receiptId: string;
-        try {
-          receiptId = await generateNextId({
-            key: "_rcpt", label: "", short: "", table: "payment_receipts",
-            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+        const mkReceiptId = async (): Promise<string> => {
+          try {
+            return await generateNextId({
+              key: "_rcpt", label: "", short: "", table: "payment_receipts",
+              idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+            });
+          } catch (e) {
+            if (!isNetworkError(e)) throw e;
+            const d = new Date();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const yy = String(d.getFullYear()).slice(-2);
+            return `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+          }
+        };
+        if (paid > 0) {
+          await resilientInsert("payment_receipts", {
+            receipt_id: await mkReceiptId(),
+            entry_date: todayIso(),
+            service_type: request.serviceType,
+            service_table: request.table,
+            service_row_id: request.row.id,
+            ref_id: request.refId,
+            passenger_name: String(request.row.passenger_name ?? ""),
+            amount: paid, method, source: "due",
+            remarks: remarks || null,
+            received_by: user!.id,
+            received_by_name: me,
           });
-        } catch (e) {
-          if (!isNetworkError(e)) throw e;
-          const d = new Date();
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const yy = String(d.getFullYear()).slice(-2);
-          receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
         }
-        await resilientInsert("payment_receipts", {
-          receipt_id: receiptId,
-          entry_date: todayIso(),
-          service_type: request.serviceType,
-          service_table: request.table,
-          service_row_id: request.row.id,
-          ref_id: request.refId,
-          passenger_name: String(request.row.passenger_name ?? ""),
-          amount: paid, method, source: "due",
-          remarks: remarks || null,
-          received_by: user!.id,
-          received_by_name: me,
-        });
+        if (discAmt > 0) {
+          await resilientInsert("payment_receipts", {
+            receipt_id: await mkReceiptId(),
+            entry_date: todayIso(),
+            service_type: request.serviceType,
+            service_table: request.table,
+            service_row_id: request.row.id,
+            ref_id: request.refId,
+            passenger_name: String(request.row.passenger_name ?? ""),
+            amount: discAmt, method: "Discount", source: "discount",
+            remarks: remarks ? `Discount: ${remarks}` : `Discount: ${discAmt}`,
+            received_by: user!.id,
+            received_by_name: me,
+          });
+        }
       }
 
       try {
@@ -265,8 +289,10 @@ export function StatusChangeDrawer({
   const row = request.row;
   const passport = String(row.passport ?? "");
   const country = String(row.country_name ?? row.country_route ?? "");
-  const route = String(row.route ?? row.sector ?? "");
-  const showRoute = request.moduleKey === "tickets" && !!route;
+  const isTicket = request.moduleKey === "tickets";
+  const airline = String(row.airline ?? "");
+  const tripRoad = String(row.trip_road ?? row.route ?? row.sector ?? "");
+  const flightDate = row.flight_date ? String(row.flight_date) : "";
 
   return (
     <Popover open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -288,8 +314,15 @@ export function StatusChangeDrawer({
           <div className="text-[11px] font-mono text-muted-foreground">{request.refId}</div>
           {passport && <div className="text-[11px] text-muted-foreground">PP: <span className="font-mono">{passport}</span></div>}
           {country && <div className="text-[11px] text-muted-foreground">Country: {country}</div>}
-          {showRoute && <div className="text-[11px] text-muted-foreground">Route: {route}</div>}
+          {isTicket && (airline || tripRoad || flightDate) && (
+            <div className="mt-1 pt-1 border-t border-border/60 space-y-0.5">
+              {airline && <div className="text-[11px] text-muted-foreground">✈ Airline: <span className="text-foreground font-medium">{airline}</span></div>}
+              {tripRoad && <div className="text-[11px] text-muted-foreground">Route: <span className="text-foreground font-medium">{tripRoad}</span></div>}
+              {flightDate && <div className="text-[11px] text-muted-foreground">Flight: <span className="text-foreground font-medium">{flightDate}</span></div>}
+            </div>
+          )}
         </div>
+
 
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -364,6 +397,11 @@ export function StatusChangeDrawer({
                     onChange={(e) => setAmount(e.target.value)} placeholder="0" />
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-[10px]">Discount</Label>
+                  <Input className="h-8 text-sm" type="number" inputMode="decimal" value={discount}
+                    onChange={(e) => setDiscount(e.target.value)} placeholder="0" />
+                </div>
+                <div className="space-y-1 col-span-2">
                   <Label className="text-[10px]">Method</Label>
                   <Select value={method} onValueChange={setMethod}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -376,6 +414,12 @@ export function StatusChangeDrawer({
                   </Select>
                 </div>
               </div>
+              {(Number(amount) > 0 || Number(discount) > 0) && (
+                <div className="text-[10px] text-muted-foreground flex justify-between px-1">
+                  <span>Pay + Disc: <span className="font-semibold text-foreground tabular-nums">৳{((Number(amount)||0)+(Number(discount)||0)).toLocaleString()}</span></span>
+                  <span>Remaining: <span className={`font-semibold tabular-nums ${Math.max(0, due - (Number(amount)||0) - (Number(discount)||0)) > 0 ? "text-rose-500" : "text-emerald-600"}`}>৳{Math.max(0, due - (Number(amount)||0) - (Number(discount)||0)).toLocaleString()}</span></span>
+                </div>
+              )}
               <Textarea className="text-xs" rows={2} value={remarks}
                 onChange={(e) => setRemarks(e.target.value)} placeholder="Remarks (optional)" />
             </div>
