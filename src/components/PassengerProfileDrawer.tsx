@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass } from "@/lib/modules";
-import { CalendarDays, Send, Package, CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, Circle } from "lucide-react";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -25,16 +25,32 @@ const val = (v: unknown) => {
 };
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
 
+// Map a status name to the row field that records when it was reached.
+// Used to render the full status pipeline in the timeline section.
+function dateForStatus(row: Row, status: string): string | null {
+  const s = status.trim().toLowerCase();
+  if (s === "entry" || s === "new" || s === "issue") return (row.entry_date as string) ?? null;
+  if (s === "file process" || s === "sent to vendor") return (row.vendor_sent_date as string) ?? null;
+  if (s === "card ready" || s === "received from vendor" || s === "pending delivery")
+    return (row.received_date as string) ?? null;
+  if (s === "delivered") return (row.delivery_date as string) ?? null;
+  return null;
+}
+
 export function PassengerProfileDrawer({
   open,
   onOpenChange,
   row,
   serviceTable,
+  moduleKey,
+  statusOrder,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   row: Row | null;
   serviceTable: string;
+  moduleKey?: string;
+  statusOrder?: string[];
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,12 +81,15 @@ export function PassengerProfileDrawer({
 
   const sold = Number(row.sold_price ?? 0);
   const cost = Number(row.cost_price ?? 0);
-  const received = Number(row.received ?? row.received_amount ?? 0);
-  const due = Math.max(0, sold - received);
-  const totalDiscount = receipts.reduce((acc, r) => {
-    const m = /discount[:\s]*([0-9]+(?:\.[0-9]+)?)/i.exec(r.remarks ?? "");
-    return acc + (m ? Number(m[1]) : 0);
-  }, 0);
+  const receivedField = Number(row.received ?? row.received_amount ?? 0);
+  // Money actually received (exclude discount receipts) + discount totals
+  const totalDiscount = receipts
+    .filter((r) => (r.method ?? "").toLowerCase() === "discount")
+    .reduce((acc, r) => acc + Number(r.amount ?? 0), 0);
+  const moneyReceipts = receipts.filter((r) => (r.method ?? "").toLowerCase() !== "discount");
+  const totalReceived = Math.max(0, receivedField - totalDiscount);
+  const due = Math.max(0, sold - receivedField);
+  const profit = sold - cost - totalDiscount;
   const country =
     (row.country_name as string) ||
     (row.trip_road as string) ||
@@ -78,13 +97,13 @@ export function PassengerProfileDrawer({
     "";
 
   const status = String(row.status ?? "");
+  const isTicket = moduleKey === "tickets";
+  const airline = String(row.airline ?? "");
+  const flightDate = row.flight_date ? String(row.flight_date) : "";
 
-  const timeline = [
-    { label: "Entry Date", date: row.entry_date as string | null, icon: CalendarDays },
-    { label: `Sent to Vendor${row.vendor_bought ? ` — ${row.vendor_bought}` : ""}`, date: row.vendor_sent_date as string | null, icon: Send },
-    { label: "Received from Vendor", date: row.received_date as string | null, icon: Package },
-    { label: "Delivered", date: row.delivery_date as string | null, icon: CheckCircle2 },
-  ].filter((t) => t.label !== "Received from Vendor" || "received_date" in row);
+  // Full pipeline timeline from module statuses
+  const pipeline = (statusOrder && statusOrder.length > 0) ? statusOrder : [];
+  const currentIdx = pipeline.findIndex((s) => s.trim().toLowerCase() === status.trim().toLowerCase());
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -107,46 +126,81 @@ export function PassengerProfileDrawer({
                 <div><span className="text-muted-foreground text-xs block">Passport</span><span className="font-mono">{val(row.passport)}</span></div>
                 <div><span className="text-muted-foreground text-xs block">Mobile</span>{val(row.mobile)}</div>
                 <div className="col-span-2"><span className="text-muted-foreground text-xs block">Country / Route</span>{country || DASH}</div>
+                {isTicket && (
+                  <>
+                    <div><span className="text-muted-foreground text-xs block">Airline</span>{val(airline)}</div>
+                    <div><span className="text-muted-foreground text-xs block">Flight Date</span>{flightDate ? formatDate(flightDate) : DASH}</div>
+                  </>
+                )}
               </div>
             </section>
 
             <Separator />
 
-            {/* Section B — Timeline */}
+            {/* Section B — Timeline: full status pipeline */}
             <section>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Tracking Timeline</h4>
-              <ol className="relative border-l-2 border-border ml-2 space-y-4">
-                {timeline.map((t, i) => {
-                  const Icon = t.icon;
-                  const done = !!t.date;
-                  return (
-                    <li key={i} className="ml-4">
-                      <span className={`absolute -left-[11px] flex h-5 w-5 items-center justify-center rounded-full ${done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
-                        <Icon className="h-3 w-3" />
-                      </span>
-                      <div className="text-sm font-medium">{t.label}</div>
-                      <div className={`text-xs ${done ? "text-muted-foreground" : "text-amber-600 inline-flex items-center gap-1"}`}>
-                        {done ? formatDate(t.date as string) : (<><Clock className="h-3 w-3" /> Pending</>)}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
+              {pipeline.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic">No timeline available.</div>
+              ) : (
+                <ol className="relative border-l-2 border-border ml-2 space-y-3">
+                  {pipeline.map((stepStatus, i) => {
+                    const dt = dateForStatus(row, stepStatus);
+                    const reached = currentIdx >= 0 && i <= currentIdx;
+                    const isCurrent = i === currentIdx;
+                    return (
+                      <li key={stepStatus} className="ml-4">
+                        <span className={`absolute -left-[11px] flex h-5 w-5 items-center justify-center rounded-full ${
+                          isCurrent
+                            ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
+                            : reached
+                              ? "bg-emerald-500 text-white"
+                              : "bg-muted text-muted-foreground"
+                        }`}>
+                          {reached ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                        </span>
+                        <div className={`text-sm font-medium ${isCurrent ? "text-primary" : ""}`}>
+                          {stepStatus}
+                          {stepStatus.toLowerCase() === "file process" && row.vendor_bought ? (
+                            <span className="text-muted-foreground font-normal"> — {String(row.vendor_bought)}</span>
+                          ) : null}
+                        </div>
+                        <div className={`text-xs ${dt ? "text-muted-foreground" : "text-amber-600 inline-flex items-center gap-1"}`}>
+                          {dt ? formatDate(dt) : (<><Clock className="h-3 w-3" /> Pending</>)}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
             </section>
 
             <Separator />
 
-            {/* Section C — Financials */}
+            {/* Section C — Financials, redesigned */}
             <section>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Financial Ledger</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm rounded-lg border bg-muted/30 p-3">
-                <Money label="Total Sold" value={sold} />
-                <Money label="Cost Price" value={cost} />
-                <Money label="Total Received" value={received} className="text-emerald-600" />
-                <Money label="Total Discount" value={totalDiscount} />
-                <div className="col-span-2 pt-2 border-t flex items-baseline justify-between">
-                  <span className="text-xs text-muted-foreground">Outstanding Due</span>
-                  <span className={`text-base font-bold ${due > 0 ? "text-rose-600" : "text-emerald-600"}`}>{fmtMoney(due)}</span>
+
+              {/* Sales summary */}
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <Line label="Total Sold" value={fmtMoney(sold)} bold />
+                <Line label="Total Received" value={fmtMoney(totalReceived)} className="text-emerald-600" />
+                <Line label="Discount Given" value={fmtMoney(totalDiscount)} className="text-amber-600" />
+                <div className="border-t pt-2 flex items-baseline justify-between">
+                  <span className="text-sm font-semibold">Outstanding Due</span>
+                  <span className={`text-lg font-bold tabular-nums ${due > 0 ? "text-rose-600" : "text-emerald-600"}`}>{fmtMoney(due)}</span>
+                </div>
+              </div>
+
+              {/* Cost / Profit — separated */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-lg border bg-background p-3">
+                  <div className="text-[11px] text-muted-foreground">Cost Price</div>
+                  <div className="mt-0.5 text-sm font-semibold tabular-nums">{fmtMoney(cost)}</div>
+                </div>
+                <div className="rounded-lg border bg-background p-3">
+                  <div className="text-[11px] text-muted-foreground">Profit</div>
+                  <div className={`mt-0.5 text-sm font-semibold tabular-nums ${profit < 0 ? "text-rose-600" : "text-emerald-600"}`}>{fmtMoney(profit)}</div>
                 </div>
               </div>
 
@@ -167,13 +221,16 @@ export function PassengerProfileDrawer({
                         </tr>
                       </thead>
                       <tbody>
-                        {receipts.map((r) => (
-                          <tr key={r.id} className="border-t">
-                            <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
-                            <td className="px-2 py-1.5 text-right tabular-nums font-medium">{fmtMoney(Number(r.amount ?? 0))}</td>
-                            <td className="px-2 py-1.5">{r.method ?? DASH}</td>
-                          </tr>
-                        ))}
+                        {[...moneyReceipts, ...receipts.filter((r) => (r.method ?? "").toLowerCase() === "discount")].map((r) => {
+                          const isDisc = (r.method ?? "").toLowerCase() === "discount";
+                          return (
+                            <tr key={r.id} className="border-t">
+                              <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
+                              <td className={`px-2 py-1.5 text-right tabular-nums font-medium ${isDisc ? "text-amber-600" : ""}`}>{fmtMoney(Number(r.amount ?? 0))}</td>
+                              <td className="px-2 py-1.5">{r.method ?? DASH}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -197,11 +254,11 @@ export function PassengerProfileDrawer({
   );
 }
 
-function Money({ label, value, className = "" }: { label: string; value: number; className?: string }) {
+function Line({ label, value, className = "", bold = false }: { label: string; value: string; className?: string; bold?: boolean }) {
   return (
-    <div className="flex flex-col">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-      <span className={`tabular-nums font-medium ${className}`}>{fmtMoney(value)}</span>
+    <div className="flex items-baseline justify-between text-sm">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={`tabular-nums ${bold ? "font-semibold" : "font-medium"} ${className}`}>{value}</span>
     </div>
   );
 }
