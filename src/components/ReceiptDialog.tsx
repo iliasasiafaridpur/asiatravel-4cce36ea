@@ -208,46 +208,8 @@ export function ReceiptDialog({
     }
   };
 
-  const canShareFiles =
-    typeof navigator !== "undefined" &&
-    typeof (navigator as Navigator).canShare === "function";
 
-  const handleShareImage = async () => {
-    setBusy(true);
-    try {
-      const blob = await renderJpegBlob();
-      if (!blob) throw new Error("blob");
-      const file = new File([blob], jpgFileName(), { type: "image/jpeg" });
-      const nav = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-        share?: (data: ShareData) => Promise<void>;
-      };
-      if (nav.canShare?.({ files: [file] }) && nav.share) {
-        await nav.share({
-          files: [file],
-          title: `Receipt ${receipt.receiptId}`,
-          text: receiptText(),
-        });
-      } else {
-        toast.error("এই ব্রাউজার image share সমর্থন করে না — JPG ডাউনলোড করে attach করুন");
-      }
-    } catch (e: unknown) {
-      const err = e as { name?: string };
-      if (err?.name !== "AbortError") toast.error("Share করা যায়নি");
-    } finally {
-      setBusy(false);
-    }
-  };
 
-  const handleWhatsApp = () => {
-    const phone = normalizeBdPhone(receipt.mobile);
-    const lines = receiptText();
-    const text = encodeURIComponent(lines);
-    const url = phone
-      ? `https://web.whatsapp.com/send?phone=${phone}&text=${text}`
-      : `https://web.whatsapp.com/send?text=${text}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
 
   return (
     <Dialog
