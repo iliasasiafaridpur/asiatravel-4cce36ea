@@ -29,18 +29,6 @@ function fmt(n: number) {
   return `৳${n.toLocaleString()}`;
 }
 
-function onlyDigits(s: string) {
-  return (s || "").replace(/\D/g, "");
-}
-
-function normalizeBdPhone(raw?: string): string {
-  const d = onlyDigits(raw || "");
-  if (!d) return "";
-  if (d.startsWith("880")) return d;
-  if (d.startsWith("0")) return "880" + d.slice(1);
-  if (d.length === 10) return "880" + d;
-  return d;
-}
 
 export function ReceiptDialog({
   receipt,
