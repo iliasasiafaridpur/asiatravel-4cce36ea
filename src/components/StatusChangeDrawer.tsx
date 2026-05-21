@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,7 @@ export function StatusChangeDrawer({
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptInfo | null>(null);
 
   const order = request?.statusOrder && request.statusOrder.length > 0
     ? request.statusOrder
@@ -179,8 +181,9 @@ export function StatusChangeDrawer({
 
       await resilientUpdate(request.table, { id: request.row.id }, patch);
 
+      let firstReceiptId = "";
+      const me = displayName(profile, user);
       if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
-        const me = displayName(profile, user);
         const mkReceiptId = async (): Promise<string> => {
           try {
             return await generateNextId({
@@ -196,8 +199,10 @@ export function StatusChangeDrawer({
           }
         };
         if (paid > 0) {
+          const rid = await mkReceiptId();
+          firstReceiptId = rid;
           await resilientInsert("payment_receipts", {
-            receipt_id: await mkReceiptId(),
+            receipt_id: rid,
             entry_date: todayIso(),
             service_type: request.serviceType,
             service_table: request.table,
@@ -211,8 +216,10 @@ export function StatusChangeDrawer({
           });
         }
         if (discAmt > 0) {
+          const rid = await mkReceiptId();
+          if (!firstReceiptId) firstReceiptId = rid;
           await resilientInsert("payment_receipts", {
-            receipt_id: await mkReceiptId(),
+            receipt_id: rid,
             entry_date: todayIso(),
             service_type: request.serviceType,
             service_table: request.table,
@@ -271,7 +278,25 @@ export function StatusChangeDrawer({
       toast.success(`Status: ${next}`);
       if (isDeliveredAny) speakDelivery(String(request.row.passenger_name ?? ""));
       onApplied();
-      onClose();
+      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
+        setReceipt({
+          receiptId: firstReceiptId || `RCPT-${Date.now()}`,
+          date: todayIso(),
+          passengerName: String(request.row.passenger_name ?? ""),
+          mobile: String(request.row.mobile ?? ""),
+          refId: request.refId,
+          serviceType: request.serviceType,
+          sold, previouslyReceived: received,
+          paid, discount: discAmt, method,
+          remarks: remarks || undefined,
+          receivedByName: me,
+          airline: String(request.row.airline ?? "") || undefined,
+          route: String(request.row.trip_road ?? request.row.country_name ?? request.row.country_route ?? "") || undefined,
+          flightDate: request.row.flight_date ? String(request.row.flight_date) : undefined,
+        });
+      } else {
+        onClose();
+      }
     } catch (e) {
       if (isNetworkError(e)) {
         toast.success("ইন্টারনেট নেই! পরিবর্তন অটো-সেভ হয়েছে।");
@@ -295,7 +320,13 @@ export function StatusChangeDrawer({
   const flightDate = row.flight_date ? String(row.flight_date) : "";
 
   return (
-    <Popover open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <>
+    <ReceiptDialog
+      receipt={receipt}
+      open={!!receipt}
+      onClose={() => { setReceipt(null); onClose(); }}
+    />
+    <Popover open={open && !receipt} onOpenChange={(v) => { if (!v && !receipt) onClose(); }}>
       <PopoverAnchor virtualRef={anchorRef} />
       <PopoverContent
         side="right"
@@ -445,5 +476,6 @@ export function StatusChangeDrawer({
         </div>
       </PopoverContent>
     </Popover>
+    </>
   );
 }
