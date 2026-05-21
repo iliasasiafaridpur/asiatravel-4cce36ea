@@ -515,7 +515,7 @@ export function ModulePage({ module: mod }: Props) {
             data-row-noopen
             onClick={(e) => {
               e.stopPropagation();
-              handleStatusSelect(r, status);
+              handleStatusSelect(r, status, e.currentTarget as HTMLElement);
             }}
           >
             {badgeNode}
