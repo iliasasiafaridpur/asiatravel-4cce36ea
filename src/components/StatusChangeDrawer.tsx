@@ -278,7 +278,25 @@ export function StatusChangeDrawer({
       toast.success(`Status: ${next}`);
       if (isDeliveredAny) speakDelivery(String(request.row.passenger_name ?? ""));
       onApplied();
-      onClose();
+      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
+        setReceipt({
+          receiptId: firstReceiptId || `RCPT-${Date.now()}`,
+          date: todayIso(),
+          passengerName: String(request.row.passenger_name ?? ""),
+          mobile: String(request.row.mobile ?? ""),
+          refId: request.refId,
+          serviceType: request.serviceType,
+          sold, previouslyReceived: received,
+          paid, discount: discAmt, method,
+          remarks: remarks || undefined,
+          receivedByName: me,
+          airline: String(request.row.airline ?? "") || undefined,
+          route: String(request.row.trip_road ?? request.row.country_name ?? request.row.country_route ?? "") || undefined,
+          flightDate: request.row.flight_date ? String(request.row.flight_date) : undefined,
+        });
+      } else {
+        onClose();
+      }
     } catch (e) {
       if (isNetworkError(e)) {
         toast.success("ইন্টারনেট নেই! পরিবর্তন অটো-সেভ হয়েছে।");
