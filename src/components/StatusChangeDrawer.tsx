@@ -320,7 +320,13 @@ export function StatusChangeDrawer({
   const flightDate = row.flight_date ? String(row.flight_date) : "";
 
   return (
-    <Popover open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <>
+    <ReceiptDialog
+      receipt={receipt}
+      open={!!receipt}
+      onClose={() => { setReceipt(null); onClose(); }}
+    />
+    <Popover open={open && !receipt} onOpenChange={(v) => { if (!v && !receipt) onClose(); }}>
       <PopoverAnchor virtualRef={anchorRef} />
       <PopoverContent
         side="right"
