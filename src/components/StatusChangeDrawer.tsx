@@ -397,6 +397,11 @@ export function StatusChangeDrawer({
                     onChange={(e) => setAmount(e.target.value)} placeholder="0" />
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-[10px]">Discount</Label>
+                  <Input className="h-8 text-sm" type="number" inputMode="decimal" value={discount}
+                    onChange={(e) => setDiscount(e.target.value)} placeholder="0" />
+                </div>
+                <div className="space-y-1 col-span-2">
                   <Label className="text-[10px]">Method</Label>
                   <Select value={method} onValueChange={setMethod}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -409,6 +414,12 @@ export function StatusChangeDrawer({
                   </Select>
                 </div>
               </div>
+              {(Number(amount) > 0 || Number(discount) > 0) && (
+                <div className="text-[10px] text-muted-foreground flex justify-between px-1">
+                  <span>Pay + Disc: <span className="font-semibold text-foreground tabular-nums">৳{((Number(amount)||0)+(Number(discount)||0)).toLocaleString()}</span></span>
+                  <span>Remaining: <span className={`font-semibold tabular-nums ${Math.max(0, due - (Number(amount)||0) - (Number(discount)||0)) > 0 ? "text-rose-500" : "text-emerald-600"}`}>৳{Math.max(0, due - (Number(amount)||0) - (Number(discount)||0)).toLocaleString()}</span></span>
+                </div>
+              )}
               <Textarea className="text-xs" rows={2} value={remarks}
                 onChange={(e) => setRemarks(e.target.value)} placeholder="Remarks (optional)" />
             </div>
