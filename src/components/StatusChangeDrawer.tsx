@@ -181,8 +181,9 @@ export function StatusChangeDrawer({
 
       await resilientUpdate(request.table, { id: request.row.id }, patch);
 
+      let firstReceiptId = "";
+      const me = displayName(profile, user);
       if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
-        const me = displayName(profile, user);
         const mkReceiptId = async (): Promise<string> => {
           try {
             return await generateNextId({
@@ -198,8 +199,10 @@ export function StatusChangeDrawer({
           }
         };
         if (paid > 0) {
+          const rid = await mkReceiptId();
+          firstReceiptId = rid;
           await resilientInsert("payment_receipts", {
-            receipt_id: await mkReceiptId(),
+            receipt_id: rid,
             entry_date: todayIso(),
             service_type: request.serviceType,
             service_table: request.table,
@@ -213,8 +216,10 @@ export function StatusChangeDrawer({
           });
         }
         if (discAmt > 0) {
+          const rid = await mkReceiptId();
+          if (!firstReceiptId) firstReceiptId = rid;
           await resilientInsert("payment_receipts", {
-            receipt_id: await mkReceiptId(),
+            receipt_id: rid,
             entry_date: todayIso(),
             service_type: request.serviceType,
             service_table: request.table,
