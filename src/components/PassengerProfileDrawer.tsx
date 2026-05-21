@@ -257,8 +257,8 @@ export function PassengerProfileDrawer({
                               <td className={`px-2 py-1.5 text-right tabular-nums font-medium ${isDisc ? "text-amber-600" : ""}`}>{fmtMoney(Number(r.amount ?? 0))}</td>
                               <td className="px-2 py-1.5">{r.method ?? DASH}</td>
                               <td className="px-2 py-1.5 text-right">
-                                <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => openReceipt(r)}>
-                                  <ReceiptText className="h-3.5 w-3.5" />
+                                <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={() => openReceipt(r)}>
+                                  <ReceiptText className="h-3.5 w-3.5" /> Receipt
                                 </Button>
                               </td>
                             </tr>
