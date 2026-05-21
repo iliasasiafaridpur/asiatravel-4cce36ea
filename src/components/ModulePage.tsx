@@ -405,7 +405,7 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod, computeValue, load]);
 
-  const handleStatusSelect = useCallback((row: Row, newStatus: string) => {
+  const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
     const hasField = (n: string) => mod.fields.some((f) => f.name === n);
     const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
     setStatusChange({
@@ -420,6 +420,8 @@ export function ModulePage({ module: mod }: Props) {
       hasReceivedDate: hasField("received_date"),
       hasDeliveryDate: hasField("delivery_date"),
       statusOrder: mod.statuses,
+      moduleKey: mod.key,
+      anchorEl: anchorEl ?? null,
     });
   }, [mod]);
 
@@ -513,7 +515,7 @@ export function ModulePage({ module: mod }: Props) {
             data-row-noopen
             onClick={(e) => {
               e.stopPropagation();
-              handleStatusSelect(r, status);
+              handleStatusSelect(r, status, e.currentTarget as HTMLElement);
             }}
           >
             {badgeNode}
