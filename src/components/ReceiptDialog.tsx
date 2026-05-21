@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, MessageCircle, X } from "lucide-react";
+import { Printer, MessageCircle, X, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 export interface ReceiptInfo {
   receiptId: string;
@@ -79,8 +80,7 @@ export function ReceiptDialog({
     setTimeout(() => { w.print(); }, 300);
   };
 
-  const handleWhatsApp = () => {
-    const phone = normalizeBdPhone(receipt.mobile);
+  const receiptText = () => {
     const lines = [
       `*Payment Receipt*`,
       `Receipt: ${receipt.receiptId}`,
@@ -103,6 +103,17 @@ export function ReceiptDialog({
       `Received by: ${receipt.receivedByName}`,
       receipt.agencyName ? `\n— ${receipt.agencyName}` : "",
     ].filter(Boolean).join("\n");
+    return lines;
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(receiptText());
+    toast.success("Receipt text copied");
+  };
+
+  const handleWhatsApp = () => {
+    const phone = normalizeBdPhone(receipt.mobile);
+    const lines = receiptText();
     const text = encodeURIComponent(lines);
     // api.whatsapp.com / wa.me redirects are blocked on some ISPs (e.g. BD).
     // web.whatsapp.com works directly when user is logged in to WhatsApp Web.
@@ -183,6 +194,9 @@ export function ReceiptDialog({
         <div className="flex gap-2 p-3 border-t bg-muted/30">
           <Button variant="outline" size="sm" className="flex-1" onClick={onClose}>
             <X className="h-4 w-4" /> বন্ধ
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={handleCopy}>
+            <Copy className="h-4 w-4" /> Copy
           </Button>
           <Button variant="outline" size="sm" className="flex-1" onClick={handlePrint}>
             <Printer className="h-4 w-4" /> Print / PDF
