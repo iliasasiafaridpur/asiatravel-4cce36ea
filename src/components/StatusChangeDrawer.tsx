@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
