@@ -1085,36 +1085,59 @@ export function FormSections({ mod, form, setForm }: {
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
+  const [showAll, setShowAll] = useState(false);
   const visibleFields = mod.fields.filter((f) => !f.hideInForm);
+  const isEssential = (f: Field) =>
+    !!f.required ||
+    !!f.showInList ||
+    ["passenger_name", "passport", "mobile", "entry_date", "status", "sub_agency", "agent_name", "vendor_bought", "sold_price", "cost_price", "received", "received_amount", "paid_amount"].includes(f.name);
+  const optionalCount = visibleFields.filter((f) => !isEssential(f)).length;
+  const shownFields = showAll ? visibleFields : visibleFields.filter(isEssential);
   const sections: Section[] = ["passenger", "agency", "vendor"];
   const grouped = sections
-    .map((s) => ({ section: s, fields: visibleFields.filter((f) => (f.section ?? "passenger") === s) }))
+    .map((s) => ({ section: s, fields: shownFields.filter((f) => (f.section ?? "passenger") === s) }))
     .filter((g) => g.fields.length > 0);
-  // If no field uses sections at all, render as one block (e.g. agents/vendors/ledgers).
   const usesSections = visibleFields.some((f) => f.section);
   const hasPassportFields = mod.fields.some((f) => f.name === "passenger_name") && mod.fields.some((f) => f.name === "passport");
   const applyOcr = (fields: PassportFields) => {
     setForm((s) => {
       const next = { ...s };
-      // Only apply name + passport — nothing else.
       if (fields.passenger_name) next.passenger_name = fields.passenger_name;
       if (fields.passport) next.passport = fields.passport.toUpperCase();
       return next;
     });
   };
+
+  // Enter → focus next input. Textarea/buttons keep native behavior.
+  const onFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Enter") return;
+    const t = e.target as HTMLElement;
+    const tag = t.tagName;
+    if (tag === "TEXTAREA" || tag === "BUTTON") return;
+    if (tag !== "INPUT") return;
+    e.preventDefault();
+    const root = e.currentTarget;
+    const focusables = Array.from(
+      root.querySelectorAll<HTMLElement>('input:not([readonly]):not([disabled])')
+    );
+    const idx = focusables.indexOf(t as HTMLElement);
+    const next = focusables[idx + 1];
+    if (next) next.focus();
+  };
+
   return (
-    <div className="space-y-5 py-2">
+    <div className="space-y-3 py-1" onKeyDown={onFormKeyDown}>
       {hasPassportFields && (
         <PassportScanner onResult={applyOcr} />
       )}
-      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: visibleFields }]).map((g) => (
+      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: shownFields }]).map((g) => (
         <div key={g.section}>
           {usesSections && (
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 pb-1 border-b">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 pb-0.5 border-b">
               {SECTION_LABELS[g.section]}
             </h3>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {g.fields.map((field) => (
               <FormField
                 key={field.name}
@@ -1126,6 +1149,16 @@ export function FormSections({ mod, form, setForm }: {
           </div>
         </div>
       ))}
+      {optionalCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
+          {showAll ? "কম দেখাও" : `আরও ${optionalCount}টি ফিল্ড দেখাও`}
+        </button>
+      )}
     </div>
   );
 }
@@ -1135,36 +1168,37 @@ function FormField({ field, value, onChange }: {
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const span = field.type === "textarea" ? "sm:col-span-2" : "";
+  const span = field.type === "textarea" ? "sm:col-span-2 lg:col-span-3" : "";
   const strVal = (value as string) ?? "";
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className={`space-y-1.5 ${span}`}>
-      <Label>{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+    <div className={`space-y-0.5 ${span}`}>
+      <Label className="text-[11px] font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
-        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={2} />
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-[36px] py-1.5" />
       ) : field.type === "select" ? (
         <Select value={strVal} onValueChange={onChange}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
           <SelectContent>
             {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
       ) : field.type === "boolean" ? (
-        <div className="flex items-center h-10">
+        <div className="flex items-center h-8">
           <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
-          <span className="ml-2 text-sm text-muted-foreground">Yes</span>
+          <span className="ml-2 text-xs text-muted-foreground">Yes</span>
         </div>
       ) : field.type === "date" ? (
         <DateInput
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
+          className="h-8"
         />
       ) : (
         <Input
-          type={field.type === "number" ? "number" : "text"}
+          type="text"
           inputMode={field.type === "number" ? "decimal" : undefined}
           value={
             field.type === "number"
@@ -1172,24 +1206,38 @@ function FormField({ field, value, onChange }: {
               : strVal
           }
           placeholder={field.type === "number" ? "0" : undefined}
+          className={`h-8 ${isEntryBy ? "bg-muted text-muted-foreground" : ""}`}
           onChange={(e) => {
             if (field.type === "number") {
-              const v = e.target.value;
-              onChange(v === "" ? 0 : Number(v));
+              const raw = e.target.value.trim();
+              if (raw === "") return onChange(0);
+              // Quick keys: 5k → 5000, 1.5l → 150000, 2m → 2,000,000
+              const m = /^(-?\d*\.?\d+)\s*([klmKLM])?$/.exec(raw);
+              if (m) {
+                let n = Number(m[1]);
+                const suf = (m[2] || "").toLowerCase();
+                if (suf === "k") n *= 1_000;
+                else if (suf === "l") n *= 100_000;
+                else if (suf === "m") n *= 1_000_000;
+                onChange(n);
+              } else {
+                const n = Number(raw);
+                onChange(Number.isFinite(n) ? n : 0);
+              }
             } else {
               onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
             }
           }}
-          onFocus={(e) => { if (field.type === "number" && e.target.value === "0") e.target.select(); }}
+          onFocus={(e) => { if (field.type === "number" && (e.target.value === "0" || e.target.value === "")) e.target.select(); }}
           onBlur={(e) => {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
           required={field.required}
           readOnly={isEntryBy}
-          className={isEntryBy ? "bg-muted text-muted-foreground" : undefined}
         />
       )}
     </div>
   );
 }
+
 
