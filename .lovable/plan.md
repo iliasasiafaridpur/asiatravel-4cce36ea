@@ -1,34 +1,38 @@
-## সমস্যা
+## কারণ
 
-Delivery-সংক্রান্ত status change-এ Confirm চাপলে `StatusChangeDrawer` → `setReceipt(...)` করে, যাতে `<ReceiptDialog receipt={...} />` রি-রেন্ডার হয়। কিন্তু `src/components/ReceiptDialog.tsx`-এ Hook-এর order ভুল:
+`html2canvas` `oklch()` color function বুঝে না। আমাদের offscreen receipt node-এ inline hex/rgb দেওয়া আছে, কিন্তু সেটা `document.body`-তে append করায় page-এর সব CSS variables (যেগুলো `src/styles.css`-এ oklch) computed style হিসেবে চলে আসে। `html2canvas` সেগুলো parse করতে গিয়ে throw করে → toast: "JPG তৈরি করা যায়নি"।
 
-```tsx
-const printRef = useRef<HTMLDivElement>(null);   // hook #1
-if (!receipt) return null;                        // ← early return
-...
-const [busy, setBusy] = useState(false);          // hook #2 — only when receipt is non-null
-```
+Share Image বাটনও একই কারণে কাজ করছে না (একই `renderJpegBlob` ব্যবহার করে)।
 
-প্রথম render (receipt = null): শুধু hook #1 চলে।
-দ্বিতীয় render (receipt = object): hook #1 + hook #2 চলে → React Rules of Hooks ভঙ্গ → "Rendered more hooks than during the previous render" throw → root `errorComponent` (router.tsx এর `DefaultErrorComponent`) ধরে → "This page didn't load" স্ক্রিন।
+## সমাধান
 
-## ফিক্স (একটাই ফাইল)
+`html2canvas` সরিয়ে **`html-to-image`** ব্যবহার করব — এটা modern CSS (oklch, color-mix, css variables) সাপোর্ট করে।
 
-`src/components/ReceiptDialog.tsx` — সব hook (`useRef`, `useState`) `if (!receipt) return null` লাইনের **উপরে** নিয়ে যাওয়া। বাকি লজিক/UI অপরিবর্তিত।
+### পরিবর্তন
 
-```tsx
-export function ReceiptDialog({ receipt, open, onClose }: {...}) {
-  const printRef = useRef<HTMLDivElement>(null);
-  const [busy, setBusy] = useState(false);     // ← উপরে আনলাম
+1. **প্যাকেজ**
+   - `bun remove html2canvas`
+   - `bun add html-to-image`
 
-  if (!receipt) return null;                    // এখন hooks-এর পরে
-  // ... বাকি সব আগের মতো
-}
-```
+2. **`src/components/ReceiptDialog.tsx`**
+   - `import html2canvas from "html2canvas"` → `import { toJpeg } from "html-to-image"`
+   - `renderJpegBlob()` rewrite:
+     ```ts
+     const dataUrl = await toJpeg(node, {
+       quality: 0.95,
+       pixelRatio: 2,
+       backgroundColor: "#ffffff",
+       cacheBust: true,
+     });
+     const blob = await (await fetch(dataUrl)).blob();
+     ```
+   - `buildPrintableNode()` অপরিবর্তিত (inline styled, safe colors)।
+   - `handleDownloadJpg` ও `handleShareImage` একই blob ব্যবহার করবে — অন্য কোনো লজিক বদলাচ্ছে না।
 
-এতে hook count সব render-এ একই থাকবে, crash বন্ধ হবে, Confirm → Payment Receipt popup ঠিকমতো খুলবে।
+3. **fallback** — যদি কোনো কারণে generation fail হয়, console-এ error log করব যাতে debug সহজ হয়।
 
-## যাচাই
+### যাচাই
 
-- Status "Delivered" (due > 0) এ Confirm → Receipt popup আসবে, error page আর আসবে না।
-- JPG / Copy / WhatsApp / Print বাটনগুলোর আচরণ অপরিবর্তিত।
+- Receipt popup → JPG বাটন → file ডাউনলোড হবে।
+- Share Image বাটন (সাপোর্টেড ডিভাইসে) → JPG share dialog আসবে।
+- Print, Copy, WhatsApp, Close — অপরিবর্তিত।
