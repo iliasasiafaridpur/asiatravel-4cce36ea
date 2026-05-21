@@ -408,9 +408,17 @@ export function ModulePage({ module: mod }: Props) {
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
     const hasField = (n: string) => mod.fields.some((f) => f.name === n);
     const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
+    // Auto-advance: if clicked badge is current status, preselect the NEXT one in order
+    const order = mod.statuses ?? [];
+    const currentStatus = String(row.status ?? "") || (order[0] ?? "");
+    let target = newStatus;
+    if (order.length > 0 && newStatus.trim().toLowerCase() === currentStatus.trim().toLowerCase()) {
+      const idx = order.findIndex((s) => s.trim().toLowerCase() === currentStatus.trim().toLowerCase());
+      if (idx >= 0 && idx < order.length - 1) target = order[idx + 1];
+    }
     setStatusChange({
       row,
-      newStatus,
+      newStatus: target,
       table: mod.table,
       recvCol: meta.recvCol,
       serviceType: meta.serviceType,
