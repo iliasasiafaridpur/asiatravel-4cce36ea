@@ -24,9 +24,13 @@ export interface ReceiptInfo {
   flightDate?: string;
 }
 
-function fmt(n: number) { return `৳${n.toLocaleString()}`; }
+function fmt(n: number) {
+  return `৳${n.toLocaleString()}`;
+}
 
-function onlyDigits(s: string) { return (s || "").replace(/\D/g, ""); }
+function onlyDigits(s: string) {
+  return (s || "").replace(/\D/g, "");
+}
 
 function normalizeBdPhone(raw?: string): string {
   const d = onlyDigits(raw || "");
@@ -77,7 +81,9 @@ export function ReceiptDialog({
       </style></head><body>${node.innerHTML}</body></html>`);
     w.document.close();
     w.focus();
-    setTimeout(() => { w.print(); }, 300);
+    setTimeout(() => {
+      w.print();
+    }, 300);
   };
 
   const receiptText = () => {
@@ -102,7 +108,9 @@ export function ReceiptDialog({
       ``,
       `Received by: ${receipt.receivedByName}`,
       receipt.agencyName ? `\n— ${receipt.agencyName}` : "",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
     return lines;
   };
 
@@ -128,7 +136,12 @@ export function ReceiptDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent className="max-w-md p-0 overflow-hidden">
         <DialogHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
           <DialogTitle className="text-base">Payment Receipt</DialogTitle>
@@ -142,38 +155,86 @@ export function ReceiptDialog({
                 <div className="sub text-[10px] text-muted-foreground">Payment Receipt</div>
               </div>
 
-              <div className="row flex justify-between text-xs py-0.5"><b>Receipt #</b><span className="font-mono">{receipt.receiptId}</span></div>
-              <div className="row flex justify-between text-xs py-0.5"><b>Date</b><span>{receipt.date}</span></div>
-
-              <div className="sect mt-2 pt-2 border-t border-dashed">
-                <div className="row flex justify-between text-xs py-0.5"><b>Passenger</b><span>{receipt.passengerName}</span></div>
-                {receipt.mobile && <div className="row flex justify-between text-xs py-0.5"><b>Mobile</b><span>{receipt.mobile}</span></div>}
-                <div className="row flex justify-between text-xs py-0.5"><b>Ref ID</b><span className="font-mono">{receipt.refId}</span></div>
-                <div className="row flex justify-between text-xs py-0.5"><b>Service</b><span>{receipt.serviceType}</span></div>
-                {receipt.airline && <div className="row flex justify-between text-xs py-0.5"><b>Airline</b><span>{receipt.airline}</span></div>}
-                {receipt.route && <div className="row flex justify-between text-xs py-0.5"><b>Route</b><span>{receipt.route}</span></div>}
-                {receipt.flightDate && <div className="row flex justify-between text-xs py-0.5"><b>Flight Date</b><span>{receipt.flightDate}</span></div>}
+              <div className="row flex justify-between text-xs py-0.5">
+                <b>Receipt #</b>
+                <span className="font-mono">{receipt.receiptId}</span>
+              </div>
+              <div className="row flex justify-between text-xs py-0.5">
+                <b>Date</b>
+                <span>{receipt.date}</span>
               </div>
 
               <div className="sect mt-2 pt-2 border-t border-dashed">
-                <div className="row flex justify-between text-xs py-0.5"><b>Sold Price</b><span className="tabular-nums">{fmt(receipt.sold)}</span></div>
-                <div className="row flex justify-between text-xs py-0.5"><b>Previously Received</b><span className="tabular-nums">{fmt(receipt.previouslyReceived)}</span></div>
+                <div className="row flex justify-between text-xs py-0.5">
+                  <b>Passenger</b>
+                  <span>{receipt.passengerName}</span>
+                </div>
+                {receipt.mobile && (
+                  <div className="row flex justify-between text-xs py-0.5">
+                    <b>Mobile</b>
+                    <span>{receipt.mobile}</span>
+                  </div>
+                )}
+                <div className="row flex justify-between text-xs py-0.5">
+                  <b>Ref ID</b>
+                  <span className="font-mono">{receipt.refId}</span>
+                </div>
+                <div className="row flex justify-between text-xs py-0.5">
+                  <b>Service</b>
+                  <span>{receipt.serviceType}</span>
+                </div>
+                {receipt.airline && (
+                  <div className="row flex justify-between text-xs py-0.5">
+                    <b>Airline</b>
+                    <span>{receipt.airline}</span>
+                  </div>
+                )}
+                {receipt.route && (
+                  <div className="row flex justify-between text-xs py-0.5">
+                    <b>Route</b>
+                    <span>{receipt.route}</span>
+                  </div>
+                )}
+                {receipt.flightDate && (
+                  <div className="row flex justify-between text-xs py-0.5">
+                    <b>Flight Date</b>
+                    <span>{receipt.flightDate}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="sect mt-2 pt-2 border-t border-dashed">
+                <div className="row flex justify-between text-xs py-0.5">
+                  <b>Sold Price</b>
+                  <span className="tabular-nums">{fmt(receipt.sold)}</span>
+                </div>
+                <div className="row flex justify-between text-xs py-0.5">
+                  <b>Previously Received</b>
+                  <span className="tabular-nums">{fmt(receipt.previouslyReceived)}</span>
+                </div>
                 {receipt.paid > 0 && (
                   <div className="row flex justify-between text-xs py-0.5">
-                    <b>Paid Now ({receipt.method})</b><span className="tabular-nums text-emerald-600">+{fmt(receipt.paid)}</span>
+                    <b>Paid Now ({receipt.method})</b>
+                    <span className="tabular-nums text-emerald-600">+{fmt(receipt.paid)}</span>
                   </div>
                 )}
                 {receipt.discount > 0 && (
                   <div className="row flex justify-between text-xs py-0.5">
-                    <b>Discount</b><span className="tabular-nums text-amber-600">−{fmt(receipt.discount)}</span>
+                    <b>Discount</b>
+                    <span className="tabular-nums text-amber-600">−{fmt(receipt.discount)}</span>
                   </div>
                 )}
                 <div className="total flex justify-between text-sm font-bold border-t-2 border-foreground mt-2 pt-1.5">
-                  <span>Total Adjusted</span><span className="tabular-nums">{fmt(total)}</span>
+                  <span>Total Adjusted</span>
+                  <span className="tabular-nums">{fmt(total)}</span>
                 </div>
                 <div className="row flex justify-between text-xs py-0.5 mt-1">
                   <b>Remaining Due</b>
-                  <span className={`tabular-nums font-semibold ${remaining > 0 ? "text-rose-500" : "text-emerald-600"}`}>{fmt(remaining)}</span>
+                  <span
+                    className={`tabular-nums font-semibold ${remaining > 0 ? "text-rose-500" : "text-emerald-600"}`}
+                  >
+                    {fmt(remaining)}
+                  </span>
                 </div>
               </div>
 
@@ -184,8 +245,14 @@ export function ReceiptDialog({
               )}
 
               <div className="sig mt-6 flex justify-between text-[11px]">
-                <div className="border-t border-foreground pt-1 w-[40%] text-center">Received by<br/>{receipt.receivedByName}</div>
-                <div className="border-t border-foreground pt-1 w-[40%] text-center">Customer Signature</div>
+                <div className="border-t border-foreground pt-1 w-[40%] text-center">
+                  Received by
+                  <br />
+                  {receipt.receivedByName}
+                </div>
+                <div className="border-t border-foreground pt-1 w-[40%] text-center">
+                  Customer Signature
+                </div>
               </div>
 
               <div className="ft mt-4 text-[10px] text-center text-muted-foreground">
@@ -199,13 +266,22 @@ export function ReceiptDialog({
           <Button variant="outline" size="sm" className="flex-1 min-w-[5.5rem]" onClick={onClose}>
             <X className="h-4 w-4" /> বন্ধ
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 min-w-[5.5rem]" onClick={handleCopy}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 min-w-[5.5rem]"
+            onClick={handleCopy}
+          >
             <Copy className="h-4 w-4" /> Copy
           </Button>
           <Button variant="outline" size="sm" className="flex-1 min-w-[7rem]" onClick={handlePrint}>
             <Printer className="h-4 w-4" /> Print / PDF
           </Button>
-          <Button size="sm" className="flex-1 min-w-[7rem] bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleWhatsApp}>
+          <Button
+            size="sm"
+            className="flex-1 min-w-[7rem] bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={handleWhatsApp}
+          >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </Button>
         </div>
