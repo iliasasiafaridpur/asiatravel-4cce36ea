@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle } from "lucide-react";
+import { CheckCircle2, Clock, Circle, ReceiptText } from "lucide-react";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -16,6 +18,7 @@ type Receipt = {
   method: string | null;
   receipt_id: string | null;
   remarks: string | null;
+  received_by_name: string | null;
 };
 
 const DASH = "—";
@@ -53,6 +56,7 @@ export function PassengerProfileDrawer({
   statusOrder?: string[];
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -65,7 +69,7 @@ export function PassengerProfileDrawer({
       setLoading(true);
       const { data } = await supabase
         .from("payment_receipts")
-        .select("id, entry_date, amount, method, receipt_id, remarks")
+        .select("id, entry_date, amount, method, receipt_id, remarks, received_by_name")
         .eq("service_table", serviceTable)
         .eq("service_row_id", row.id)
         .order("entry_date", { ascending: false });
@@ -100,12 +104,35 @@ export function PassengerProfileDrawer({
   const isTicket = moduleKey === "tickets";
   const airline = String(row.airline ?? "");
   const flightDate = row.flight_date ? String(row.flight_date) : "";
+  const openReceipt = (r: Receipt) => {
+    const isDiscount = (r.method ?? "").toLowerCase() === "discount";
+    setSelectedReceipt({
+      receiptId: r.receipt_id || "Receipt",
+      date: r.entry_date || "",
+      passengerName: String(row.passenger_name ?? ""),
+      mobile: String(row.mobile ?? ""),
+      refId: String(row.ticket_id ?? row.bmet_id ?? row.kuwait_id ?? row.saudi_id ?? row.passenger_id ?? row.id),
+      serviceType: serviceTable,
+      sold,
+      previouslyReceived: Math.max(0, receivedField - Number(r.amount ?? 0)),
+      paid: isDiscount ? 0 : Number(r.amount ?? 0),
+      discount: isDiscount ? Number(r.amount ?? 0) : 0,
+      method: r.method || "Cash",
+      remarks: r.remarks || undefined,
+      receivedByName: r.received_by_name || "—",
+      airline: airline || undefined,
+      route: country || undefined,
+      flightDate: flightDate || undefined,
+    });
+  };
 
   // Full pipeline timeline from module statuses
   const pipeline = (statusOrder && statusOrder.length > 0) ? statusOrder : [];
   const currentIdx = pipeline.findIndex((s) => s.trim().toLowerCase() === status.trim().toLowerCase());
 
   return (
+    <>
+    <ReceiptDialog receipt={selectedReceipt} open={!!selectedReceipt} onClose={() => setSelectedReceipt(null)} />
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b">
@@ -218,6 +245,7 @@ export function PassengerProfileDrawer({
                           <th className="px-2 py-1.5 font-medium">Date</th>
                           <th className="px-2 py-1.5 font-medium text-right">Amount</th>
                           <th className="px-2 py-1.5 font-medium">Method</th>
+                          <th className="px-2 py-1.5 font-medium text-right">Receipt</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -228,6 +256,11 @@ export function PassengerProfileDrawer({
                               <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
                               <td className={`px-2 py-1.5 text-right tabular-nums font-medium ${isDisc ? "text-amber-600" : ""}`}>{fmtMoney(Number(r.amount ?? 0))}</td>
                               <td className="px-2 py-1.5">{r.method ?? DASH}</td>
+                              <td className="px-2 py-1.5 text-right">
+                                <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => openReceipt(r)}>
+                                  <ReceiptText className="h-3.5 w-3.5" />
+                                </Button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -251,6 +284,7 @@ export function PassengerProfileDrawer({
         </ScrollArea>
       </SheetContent>
     </Sheet>
+    </>
   );
 }
 
