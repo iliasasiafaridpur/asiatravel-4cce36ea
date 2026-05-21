@@ -167,43 +167,64 @@ export function StatusChangeDrawer({
       }
 
       let paid = 0;
+      let discAmt = 0;
       if (isDeliveredWithDue) {
-        paid = Math.max(0, Math.min(due, Number(amount) || 0));
-        if (paid <= 0) { setSaving(false); toast.error("সঠিক টাকার পরিমাণ দিন"); return; }
-        patch[request.recvCol] = received + paid;
+        discAmt = Math.max(0, Math.min(due, Number(discount) || 0));
+        const maxPay = Math.max(0, due - discAmt);
+        paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
+        if (paid + discAmt <= 0) { setSaving(false); toast.error("Amount বা Discount দিন"); return; }
+        patch[request.recvCol] = received + paid + discAmt;
         patch.received_by = user!.id;
       }
 
       await resilientUpdate(request.table, { id: request.row.id }, patch);
 
-      if (isDeliveredWithDue && paid > 0) {
+      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
         const me = displayName(profile, user);
-        let receiptId: string;
-        try {
-          receiptId = await generateNextId({
-            key: "_rcpt", label: "", short: "", table: "payment_receipts",
-            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+        const mkReceiptId = async (): Promise<string> => {
+          try {
+            return await generateNextId({
+              key: "_rcpt", label: "", short: "", table: "payment_receipts",
+              idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+            });
+          } catch (e) {
+            if (!isNetworkError(e)) throw e;
+            const d = new Date();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const yy = String(d.getFullYear()).slice(-2);
+            return `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+          }
+        };
+        if (paid > 0) {
+          await resilientInsert("payment_receipts", {
+            receipt_id: await mkReceiptId(),
+            entry_date: todayIso(),
+            service_type: request.serviceType,
+            service_table: request.table,
+            service_row_id: request.row.id,
+            ref_id: request.refId,
+            passenger_name: String(request.row.passenger_name ?? ""),
+            amount: paid, method, source: "due",
+            remarks: remarks || null,
+            received_by: user!.id,
+            received_by_name: me,
           });
-        } catch (e) {
-          if (!isNetworkError(e)) throw e;
-          const d = new Date();
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const yy = String(d.getFullYear()).slice(-2);
-          receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
         }
-        await resilientInsert("payment_receipts", {
-          receipt_id: receiptId,
-          entry_date: todayIso(),
-          service_type: request.serviceType,
-          service_table: request.table,
-          service_row_id: request.row.id,
-          ref_id: request.refId,
-          passenger_name: String(request.row.passenger_name ?? ""),
-          amount: paid, method, source: "due",
-          remarks: remarks || null,
-          received_by: user!.id,
-          received_by_name: me,
-        });
+        if (discAmt > 0) {
+          await resilientInsert("payment_receipts", {
+            receipt_id: await mkReceiptId(),
+            entry_date: todayIso(),
+            service_type: request.serviceType,
+            service_table: request.table,
+            service_row_id: request.row.id,
+            ref_id: request.refId,
+            passenger_name: String(request.row.passenger_name ?? ""),
+            amount: discAmt, method: "Discount", source: "discount",
+            remarks: remarks ? `Discount: ${remarks}` : `Discount: ${discAmt}`,
+            received_by: user!.id,
+            received_by_name: me,
+          });
+        }
       }
 
       try {
