@@ -593,7 +593,7 @@ export const MODULES: ModuleSchema[] = [
   },
   {
     key: "agency-ledger",
-    label: "Agency খাতা",
+    label: "Customers Data",
     short: "Agency Ledger",
     table: "agency_ledger",
     idColumn: "ledger_id",
@@ -657,7 +657,7 @@ export const MODULES: ModuleSchema[] = [
     ],
     groupBy: {
       field: "agent_name",
-      label: "Agent",
+      label: "Customer/ Sub-Agent",
       metrics: [
         { name: "total_bill", label: "Total Bill" },
         { name: "received_amount", label: "Received" },
@@ -667,7 +667,7 @@ export const MODULES: ModuleSchema[] = [
   },
   {
     key: "vendor-ledger",
-    label: "Vendor খাতা",
+    label: "Vendor Data",
     short: "Vendor Ledger",
     table: "vendor_ledger",
     idColumn: "ledger_id",

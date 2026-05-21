@@ -39,8 +39,8 @@ const NAV = [
     
   ]},
   { group: "হিসাব", items: [
-    { to: "/agency-ledger", title: "Agency খাতা", icon: Users },
-    { to: "/vendor-ledger", title: "Vendor খাতা", icon: Truck },
+    { to: "/agency-ledger", title: "Customers Data", icon: Users },
+    { to: "/vendor-ledger", title: "Vendor Data", icon: Truck },
     { to: "/accounts", title: "My Accounts", icon: Wallet },
   ]},
   { group: "তালিকা", items: [
