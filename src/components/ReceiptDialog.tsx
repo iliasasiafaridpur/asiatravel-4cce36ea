@@ -118,7 +118,7 @@ export function ReceiptDialog({
   const buildPrintableNode = (): HTMLDivElement => {
     const wrap = document.createElement("div");
     wrap.style.cssText =
-      "position:fixed;left:-10000px;top:0;width:520px;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
+      "position:fixed;top:0;left:0;z-index:-1;opacity:0;pointer-events:none;width:520px;box-sizing:border-box;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
     wrap.innerHTML = `
       <div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px;">
         <h1 style="margin:0;font-size:18px;font-weight:700;">${receipt.agencyName || "Asia Travel"}</h1>
