@@ -1,25 +1,63 @@
-## সমস্যা
 
-1. **Blank JPG** — `buildPrintableNode()` এ node-কে `position:fixed; left:-10000px` দিয়ে viewport-এর বাইরে রাখা হচ্ছে। `html-to-image` কিছু ক্ষেত্রে off-screen fixed node-এর computed layout/size ঠিকমতো পায় না (বিশেষ করে যখন node-এর explicit `width/height` set নেই বা parent visibility issue থাকে) — ফলে সাদা/blank image generate হয়। এছাড়া web fonts load না হলেও text render হয় না।
+# Action Board ফর্ম — Compact ও Fast Entry পরিকল্পনা (পরামর্শ)
 
-2. **Share Image ও WhatsApp বাটন** দরকার নেই — সরাতে হবে।
+বর্তমানে `FormSections` (ModulePage.tsx) প্রতি field কে আলাদা row + label সহ 2-column grid এ দেখায়, gap-3, py-2, section heading সহ। ফলে পেইজ অনেক লম্বা হয় এবং মাউস স্ক্রল বেশি লাগে। নিচে কী কী পরিবর্তন করব ও কেন তা ব্যাখ্যা করছি — তোমার সম্মতি পেলে implement করব।
 
-## সমাধান
+## ১. Layout — পেইজ ছোট করা
 
-### `src/components/ReceiptDialog.tsx`
+- **3-column grid** (sm:2, lg:3) — এখন 2-column; বড় স্ক্রিনে 3 কলাম দিলে উচ্চতা ~33% কমবে।
+- **Compact spacing** — `space-y-5 py-2` → `space-y-3`, grid `gap-3` → `gap-2`, Input/Select height `h-9` → `h-8`, Label `text-sm` → `text-xs`, Label-input gap `space-y-1.5` → `space-y-0.5`.
+- **Floating / inline label** — Label কে input এর উপরে আলাদা row না দিয়ে input এর ভিতর placeholder + ছোট uppercase caption হিসেবে দেখানো। প্রতি field-এ ~20px সাশ্রয়।
+- **Section header inline** — section heading আলাদা border-b row না, একটা ছোট pill/chip হিসেবে first field এর সাথে। অথবা section কে collapsible accordion।
+- **Textarea (Note/Remarks) ছোট** — `rows={2}` → `rows={1}` auto-grow।
+- **Boolean field গুলো একটা row তে** চেকবক্স group আকারে।
 
-**A. Blank JPG fix — `buildPrintableNode()` rewrite**
-- Off-screen positioning বদলে node-কে `position: fixed; top: 0; left: 0; z-index: -1; opacity: 0; pointer-events: none;` রাখব — viewport-এর ভেতরে কিন্তু invisible। html-to-image properly measure ও render করতে পারবে।
-- Explicit `width: 520px` রাখব (already আছে), সাথে inline `box-sizing: border-box`।
-- `renderJpegBlob()` এ `toJpeg` call করার আগে `await document.fonts.ready` দেব যাতে fonts লোড থাকে।
-- `toJpeg` options এ explicit `width: 520`, `height: node.offsetHeight` যোগ করব যাতে সঠিক canvas size হয়।
+## ২. Smart Entry — কম keystroke, কম স্ক্রল
 
-**B. Share Image ও WhatsApp বাটন সরানো**
-- `handleShareImage`, `handleWhatsApp`, `canShareFiles`, `receiptText` (যদি শুধু এদের জন্য থাকে — Copy বাটনেও ব্যবহৃত হয়, তাই রাখব), `normalizeBdPhone` (শুধু WhatsApp-এ ব্যবহৃত — সরাবে), `onlyDigits` (শুধু normalizeBdPhone-এ — সরাবে) — function ও বাটন JSX দুটোই সরাব।
-- `MessageCircle`, `Share2` icon import সরাব।
+- **Keyboard navigation** — Enter চাপলে পরের field এ যাবে (textarea বাদে), শেষ field থেকে Enter → Save। Tab order ঠিক রাখা।
+- **Global shortcuts** — `Ctrl+S` Save, `Ctrl+K` Search, `Ctrl+R` Clear, `Alt+1..9` Service Category দ্রুত পরিবর্তন।
+- **Service Category কে chip/tab bar** — dropdown না, top এ horizontal scroll chip গুলো (Ticket/BMET/Saudi/Kuwait...) — এক click এ পরিবর্তন, কীবোর্ড-friendly।
+- **Auto-focus** — category পরিবর্তন বা save পরে cursor সরাসরি প্রথম মুখ্য field (passenger_name বা passport) এ।
+- **Smart defaults** — entry_date=today, sub_agency=Self, entry_by=current user (আগেই আছে), status=first; বাকি optional field গুলো folded।
+- **Passport scan + OCR fast-path** — এখন আছে; scan সফল হলে auto-focus পরের খালি field এ।
+- **Number field UX** — focus এ auto-select (আছে), 0 হলে placeholder; Tab চাপলে empty → 0 না করে skip।
+- **Money quick-keys** — amount field এ `5k`, `10k`, `1.5l` লিখলে সংখ্যায় রূপান্তর।
+- **Mobile field** — auto-format, 11 digit হলে next field এ auto-jump।
+- **Sub-Agent / Vendor LookupSelect** — type-ahead এ Enter চাপলে first match select।
 
-**C. বাকি বাটন (বন্ধ, Copy, Print/PDF, JPG) অপরিবর্তিত।**
+## ৩. Progressive Disclosure — অপ্রয়োজনীয় field লুকানো
 
-### যাচাই
-- Receipt popup → JPG → ডাউনলোড হওয়া ফাইলে সব receipt তথ্য দেখাবে।
-- Footer-এ শুধু ৪টা বাটন: বন্ধ, Copy, Print/PDF, JPG।
+- **"Essentials" mode (default)** — শুধু required + frequently-used field দেখাবে (passport, name, mobile, sold price, cost price, vendor, status, entry_date)।
+- **"More fields" toggle** — বাকি field (remarks, secondary contacts, optional dates) এক click এ expand।
+- প্রতি module-এ `essential: true` ফ্ল্যাগ দিয়ে কনফিগ করা হবে `modules.ts` এ।
+
+## ৪. Sticky Action Bar
+
+- উপরের Category selector + Save/Search/Clear button কে **sticky top bar** করা। স্ক্রল করলেও সবসময় হাতের কাছে — Save এর জন্য নিচে যেতে হবে না।
+- নিচের duplicate Save button সরিয়ে দেয়া (sticky bar যথেষ্ট) → আরো ছোট পেইজ।
+
+## ৫. Edit Dialog — একই compact layout
+
+Edit এর `Dialog` এর ভিতরেও `FormSections` use হয়, তাই উপরের সব পরিবর্তন এডিট ফর্মেও স্বয়ংক্রিয়ভাবে আসবে। অতিরিক্ত:
+- Dialog এর width `max-w-3xl` রেখে height সীমিত, ভিতরে scroll এর বদলে compact grid এ পুরোটা একসাথে।
+- Footer Save button sticky।
+
+## ৬. ফলাফল (অনুমিত)
+
+| পরিবর্তন | Impact |
+|---|---|
+| 3-column + compact spacing | পেইজ উচ্চতা ~40-50% কম |
+| Essentials mode | প্রথম দর্শনে ~60% কম field |
+| Sticky save bar + Enter-to-next | স্ক্রল ~80% কম, মাউস click ~70% কম |
+| Shortcuts + chip category | কীবোর্ডেই পুরো এন্ট্রি possible |
+
+## জিজ্ঞাসা
+
+implement শুরু করার আগে কনফার্ম করো:
+
+1. **Layout** — 3-column compact + sticky save bar OK?
+2. **Essentials mode** ডিফল্ট চাও, না কি সব field সবসময় visible (শুধু compact)?
+3. **Service Category** — dropdown রাখব নাকি chip/tab bar এ পরিবর্তন করব?
+4. **Keyboard shortcut** (Enter→next, Ctrl+S save) যোগ করব?
+
+তোমার উত্তর পেলে এই অনুযায়ী `FormSections`, `FormField`, `action-board.tsx` ও edit dialog refactor করব। কোনো business logic / data পরিবর্তন হবে না — শুধু UI/UX।
