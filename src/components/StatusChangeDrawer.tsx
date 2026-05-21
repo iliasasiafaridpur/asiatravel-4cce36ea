@@ -289,8 +289,10 @@ export function StatusChangeDrawer({
   const row = request.row;
   const passport = String(row.passport ?? "");
   const country = String(row.country_name ?? row.country_route ?? "");
-  const route = String(row.route ?? row.sector ?? "");
-  const showRoute = request.moduleKey === "tickets" && !!route;
+  const isTicket = request.moduleKey === "tickets";
+  const airline = String(row.airline ?? "");
+  const tripRoad = String(row.trip_road ?? row.route ?? row.sector ?? "");
+  const flightDate = row.flight_date ? String(row.flight_date) : "";
 
   return (
     <Popover open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -312,8 +314,15 @@ export function StatusChangeDrawer({
           <div className="text-[11px] font-mono text-muted-foreground">{request.refId}</div>
           {passport && <div className="text-[11px] text-muted-foreground">PP: <span className="font-mono">{passport}</span></div>}
           {country && <div className="text-[11px] text-muted-foreground">Country: {country}</div>}
-          {showRoute && <div className="text-[11px] text-muted-foreground">Route: {route}</div>}
+          {isTicket && (airline || tripRoad || flightDate) && (
+            <div className="mt-1 pt-1 border-t border-border/60 space-y-0.5">
+              {airline && <div className="text-[11px] text-muted-foreground">✈ Airline: <span className="text-foreground font-medium">{airline}</span></div>}
+              {tripRoad && <div className="text-[11px] text-muted-foreground">Route: <span className="text-foreground font-medium">{tripRoad}</span></div>}
+              {flightDate && <div className="text-[11px] text-muted-foreground">Flight: <span className="text-foreground font-medium">{flightDate}</span></div>}
+            </div>
+          )}
         </div>
+
 
         <div className="space-y-3">
           <div className="space-y-1.5">
