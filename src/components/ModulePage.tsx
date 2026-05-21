@@ -740,7 +740,7 @@ export function ModulePage({ module: mod }: Props) {
               <Plus className="h-4 w-4" /> নতুন এন্ট্রি
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
             </DialogHeader>
