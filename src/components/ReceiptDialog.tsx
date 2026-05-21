@@ -169,15 +169,17 @@ export function ReceiptDialog({
   const renderJpegBlob = async (): Promise<Blob | null> => {
     const node = buildPrintableNode();
     try {
-      const canvas = await html2canvas(node, {
-        scale: 2,
+      const dataUrl = await toJpeg(node, {
+        quality: 0.95,
+        pixelRatio: 2,
         backgroundColor: "#ffffff",
-        useCORS: true,
-        logging: false,
+        cacheBust: true,
       });
-      return await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob((b) => resolve(b), "image/jpeg", 0.95),
-      );
+      const res = await fetch(dataUrl);
+      return await res.blob();
+    } catch (e) {
+      console.error("renderJpegBlob failed", e);
+      return null;
     } finally {
       node.remove();
     }
