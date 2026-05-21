@@ -233,7 +233,7 @@ export function LedgerPage({ module: mod }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status,received_date")
           .limit(2000),
         supabase
           .from("kuwait_visas")
@@ -258,8 +258,10 @@ export function LedgerPage({ module: mod }: Props) {
           status?: string;
           airline?: string;
           pnr?: string;
+          received_from_vendor?: boolean;
         }
       >();
+
       type T = {
         id: string;
         flight_date: string | null;
