@@ -122,9 +122,11 @@ export function LedgerPage({ module: mod }: Props) {
         status?: string;
         airline?: string;
         pnr?: string;
+        received_from_vendor?: boolean;
       }
     >
   >(new Map());
+
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -231,7 +233,7 @@ export function LedgerPage({ module: mod }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status,received_date")
           .limit(2000),
         supabase
           .from("kuwait_visas")
@@ -256,8 +258,10 @@ export function LedgerPage({ module: mod }: Props) {
           status?: string;
           airline?: string;
           pnr?: string;
+          received_from_vendor?: boolean;
         }
       >();
+
       type T = {
         id: string;
         flight_date: string | null;
@@ -298,6 +302,7 @@ export function LedgerPage({ module: mod }: Props) {
         sold_price: number | null;
         cost_price: number | null;
         status: string | null;
+        received_date: string | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
         if (b.country_name) cm.set(b.id, b.country_name);
@@ -309,6 +314,8 @@ export function LedgerPage({ module: mod }: Props) {
           sold: b.sold_price ?? undefined,
           cost: b.cost_price ?? undefined,
           status: b.status ?? undefined,
+          received_from_vendor:
+            (b.status ?? "") === "Pending Delivery" && !!b.received_date,
         });
       }
       const vm = new Map<string, string>();
@@ -332,6 +339,7 @@ export function LedgerPage({ module: mod }: Props) {
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
+          received_from_vendor: (v.status ?? "") === "Pending Delivery",
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -344,8 +352,10 @@ export function LedgerPage({ module: mod }: Props) {
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
           status: v.status ?? undefined,
+          received_from_vendor: (v.status ?? "") === "Pending Delivery",
         });
       }
+
       setTicketFlightMap(fm);
       setTicketRouteMap(rm);
       setBmetCountryMap(cm);
@@ -464,6 +474,20 @@ export function LedgerPage({ module: mod }: Props) {
     };
   }, [filtered, billCol, paidCol]);
 
+  // For vendor-ledger: a bill row from BMET/Saudi/Kuwait modules only contributes
+  // to Total Payable / Due of Vendor once the source customer's status is
+  // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
+  const countsForVendorDue = useCallback(
+    (r: Row) => {
+      if (isAgency) return true;
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+      const info = sourceInfoMap.get(String(r.source_id ?? ""));
+      return !!info?.received_from_vendor;
+    },
+    [isAgency, sourceInfoMap],
+  );
+
   const groupSummary = useMemo(() => {
     const map = new Map<string, { bill: number; cashPaid: number; applied: number; advance: number }>();
     for (const r of filtered) {
@@ -471,7 +495,7 @@ export function LedgerPage({ module: mod }: Props) {
       const cur = map.get(k) ?? { bill: 0, cashPaid: 0, applied: 0, advance: 0 };
       if (isAdvanceRow(r)) {
         cur.advance += Number(r[paidCol] ?? 0);
-      } else {
+      } else if (countsForVendorDue(r)) {
         cur.bill += Number(r[billCol] ?? 0);
         cur.cashPaid += Number(r[paidCol] ?? 0);
         cur.applied += Number(r.advance_applied ?? 0);
@@ -489,7 +513,8 @@ export function LedgerPage({ module: mod }: Props) {
         };
       })
       .sort((a, b) => b.due - a.due);
-  }, [filtered, groupField, billCol, paidCol]);
+  }, [filtered, groupField, billCol, paidCol, countsForVendorDue]);
+
 
   const groupOptions = useMemo(() => {
     const set = new Set<string>();
@@ -1227,7 +1252,7 @@ export function LedgerPage({ module: mod }: Props) {
                     <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Due</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{isAgency ? "Due" : "Due of Vendor"}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
                   </TableRow>
                 </TableHeader>
