@@ -66,6 +66,7 @@ export function StatusChangeDrawer({
 
   const [vendor, setVendor] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
+  const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
