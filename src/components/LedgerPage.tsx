@@ -1554,14 +1554,20 @@ export function LedgerPage({ module: mod }: Props) {
                             </span>
                           )}
                         </div>
-                        <div
-                          className={cn(
-                            "text-[11px] font-medium",
-                            profit < 0 ? "text-rose-500" : "text-muted-foreground",
-                          )}
-                        >
-                          Profit: {profit.toLocaleString()}
-                        </div>
+                        {typeof info?.cost === "number" && info.cost > 0 && (
+                          <div
+                            className={cn(
+                              "text-[11px] font-medium",
+                              profit < 0
+                                ? "text-rose-500"
+                                : displayDue <= 0 && Number(r[billCol] ?? 0) > 0
+                                  ? "text-emerald-400"
+                                  : "text-amber-400",
+                            )}
+                          >
+                            Profit: {profit.toLocaleString()}
+                          </div>
+                        )}
                       </div>
                       <div className="print:hidden">
                         <div className="flex justify-end gap-0.5 lg:justify-end">
