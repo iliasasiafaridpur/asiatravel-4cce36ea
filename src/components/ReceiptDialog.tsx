@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, MessageCircle, X, Copy, Image as ImageIcon, Share2 } from "lucide-react";
+import { Printer, X, Copy, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { toJpeg } from "html-to-image";
 
@@ -29,18 +29,6 @@ function fmt(n: number) {
   return `৳${n.toLocaleString()}`;
 }
 
-function onlyDigits(s: string) {
-  return (s || "").replace(/\D/g, "");
-}
-
-function normalizeBdPhone(raw?: string): string {
-  const d = onlyDigits(raw || "");
-  if (!d) return "";
-  if (d.startsWith("880")) return d;
-  if (d.startsWith("0")) return "880" + d.slice(1);
-  if (d.length === 10) return "880" + d;
-  return d;
-}
 
 export function ReceiptDialog({
   receipt,
@@ -130,7 +118,7 @@ export function ReceiptDialog({
   const buildPrintableNode = (): HTMLDivElement => {
     const wrap = document.createElement("div");
     wrap.style.cssText =
-      "position:fixed;left:-10000px;top:0;width:520px;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
+      "position:fixed;top:0;left:0;z-index:-1;opacity:0;pointer-events:none;width:520px;box-sizing:border-box;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
     wrap.innerHTML = `
       <div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px;">
         <h1 style="margin:0;font-size:18px;font-weight:700;">${receipt.agencyName || "Asia Travel"}</h1>
@@ -169,11 +157,19 @@ export function ReceiptDialog({
   const renderJpegBlob = async (): Promise<Blob | null> => {
     const node = buildPrintableNode();
     try {
+      if (document.fonts?.ready) {
+        try { await document.fonts.ready; } catch { /* ignore */ }
+      }
+      const width = node.offsetWidth || 520;
+      const height = node.offsetHeight;
       const dataUrl = await toJpeg(node, {
         quality: 0.95,
         pixelRatio: 2,
         backgroundColor: "#ffffff",
         cacheBust: true,
+        width,
+        height,
+        style: { transform: "none", opacity: "1" },
       });
       const res = await fetch(dataUrl);
       return await res.blob();
@@ -184,6 +180,7 @@ export function ReceiptDialog({
       node.remove();
     }
   };
+
 
   const jpgFileName = () =>
     `Receipt-${receipt.receiptId}-${(receipt.passengerName || "").replace(/[^a-z0-9]+/gi, "_")}.jpg`;
@@ -211,46 +208,8 @@ export function ReceiptDialog({
     }
   };
 
-  const canShareFiles =
-    typeof navigator !== "undefined" &&
-    typeof (navigator as Navigator).canShare === "function";
 
-  const handleShareImage = async () => {
-    setBusy(true);
-    try {
-      const blob = await renderJpegBlob();
-      if (!blob) throw new Error("blob");
-      const file = new File([blob], jpgFileName(), { type: "image/jpeg" });
-      const nav = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-        share?: (data: ShareData) => Promise<void>;
-      };
-      if (nav.canShare?.({ files: [file] }) && nav.share) {
-        await nav.share({
-          files: [file],
-          title: `Receipt ${receipt.receiptId}`,
-          text: receiptText(),
-        });
-      } else {
-        toast.error("এই ব্রাউজার image share সমর্থন করে না — JPG ডাউনলোড করে attach করুন");
-      }
-    } catch (e: unknown) {
-      const err = e as { name?: string };
-      if (err?.name !== "AbortError") toast.error("Share করা যায়নি");
-    } finally {
-      setBusy(false);
-    }
-  };
 
-  const handleWhatsApp = () => {
-    const phone = normalizeBdPhone(receipt.mobile);
-    const lines = receiptText();
-    const text = encodeURIComponent(lines);
-    const url = phone
-      ? `https://web.whatsapp.com/send?phone=${phone}&text=${text}`
-      : `https://web.whatsapp.com/send?text=${text}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
 
   return (
     <Dialog
@@ -403,25 +362,8 @@ export function ReceiptDialog({
           >
             <ImageIcon className="h-4 w-4" /> JPG
           </Button>
-          {canShareFiles && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 min-w-[7rem]"
-              onClick={handleShareImage}
-              disabled={busy}
-            >
-              <Share2 className="h-4 w-4" /> Share Image
-            </Button>
-          )}
-          <Button
-            size="sm"
-            className="flex-1 min-w-[7rem] bg-emerald-600 hover:bg-emerald-700 text-white"
-            onClick={handleWhatsApp}
-          >
-            <MessageCircle className="h-4 w-4" /> WhatsApp
-          </Button>
         </div>
+
       </DialogContent>
     </Dialog>
   );
