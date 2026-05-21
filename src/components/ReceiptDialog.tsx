@@ -1,8 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, MessageCircle, X, Copy } from "lucide-react";
+import { Printer, MessageCircle, X, Copy, Image as ImageIcon, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
 
 export interface ReceiptInfo {
   receiptId: string;
@@ -123,12 +124,125 @@ export function ReceiptDialog({
     }
   };
 
+  // Build an offscreen DOM that uses ONLY safe rgb/hex colors (no oklch),
+  // since html2canvas cannot parse oklch() values from Tailwind tokens.
+  const buildPrintableNode = (): HTMLDivElement => {
+    const wrap = document.createElement("div");
+    wrap.style.cssText =
+      "position:fixed;left:-10000px;top:0;width:520px;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
+    wrap.innerHTML = `
+      <div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px;">
+        <h1 style="margin:0;font-size:18px;font-weight:700;">${receipt.agencyName || "Asia Travel"}</h1>
+        <div style="font-size:11px;color:#555;">Payment Receipt</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Receipt #</b><span style="font-family:ui-monospace,monospace;">${receipt.receiptId}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Date</b><span>${receipt.date}</span></div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Passenger</b><span>${receipt.passengerName}</span></div>
+        ${receipt.mobile ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Mobile</b><span>${receipt.mobile}</span></div>` : ""}
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Ref ID</b><span style="font-family:ui-monospace,monospace;">${receipt.refId}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Service</b><span>${receipt.serviceType}</span></div>
+        ${receipt.airline ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Airline</b><span>${receipt.airline}</span></div>` : ""}
+        ${receipt.route ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Route</b><span>${receipt.route}</span></div>` : ""}
+        ${receipt.flightDate ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Flight Date</b><span>${receipt.flightDate}</span></div>` : ""}
+      </div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Sold Price</b><span>${fmt(receipt.sold)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Previously Received</b><span>${fmt(receipt.previouslyReceived)}</span></div>
+        ${receipt.paid > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Paid Now (${receipt.method})</b><span style="color:#059669;">+${fmt(receipt.paid)}</span></div>` : ""}
+        ${receipt.discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Discount</b><span style="color:#d97706;">−${fmt(receipt.discount)}</span></div>` : ""}
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:2px solid #111;margin-top:8px;padding-top:6px;"><span>Total Adjusted</span><span>${fmt(total)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Remaining Due</b><span style="font-weight:600;color:${remaining > 0 ? "#e11d48" : "#059669"};">${fmt(remaining)}</span></div>
+      </div>
+      ${receipt.remarks ? `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;font-size:12px;"><b>Remarks:</b> ${receipt.remarks}</div>` : ""}
+      <div style="margin-top:30px;display:flex;justify-content:space-between;font-size:11px;">
+        <div style="border-top:1px solid #111;padding-top:4px;width:40%;text-align:center;">Received by<br/>${receipt.receivedByName}</div>
+        <div style="border-top:1px solid #111;padding-top:4px;width:40%;text-align:center;">Customer Signature</div>
+      </div>
+      <div style="margin-top:18px;font-size:10px;color:#666;text-align:center;">Thank you for choosing us. This is a computer generated receipt.</div>
+    `;
+    document.body.appendChild(wrap);
+    return wrap;
+  };
+
+  const renderJpegBlob = async (): Promise<Blob | null> => {
+    const node = buildPrintableNode();
+    try {
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+      });
+      return await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/jpeg", 0.95),
+      );
+    } finally {
+      node.remove();
+    }
+  };
+
+  const jpgFileName = () =>
+    `Receipt-${receipt.receiptId}-${(receipt.passengerName || "").replace(/[^a-z0-9]+/gi, "_")}.jpg`;
+
+  const [busy, setBusy] = useState(false);
+
+  const handleDownloadJpg = async () => {
+    setBusy(true);
+    try {
+      const blob = await renderJpegBlob();
+      if (!blob) throw new Error("blob");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = jpgFileName();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("JPG ডাউনলোড শুরু হয়েছে");
+    } catch {
+      toast.error("JPG তৈরি করা যায়নি");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const canShareFiles =
+    typeof navigator !== "undefined" &&
+    typeof (navigator as Navigator).canShare === "function";
+
+  const handleShareImage = async () => {
+    setBusy(true);
+    try {
+      const blob = await renderJpegBlob();
+      if (!blob) throw new Error("blob");
+      const file = new File([blob], jpgFileName(), { type: "image/jpeg" });
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+        share?: (data: ShareData) => Promise<void>;
+      };
+      if (nav.canShare?.({ files: [file] }) && nav.share) {
+        await nav.share({
+          files: [file],
+          title: `Receipt ${receipt.receiptId}`,
+          text: receiptText(),
+        });
+      } else {
+        toast.error("এই ব্রাউজার image share সমর্থন করে না — JPG ডাউনলোড করে attach করুন");
+      }
+    } catch (e: unknown) {
+      const err = e as { name?: string };
+      if (err?.name !== "AbortError") toast.error("Share করা যায়নি");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleWhatsApp = () => {
     const phone = normalizeBdPhone(receipt.mobile);
     const lines = receiptText();
     const text = encodeURIComponent(lines);
-    // api.whatsapp.com / wa.me redirects are blocked on some ISPs (e.g. BD).
-    // web.whatsapp.com works directly when user is logged in to WhatsApp Web.
     const url = phone
       ? `https://web.whatsapp.com/send?phone=${phone}&text=${text}`
       : `https://web.whatsapp.com/send?text=${text}`;
@@ -277,6 +391,26 @@ export function ReceiptDialog({
           <Button variant="outline" size="sm" className="flex-1 min-w-[7rem]" onClick={handlePrint}>
             <Printer className="h-4 w-4" /> Print / PDF
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 min-w-[5.5rem]"
+            onClick={handleDownloadJpg}
+            disabled={busy}
+          >
+            <ImageIcon className="h-4 w-4" /> JPG
+          </Button>
+          {canShareFiles && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 min-w-[7rem]"
+              onClick={handleShareImage}
+              disabled={busy}
+            >
+              <Share2 className="h-4 w-4" /> Share Image
+            </Button>
+          )}
           <Button
             size="sm"
             className="flex-1 min-w-[7rem] bg-emerald-600 hover:bg-emerald-700 text-white"
