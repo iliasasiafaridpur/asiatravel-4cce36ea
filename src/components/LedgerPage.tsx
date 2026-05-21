@@ -122,9 +122,11 @@ export function LedgerPage({ module: mod }: Props) {
         status?: string;
         airline?: string;
         pnr?: string;
+        received_from_vendor?: boolean;
       }
     >
   >(new Map());
+
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
