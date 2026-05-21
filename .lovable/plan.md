@@ -1,38 +1,25 @@
-## কারণ
+## সমস্যা
 
-`html2canvas` `oklch()` color function বুঝে না। আমাদের offscreen receipt node-এ inline hex/rgb দেওয়া আছে, কিন্তু সেটা `document.body`-তে append করায় page-এর সব CSS variables (যেগুলো `src/styles.css`-এ oklch) computed style হিসেবে চলে আসে। `html2canvas` সেগুলো parse করতে গিয়ে throw করে → toast: "JPG তৈরি করা যায়নি"।
+1. **Blank JPG** — `buildPrintableNode()` এ node-কে `position:fixed; left:-10000px` দিয়ে viewport-এর বাইরে রাখা হচ্ছে। `html-to-image` কিছু ক্ষেত্রে off-screen fixed node-এর computed layout/size ঠিকমতো পায় না (বিশেষ করে যখন node-এর explicit `width/height` set নেই বা parent visibility issue থাকে) — ফলে সাদা/blank image generate হয়। এছাড়া web fonts load না হলেও text render হয় না।
 
-Share Image বাটনও একই কারণে কাজ করছে না (একই `renderJpegBlob` ব্যবহার করে)।
+2. **Share Image ও WhatsApp বাটন** দরকার নেই — সরাতে হবে।
 
 ## সমাধান
 
-`html2canvas` সরিয়ে **`html-to-image`** ব্যবহার করব — এটা modern CSS (oklch, color-mix, css variables) সাপোর্ট করে।
+### `src/components/ReceiptDialog.tsx`
 
-### পরিবর্তন
+**A. Blank JPG fix — `buildPrintableNode()` rewrite**
+- Off-screen positioning বদলে node-কে `position: fixed; top: 0; left: 0; z-index: -1; opacity: 0; pointer-events: none;` রাখব — viewport-এর ভেতরে কিন্তু invisible। html-to-image properly measure ও render করতে পারবে।
+- Explicit `width: 520px` রাখব (already আছে), সাথে inline `box-sizing: border-box`।
+- `renderJpegBlob()` এ `toJpeg` call করার আগে `await document.fonts.ready` দেব যাতে fonts লোড থাকে।
+- `toJpeg` options এ explicit `width: 520`, `height: node.offsetHeight` যোগ করব যাতে সঠিক canvas size হয়।
 
-1. **প্যাকেজ**
-   - `bun remove html2canvas`
-   - `bun add html-to-image`
+**B. Share Image ও WhatsApp বাটন সরানো**
+- `handleShareImage`, `handleWhatsApp`, `canShareFiles`, `receiptText` (যদি শুধু এদের জন্য থাকে — Copy বাটনেও ব্যবহৃত হয়, তাই রাখব), `normalizeBdPhone` (শুধু WhatsApp-এ ব্যবহৃত — সরাবে), `onlyDigits` (শুধু normalizeBdPhone-এ — সরাবে) — function ও বাটন JSX দুটোই সরাব।
+- `MessageCircle`, `Share2` icon import সরাব।
 
-2. **`src/components/ReceiptDialog.tsx`**
-   - `import html2canvas from "html2canvas"` → `import { toJpeg } from "html-to-image"`
-   - `renderJpegBlob()` rewrite:
-     ```ts
-     const dataUrl = await toJpeg(node, {
-       quality: 0.95,
-       pixelRatio: 2,
-       backgroundColor: "#ffffff",
-       cacheBust: true,
-     });
-     const blob = await (await fetch(dataUrl)).blob();
-     ```
-   - `buildPrintableNode()` অপরিবর্তিত (inline styled, safe colors)।
-   - `handleDownloadJpg` ও `handleShareImage` একই blob ব্যবহার করবে — অন্য কোনো লজিক বদলাচ্ছে না।
-
-3. **fallback** — যদি কোনো কারণে generation fail হয়, console-এ error log করব যাতে debug সহজ হয়।
+**C. বাকি বাটন (বন্ধ, Copy, Print/PDF, JPG) অপরিবর্তিত।**
 
 ### যাচাই
-
-- Receipt popup → JPG বাটন → file ডাউনলোড হবে।
-- Share Image বাটন (সাপোর্টেড ডিভাইসে) → JPG share dialog আসবে।
-- Print, Copy, WhatsApp, Close — অপরিবর্তিত।
+- Receipt popup → JPG → ডাউনলোড হওয়া ফাইলে সব receipt তথ্য দেখাবে।
+- Footer-এ শুধু ৪টা বাটন: বন্ধ, Copy, Print/PDF, JPG।

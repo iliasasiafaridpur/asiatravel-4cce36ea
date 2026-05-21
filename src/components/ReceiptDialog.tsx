@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, MessageCircle, X, Copy, Image as ImageIcon, Share2 } from "lucide-react";
+import { Printer, X, Copy, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { toJpeg } from "html-to-image";
 
