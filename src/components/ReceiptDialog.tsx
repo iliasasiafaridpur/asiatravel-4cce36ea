@@ -121,8 +121,8 @@ export function ReceiptDialog({
       "position:fixed;top:0;left:0;z-index:-1;opacity:0;pointer-events:none;width:520px;box-sizing:border-box;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
     wrap.innerHTML = `
       <div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px;">
-        <h1 style="margin:0;font-size:18px;font-weight:700;">${receipt.agencyName || "Asia Travel"}</h1>
-        <div style="font-size:11px;color:#555;">Payment Receipt</div>
+        <h1 style="margin:0;font-size:18px;font-weight:700;">Asia Travels &amp; Tours</h1>
+        <div style="font-size:11px;color:#555;">Bariplaza, Faridpur. 01721-399599</div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Receipt #</b><span style="font-family:ui-monospace,monospace;">${receipt.receiptId}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Date</b><span>${receipt.date}</span></div>
@@ -227,8 +227,8 @@ export function ReceiptDialog({
           <div ref={printRef}>
             <div className="r">
               <div className="h text-center border-b-2 border-foreground pb-2 mb-3">
-                <h1 className="text-base font-bold m-0">{receipt.agencyName || "Asia Travel"}</h1>
-                <div className="sub text-[10px] text-muted-foreground">Payment Receipt</div>
+                <h1 className="text-base font-bold m-0">Asia Travels & Tours</h1>
+                <div className="sub text-[10px] text-muted-foreground">Bariplaza, Faridpur. 01721-399599</div>
               </div>
 
               <div className="row flex justify-between text-xs py-0.5">
