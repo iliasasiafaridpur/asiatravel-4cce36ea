@@ -103,9 +103,12 @@ export function ReceiptDialog({
       `Received by: ${receipt.receivedByName}`,
       receipt.agencyName ? `\n— ${receipt.agencyName}` : "",
     ].filter(Boolean).join("\n");
+    const text = encodeURIComponent(lines);
+    // api.whatsapp.com / wa.me redirects are blocked on some ISPs (e.g. BD).
+    // web.whatsapp.com works directly when user is logged in to WhatsApp Web.
     const url = phone
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(lines)}`
-      : `https://wa.me/?text=${encodeURIComponent(lines)}`;
+      ? `https://web.whatsapp.com/send?phone=${phone}&text=${text}`
+      : `https://web.whatsapp.com/send?text=${text}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
