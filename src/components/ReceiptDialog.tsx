@@ -52,6 +52,7 @@ export function ReceiptDialog({
   onClose: () => void;
 }) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
 
   if (!receipt) return null;
 

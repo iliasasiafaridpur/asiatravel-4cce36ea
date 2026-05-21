@@ -1,33 +1,34 @@
-## Receipt কে JPG হিসেবে Download
+## সমস্যা
 
-হ্যাঁ, সম্ভব। `html2canvas` library ব্যবহার করে receipt এর DOM (`printRef`) কে canvas এ render করব, তারপর `canvas.toBlob('image/jpeg')` দিয়ে JPG file বানিয়ে download trigger করব।
+Delivery-সংক্রান্ত status change-এ Confirm চাপলে `StatusChangeDrawer` → `setReceipt(...)` করে, যাতে `<ReceiptDialog receipt={...} />` রি-রেন্ডার হয়। কিন্তু `src/components/ReceiptDialog.tsx`-এ Hook-এর order ভুল:
 
-### পরিবর্তন
+```tsx
+const printRef = useRef<HTMLDivElement>(null);   // hook #1
+if (!receipt) return null;                        // ← early return
+...
+const [busy, setBusy] = useState(false);          // hook #2 — only when receipt is non-null
+```
 
-**1. Package install**
-- `bun add html2canvas`
+প্রথম render (receipt = null): শুধু hook #1 চলে।
+দ্বিতীয় render (receipt = object): hook #1 + hook #2 চলে → React Rules of Hooks ভঙ্গ → "Rendered more hooks than during the previous render" throw → root `errorComponent` (router.tsx এর `DefaultErrorComponent`) ধরে → "This page didn't load" স্ক্রিন।
 
-**2. `src/components/ReceiptDialog.tsx`**
-- নতুন `handleDownloadJpg()` function:
-  - `html2canvas(printRef.current, { scale: 2, backgroundColor: '#ffffff' })` দিয়ে high-DPI snapshot
-  - `canvas.toBlob(blob => ...)` → `image/jpeg`, quality `0.95`
-  - একটি hidden `<a>` element তৈরি করে `download="Receipt-{receiptId}.jpg"` দিয়ে click → auto download
-  - Success/error toast
-- Footer এ নতুন **"JPG"** button যোগ (Image icon সহ), বিদ্যমান Close / Copy / Print / WhatsApp এর পাশে
-- Button row ইতিমধ্যেই `flex-wrap` — নতুন button সুন্দর fit হবে
+## ফিক্স (একটাই ফাইল)
 
-**3. WhatsApp এ JPG পাঠানোর bonus path (mobile)**
-- যদি `navigator.canShare({ files: [...] })` support করে (mostly mobile browser), একই JPG blob কে `File` বানিয়ে `navigator.share()` দিয়ে সরাসরি WhatsApp/অন্য app এ share করার option যোগ করা যায় — button label: **"Share Image"**
-- Desktop / unsupported browser এ এই button hide থাকবে; user JPG download করে manually attach করবেন
+`src/components/ReceiptDialog.tsx` — সব hook (`useRef`, `useState`) `if (!receipt) return null` লাইনের **উপরে** নিয়ে যাওয়া। বাকি লজিক/UI অপরিবর্তিত।
 
-### কেন JPG ভালো option
+```tsx
+export function ReceiptDialog({ receipt, open, onClose }: {...}) {
+  const printRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);     // ← উপরে আনলাম
 
-- WhatsApp Web/App এ image attach করা PDF এর চেয়ে সহজ (drag-drop বা mobile gallery থেকে)
-- BD তে `wa.me` block থাকলেও WhatsApp app/web এ image সরাসরি paste/attach করা যায়
-- File size ছোট (~50–150 KB)
-- Print/PDF option আগের মতই থাকবে — কেউ চাইলে PDF নিতে পারবেন
+  if (!receipt) return null;                    // এখন hooks-এর পরে
+  // ... বাকি সব আগের মতো
+}
+```
 
-### Technical notes
+এতে hook count সব render-এ একই থাকবে, crash বন্ধ হবে, Confirm → Payment Receipt popup ঠিকমতো খুলবে।
 
-- `html2canvas` Tailwind/oklch color পুরোপুরি support করে না কখনো কখনো — যদি color rendering সমস্যা হয়, receipt block এর জন্য inline fallback styles (যা ইতিমধ্যে print HTML এ আছে) ব্যবহার করব
-- Filename format: `Receipt-{receiptId}-{passengerName}.jpg`
+## যাচাই
+
+- Status "Delivered" (due > 0) এ Confirm → Receipt popup আসবে, error page আর আসবে না।
+- JPG / Copy / WhatsApp / Print বাটনগুলোর আচরণ অপরিবর্তিত।
