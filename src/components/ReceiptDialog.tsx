@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Printer, MessageCircle, X, Copy, Image as ImageIcon, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
+import { toJpeg } from "html-to-image";
 
 export interface ReceiptInfo {
   receiptId: string;
