@@ -1416,7 +1416,6 @@ export function LedgerPage({ module: mod }: Props) {
                         ? info.sold - info.cost
                         : 0;
                   const status = info?.status ?? "";
-                  const isPending = !!status && /pending|process/i.test(status);
                   return (
                     <div
                       key={r.id}
@@ -1436,9 +1435,9 @@ export function LedgerPage({ module: mod }: Props) {
                         {status && (
                           <Badge
                             variant="outline"
-                            className={cn("mt-1 text-[10px]", statusBadgeClass(status))}
+                            className={cn("mt-1 text-[10px] whitespace-nowrap", statusBadgeClass(status))}
                           >
-                            {isPending ? "Pending" : status}
+                            {status}
                           </Badge>
                         )}
                         {byName && (
