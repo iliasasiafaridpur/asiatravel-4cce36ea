@@ -72,6 +72,7 @@ export function StatusChangeDrawer({
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptInfo | null>(null);
 
   const order = request?.statusOrder && request.statusOrder.length > 0
     ? request.statusOrder
