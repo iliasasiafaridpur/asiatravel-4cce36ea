@@ -865,7 +865,14 @@ export function LedgerPage({ module: mod }: Props) {
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
         await writeCashMirror(total, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
-        toast.success(`✓ ${entries.length}টি বিলে পেমেন্ট সংরক্ষিত: ${total.toLocaleString()}`);
+        notify.success(`✓ ${entries.length}টি বিলে পেমেন্ট সংরক্ষিত: ${total.toLocaleString()}`, {
+          meta: {
+            vendor: String(payTarget),
+            service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (${entries.length} bills)`,
+            refId: parts.map((p) => p.split("=")[0]).join(", "),
+            amount: total,
+          },
+        });
         setPayOpen(false);
         void load();
         return;
