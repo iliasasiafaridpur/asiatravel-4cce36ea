@@ -56,7 +56,7 @@ const STATUS_VISA = ["NEW", "File Process", "Card Ready", "Pending Delivery", "D
 const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 
 const DUE = (sold: string, recv: string, discount?: string) => (r: Record<string, unknown>) =>
-  Number(r[sold] ?? 0) - Number(r[recv] ?? 0) - Number(discount ? r[discount] ?? 0 : 0);
+  Math.max(0, Number(r[sold] ?? 0) - Number(r[recv] ?? 0) - Number(discount ? r[discount] ?? 0 : 0));
 
 const PROFIT = (sold: string, cost: string, discount?: string) => (r: Record<string, unknown>) =>
   Number(r[sold] ?? 0) - Number(discount ? r[discount] ?? 0 : 0) - Number(r[cost] ?? 0);
