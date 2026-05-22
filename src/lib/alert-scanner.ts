@@ -75,7 +75,7 @@ async function scanTarget(t: Target) {
   const q: any = supabase.from(t.table as any);
   const { data, error } = await q
     .select(
-      "id, passenger_name, country_name, country_route, status, sold_price, received_amount, delivery_date, updated_at, entry_date",
+      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, delivery_date, updated_at, entry_date, vendor_bought`,
     )
     .in("status", ["Card Ready", "Pending Delivery"])
     .is("delivery_date", null)
@@ -85,7 +85,9 @@ async function scanTarget(t: Target) {
   for (const r of data as Row[]) {
     const passenger = r.passenger_name || "(নাম নেই)";
     const country = countryOf(r, t);
-    const meta = { passenger, service: t.serviceLabel, country };
+    const refId = (r[t.idField] as string | null | undefined) || undefined;
+    const vendor = r.vendor_bought || undefined;
+    const meta = { passenger, service: t.serviceLabel, country, refId, vendor };
     const outstanding = due(r);
 
     // 1) Financial alert
@@ -111,7 +113,6 @@ async function scanTarget(t: Target) {
           `${t.serviceLabel} — ${days} দিন ধরে Card Ready, এখনো ডেলিভারি হয়নি`,
           {
             meta,
-            // bucket by day so we re-notify once per day at most
             dedupeKey: `aging:${t.table}:${r.id}:${Math.floor(Date.now() / DAY_MS)}`,
           },
         );
