@@ -6,13 +6,12 @@ import type { NotificationMeta } from "@/lib/notification-store";
 
 type Opts = { meta?: NotificationMeta; dedupeKey?: string; description?: string };
 
-function call(fn: (msg: string, o?: unknown) => unknown, msg: string, opts?: Opts) {
-  fn(msg, opts as unknown);
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const t = toast as any;
 
 export const notify = {
-  success: (msg: string, opts?: Opts) => call(toast.success.bind(toast), msg, opts),
-  error:   (msg: string, opts?: Opts) => call(toast.error.bind(toast),   msg, opts),
-  info:    (msg: string, opts?: Opts) => call(toast.info.bind(toast),    msg, opts),
-  warning: (msg: string, opts?: Opts) => call(toast.warning.bind(toast), msg, opts),
+  success: (msg: string, opts?: Opts) => t.success(msg, opts),
+  error:   (msg: string, opts?: Opts) => t.error(msg, opts),
+  info:    (msg: string, opts?: Opts) => t.info(msg, opts),
+  warning: (msg: string, opts?: Opts) => t.warning(msg, opts),
 };
