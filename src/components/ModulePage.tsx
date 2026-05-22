@@ -1093,14 +1093,8 @@ export function FormSections({ mod, form, setForm }: {
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
-  const [showAll, setShowAll] = useState(false);
   const visibleFields = mod.fields.filter((f) => !f.hideInForm);
-  const isEssential = (f: Field) =>
-    !!f.required ||
-    !!f.showInList ||
-    ["passenger_name", "passport", "mobile", "entry_date", "status", "sub_agency", "agent_name", "vendor_bought", "sold_price", "cost_price", "received", "received_amount", "paid_amount"].includes(f.name);
-  const optionalCount = visibleFields.filter((f) => !isEssential(f)).length;
-  const shownFields = showAll ? visibleFields : visibleFields.filter(isEssential);
+  const shownFields = visibleFields;
   const sections: Section[] = ["passenger", "agency", "vendor"];
   const grouped = sections
     .map((s) => ({ section: s, fields: shownFields.filter((f) => (f.section ?? "passenger") === s) }))
