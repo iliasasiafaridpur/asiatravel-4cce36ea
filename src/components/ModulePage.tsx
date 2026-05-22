@@ -1139,10 +1139,7 @@ export function FormSections({ mod, form, setForm }: {
               {SECTION_LABELS[g.section]}
             </h3>
           )}
-          <div
-            className="grid gap-1.5"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}
-          >
+          <div className="flex flex-wrap gap-1.5 items-start">
             {g.fields.map((field) => (
               <FormField
                 key={field.name}
@@ -1206,19 +1203,23 @@ function FormField({ field, value, onChange }: {
   onChange: (v: unknown) => void;
 }) {
   const strVal = (value as string) ?? "";
-  // Dynamic column span: textareas span all; lookups always wider; long text values grow
-  let spanStyle: React.CSSProperties = { minWidth: 0 };
+  // Compact fixed widths with flex-wrap; textareas take full row.
+  let widthStyle: React.CSSProperties = { width: 180, flex: "0 0 auto" };
   if (field.type === "textarea") {
-    spanStyle.gridColumn = "1 / -1";
+    widthStyle = { width: "100%", flex: "1 1 100%" };
   } else if (field.lookup) {
-    spanStyle.gridColumn = "span 2";
+    widthStyle = { width: 240, flex: "0 0 auto" };
   } else if ((field.type === "text" || !field.type) && strVal.length > 22) {
-    const extra = Math.min(3, Math.ceil((strVal.length - 22) / 18) + 1);
-    spanStyle.gridColumn = `span ${1 + extra}`;
+    const extra = Math.min(220, (strVal.length - 22) * 8);
+    widthStyle = { width: 180 + extra, flex: "0 0 auto" };
+  } else if (field.type === "date") {
+    widthStyle = { width: 150, flex: "0 0 auto" };
+  } else if (field.type === "number") {
+    widthStyle = { width: 140, flex: "0 0 auto" };
   }
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className="space-y-1" style={spanStyle}>
+    <div className="space-y-1" style={widthStyle}>
       <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
