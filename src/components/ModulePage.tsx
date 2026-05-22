@@ -1176,12 +1176,12 @@ function FormField({ field, value, onChange }: {
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const span = field.type === "textarea" ? "sm:col-span-2 lg:col-span-3" : "";
+  const span = field.type === "textarea" ? "col-span-2 sm:col-span-3 lg:col-span-4" : "";
   const strVal = (value as string) ?? "";
   const isEntryBy = field.name === "entry_by";
   return (
     <div className={`space-y-0.5 ${span}`}>
-      <Label className="text-[11px] font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+      <Label className="text-[10px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
