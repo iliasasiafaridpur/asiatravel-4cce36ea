@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, statusBadgeClass, type ModuleSchema, type Field } from "@/lib/modules";
+import { formatDate, statusBadgeClass, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
+import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { LookupSelect } from "@/components/LookupSelect";
 import {
   Select,
@@ -163,6 +164,49 @@ export function LedgerPage({ module: mod }: Props) {
   // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
   const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
   const [profileParty, setProfileParty] = useState<string | null>(null);
+  const [passengerProfile, setPassengerProfile] = useState<{
+    row: Row;
+    serviceTable: string;
+    moduleKey?: string;
+    statusOrder?: string[];
+  } | null>(null);
+
+  const openProfileFor = useCallback(
+    async (r: Row) => {
+      const gf = mod.groupBy?.field ?? "agent_name";
+      const party = String(r[gf] ?? "").trim();
+      const isSelf = party.toLowerCase() === "self";
+      if (!isSelf) {
+        setProfileParty(party);
+        return;
+      }
+      const srcTable = String(r.source_table ?? "");
+      const srcId = String(r.source_id ?? "");
+      const srcModule = srcTable ? MODULES.find((m) => m.table === srcTable) : undefined;
+      if (srcTable && srcId) {
+        const { data } = await supabase
+          .from(srcTable as never)
+          .select("*")
+          .eq("id", srcId)
+          .maybeSingle();
+        const fullRow = (data as Row | null) ?? r;
+        setPassengerProfile({
+          row: fullRow,
+          serviceTable: srcTable,
+          moduleKey: srcModule?.key,
+          statusOrder: srcModule?.statuses,
+        });
+      } else {
+        setPassengerProfile({
+          row: r,
+          serviceTable: srcTable || mod.table,
+          moduleKey: srcModule?.key,
+          statusOrder: srcModule?.statuses,
+        });
+      }
+    },
+    [mod],
+  );
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -1432,11 +1476,11 @@ export function LedgerPage({ module: mod }: Props) {
                       key={r.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                      onClick={() => void openProfileFor(r)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setProfileParty(String(r[groupField] ?? ""));
+                          void openProfileFor(r);
                         }
                       }}
                       className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors"
@@ -1522,7 +1566,7 @@ export function LedgerPage({ module: mod }: Props) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setProfileParty(String(r[groupField] ?? ""));
+                            void openProfileFor(r);
                           }}
                           className="font-semibold text-left hover:underline hover:text-primary"
                           title={isAgency ? "Customer profile" : "Vendor profile"}
@@ -2167,6 +2211,15 @@ export function LedgerPage({ module: mod }: Props) {
         onOpenChange={(o) => !o && setProfileParty(null)}
         kind={isAgency ? "customer" : "vendor"}
         partyName={profileParty}
+      />
+
+      <PassengerProfileDrawer
+        open={!!passengerProfile}
+        onOpenChange={(v) => { if (!v) setPassengerProfile(null); }}
+        row={passengerProfile?.row ?? null}
+        serviceTable={passengerProfile?.serviceTable ?? ""}
+        moduleKey={passengerProfile?.moduleKey}
+        statusOrder={passengerProfile?.statusOrder}
       />
     </div>
   );
