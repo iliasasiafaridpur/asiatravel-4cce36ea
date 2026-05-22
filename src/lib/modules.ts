@@ -114,6 +114,7 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         lookup: "route",
         section: "passenger",
+        required: true,
       },
       {
         name: "flight_date",
@@ -121,6 +122,7 @@ export const MODULES: ModuleSchema[] = [
         type: "date",
         showInList: true,
         section: "passenger",
+        required: true,
       },
       {
         name: "status",
@@ -254,6 +256,7 @@ export const MODULES: ModuleSchema[] = [
         filterable: true,
         lookup: "country",
         section: "passenger",
+        required: true,
       },
       {
         name: "attested_date",
@@ -268,6 +271,7 @@ export const MODULES: ModuleSchema[] = [
         type: "number",
         showInList: true,
         section: "passenger",
+        required: true,
       },
       {
         name: "status",
@@ -416,6 +420,7 @@ export const MODULES: ModuleSchema[] = [
         section: "passenger",
         lookup: "visa_type",
         lookupDefaults: ["Work", "Hajj", "Umrah", "Visit", "Family"],
+        required: true,
       },
       { name: "sponsor_name", label: "Sponsor", type: "text", section: "passenger" },
       { name: "visa_no", label: "Visa No", type: "text", section: "passenger" },
@@ -436,6 +441,7 @@ export const MODULES: ModuleSchema[] = [
         section: "passenger",
         lookup: "rl_no",
         lookupDefaults: [],
+        required: true,
       },
       { name: "bmet_training", label: "BMET Training", type: "boolean", section: "passenger" },
       { name: "bmet_finger", label: "BMET Finger", type: "boolean", section: "passenger" },
