@@ -1430,7 +1430,17 @@ export function LedgerPage({ module: mod }: Props) {
                   return (
                     <div
                       key={r.id}
-                      className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setProfileParty(String(r[groupField] ?? ""));
+                        }
+                      }}
+                      className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors"
+                      title={isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
                       style={{ background: "var(--gradient-card)" }}
                     >
                       <div className="min-w-0">
@@ -1510,7 +1520,10 @@ export function LedgerPage({ module: mod }: Props) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProfileParty(String(r[groupField] ?? ""));
+                          }}
                           className="font-semibold text-left hover:underline hover:text-primary"
                           title={isAgency ? "Customer profile" : "Vendor profile"}
                         >
@@ -1552,7 +1565,10 @@ export function LedgerPage({ module: mod }: Props) {
                           {displayDue > 0 ? (
                             <button
                               type="button"
-                              onClick={() => (isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue))}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue);
+                              }}
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
@@ -1592,7 +1608,7 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => startEdit(r)}
+                            onClick={(e) => { e.stopPropagation(); startEdit(r); }}
                             title="Edit"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -1601,7 +1617,7 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setDeleteRow(r)}
+                            onClick={(e) => { e.stopPropagation(); setDeleteRow(r); }}
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5 text-rose-500" />
