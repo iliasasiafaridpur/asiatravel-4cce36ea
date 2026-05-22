@@ -2054,7 +2054,7 @@ export function LedgerPage({ module: mod }: Props) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {openBookingsFor(payTarget).map((r) => {
+                        {openBookingsFor(payTarget).map((r, idx) => {
                           const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
                           const checked = r.id in selectedLines;
                           return (
