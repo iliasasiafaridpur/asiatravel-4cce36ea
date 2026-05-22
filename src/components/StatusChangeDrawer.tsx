@@ -294,12 +294,10 @@ export function StatusChangeDrawer({
         if (!isNetworkError(le)) toast.warning("Vendor ledger update failed: " + errMsg(le));
       }
 
-      toast.success(`Status: ${next}`, {
+      toast.success(`Status: ${next}${request.refId ? `-${request.refId}` : ""}`, {
         meta: {
           passenger: String(request.row.passenger_name ?? "") || undefined,
-          service: request.serviceType,
           country: String(request.row.country_name ?? request.row.country_route ?? "") || undefined,
-          refId: request.refId || undefined,
           vendor: effectiveVendor || String(request.row.vendor_bought ?? "") || undefined,
           receiptId: firstReceiptId || undefined,
         },
