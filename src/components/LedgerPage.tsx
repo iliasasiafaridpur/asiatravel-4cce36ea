@@ -1520,7 +1520,10 @@ export function LedgerPage({ module: mod }: Props) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProfileParty(String(r[groupField] ?? ""));
+                          }}
                           className="font-semibold text-left hover:underline hover:text-primary"
                           title={isAgency ? "Customer profile" : "Vendor profile"}
                         >
