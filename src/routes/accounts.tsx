@@ -895,7 +895,16 @@ ${node.innerHTML.replace(
                         const pd = p.entry_date;
                         return !d || pd > d ? pd : d;
                       }, "");
-                      if (sumPrev > 0.005) advText = `${fmt(sumPrev)}\n(${formatDate(lastDate)})`;
+                      if (sumPrev > 0.005) advText = `${fmt(sumPrev)} (${formatDate(lastDate)})`;
+                    }
+                  }
+                  // Discount: parse from receipt remarks (e.g. "Discount ৳500 প্রয়োগ")
+                  let discText = "";
+                  if (isIn && r.remarks) {
+                    const m = /Discount\s*৳?\s*([\d,]+)/i.exec(r.remarks);
+                    if (m) {
+                      const dv = Number(m[1].replace(/,/g, ""));
+                      if (dv > 0) discText = `Discount: ${fmt(dv)}`;
                     }
                   }
                   // বাকি = মোট বিল − (এই আয় + পূর্বে জমা)
@@ -911,7 +920,10 @@ ${node.innerHTML.replace(
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td className="wrap" style={{whiteSpace:"pre-line"}}>{advText}</td>
+                      <td className="wrap" style={{whiteSpace:"nowrap"}}>
+                        {advText}
+                        {discText && <div style={{whiteSpace:"nowrap"}}>{discText}</div>}
+                      </td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
                       <td className="num">{fmt(it.running)}</td>
                     </tr>
