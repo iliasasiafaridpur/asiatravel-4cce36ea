@@ -465,6 +465,7 @@ export function StatusChangeDrawer({
                   <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> Due Receive</span>
                   <span className="text-[10px] text-muted-foreground font-normal">
                     Sold <span className="font-semibold text-foreground tabular-nums">৳{sold.toLocaleString()}</span>
+                    {existingDiscount > 0 && <> · Discount <span className="font-semibold text-amber-600 tabular-nums">৳{existingDiscount.toLocaleString()}</span></>}
                     {" · "}Due <span className="font-semibold text-rose-500 tabular-nums">৳{due.toLocaleString()}</span>
                   </span>
                 </div>
