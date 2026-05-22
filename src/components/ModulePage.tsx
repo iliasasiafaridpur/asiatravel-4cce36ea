@@ -789,11 +789,11 @@ export function ModulePage({ module: mod }: Props) {
                 {hasDateFilter && (
                   <>
                     <div className="space-y-1 w-32">
-                      <Label className="text-xs font-medium">Start Date</Label>
+                      <Label className="text-sm font-medium">Start Date</Label>
                       <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 px-2 text-sm" />
                     </div>
                     <div className="space-y-1 w-32">
-                      <Label className="text-xs font-medium">End Date</Label>
+                      <Label className="text-sm font-medium">End Date</Label>
                       <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 px-2 text-sm" />
                     </div>
                   </>
@@ -805,7 +805,7 @@ export function ModulePage({ module: mod }: Props) {
                   ])).sort();
                   return (
                     <div key={f.name} className="space-y-1 w-32">
-                      <Label className="text-xs font-medium">{f.label}</Label>
+                      <Label className="text-sm font-medium">{f.label}</Label>
                       <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
                         <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
                         <SelectContent>
@@ -818,7 +818,7 @@ export function ModulePage({ module: mod }: Props) {
                 })}
                 {mod.statuses && (
                   <div className="space-y-1 w-32">
-                    <Label className="text-xs font-medium">Status</Label>
+                    <Label className="text-sm font-medium">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="h-9 px-2 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
