@@ -122,6 +122,7 @@ export function LedgerPage({ module: mod }: Props) {
         agency_sold?: string;
         sold?: number;
         cost?: number;
+        discount?: number;
         status?: string;
         airline?: string;
         pnr?: string;
@@ -276,20 +277,20 @@ export function LedgerPage({ module: mod }: Props) {
         supabase
           .from("tickets")
           .select(
-            "id,flight_date,trip_road,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status,airline,pnr",
+            "id,flight_date,trip_road,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,airline,pnr",
           )
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status,received_date")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,status")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status")
           .limit(2000),
       ]);
       const fm = new Map<string, string>();
@@ -303,6 +304,7 @@ export function LedgerPage({ module: mod }: Props) {
           agency_sold?: string;
           sold?: number;
           cost?: number;
+          discount?: number;
           status?: string;
           airline?: string;
           pnr?: string;
@@ -323,6 +325,7 @@ export function LedgerPage({ module: mod }: Props) {
         status: string | null;
         airline: string | null;
         pnr: string | null;
+        discount_amount: number | null;
       };
       for (const t of (tk.data as unknown as T[]) ?? []) {
         if (t.flight_date) fm.set(t.id, t.flight_date);
@@ -334,6 +337,7 @@ export function LedgerPage({ module: mod }: Props) {
           agency_sold: t.agency_sold ?? undefined,
           sold: t.sold_price ?? undefined,
           cost: t.cost_price ?? undefined,
+          discount: t.discount_amount ?? undefined,
           status: t.status ?? undefined,
           airline: t.airline ?? undefined,
           pnr: t.pnr ?? undefined,
@@ -351,6 +355,7 @@ export function LedgerPage({ module: mod }: Props) {
         cost_price: number | null;
         status: string | null;
         received_date: string | null;
+        discount_amount: number | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
         if (b.country_name) cm.set(b.id, b.country_name);
@@ -361,6 +366,7 @@ export function LedgerPage({ module: mod }: Props) {
           agency_sold: b.agency_sold ?? undefined,
           sold: b.sold_price ?? undefined,
           cost: b.cost_price ?? undefined,
+          discount: b.discount_amount ?? undefined,
           status: b.status ?? undefined,
           received_from_vendor:
             (b.status ?? "") === "Pending Delivery" && !!b.received_date,
@@ -375,6 +381,7 @@ export function LedgerPage({ module: mod }: Props) {
         agency_sold: string | null;
         sold_price: number | null;
         cost_price: number | null;
+        discount_amount: number | null;
         status: string | null;
       };
       for (const v of (kv.data as unknown as V[]) ?? []) {
@@ -386,6 +393,7 @@ export function LedgerPage({ module: mod }: Props) {
           agency_sold: v.agency_sold ?? undefined,
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
+          discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
           received_from_vendor: (v.status ?? "") === "Pending Delivery",
         });
@@ -399,6 +407,7 @@ export function LedgerPage({ module: mod }: Props) {
           agency_sold: v.agency_sold ?? undefined,
           sold: v.sold_price ?? undefined,
           cost: v.cost_price ?? undefined,
+          discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
           received_from_vendor: (v.status ?? "") === "Pending Delivery",
         });
@@ -889,7 +898,7 @@ export function LedgerPage({ module: mod }: Props) {
       if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
       const list = openBookingsFor(payTarget);
       const totalDue = list.reduce(
-        (s, r) => s + (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)),
+        (s, r) => s + (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0)),
         0,
       );
       if (amt > totalDue + 0.001)
@@ -900,7 +909,7 @@ export function LedgerPage({ module: mod }: Props) {
       const parts: string[] = [];
       for (const r of list) {
         if (remaining <= 0.0001) break;
-        const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+        const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
         await applyAllocationToRow(r, take);
@@ -1057,7 +1066,7 @@ export function LedgerPage({ module: mod }: Props) {
         const bill = Number(r[billCol] ?? 0);
         const adjusted = advanceAdjustedRows.get(r.id);
         const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
-        const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0), 0);
+        const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0) - discountOf(r), 0);
         const srcId = String(r.source_id ?? "");
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
@@ -1513,7 +1522,7 @@ export function LedgerPage({ module: mod }: Props) {
                     rowProfit !== undefined && rowProfit !== null && rowProfit !== ""
                       ? Number(rowProfit)
                       : info && typeof info.sold === "number" && typeof info.cost === "number"
-                        ? info.sold - info.cost
+                        ? info.sold - Number(info.discount ?? 0) - info.cost
                         : 0;
                   const status = info?.status ?? "";
                   return (
@@ -2151,7 +2160,7 @@ export function LedgerPage({ module: mod }: Props) {
                       </TableHeader>
                       <TableBody>
                         {openBookingsFor(payTarget).map((r, idx) => {
-                          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+                          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
                           const checked = r.id in selectedLines;
                           return (
                             <TableRow key={r.id} className={`row-tint-${idx % 6}`}>

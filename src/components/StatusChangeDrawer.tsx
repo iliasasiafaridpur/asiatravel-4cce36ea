@@ -306,7 +306,7 @@ export function StatusChangeDrawer({
           refId: request.refId,
           serviceType: request.serviceType,
           sold, previouslyReceived: received,
-          paid, discount: discAmt, method,
+          paid, discount: existingDiscount + discAmt, method,
           remarks: remarks || undefined,
           receivedByName: me,
           airline: String(request.row.airline ?? "") || undefined,

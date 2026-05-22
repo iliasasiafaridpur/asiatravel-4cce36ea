@@ -208,7 +208,10 @@ export function ModulePage({ module: mod }: Props) {
     for (const [name, val] of Object.entries(fieldFilters)) {
       if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
     }
-    if (dueOnly) xs = xs.filter((r) => computeValue(r, "balance") > 0);
+    if (dueOnly) {
+      const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      xs = xs.filter((r) => computeValue(r, dueColumn) > 0);
+    }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
@@ -381,7 +384,8 @@ export function ModulePage({ module: mod }: Props) {
 
     // CASE C: Delivered with outstanding due → open Due Receive modal
     if (newStatus === "Delivered") {
-      const due = computeValue(row, "balance");
+      const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      const due = computeValue(row, dueColumn);
       const svc = DUE_SERVICE_KEY[mod.key];
       if (due > 0 && svc) {
         setDuePreselect({ serviceKey: svc, rowId: row.id });
@@ -494,6 +498,15 @@ export function ModulePage({ module: mod }: Props) {
   type StackedCol = { key: string; header: string; align?: "right"; className?: string; render: (r: Row) => React.ReactNode };
   const stackedCols: StackedCol[] | null = useMemo(() => {
     const fmt = (n: unknown) => Number(n ?? 0).toLocaleString();
+    const money = (r: Row, recvField: string) => {
+      const sold = Number(r.sold_price ?? 0);
+      const recv = Number(r[recvField] ?? 0);
+      const discount = Number(r.discount_amount ?? 0);
+      const cost = Number(r.cost_price ?? 0);
+      const due = Math.max(0, sold - recv - discount);
+      const profit = sold - discount - cost;
+      return { sold, recv, discount, cost, due, profit };
+    };
     const subLine = (label: string, val: React.ReactNode) => (
       <div className="text-xs text-muted-foreground leading-tight">
         <span className="opacity-60">{label}:</span> {val}
@@ -504,7 +517,8 @@ export function ModulePage({ module: mod }: Props) {
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "") || (mod.statuses?.[0] ?? "");
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
-      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+      const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      const computedDue = typeof due === "number" ? due : computeValue(r, dueColumn);
 
       let badgeNode: React.ReactNode;
       if (isServiceMod && status === "Delivered") {
@@ -605,11 +619,7 @@ export function ModulePage({ module: mod }: Props) {
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const sold = Number(r.sold_price ?? 0);
-            const recv = Number(r.received ?? 0);
-            const cost = Number(r.cost_price ?? 0);
-            const due = sold - recv;
-            const profit = sold - cost;
+            const { sold, recv, discount, cost, due, profit } = money(r, "received");
             const showProfit = cost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
@@ -620,6 +630,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
@@ -661,11 +672,7 @@ export function ModulePage({ module: mod }: Props) {
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const sold = Number(r.sold_price ?? 0);
-            const recv = Number(r.received_amount ?? 0);
-            const cost = Number(r.cost_price ?? 0);
-            const due = sold - recv;
-            const profit = sold - cost;
+            const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
             const showProfit = cost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
@@ -676,6 +683,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
@@ -718,11 +726,7 @@ export function ModulePage({ module: mod }: Props) {
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const sold = Number(r.sold_price ?? 0);
-            const recv = Number(r[recvField] ?? 0);
-            const cost = Number(r.cost_price ?? 0);
-            const due = sold - recv;
-            const profit = sold - cost;
+            const { sold, recv, discount, cost, due, profit } = money(r, recvField);
             const showProfit = cost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
@@ -733,6 +737,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
                 <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
