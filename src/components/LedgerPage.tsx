@@ -1303,17 +1303,28 @@ export function LedgerPage({ module: mod }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupSummary.map((g, idx) => (
+                  {groupSummary.map((g, idx) => {
+                    const isSelfGroup = g.key.trim().toLowerCase() === "self";
+                    return (
                     <TableRow key={g.key} className={`row-tint-${idx % 6}`}>
                       <TableCell className="font-medium">
-                        <button
-                          type="button"
-                          onClick={() => setProfileParty(g.key)}
-                          className="text-left hover:underline hover:text-primary"
-                          title={isAgency ? "Customer profile দেখুন" : "Vendor profile দেখুন"}
-                        >
-                          {g.key}
-                        </button>
+                        {isSelfGroup ? (
+                          <span
+                            className="text-left text-muted-foreground"
+                            title="Self মানে passenger নিজেই — নিচের রো-তে ক্লিক করে individual passenger profile দেখুন"
+                          >
+                            {g.key}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setProfileParty(g.key)}
+                            className="text-left hover:underline hover:text-primary"
+                            title={isAgency ? "Customer profile দেখুন" : "Vendor profile দেখুন"}
+                          >
+                            {g.key}
+                          </button>
+                        )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {g.bill.toLocaleString()}
@@ -1353,7 +1364,8 @@ export function LedgerPage({ module: mod }: Props) {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
