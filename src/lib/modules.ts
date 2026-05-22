@@ -316,6 +316,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -371,14 +378,15 @@ export const MODULES: ModuleSchema[] = [
       "sold_price",
       "cost_price",
       "received_amount",
+      "discount_amount",
       "due",
       "profit",
       "notes",
       "entry_by",
     ],
     computed: [
-      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount") },
-      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
+      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount", "discount_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price", "discount_amount") },
     ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
