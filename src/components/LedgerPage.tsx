@@ -60,6 +60,7 @@ import {
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { FormSections } from "@/components/ModulePage";
+import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
 
 type Row = Record<string, unknown> & { id: string };
@@ -161,6 +162,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
   // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
   const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
+  const [profileParty, setProfileParty] = useState<string | null>(null);
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -1259,7 +1261,16 @@ export function LedgerPage({ module: mod }: Props) {
                 <TableBody>
                   {groupSummary.map((g, idx) => (
                     <TableRow key={g.key} className={`row-tint-${idx % 6}`}>
-                      <TableCell className="font-medium">{g.key}</TableCell>
+                      <TableCell className="font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setProfileParty(g.key)}
+                          className="text-left hover:underline hover:text-primary"
+                          title={isAgency ? "Customer profile দেখুন" : "Vendor profile দেখুন"}
+                        >
+                          {g.key}
+                        </button>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {g.bill.toLocaleString()}
                       </TableCell>
@@ -1497,7 +1508,14 @@ export function LedgerPage({ module: mod }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           {groupLabel}
                         </div>
-                        <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
+                        <button
+                          type="button"
+                          onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                          className="font-semibold text-left hover:underline hover:text-primary"
+                          title={isAgency ? "Customer profile" : "Vendor profile"}
+                        >
+                          {String(r[groupField] ?? "—")}
+                        </button>
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
@@ -2127,6 +2145,13 @@ export function LedgerPage({ module: mod }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PartyProfileDrawer
+        open={!!profileParty}
+        onOpenChange={(o) => !o && setProfileParty(null)}
+        kind={isAgency ? "customer" : "vendor"}
+        partyName={profileParty}
+      />
     </div>
   );
 }
