@@ -676,6 +676,7 @@ export const MODULES: ModuleSchema[] = [
       },
       { name: "total_bill", label: "Total Bill", type: "number", showInList: true },
       { name: "received_amount", label: "Received", type: "number", showInList: true },
+      { name: "discount_amount", label: "Discount", type: "number", showInList: true },
       { name: "payment_date", label: "Payment Date", type: "date" },
       {
         name: "payment_method",
@@ -688,11 +689,12 @@ export const MODULES: ModuleSchema[] = [
       { name: "remarks", label: "Remarks", type: "textarea" },
     ],
     computed: [
-      { name: "balance", label: "Balance Due", compute: DUE("total_bill", "received_amount") },
+      { name: "balance", label: "Balance Due", compute: DUE("total_bill", "received_amount", "discount_amount") },
     ],
     summaryFields: [
       { name: "total_bill", label: "মোট বিল" },
       { name: "received_amount", label: "মোট Received" },
+      { name: "discount_amount", label: "মোট Discount" },
       { name: "balance", label: "মোট Due" },
     ],
     groupBy: {
@@ -701,6 +703,7 @@ export const MODULES: ModuleSchema[] = [
       metrics: [
         { name: "total_bill", label: "Total Bill" },
         { name: "received_amount", label: "Received" },
+        { name: "discount_amount", label: "Discount" },
         { name: "balance", label: "Due" },
       ],
     },
