@@ -1476,11 +1476,11 @@ export function LedgerPage({ module: mod }: Props) {
                       key={r.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                      onClick={() => void openProfileFor(r)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setProfileParty(String(r[groupField] ?? ""));
+                          void openProfileFor(r);
                         }
                       }}
                       className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors"
