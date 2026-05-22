@@ -1145,7 +1145,7 @@ export function FormSections({ mod, form, setForm }: {
               {SECTION_LABELS[g.section]}
             </h3>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
             {g.fields.map((field) => (
               <FormField
                 key={field.name}
@@ -1176,25 +1176,25 @@ function FormField({ field, value, onChange }: {
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const span = field.type === "textarea" ? "sm:col-span-2 lg:col-span-3" : "";
+  const span = field.type === "textarea" ? "col-span-2 sm:col-span-3 lg:col-span-4" : "";
   const strVal = (value as string) ?? "";
   const isEntryBy = field.name === "entry_by";
   return (
     <div className={`space-y-0.5 ${span}`}>
-      <Label className="text-[11px] font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+      <Label className="text-[10px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
-        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-[36px] py-1.5" />
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-[32px] py-1 text-xs" />
       ) : field.type === "select" ? (
         <Select value={strVal} onValueChange={onChange}>
-          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-7 text-xs py-1"><SelectValue /></SelectTrigger>
           <SelectContent>
             {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
       ) : field.type === "boolean" ? (
-        <div className="flex items-center h-8">
+        <div className="flex items-center h-7">
           <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
           <span className="ml-2 text-xs text-muted-foreground">Yes</span>
         </div>
@@ -1202,7 +1202,7 @@ function FormField({ field, value, onChange }: {
         <DateInput
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
-          className="h-8"
+          className="h-7 text-xs py-1"
         />
       ) : (
         <Input
@@ -1214,7 +1214,7 @@ function FormField({ field, value, onChange }: {
               : strVal
           }
           placeholder={field.type === "number" ? "0" : undefined}
-          className={`h-8 ${isEntryBy ? "bg-muted text-muted-foreground" : ""}`}
+          className={`h-7 text-xs py-1 ${isEntryBy ? "bg-muted text-muted-foreground" : ""}`}
           onChange={(e) => {
             if (field.type === "number") {
               const raw = e.target.value.trim();

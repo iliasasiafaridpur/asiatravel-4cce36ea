@@ -176,7 +176,7 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     <>
       <div className="flex gap-1.5">
         <Select value={value || ""} onValueChange={onChange}>
-          <SelectTrigger className="flex-1"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
+          <SelectTrigger className="flex-1 h-7 text-xs py-1"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
           <SelectContent>
             {merged.length === 0 ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
@@ -187,11 +187,11 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
         </Select>
         {!compact && (
           <>
-            <Button type="button" variant="outline" size="icon" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
-              <Plus className="h-4 w-4" />
+            <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
+              <Plus className="h-3.5 w-3.5" />
             </Button>
-            <Button type="button" variant="outline" size="icon" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
-              <Settings2 className="h-4 w-4" />
+            <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => setOpenManage(true)} title={`${label} ম্যানেজ`}>
+              <Settings2 className="h-3.5 w-3.5" />
             </Button>
           </>
         )}
