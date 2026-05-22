@@ -824,7 +824,15 @@ export function LedgerPage({ module: mod }: Props) {
         await applyAllocationToRow(payRow, amt);
         await writeCashMirror(amt, String(payRow[mod.idColumn] ?? ""),
           `${String(payRow[mod.idColumn] ?? "")}=${amt}`);
-        toast.success(`✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`);
+        notify.success(`✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`, {
+          meta: {
+            vendor: String(payTarget),
+            service: String(payRow.service_type ?? (isAgency ? "Agent Receipt" : "Vendor Payment")),
+            passenger: String(payRow.passenger_name ?? ""),
+            refId: String(payRow[mod.idColumn] ?? ""),
+            amount: amt,
+          },
+        });
         setPayOpen(false);
         setPayRow(null);
         void load();
