@@ -174,9 +174,9 @@
 .dark .row-tint-5 { background-color: #0f111a !important; color: #e2e8f0 !important; }
 .dark .row-tint-0:hover, .dark .row-tint-1:hover, .dark .row-tint-2:hover,
 .dark .row-tint-3:hover, .dark .row-tint-4:hover, .dark .row-tint-5:hover {
-  background-color: #334155 !important;
+  background-color: #475569 !important;
   color: #ffffff !important;
-  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.45), 0 0 8px rgba(45, 212, 191, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.22), 0 0 6px rgba(45, 212, 191, 0.08);
   filter: none;
 }
 

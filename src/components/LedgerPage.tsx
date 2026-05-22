@@ -1996,10 +1996,10 @@ export function LedgerPage({ module: mod }: Props) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {fifoPreview.map(({ row, alloc, due }) => (
+                          {fifoPreview.map(({ row, alloc, due }, idx) => (
                             <TableRow
                               key={row.id}
-                              className={alloc > 0 ? "" : "opacity-40"}
+                              className={alloc > 0 ? `row-tint-${idx % 6}` : `row-tint-${idx % 6} opacity-40`}
                             >
                               <TableCell className="text-xs">
                                 <div>{formatDate(row.entry_date as string | null)}</div>
@@ -2054,11 +2054,11 @@ export function LedgerPage({ module: mod }: Props) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {openBookingsFor(payTarget).map((r) => {
+                        {openBookingsFor(payTarget).map((r, idx) => {
                           const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
                           const checked = r.id in selectedLines;
                           return (
-                            <TableRow key={r.id}>
+                            <TableRow key={r.id} className={`row-tint-${idx % 6}`}>
                               <TableCell>
                                 <Checkbox
                                   checked={checked}
