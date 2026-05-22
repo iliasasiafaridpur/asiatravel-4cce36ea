@@ -183,15 +183,46 @@ export function enqueueRaw(
 
 let draining = false;
 
+async function refreshAuthHeaders(headers: Record<string, string>): Promise<Record<string, string>> {
+  // Critical: the token captured when the request was first attempted may have
+  // expired by the time we replay (especially after a PC shutdown overnight).
+  // Replace Authorization + apikey with the current session's fresh values so
+  // the server doesn't reject the replay with 401 Unauthorized.
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    const out: Record<string, string> = { ...headers };
+    // Normalize header keys (HTTP headers are case-insensitive but fetch keeps case)
+    for (const k of Object.keys(out)) {
+      const lk = k.toLowerCase();
+      if (lk === "authorization" || lk === "apikey") delete out[k];
+    }
+    const apikey =
+      (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ?? "";
+    if (token) out["Authorization"] = `Bearer ${token}`;
+    if (apikey) out["apikey"] = apikey;
+    return out;
+  } catch {
+    return headers;
+  }
+}
+
 async function runItem(item: QueueItem) {
   if (item.op === "raw" && item.raw) {
+    const headers = await refreshAuthHeaders(item.raw.headers);
     const res = await fetch(item.raw.url, {
       method: item.raw.method,
-      headers: item.raw.headers,
+      headers,
       body: item.raw.body,
     });
     if (!res.ok) {
-      return { error: { message: `HTTP ${res.status}: ${await res.text().catch(() => "")}` } };
+      const text = await res.text().catch(() => "");
+      return {
+        error: {
+          message: `HTTP ${res.status}: ${text || res.statusText}`,
+          status: res.status,
+        },
+      };
     }
     return { error: null };
   }
