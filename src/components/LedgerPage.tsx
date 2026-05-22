@@ -60,6 +60,7 @@ import {
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { FormSections } from "@/components/ModulePage";
+import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
 
 type Row = Record<string, unknown> & { id: string };
