@@ -123,12 +123,24 @@ export function Dashboard() {
   );
 }
 
+const cardTint: Record<string, { bg: string; ring: string }> = {
+  "মোট":       { bg: "linear-gradient(180deg,#1e3a5f,#0f1f3a)", ring: "#3b82f6" },     // royal navy
+  Pending:    { bg: "linear-gradient(180deg,#78350f,#451a03)", ring: "#f59e0b" },     // amber/crimson
+  Processing: { bg: "linear-gradient(180deg,#1e3a8a,#172554)", ring: "#60a5fa" },     // deep blue
+  Done:       { bg: "linear-gradient(180deg,#064e3b,#022c22)", ring: "#10b981" },     // emerald
+  Cancelled:  { bg: "linear-gradient(180deg,#7f1d1d,#450a0a)", ring: "#ef4444" },     // crimson
+};
+
 function StatCard({ label, value, icon: Icon, accent }: { label: string; value: number; icon: React.ElementType; accent: string }) {
+  const tint = cardTint[label];
+  const style = tint
+    ? { background: tint.bg, boxShadow: `0 4px 22px -10px ${tint.ring}88, inset 0 0 0 1px ${tint.ring}40` }
+    : { background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" };
   return (
-    <Card className="p-4 relative overflow-hidden" style={{ background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" }}>
+    <Card className="p-4 relative overflow-hidden text-white" style={style}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xs opacity-80">{label}</p>
           <p className="text-2xl font-bold mt-1">{value}</p>
         </div>
         <div className={`p-2 rounded-lg border ${accent}`}>
