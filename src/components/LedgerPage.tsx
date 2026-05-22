@@ -1282,7 +1282,7 @@ export function LedgerPage({ module: mod }: Props) {
                           <button
                             type="button"
                             onClick={() => openPayment(g.key, g.due)}
-                            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary/60 hover:shadow-sm transition-colors"
+                            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
                             title="পেমেন্ট"
                           >
                             {g.due.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
@@ -1569,7 +1569,7 @@ export function LedgerPage({ module: mod }: Props) {
                                 e.stopPropagation();
                                 isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue);
                               }}
-                              className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary/60 hover:shadow-sm transition-colors"
+                              className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
                               title="পেমেন্ট"
                             >
                               {isAgency ? "Cus:-Due" : "Ven:-Due"}: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />

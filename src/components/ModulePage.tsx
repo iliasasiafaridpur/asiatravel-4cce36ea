@@ -518,7 +518,7 @@ export function ModulePage({ module: mod }: Props) {
         <div className="mt-1">
           <button
             type="button"
-            className="inline-flex items-center rounded-md outline outline-1 outline-transparent hover:outline-primary/60 hover:shadow-sm transition-colors"
+            className="inline-flex items-center rounded-md outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
             title="Status পরিবর্তন করুন"
             data-row-noopen
             onClick={(e) => {
@@ -538,7 +538,7 @@ export function ModulePage({ module: mod }: Props) {
           <button
             type="button"
             onClick={() => setDuePreselect({ serviceKey: svc, rowId: r.id })}
-            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary/60 hover:shadow-sm transition-colors"
+            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
             title="Due Receive"
           >
             Due: {fmt(due)} <Wallet className="h-3 w-3" />
