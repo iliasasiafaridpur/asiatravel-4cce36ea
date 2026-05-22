@@ -164,6 +164,49 @@ export function LedgerPage({ module: mod }: Props) {
   // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
   const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
   const [profileParty, setProfileParty] = useState<string | null>(null);
+  const [passengerProfile, setPassengerProfile] = useState<{
+    row: Row;
+    serviceTable: string;
+    moduleKey?: string;
+    statusOrder?: string[];
+  } | null>(null);
+
+  const openProfileFor = useCallback(
+    async (r: Row) => {
+      const party = String(r[groupField] ?? "").trim();
+      const isSelf = party.toLowerCase() === "self";
+      if (!isSelf) {
+        setProfileParty(party);
+        return;
+      }
+      const srcTable = String(r.source_table ?? "");
+      const srcId = String(r.source_id ?? "");
+      const srcModule = srcTable ? MODULES.find((m) => m.table === srcTable) : undefined;
+      if (srcTable && srcId) {
+        const { data } = await supabase
+          .from(srcTable as never)
+          .select("*")
+          .eq("id", srcId)
+          .maybeSingle();
+        const fullRow = (data as Row | null) ?? r;
+        setPassengerProfile({
+          row: fullRow,
+          serviceTable: srcTable,
+          moduleKey: srcModule?.key,
+          statusOrder: srcModule?.statuses,
+        });
+      } else {
+        // Fallback: use the ledger row itself
+        setPassengerProfile({
+          row: r,
+          serviceTable: srcTable || mod.table,
+          moduleKey: srcModule?.key,
+          statusOrder: srcModule?.statuses,
+        });
+      }
+    },
+    [groupField, mod.table],
+  );
 
   const PAYMENT_METHODS = [
     "Cash",
