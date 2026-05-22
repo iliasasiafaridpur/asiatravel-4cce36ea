@@ -287,12 +287,11 @@ export function DueReceiveDialog({
   const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
     const amt = Number(amount) || 0;
-    const disc = Math.max(0, Number(discount) || 0);
+    const disc = Math.max(0, Math.min(selected.due, Number(discount) || 0));
     if (amt <= 0 && disc <= 0) return toast.error("সঠিক টাকার পরিমাণ অথবা ডিসকাউন্ট দিন");
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
 
-      const maxDiscount = Math.max(0, Math.min(selected.due, disc));
-      const effectiveDue = Math.max(0, selected.due - maxDiscount);
+      const effectiveDue = Math.max(0, selected.due - disc);
     const excess = Math.max(0, amt - effectiveDue);
     const appliedToDue = amt - excess;
 
@@ -315,10 +314,10 @@ export function DueReceiveDialog({
 
       // 1) update service row — cash goes to received; discount is stored separately.
       const newRecv = selected.received + appliedToDue;
-      const newDiscount = selected.discount + maxDiscount;
+      const newDiscount = selected.discount + disc;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
-      if (maxDiscount > 0) upd.discount_amount = newDiscount;
+      if (disc > 0) upd.discount_amount = newDiscount;
       upd.received_by = user.id;
       if (withDelivery) {
         if (selected.service.hasDelivery) upd.delivery_date = today;
@@ -347,7 +346,7 @@ export function DueReceiveDialog({
 
       const remarkParts: string[] = [];
       if (remarks) remarkParts.push(remarks);
-      if (maxDiscount > 0) remarkParts.push(`Discount ৳${maxDiscount.toLocaleString()} প্রয়োগ`);
+      if (disc > 0) remarkParts.push(`Discount ৳${disc.toLocaleString()} প্রয়োগ`);
       if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
       const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
