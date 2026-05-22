@@ -434,7 +434,7 @@ export function StatusChangeDrawer({
                 Vendor Cost Entry আবশ্যক
               </div>
               <div className="text-[10px] text-muted-foreground -mt-1">
-                Pending Delivery করতে হলে আগে Vendor ও Cost Price দিন।
+                {next} করতে হলে আগে Vendor ও Cost Price দিন।
               </div>
               {needsVendorForPD && (
                 <div className="space-y-1">
