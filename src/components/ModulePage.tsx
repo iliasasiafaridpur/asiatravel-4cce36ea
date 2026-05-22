@@ -1157,16 +1157,6 @@ export function FormSections({ mod, form, setForm }: {
           </div>
         </div>
       ))}
-      {optionalCount > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-        >
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
-          {showAll ? "কম দেখাও" : `আরও ${optionalCount}টি ফিল্ড দেখাও`}
-        </button>
-      )}
     </div>
   );
 }
@@ -1176,12 +1166,16 @@ function FormField({ field, value, onChange }: {
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const span = field.type === "textarea" ? "col-span-2 sm:col-span-3 lg:col-span-4" : "";
+  const span = field.type === "textarea"
+    ? "col-span-2 sm:col-span-3 lg:col-span-4"
+    : field.lookup
+      ? "col-span-2"
+      : "";
   const strVal = (value as string) ?? "";
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className={`space-y-1 ${span}`}>
-      <Label className="text-xs font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+    <div className={`space-y-1 min-w-0 ${span}`}>
+      <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
