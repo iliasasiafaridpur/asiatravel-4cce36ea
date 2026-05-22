@@ -1066,7 +1066,7 @@ export function LedgerPage({ module: mod }: Props) {
         const bill = Number(r[billCol] ?? 0);
         const adjusted = advanceAdjustedRows.get(r.id);
         const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
-        const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0), 0);
+        const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0) - discountOf(r), 0);
         const srcId = String(r.source_id ?? "");
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
@@ -2160,7 +2160,7 @@ export function LedgerPage({ module: mod }: Props) {
                       </TableHeader>
                       <TableBody>
                         {openBookingsFor(payTarget).map((r, idx) => {
-                          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+                          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
                           const checked = r.id in selectedLines;
                           return (
                             <TableRow key={r.id} className={`row-tint-${idx % 6}`}>
