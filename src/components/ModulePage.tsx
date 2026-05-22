@@ -208,7 +208,10 @@ export function ModulePage({ module: mod }: Props) {
     for (const [name, val] of Object.entries(fieldFilters)) {
       if (val && val !== "all") xs = xs.filter((r) => String(r[name] ?? "") === val);
     }
-    if (dueOnly) xs = xs.filter((r) => computeValue(r, "balance") > 0);
+    if (dueOnly) {
+      const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      xs = xs.filter((r) => computeValue(r, dueColumn) > 0);
+    }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
@@ -381,7 +384,8 @@ export function ModulePage({ module: mod }: Props) {
 
     // CASE C: Delivered with outstanding due → open Due Receive modal
     if (newStatus === "Delivered") {
-      const due = computeValue(row, "balance");
+      const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      const due = computeValue(row, dueColumn);
       const svc = DUE_SERVICE_KEY[mod.key];
       if (due > 0 && svc) {
         setDuePreselect({ serviceKey: svc, rowId: row.id });
