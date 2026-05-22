@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowRight, ArrowLeft, AlertTriangle, Wallet, Loader2, User2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, AlertTriangle, Wallet, Loader2, User2, Banknote } from "lucide-react";
 import { LookupSelect } from "@/components/LookupSelect";
 import { statusBadgeClass } from "@/lib/modules";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -66,6 +66,7 @@ export function StatusChangeDrawer({
   const open = !!request;
 
   const [vendor, setVendor] = useState<string>("");
+  const [costPriceInput, setCostPriceInput] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
@@ -107,6 +108,7 @@ export function StatusChangeDrawer({
     const currentStatus = String(request.row.status ?? "") || (requestOrder[0] ?? "");
     setTargetStatus(request.newStatus || currentStatus);
     setVendor(String(request.row.vendor_bought ?? ""));
+    setCostPriceInput(request.row.cost_price ? String(request.row.cost_price) : "");
     setAmount("");
     setDiscount("");
     setMethod("Cash");
@@ -131,8 +133,12 @@ export function StatusChangeDrawer({
   const vendorName = String(request.row.vendor_bought ?? "").trim();
   const crossesIntoPD = pdIdx >= 0 && direction === "forward" && currentIdx < pdIdx && _targetIdx >= pdIdx;
   const crossesOutOfPD = pdIdx >= 0 && direction === "backward" && currentIdx >= pdIdx && _targetIdx < pdIdx;
-  if (crossesIntoPD && costPrice > 0 && vendorName) {
-    forwardEffects.push(`Vendor "${vendorName}" এর খাতায় ৳${costPrice.toLocaleString()} Credit`);
+  const needsCostPrice = crossesIntoPD && costPrice <= 0;
+  const needsVendorForPD = crossesIntoPD && !vendorName && request.hasVendorField;
+  const effectiveCostPrice = needsCostPrice ? (Number(costPriceInput) || 0) : costPrice;
+  const effectiveVendor = (needsVendorForPD ? vendor : vendorName).trim();
+  if (crossesIntoPD && effectiveCostPrice > 0 && effectiveVendor) {
+    forwardEffects.push(`Vendor "${effectiveVendor}" এর খাতায় ৳${effectiveCostPrice.toLocaleString()} Credit`);
   }
   if (isDeliveredAny && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
   if (isDeliveredWithDue) forwardEffects.push(`Due ৳${due.toLocaleString()} আদায় রসিদ`);
@@ -152,6 +158,12 @@ export function StatusChangeDrawer({
     if (isFileProcess && request.hasVendorField && !vendor.trim()) {
       toast.error("Vendor নির্বাচন করুন"); return;
     }
+    if (needsCostPrice && effectiveCostPrice <= 0) {
+      toast.error("Vendor Cost Price দিন (Pending Delivery এর জন্য আবশ্যক)"); return;
+    }
+    if (needsVendorForPD && !effectiveVendor) {
+      toast.error("Vendor নির্বাচন করুন"); return;
+    }
     setSaving(true);
     try {
       const patch: Record<string, unknown> = { status: next };
@@ -159,6 +171,13 @@ export function StatusChangeDrawer({
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
           if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
+        }
+        if (crossesIntoPD) {
+          if (needsCostPrice) patch.cost_price = effectiveCostPrice;
+          if (needsVendorForPD) {
+            patch.vendor_bought = effectiveVendor;
+            if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = todayIso();
+          }
         }
         if (isPendingDelivery && request.hasReceivedDate) patch.received_date = todayIso();
         if (isDeliveredAny && request.hasDeliveryDate) patch.delivery_date = todayIso();
@@ -235,7 +254,7 @@ export function StatusChangeDrawer({
       }
 
       try {
-        if (crossesIntoPD && costPrice > 0 && vendorName) {
+        if (crossesIntoPD && effectiveCostPrice > 0 && effectiveVendor) {
           const { data: existing } = await supabase
             .from("vendor_ledger").select("id")
             .eq("source_table", request.table).eq("source_id", request.row.id).limit(1);
@@ -256,12 +275,12 @@ export function StatusChangeDrawer({
             const pname = String(request.row.passenger_name ?? "");
             await resilientInsert("vendor_ledger", {
               ledger_id: ledgerId, entry_date: todayIso(),
-              vendor_name: vendorName, passenger_name: pname,
+              vendor_name: effectiveVendor, passenger_name: pname,
               passport: passport || null,
               mobile: String(request.row.mobile ?? "") || null,
               service_type: request.serviceType,
               country_route: String(request.row.country_name ?? request.row.country_route ?? "") || null,
-              total_payable: costPrice, paid_amount: 0, advance_applied: 0,
+              total_payable: effectiveCostPrice, paid_amount: 0, advance_applied: 0,
               payment_method: "Cash", source_table: request.table, source_id: request.row.id,
               remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${todayIso()})`,
               created_by: user?.id ?? null,
@@ -396,6 +415,43 @@ export function StatusChangeDrawer({
             <div className="space-y-1">
               <Label className="text-[10px]">Vendor <span className="text-rose-500">*</span></Label>
               <LookupSelect kind="vendor" value={vendor} onChange={setVendor} />
+            </div>
+          )}
+
+          {(needsCostPrice || needsVendorForPD) && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                <Banknote className="h-3.5 w-3.5" />
+                Vendor Cost Entry আবশ্যক
+              </div>
+              <div className="text-[10px] text-muted-foreground -mt-1">
+                Pending Delivery করতে হলে আগে Vendor ও Cost Price দিন।
+              </div>
+              {needsVendorForPD && (
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Vendor <span className="text-rose-500">*</span></Label>
+                  <LookupSelect kind="vendor" value={vendor} onChange={setVendor} />
+                </div>
+              )}
+              {needsCostPrice && (
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Cost Price (৳) <span className="text-rose-500">*</span></Label>
+                  <Input
+                    className="h-8 text-sm"
+                    type="number"
+                    inputMode="decimal"
+                    value={costPriceInput}
+                    onChange={(e) => setCostPriceInput(e.target.value)}
+                    placeholder="0"
+                    autoFocus
+                  />
+                  {sold > 0 && effectiveCostPrice > 0 && (
+                    <div className="text-[10px] text-muted-foreground tabular-nums">
+                      Profit: <span className={`font-semibold ${sold - effectiveCostPrice >= 0 ? "text-emerald-600" : "text-rose-500"}`}>৳{(sold - effectiveCostPrice).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
