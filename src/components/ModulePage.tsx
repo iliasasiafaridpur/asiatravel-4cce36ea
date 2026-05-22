@@ -1139,10 +1139,7 @@ export function FormSections({ mod, form, setForm }: {
               {SECTION_LABELS[g.section]}
             </h3>
           )}
-          <div
-            className="grid gap-1.5"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}
-          >
+          <div className="flex flex-wrap gap-1.5 items-start">
             {g.fields.map((field) => (
               <FormField
                 key={field.name}
