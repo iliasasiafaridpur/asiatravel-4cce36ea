@@ -773,7 +773,9 @@ export function LedgerPage({ module: mod }: Props) {
           created_by: user?.id ?? null,
         };
         const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        if (!offline) toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
+        if (!offline) toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`, {
+          meta: { vendor: String(payTarget), service: "MD Sir Deposit (Vendor Advance)", refId: ledgerId, amount: amt },
+        });
         setPayOpen(false);
         void load();
         return;
