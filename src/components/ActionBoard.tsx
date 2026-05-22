@@ -12,8 +12,12 @@ import { PassengerDialog, type PassengerRow } from "./PassengerDialog";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 export function ActionBoard() {
   const qc = useQueryClient();
+  const { profile } = useCurrentUser();
+  const isAdmin = profile?.role === "admin";
   const [tab, setTab] = useState<"all" | Status>("all");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -144,7 +148,13 @@ export function ActionBoard() {
                 <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => { setEditing(r); setDialogOpen(true); }}>
                   <Pencil className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">এডিট</span>
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-destructive hover:text-destructive" onClick={() => setDeleteId(r.id)}>
+                <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-destructive hover:text-destructive" onClick={() => {
+                  if (!isAdmin) {
+                    toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+                    return;
+                  }
+                  setDeleteId(r.id);
+                }}>
                   <Trash2 className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">ডিলিট</span>
                 </Button>
               </div>

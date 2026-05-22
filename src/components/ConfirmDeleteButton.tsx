@@ -11,6 +11,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface Props {
   onConfirm: () => void | Promise<void>;
@@ -27,6 +29,16 @@ export function ConfirmDeleteButton({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { profile } = useCurrentUser();
+  const isAdmin = profile?.role === "admin";
+
+  const handleClick = () => {
+    if (!isAdmin) {
+      toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+      return;
+    }
+    setOpen(true);
+  };
 
   return (
     <>
@@ -35,7 +47,7 @@ export function ConfirmDeleteButton({
         size="icon"
         className="h-7 w-7"
         disabled={disabled}
-        onClick={() => setOpen(true)}
+        onClick={handleClick}
         aria-label="Delete"
       >
         <Trash2 className="h-3.5 w-3.5 text-destructive" />

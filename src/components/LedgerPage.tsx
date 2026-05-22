@@ -1673,7 +1673,14 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={(e) => { e.stopPropagation(); setDeleteRow(r); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (profile?.role !== "admin") {
+                                toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+                                return;
+                              }
+                              setDeleteRow(r);
+                            }}
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5 text-rose-500" />

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Plus, Settings2, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export type LookupKind = string;
 
@@ -63,6 +64,7 @@ async function loadKind(kind: string): Promise<string[]> {
 }
 
 export function LookupSelect({ kind, value, onChange, defaults, compact }: Props) {
+  const { profile } = useCurrentUser();
   const [options, setOptions] = useState<string[]>(cache[kind] ?? []);
   const [openAdd, setOpenAdd] = useState(false);
   const [openManage, setOpenManage] = useState(false);
@@ -257,7 +259,13 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
                       <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenamingOrig(o); setRenameVal(o); }} title="রিনেম">
                         <Pencil className="h-4 w-4 text-blue-600" />
                       </Button>
-                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => void removeOne(o)} title="ডিলিট">
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                        if (profile?.role !== "admin") {
+                          toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+                          return;
+                        }
+                        void removeOne(o);
+                      }} title="ডিলিট">
                         <Trash2 className="h-4 w-4 text-rose-500" />
                       </Button>
                     </div>
