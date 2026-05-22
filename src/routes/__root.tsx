@@ -171,7 +171,10 @@ function RootComponent() {
         });
       }
     });
+    // Background operational alerts (financial / aging)
+    void import("@/lib/alert-scanner").then(({ startAlertScanner }) => startAlertScanner());
   }, []);
+
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
   return (
