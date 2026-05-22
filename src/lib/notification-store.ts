@@ -1,19 +1,30 @@
 // Centralized notification history (persisted in localStorage).
 // Powers the header bell dropdown. Toast calls are mirrored here via
 // `toast-interceptor.ts` so the user has a permanent log of sync/error/success
-// events.
+// events. Operational alerts (financial / aging) can attach structured meta
+// (passenger name, service / module, country / route) for richer display.
 
 const KEY = "notification_center_v1";
 const EVT = "notification-center:updated";
-const MAX = 100;
+const MAX = 200;
 
 export type NotificationType = "success" | "error" | "info" | "warning";
+
+export type NotificationMeta = {
+  passenger?: string;   // যাত্রীর নাম
+  service?: string;     // সার্ভিসের নাম (BMET Card, Air Ticket, ...)
+  country?: string;     // দেশ / রুট
+  amount?: number;      // optional financial figure
+};
 
 export type NotificationItem = {
   id: string;
   type: NotificationType;
   title: string;
   message?: string;
+  meta?: NotificationMeta;
+  /** Stable dedupe key so background scanners don't push duplicates */
+  dedupeKey?: string;
   created_at: string; // ISO
   read: boolean;
 };
@@ -47,18 +58,25 @@ export function pushNotification(
   type: NotificationType,
   title: string,
   message?: string,
+  opts?: { meta?: NotificationMeta; dedupeKey?: string },
 ) {
   if (typeof window === "undefined") return;
+  const list = read();
+  if (opts?.dedupeKey) {
+    // Skip if a notification with this dedupeKey already exists
+    if (list.some((n) => n.dedupeKey === opts.dedupeKey)) return;
+  }
   const item: NotificationItem = {
     id: `n_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     type,
     title,
     message,
+    meta: opts?.meta,
+    dedupeKey: opts?.dedupeKey,
     created_at: new Date().toISOString(),
     read: false,
   };
-  const list = [item, ...read()];
-  write(list);
+  write([item, ...list]);
 }
 
 export function markAllRead() {
