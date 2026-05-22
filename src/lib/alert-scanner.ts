@@ -82,12 +82,30 @@ async function scanTarget(t: Target) {
     .limit(500);
   if (error || !data) return;
 
+  // Batch-fetch latest receipt_id per service_row_id for these rows
+  const rowIds = (data as Row[]).map((r) => r.id).filter(Boolean) as string[];
+  const receiptMap: Record<string, string> = {};
+  if (rowIds.length) {
+    const { data: rec } = await supabase
+      .from("payment_receipts")
+      .select("service_row_id, receipt_id, created_at")
+      .eq("service_table", t.table)
+      .in("service_row_id", rowIds)
+      .order("created_at", { ascending: false });
+    for (const r of (rec as Array<{ service_row_id: string; receipt_id: string }> | null) ?? []) {
+      if (r.service_row_id && !receiptMap[r.service_row_id]) {
+        receiptMap[r.service_row_id] = r.receipt_id;
+      }
+    }
+  }
+
   for (const r of data as Row[]) {
     const passenger = r.passenger_name || "(নাম নেই)";
     const country = countryOf(r, t);
     const refId = (r[t.idField] as string | null | undefined) || undefined;
     const vendor = r.vendor_bought || undefined;
-    const meta = { passenger, service: t.serviceLabel, country, refId, vendor };
+    const receiptId = (r.id && receiptMap[r.id]) || "—";
+    const meta = { passenger, service: t.serviceLabel, country, refId, vendor, receiptId };
     const outstanding = due(r);
 
     // 1) Financial alert
