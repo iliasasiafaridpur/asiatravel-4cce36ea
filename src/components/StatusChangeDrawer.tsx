@@ -108,6 +108,7 @@ export function StatusChangeDrawer({
     const currentStatus = String(request.row.status ?? "") || (requestOrder[0] ?? "");
     setTargetStatus(request.newStatus || currentStatus);
     setVendor(String(request.row.vendor_bought ?? ""));
+    setCostPriceInput(request.row.cost_price ? String(request.row.cost_price) : "");
     setAmount("");
     setDiscount("");
     setMethod("Cash");
