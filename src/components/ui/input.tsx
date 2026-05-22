@@ -3,7 +3,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, onWheel, onKeyDown, ...props }, ref) => {
+    const isNumber = type === "number";
     return (
       <input
         type={type}
@@ -12,6 +13,16 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        onWheel={(e) => {
+          if (isNumber) (e.currentTarget as HTMLInputElement).blur();
+          onWheel?.(e);
+        }}
+        onKeyDown={(e) => {
+          if (isNumber && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+            e.preventDefault();
+          }
+          onKeyDown?.(e);
+        }}
         {...props}
       />
     );
