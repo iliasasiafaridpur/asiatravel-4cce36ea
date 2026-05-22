@@ -1261,7 +1261,16 @@ export function LedgerPage({ module: mod }: Props) {
                 <TableBody>
                   {groupSummary.map((g, idx) => (
                     <TableRow key={g.key} className={`row-tint-${idx % 6}`}>
-                      <TableCell className="font-medium">{g.key}</TableCell>
+                      <TableCell className="font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setProfileParty(g.key)}
+                          className="text-left hover:underline hover:text-primary"
+                          title={isAgency ? "Customer profile দেখুন" : "Vendor profile দেখুন"}
+                        >
+                          {g.key}
+                        </button>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {g.bill.toLocaleString()}
                       </TableCell>
