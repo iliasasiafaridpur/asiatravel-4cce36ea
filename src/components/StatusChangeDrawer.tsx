@@ -275,12 +275,12 @@ export function StatusChangeDrawer({
             const pname = String(request.row.passenger_name ?? "");
             await resilientInsert("vendor_ledger", {
               ledger_id: ledgerId, entry_date: todayIso(),
-              vendor_name: vendorName, passenger_name: pname,
+              vendor_name: effectiveVendor, passenger_name: pname,
               passport: passport || null,
               mobile: String(request.row.mobile ?? "") || null,
               service_type: request.serviceType,
               country_route: String(request.row.country_name ?? request.row.country_route ?? "") || null,
-              total_payable: costPrice, paid_amount: 0, advance_applied: 0,
+              total_payable: effectiveCostPrice, paid_amount: 0, advance_applied: 0,
               payment_method: "Cash", source_table: request.table, source_id: request.row.id,
               remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${todayIso()})`,
               created_by: user?.id ?? null,
