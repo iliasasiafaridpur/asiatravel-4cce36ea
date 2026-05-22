@@ -44,9 +44,9 @@ export function ReceiptDialog({
 
   if (!receipt) return null;
 
-  const total = receipt.paid + receipt.discount;
-  const newReceived = receipt.previouslyReceived + total;
-  const remaining = Math.max(0, receipt.sold - newReceived);
+  // Discount is a straight deduction from the gross bill (NOT income, NOT advance).
+  const netPayable = Math.max(0, receipt.sold - receipt.discount);
+  const remaining = Math.max(0, netPayable - receipt.previouslyReceived - receipt.paid);
 
   const handlePrint = () => {
     const node = printRef.current;
@@ -89,11 +89,11 @@ export function ReceiptDialog({
       receipt.route ? `Route: ${receipt.route}` : "",
       receipt.flightDate ? `Flight: ${receipt.flightDate}` : "",
       ``,
-      `Sold: ${fmt(receipt.sold)}`,
-      `Previously Received: ${fmt(receipt.previouslyReceived)}`,
+      `Sold Price: ${fmt(receipt.sold)}`,
+      receipt.discount > 0 ? `Discount: -${fmt(receipt.discount)}` : "",
+      `Net Payable: ${fmt(netPayable)}`,
+      receipt.previouslyReceived > 0 ? `Previously Received: ${fmt(receipt.previouslyReceived)}` : "",
       receipt.paid > 0 ? `Paid Now (${receipt.method}): ${fmt(receipt.paid)}` : "",
-      receipt.discount > 0 ? `Discount: ${fmt(receipt.discount)}` : "",
-      `*Total Adjusted: ${fmt(total)}*`,
       `Remaining Due: ${fmt(remaining)}`,
       ``,
       `Received by: ${receipt.receivedByName}`,
@@ -137,10 +137,10 @@ export function ReceiptDialog({
       </div>
       <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;">
         <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Sold Price</b><span>${fmt(receipt.sold)}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Previously Received</b><span>${fmt(receipt.previouslyReceived)}</span></div>
-        ${receipt.paid > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Paid Now (${receipt.method})</b><span style="color:#059669;">+${fmt(receipt.paid)}</span></div>` : ""}
         ${receipt.discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Discount</b><span style="color:#d97706;">−${fmt(receipt.discount)}</span></div>` : ""}
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:2px solid #111;margin-top:8px;padding-top:6px;"><span>Total Adjusted</span><span>${fmt(total)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:2px solid #111;margin-top:8px;padding-top:6px;"><span>Net Payable Amount</span><span>${fmt(netPayable)}</span></div>
+        ${receipt.previouslyReceived > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Previously Received</b><span>${fmt(receipt.previouslyReceived)}</span></div>` : ""}
+        ${receipt.paid > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Paid Now (${receipt.method})</b><span style="color:#059669;">+${fmt(receipt.paid)}</span></div>` : ""}
         <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Remaining Due</b><span style="font-weight:600;color:${remaining > 0 ? "#e11d48" : "#059669"};">${fmt(remaining)}</span></div>
       </div>
       ${receipt.remarks ? `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;font-size:12px;"><b>Remarks:</b> ${receipt.remarks}</div>` : ""}
@@ -284,16 +284,6 @@ export function ReceiptDialog({
                   <b>Sold Price</b>
                   <span className="tabular-nums">{fmt(receipt.sold)}</span>
                 </div>
-                <div className="row flex justify-between text-xs py-0.5">
-                  <b>Previously Received</b>
-                  <span className="tabular-nums">{fmt(receipt.previouslyReceived)}</span>
-                </div>
-                {receipt.paid > 0 && (
-                  <div className="row flex justify-between text-xs py-0.5">
-                    <b>Paid Now ({receipt.method})</b>
-                    <span className="tabular-nums text-emerald-600">+{fmt(receipt.paid)}</span>
-                  </div>
-                )}
                 {receipt.discount > 0 && (
                   <div className="row flex justify-between text-xs py-0.5">
                     <b>Discount</b>
@@ -301,9 +291,21 @@ export function ReceiptDialog({
                   </div>
                 )}
                 <div className="total flex justify-between text-sm font-bold border-t-2 border-foreground mt-2 pt-1.5">
-                  <span>Total Adjusted</span>
-                  <span className="tabular-nums">{fmt(total)}</span>
+                  <span>Net Payable Amount</span>
+                  <span className="tabular-nums">{fmt(netPayable)}</span>
                 </div>
+                {receipt.previouslyReceived > 0 && (
+                  <div className="row flex justify-between text-xs py-0.5 mt-1">
+                    <b>Previously Received</b>
+                    <span className="tabular-nums">{fmt(receipt.previouslyReceived)}</span>
+                  </div>
+                )}
+                {receipt.paid > 0 && (
+                  <div className="row flex justify-between text-xs py-0.5">
+                    <b>Paid Now ({receipt.method})</b>
+                    <span className="tabular-nums text-emerald-600">+{fmt(receipt.paid)}</span>
+                  </div>
+                )}
                 <div className="row flex justify-between text-xs py-0.5 mt-1">
                   <b>Remaining Due</b>
                   <span
