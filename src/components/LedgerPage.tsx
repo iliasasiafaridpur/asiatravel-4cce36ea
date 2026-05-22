@@ -1565,7 +1565,10 @@ export function LedgerPage({ module: mod }: Props) {
                           {displayDue > 0 ? (
                             <button
                               type="button"
-                              onClick={() => (isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue))}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                isAgency ? openPaymentForRow(r, displayDue) : openPayment(String(r[groupField] ?? ""), displayDue);
+                              }}
                               className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                               title="পেমেন্ট"
                             >
