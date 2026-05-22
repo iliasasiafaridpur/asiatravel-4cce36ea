@@ -1139,7 +1139,10 @@ export function FormSections({ mod, form, setForm }: {
               {SECTION_LABELS[g.section]}
             </h3>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
+          <div
+            className="grid gap-1.5"
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}
+          >
             {g.fields.map((field) => (
               <FormField
                 key={field.name}
@@ -1151,6 +1154,7 @@ export function FormSections({ mod, form, setForm }: {
           </div>
         </div>
       ))}
+
     </div>
   );
 }
