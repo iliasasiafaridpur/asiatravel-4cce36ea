@@ -350,21 +350,23 @@ export function DueReceiveDialog({
       if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
       const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
-      const insRes = await resilientInsert("payment_receipts", {
-        receipt_id: receiptId,
-        entry_date: today,
-        service_type: selected.service.type,
-        service_table: selected.service.table,
-        service_row_id: selected.id,
-        ref_id: selected.refId,
-        passenger_name: selected.passenger,
-        amount: amt,
-        method,
-        source: "due",
-        remarks: receiptRemarks,
-        received_by: user.id,
-        received_by_name: me,
-      });
+      const insRes = amt > 0
+        ? await resilientInsert("payment_receipts", {
+            receipt_id: receiptId,
+            entry_date: today,
+            service_type: selected.service.type,
+            service_table: selected.service.table,
+            service_row_id: selected.id,
+            ref_id: selected.refId,
+            passenger_name: selected.passenger,
+            amount: amt,
+            method,
+            source: "due",
+            remarks: receiptRemarks,
+            received_by: user.id,
+            received_by_name: me,
+          })
+        : { offline: false };
 
       // 3) if excess → route to agency_ledger as Advance Received
       let ledgerOffline = false;
