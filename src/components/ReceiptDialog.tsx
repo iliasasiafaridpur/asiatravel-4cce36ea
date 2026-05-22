@@ -44,9 +44,9 @@ export function ReceiptDialog({
 
   if (!receipt) return null;
 
-  const total = receipt.paid + receipt.discount;
-  const newReceived = receipt.previouslyReceived + total;
-  const remaining = Math.max(0, receipt.sold - newReceived);
+  // Discount is a straight deduction from the gross bill (NOT income, NOT advance).
+  const netPayable = Math.max(0, receipt.sold - receipt.discount);
+  const remaining = Math.max(0, netPayable - receipt.previouslyReceived - receipt.paid);
 
   const handlePrint = () => {
     const node = printRef.current;
