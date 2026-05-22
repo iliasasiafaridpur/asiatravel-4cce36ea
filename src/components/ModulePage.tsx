@@ -1180,29 +1180,28 @@ function FormField({ field, value, onChange }: {
   const strVal = (value as string) ?? "";
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className={`space-y-0.5 ${span}`}>
-      <Label className="text-[10px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+    <div className={`space-y-1 ${span}`}>
+      <Label className="text-xs font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
-        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-[32px] py-1 text-xs" />
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={2} className="min-h-[60px]" />
       ) : field.type === "select" ? (
         <Select value={strVal} onValueChange={onChange}>
-          <SelectTrigger className="h-7 text-xs py-1"><SelectValue /></SelectTrigger>
+          <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
       ) : field.type === "boolean" ? (
-        <div className="flex items-center h-7">
+        <div className="flex items-center h-9">
           <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
-          <span className="ml-2 text-xs text-muted-foreground">Yes</span>
+          <span className="ml-2 text-sm text-muted-foreground">Yes</span>
         </div>
       ) : field.type === "date" ? (
         <DateInput
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
-          className="h-7 text-xs py-1"
         />
       ) : (
         <Input
@@ -1214,7 +1213,7 @@ function FormField({ field, value, onChange }: {
               : strVal
           }
           placeholder={field.type === "number" ? "0" : undefined}
-          className={`h-7 text-xs py-1 ${isEntryBy ? "bg-muted text-muted-foreground" : ""}`}
+          className={isEntryBy ? "bg-muted text-muted-foreground" : ""}
           onChange={(e) => {
             if (field.type === "number") {
               const raw = e.target.value.trim();
