@@ -1185,16 +1185,16 @@ function FormField({ field, value, onChange }: {
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
-        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-[36px] py-1.5" />
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-[32px] py-1 text-xs" />
       ) : field.type === "select" ? (
         <Select value={strVal} onValueChange={onChange}>
-          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-7 text-xs py-1"><SelectValue /></SelectTrigger>
           <SelectContent>
             {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
       ) : field.type === "boolean" ? (
-        <div className="flex items-center h-8">
+        <div className="flex items-center h-7">
           <Checkbox checked={Boolean(value)} onCheckedChange={(v) => onChange(Boolean(v))} />
           <span className="ml-2 text-xs text-muted-foreground">Yes</span>
         </div>
@@ -1202,7 +1202,7 @@ function FormField({ field, value, onChange }: {
         <DateInput
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
-          className="h-8"
+          className="h-7 text-xs py-1"
         />
       ) : (
         <Input
