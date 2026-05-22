@@ -76,9 +76,9 @@ function AccountsPage() {
   const [expenses, setExpenses] = useState<Exp[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [latestInput, setLatestInput] = useState("5");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [latestInput, setLatestInput] = useState("10");
+  const [dateFrom, setDateFrom] = useState(today());
+  const [dateTo, setDateTo] = useState(today());
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
 
   const printRef = useRef<HTMLDivElement>(null);
