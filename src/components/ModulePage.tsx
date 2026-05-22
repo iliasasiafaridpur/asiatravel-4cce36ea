@@ -26,7 +26,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
