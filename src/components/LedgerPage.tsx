@@ -2145,6 +2145,13 @@ export function LedgerPage({ module: mod }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PartyProfileDrawer
+        open={!!profileParty}
+        onOpenChange={(o) => !o && setProfileParty(null)}
+        kind={isAgency ? "customer" : "vendor"}
+        partyName={profileParty}
+      />
     </div>
   );
 }
