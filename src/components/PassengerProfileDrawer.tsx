@@ -228,10 +228,14 @@ export function PassengerProfileDrawer({
                             ) : null}
                           </div>
                           <div
-                            className={`text-xs ${dt ? "text-muted-foreground" : "text-amber-600 inline-flex items-center gap-1"}`}
+                            className={`text-xs ${dt ? "text-muted-foreground" : reached ? "text-emerald-600 inline-flex items-center gap-1" : "text-amber-600 inline-flex items-center gap-1"}`}
                           >
                             {dt ? (
                               formatDate(dt)
+                            ) : reached ? (
+                              <>
+                                <CheckCircle2 className="h-3 w-3" /> Completed
+                              </>
                             ) : (
                               <>
                                 <Clock className="h-3 w-3" /> Pending
