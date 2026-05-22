@@ -16,6 +16,12 @@ export function OfflineSyncManager() {
     return unsub;
   }, []);
 
+  // Snapshot queue size on mount so we can detect "restored from previous session"
+  const [initialPending] = useState<number>(() =>
+    typeof window === "undefined" ? 0 : getQueueCount(),
+  );
+  const [restoredAnnounced, setRestoredAnnounced] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     const tryDrain = async () => {
@@ -27,10 +33,15 @@ export function OfflineSyncManager() {
       try {
         const { ok, failed } = await drainQueue();
         if (ok > 0 && getQueueCount() === 0) {
-          toast.success("সব অফলাইন হিসাব সফলভাবে সার্ভারে যুক্ত হয়েছে!", { duration: 4000 });
-          // Refresh any cached data
+          // If we started this session with pre-existing queued items, this
+          // means we just recovered from a previous crash / power-cut.
+          if (initialPending > 0 && !restoredAnnounced) {
+            toast.success("Successfully restored all offline entries from previous session.", { duration: 4000 });
+            setRestoredAnnounced(true);
+          } else {
+            toast.success("সব অফলাইন হিসাব সফলভাবে সার্ভারে যুক্ত হয়েছে!", { duration: 4000 });
+          }
           qc.invalidateQueries();
-          // Soft-refresh dashboard widgets that don't use react-query
           try { window.dispatchEvent(new CustomEvent("offline-sync:completed")); } catch { /* ignore */ }
         } else if (failed > 0) {
           toast.error(`${failed} টি অফলাইন এন্ট্রি সিঙ্ক করা যায়নি`, { duration: 5000 });
