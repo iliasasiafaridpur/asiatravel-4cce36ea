@@ -1159,20 +1159,66 @@ export function FormSections({ mod, form, setForm }: {
   );
 }
 
+function AutoGrowTextInput({
+  value, onChange, onBlur, onFocus, className, readOnly, required, placeholder, inputMode,
+}: {
+  value: string;
+  onChange: (e: { target: { value: string } }) => void;
+  onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  className?: string;
+  readOnly?: boolean;
+  required?: boolean;
+  placeholder?: string;
+  inputMode?: React.HTMLAttributes<HTMLTextAreaElement>["inputMode"];
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.max(36, el.scrollHeight) + "px";
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      onChange={(e) => onChange({ target: { value: e.target.value } })}
+      onBlur={onBlur}
+      onFocus={onFocus}
+      readOnly={readOnly}
+      required={required}
+      placeholder={placeholder}
+      inputMode={inputMode}
+      onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+      className={
+        "flex w-full min-h-9 resize-none overflow-hidden rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 leading-6 break-words " +
+        (className ?? "")
+      }
+    />
+  );
+}
+
 function FormField({ field, value, onChange }: {
   field: Field;
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const span = field.type === "textarea"
-    ? "col-span-2 sm:col-span-3 lg:col-span-4"
-    : field.lookup
-      ? "col-span-2"
-      : "";
   const strVal = (value as string) ?? "";
+  // Dynamic column span: textareas span all; lookups always wider; long text values grow
+  let spanStyle: React.CSSProperties = { minWidth: 0 };
+  if (field.type === "textarea") {
+    spanStyle.gridColumn = "1 / -1";
+  } else if (field.lookup) {
+    spanStyle.gridColumn = "span 2";
+  } else if ((field.type === "text" || !field.type) && strVal.length > 22) {
+    const extra = Math.min(3, Math.ceil((strVal.length - 22) / 18) + 1);
+    spanStyle.gridColumn = `span ${1 + extra}`;
+  }
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className={`space-y-1 min-w-0 ${span}`}>
+    <div className="space-y-1" style={spanStyle}>
       <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
@@ -1196,8 +1242,7 @@ function FormField({ field, value, onChange }: {
           onChange={(e) => onChange(e.target.value)}
         />
       ) : (
-        <Input
-          type="text"
+        <AutoGrowTextInput
           inputMode={field.type === "number" ? "decimal" : undefined}
           value={
             field.type === "number"
@@ -1210,7 +1255,6 @@ function FormField({ field, value, onChange }: {
             if (field.type === "number") {
               const raw = e.target.value.trim();
               if (raw === "") return onChange(0);
-              // Quick keys: 5k → 5000, 1.5l → 150000, 2m → 2,000,000
               const m = /^(-?\d*\.?\d+)\s*([klmKLM])?$/.exec(raw);
               if (m) {
                 let n = Number(m[1]);
@@ -1227,7 +1271,7 @@ function FormField({ field, value, onChange }: {
               onChange(field.format ? applyFormat(field.format, e.target.value) : e.target.value);
             }
           }}
-          onFocus={(e) => { if (field.type === "number" && (e.target.value === "0" || e.target.value === "")) e.target.select(); }}
+          onFocus={(e) => { if (field.type === "number" && (e.target.value === "0" || e.target.value === "")) (e.target as HTMLTextAreaElement).select(); }}
           onBlur={(e) => {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
@@ -1238,5 +1282,6 @@ function FormField({ field, value, onChange }: {
     </div>
   );
 }
+
 
 
