@@ -517,7 +517,8 @@ export function ModulePage({ module: mod }: Props) {
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "") || (mod.statuses?.[0] ?? "");
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
-      const computedDue = typeof due === "number" ? due : computeValue(r, "balance");
+      const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      const computedDue = typeof due === "number" ? due : computeValue(r, dueColumn);
 
       let badgeNode: React.ReactNode;
       if (isServiceMod && status === "Delivered") {
