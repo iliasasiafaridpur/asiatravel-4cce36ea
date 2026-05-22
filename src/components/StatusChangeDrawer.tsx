@@ -196,7 +196,9 @@ export function StatusChangeDrawer({
         const maxPay = Math.max(0, due - discAmt);
         paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
         if (paid + discAmt <= 0) { setSaving(false); toast.error("Amount বা Discount দিন"); return; }
-        patch[request.recvCol] = received + paid + discAmt;
+        // Cash received only; discount is a price adjustment, NOT income.
+        patch[request.recvCol] = received + paid;
+        if (discAmt > 0) patch.sold_price = Math.max(0, sold - discAmt);
         patch.received_by = user!.id;
       }
 
@@ -219,9 +221,14 @@ export function StatusChangeDrawer({
             return `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
           }
         };
+        // Discount is a non-cash price adjustment (already applied to sold_price)
+        // and must NEVER create its own payment_receipts row — otherwise it
+        // inflates daily cash income. We append it to the cash receipt's remarks.
         if (paid > 0) {
           const rid = await mkReceiptId();
           firstReceiptId = rid;
+          const discNote = discAmt > 0 ? `Discount ৳${discAmt.toLocaleString()} প্রয়োগ` : "";
+          const combinedRemarks = [remarks, discNote].filter(Boolean).join(" · ") || null;
           await resilientInsert("payment_receipts", {
             receipt_id: rid,
             entry_date: todayIso(),
@@ -231,24 +238,7 @@ export function StatusChangeDrawer({
             ref_id: request.refId,
             passenger_name: String(request.row.passenger_name ?? ""),
             amount: paid, method, source: "due",
-            remarks: remarks || null,
-            received_by: user!.id,
-            received_by_name: me,
-          });
-        }
-        if (discAmt > 0) {
-          const rid = await mkReceiptId();
-          if (!firstReceiptId) firstReceiptId = rid;
-          await resilientInsert("payment_receipts", {
-            receipt_id: rid,
-            entry_date: todayIso(),
-            service_type: request.serviceType,
-            service_table: request.table,
-            service_row_id: request.row.id,
-            ref_id: request.refId,
-            passenger_name: String(request.row.passenger_name ?? ""),
-            amount: discAmt, method: "Discount", source: "discount",
-            remarks: remarks ? `Discount: ${remarks}` : `Discount: ${discAmt}`,
+            remarks: combinedRemarks,
             received_by: user!.id,
             received_by_name: me,
           });
