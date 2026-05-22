@@ -176,7 +176,7 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     <>
       <div className="flex gap-1.5">
         <Select value={value || ""} onValueChange={onChange}>
-          <SelectTrigger className="flex-1 h-7 text-xs py-1"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
+          <SelectTrigger className="flex-1"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
           <SelectContent>
             {merged.length === 0 ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
