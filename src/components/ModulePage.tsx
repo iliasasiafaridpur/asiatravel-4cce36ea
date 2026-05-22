@@ -267,6 +267,16 @@ export function ModulePage({ module: mod }: Props) {
 
   const submit = async () => {
     if (saving) return; // Prevent double-submit
+    // Required-field validation (works even if the user bypasses HTML required)
+    for (const f of mod.fields) {
+      if (!f.required || f.hideInForm) continue;
+      const v = form[f.name];
+      const empty = v === undefined || v === null || (typeof v === "string" && !v.trim());
+      if (empty) {
+        toast.error(`${f.label} আবশ্যক`);
+        return;
+      }
+    }
     // Capture edit state at submit-time so re-renders can't lose the ID
     const editRow = editing;
     const editId = editRow?.id;
