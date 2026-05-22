@@ -1364,7 +1364,8 @@ export function LedgerPage({ module: mod }: Props) {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
