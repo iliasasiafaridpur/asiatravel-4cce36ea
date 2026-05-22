@@ -93,7 +93,8 @@ export function StatusChangeDrawer({
 
   const sold = Number(request?.row.sold_price ?? 0);
   const received = Number(request?.row[request?.recvCol ?? ""] ?? 0);
-  const due = Math.max(0, sold - received);
+  const existingDiscount = Number(request?.row.discount_amount ?? 0);
+  const due = Math.max(0, sold - received - existingDiscount);
   const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") ? due > 0 : false;
   const isFileProcess = eq(next, "File Process");
   const isPendingDelivery = eq(next, "Pending Delivery");
@@ -198,7 +199,7 @@ export function StatusChangeDrawer({
         if (paid + discAmt <= 0) { setSaving(false); toast.error("Amount বা Discount দিন"); return; }
         // Cash received only; discount is a price adjustment, NOT income.
         patch[request.recvCol] = received + paid;
-        if (discAmt > 0) patch.sold_price = Math.max(0, sold - discAmt);
+        if (discAmt > 0) patch.discount_amount = existingDiscount + discAmt;
         patch.received_by = user!.id;
       }
 
