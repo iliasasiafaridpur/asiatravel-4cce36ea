@@ -304,6 +304,7 @@ export function LedgerPage({ module: mod }: Props) {
           agency_sold?: string;
           sold?: number;
           cost?: number;
+          discount?: number;
           status?: string;
           airline?: string;
           pnr?: string;
