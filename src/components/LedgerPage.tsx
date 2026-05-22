@@ -162,6 +162,7 @@ export function LedgerPage({ module: mod }: Props) {
   const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
   // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
   const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
+  const [profileParty, setProfileParty] = useState<string | null>(null);
 
   const PAYMENT_METHODS = [
     "Cash",
