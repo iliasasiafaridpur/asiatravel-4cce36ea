@@ -615,7 +615,7 @@ export function LedgerPage({ module: mod }: Props) {
           String(r[groupField] ?? "") === key &&
           String(r.service_type ?? "").toUpperCase() !== "PAYMENT" &&
           !isAdvanceRow(r) &&
-          (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)) > 0.0001,
+          (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0)) > 0.0001,
       );
       list.sort((a, b) => {
         const ad = String(a.entry_date ?? "");
@@ -725,7 +725,7 @@ export function LedgerPage({ module: mod }: Props) {
     const list = openBookingsFor(payTarget);
     const out: Array<{ row: Row; alloc: number; due: number }> = [];
     for (const r of list) {
-      const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+      const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
       if (remaining <= 0.0001) {
         out.push({ row: r, alloc: 0, due });
         continue;
@@ -856,7 +856,7 @@ export function LedgerPage({ module: mod }: Props) {
         for (const e of entries) {
           const r = rowById.get(e.id);
           if (!r) return toast.error("বিল খুঁজে পাওয়া যায়নি");
-          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
           if (e.amt > due + 0.001)
             return toast.error(
               `${String(r[mod.idColumn] ?? "")} — Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${due})`,
