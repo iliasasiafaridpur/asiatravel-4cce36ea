@@ -4,7 +4,7 @@
 // classes of operational risk:
 //
 //   1. Financial alert — file has reached "Card Ready" or "Pending Delivery"
-//      status while Outstanding Due (sold_price − received_amount) > 0.
+//      status while Outstanding Due (sold_price − received_amount − discount_amount) > 0.
 //   2. Aging alert    — file has been sitting in "Card Ready" for more than
 //      3 days without delivery.
 //
@@ -24,6 +24,7 @@ type Row = {
   status?: string | null;
   sold_price?: number | null;
   received_amount?: number | null;
+  discount_amount?: number | null;
   delivery_date?: string | null;
   updated_at?: string | null;
   entry_date?: string | null;
@@ -51,7 +52,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const AGING_DAYS = 3;
 
 function due(r: Row): number {
-  return Number(r.sold_price ?? 0) - Number(r.received_amount ?? 0);
+  return Number(r.sold_price ?? 0) - Number(r.received_amount ?? 0) - Number(r.discount_amount ?? 0);
 }
 
 function countryOf(r: Row, t: Target): string | undefined {
@@ -75,7 +76,7 @@ async function scanTarget(t: Target) {
   const q: any = supabase.from(t.table as any);
   const { data, error } = await q
     .select(
-      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, delivery_date, updated_at, entry_date, vendor_bought`,
+      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, discount_amount, delivery_date, updated_at, entry_date, vendor_bought`,
     )
     .in("status", ["Card Ready", "Pending Delivery"])
     .is("delivery_date", null)

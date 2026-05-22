@@ -77,6 +77,7 @@ type Row = {
   airline?: string;
   sold_price?: number;
   received?: number;
+  discount?: number;
   cost_price?: number;
   entry_date?: string;
   created_at: string;
@@ -89,10 +90,10 @@ type Range = "all" | "today" | "month" | "year" | "custom";
 const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(m.key));
 const DASHBOARD_CACHE_KEY = "dashboard_entries_v2";
 const DASHBOARD_SELECTS: Record<string, string> = {
-  tickets: "ticket_id,passenger_name,status,airline,sold_price,received,cost_price,entry_date,created_at,created_by,received_by,entry_by",
-  bmet_cards: "bmet_id,passenger_name,status,country_name,sold_price,received_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
-  saudi_visas: "saudi_id,passenger_name,status,sold_price,received_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
-  kuwait_visas: "kuwait_id,passenger_name,status,sold_price,received,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  tickets: "ticket_id,passenger_name,status,airline,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  bmet_cards: "bmet_id,passenger_name,status,country_name,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  saudi_visas: "saudi_id,passenger_name,status,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  kuwait_visas: "kuwait_id,passenger_name,status,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
 };
 
 function withTimeout<T>(promise: PromiseLike<T>, ms = 6500): Promise<T> {
@@ -174,6 +175,7 @@ function DashboardPage() {
             airline: r.airline as string | undefined,
             sold_price: Number(r.sold_price ?? 0),
             received: Number((r.received ?? r.received_amount) ?? 0),
+            discount: Number(r.discount_amount ?? 0),
             cost_price: Number(r.cost_price ?? 0),
             entry_date: r.entry_date as string | undefined,
             created_at: String(r.created_at ?? ""),
