@@ -856,7 +856,7 @@ ${node.innerHTML.replace(
                   <th className="num">মোট বিল</th>
                   <th className="num">আয়</th>
                   <th className="num">বাকি</th>
-                  <th className="wrap">Advance</th>
+                  <th className="wrap">Adv:/ discu:</th>
                   <th className="num">খরচ/জমা</th>
                   <th className="num">ব্যালেন্স</th>
                 </tr>
@@ -880,8 +880,10 @@ ${node.innerHTML.replace(
                   }
                   const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt
-                  let advText = "";
+                  // Discount হলে তারিখের জায়গায় "Discount" দেখানো হবে
+                  const advLines: { text: string; isDisc: boolean }[] = [];
                   let sumPrev = 0;
+                  let advSumOnly = 0; let discSumOnly = 0; let lastAdvDate = "";
                   if (isIn && r.service_row_id) {
                     const curDate = r.entry_date;
                     const prior = received.filter(p =>
@@ -889,22 +891,26 @@ ${node.innerHTML.replace(
                       p.id !== r.id &&
                       (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
                     );
-                    if (prior.length > 0) {
-                      sumPrev = prior.reduce((s, p) => s + Number(p.amount || 0), 0);
-                      const lastDate = prior.reduce((d, p) => {
-                        const pd = p.entry_date;
-                        return !d || pd > d ? pd : d;
-                      }, "");
-                      if (sumPrev > 0.005) advText = `${fmt(sumPrev)} (${formatDate(lastDate)})`;
+                    for (const p of prior) {
+                      const pv = Number(p.amount || 0);
+                      sumPrev += pv;
+                      const isDisc = !!(p.remarks && /discount/i.test(p.remarks));
+                      if (isDisc) discSumOnly += pv;
+                      else {
+                        advSumOnly += pv;
+                        if (!lastAdvDate || p.entry_date > lastAdvDate) lastAdvDate = p.entry_date;
+                      }
                     }
+                    if (advSumOnly > 0.005) advLines.push({ text: `${fmt(advSumOnly)} (${formatDate(lastAdvDate)})`, isDisc: false });
+                    if (discSumOnly > 0.005) advLines.push({ text: `${fmt(discSumOnly)} Discount`, isDisc: true });
                   }
-                  // Discount: parse from receipt remarks (e.g. "Discount ৳500 প্রয়োগ")
+                  // Discount on current row from remarks
                   let discText = "";
                   if (isIn && r.remarks) {
                     const m = /Discount\s*৳?\s*([\d,]+)/i.exec(r.remarks);
                     if (m) {
                       const dv = Number(m[1].replace(/,/g, ""));
-                      if (dv > 0) discText = `Discount: ${fmt(dv)}`;
+                      if (dv > 0) discText = `${fmt(dv)} Discount`;
                     }
                   }
                   // বাকি = মোট বিল − (এই আয় + পূর্বে জমা)
@@ -921,7 +927,9 @@ ${node.innerHTML.replace(
                       <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
                       <td className="wrap" style={{whiteSpace:"nowrap"}}>
-                        {advText}
+                        {advLines.map((l, idx) => (
+                          <div key={idx} style={{whiteSpace:"nowrap"}}>{l.text}</div>
+                        ))}
                         {discText && <div style={{whiteSpace:"nowrap"}}>{discText}</div>}
                       </td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
