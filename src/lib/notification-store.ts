@@ -17,6 +17,7 @@ export type NotificationMeta = {
   amount?: number;      // optional financial figure
   refId?: string;       // ID নাম্বার (BMET ID, Saudi ID, Kuwait ID, Ledger ID, ...)
   vendor?: string;      // ভেন্ডর নাম
+  receiptId?: string;   // মানি রিসিট নম্বর (payment_receipts.receipt_id) — "—" if none
 };
 
 export type NotificationItem = {
