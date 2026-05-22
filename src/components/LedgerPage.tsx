@@ -1522,7 +1522,7 @@ export function LedgerPage({ module: mod }: Props) {
                     rowProfit !== undefined && rowProfit !== null && rowProfit !== ""
                       ? Number(rowProfit)
                       : info && typeof info.sold === "number" && typeof info.cost === "number"
-                        ? info.sold - info.cost
+                        ? info.sold - Number(info.discount ?? 0) - info.cost
                         : 0;
                   const status = info?.status ?? "";
                   return (
