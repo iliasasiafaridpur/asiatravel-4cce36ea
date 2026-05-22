@@ -506,6 +506,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -527,7 +534,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
+    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount", "discount_amount") }],
   },
   {
     key: "kuwait-visa",
@@ -603,6 +610,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -615,7 +629,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received") }],
+    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received", "discount_amount") }],
   },
   {
     key: "agency-ledger",
