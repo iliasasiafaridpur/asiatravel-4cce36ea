@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
+import { NotificationBell } from "@/components/NotificationBell";
+import { installToastInterceptor } from "@/lib/toast-interceptor";
 import {
   clearStaleAssetRecoveryFlag,
   isRecoverableAssetError,
@@ -151,10 +153,24 @@ function RootComponent() {
   const [dark, setDark] = useState(true);
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
+    installToastInterceptor();
     void import("@/lib/register-sw").then(({ registerOfflineSW }) => registerOfflineSW());
     void import("@/lib/global-fetch-interceptor").then(({ installGlobalFetchInterceptor }) =>
       installGlobalFetchInterceptor(),
     );
+    // Power-cut recovery: detect pre-existing queued items from previous session
+    void import("@/lib/offline-queue").then(({ getQueueCount }) => {
+      const pending = getQueueCount();
+      if (pending > 0) {
+        void import("@/lib/notification-store").then(({ pushNotification }) => {
+          pushNotification(
+            "info",
+            "পূর্বের সেশনের অফলাইন এন্ট্রি পাওয়া গেছে",
+            `${pending} টি অসিঙ্ক এন্ট্রি লোকাল স্টোরেজে সংরক্ষিত আছে — ইন্টারনেট এলেই অটো-সিঙ্ক হবে।`,
+          );
+        });
+      }
+    });
   }, []);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
@@ -168,6 +184,7 @@ function RootComponent() {
               <header className="h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
                 <SidebarTrigger />
                 <div className="flex items-center gap-1">
+                  <NotificationBell />
                   <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
                     {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
