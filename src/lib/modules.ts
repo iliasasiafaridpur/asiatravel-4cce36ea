@@ -114,6 +114,7 @@ export const MODULES: ModuleSchema[] = [
         showInList: true,
         lookup: "route",
         section: "passenger",
+        required: true,
       },
       {
         name: "flight_date",
@@ -121,6 +122,7 @@ export const MODULES: ModuleSchema[] = [
         type: "date",
         showInList: true,
         section: "passenger",
+        required: true,
       },
       {
         name: "status",
