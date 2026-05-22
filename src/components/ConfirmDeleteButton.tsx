@@ -11,6 +11,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface Props {
   onConfirm: () => void | Promise<void>;
