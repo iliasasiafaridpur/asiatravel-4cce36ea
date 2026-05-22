@@ -136,6 +136,7 @@ export const MODULES: ModuleSchema[] = [
         name: "sold_price",
         label: "Price",
         type: "number",
+        required: true,
         showInList: true,
         section: "passenger",
       },
