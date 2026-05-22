@@ -2212,6 +2212,15 @@ export function LedgerPage({ module: mod }: Props) {
         kind={isAgency ? "customer" : "vendor"}
         partyName={profileParty}
       />
+
+      <PassengerProfileDrawer
+        open={!!passengerProfile}
+        onOpenChange={(v) => { if (!v) setPassengerProfile(null); }}
+        row={passengerProfile?.row ?? null}
+        serviceTable={passengerProfile?.serviceTable ?? ""}
+        moduleKey={passengerProfile?.moduleKey}
+        statusOrder={passengerProfile?.statusOrder}
+      />
     </div>
   );
 }
