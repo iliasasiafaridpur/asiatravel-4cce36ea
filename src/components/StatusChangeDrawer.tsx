@@ -158,6 +158,12 @@ export function StatusChangeDrawer({
     if (isFileProcess && request.hasVendorField && !vendor.trim()) {
       toast.error("Vendor নির্বাচন করুন"); return;
     }
+    if (needsCostPrice && effectiveCostPrice <= 0) {
+      toast.error("Vendor Cost Price দিন (Pending Delivery এর জন্য আবশ্যক)"); return;
+    }
+    if (needsVendorForPD && !effectiveVendor) {
+      toast.error("Vendor নির্বাচন করুন"); return;
+    }
     setSaving(true);
     try {
       const patch: Record<string, unknown> = { status: next };
@@ -165,6 +171,13 @@ export function StatusChangeDrawer({
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
           if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
+        }
+        if (crossesIntoPD) {
+          if (needsCostPrice) patch.cost_price = effectiveCostPrice;
+          if (needsVendorForPD) {
+            patch.vendor_bought = effectiveVendor;
+            if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = todayIso();
+          }
         }
         if (isPendingDelivery && request.hasReceivedDate) patch.received_date = todayIso();
         if (isDeliveredAny && request.hasDeliveryDate) patch.delivery_date = todayIso();
