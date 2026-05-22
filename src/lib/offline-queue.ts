@@ -242,6 +242,7 @@ export async function drainQueue(
   if (draining) return { ok: 0, failed: 0 };
   draining = true;
   let ok = 0; let failed = 0;
+  const MAX_ATTEMPTS = 3;
   try {
     let q = read().slice().sort((a, b) => a.created_at.localeCompare(b.created_at));
     const total = q.length;
@@ -251,12 +252,31 @@ export async function drainQueue(
         const { error } = await runItem(item);
         if (error) {
           if (isNetworkError(error)) throw error; // stop draining; retry later
-          // Real DB error — drop after marking. Keep going.
-          item.attempts += 1;
-          item.last_error = (error as { message?: string }).message ?? String(error);
-          failed += 1;
-          const all = read().filter((x) => x.id !== item.id);
-          write(all);
+          // Real server error (401, 409, 400, RLS, etc.) — increment attempts,
+          // keep the item until MAX_ATTEMPTS so user can see what's happening
+          // instead of silently losing the entry.
+          const all = read();
+          const idx = all.findIndex((x) => x.id === item.id);
+          if (idx >= 0) {
+            all[idx].attempts = (all[idx].attempts ?? 0) + 1;
+            all[idx].last_error = (error as { message?: string }).message ?? String(error);
+            if (all[idx].attempts >= MAX_ATTEMPTS) {
+              // Give up — show detailed reason so user knows what failed.
+              const msg = all[idx].last_error ?? "Unknown error";
+              try {
+                toast.error(
+                  `অফলাইন এন্ট্রি সিঙ্ক ব্যর্থ (${item.table}): ${msg.slice(0, 140)}`,
+                  { duration: 10000 },
+                );
+              } catch { /* ignore */ }
+              failed += 1;
+              all.splice(idx, 1);
+            }
+            write(all);
+          }
+          // If attempts < MAX, leave item in queue and stop this drain pass
+          // so we don't hammer the server. Next online/focus event retries.
+          break;
         } else {
           ok += 1;
           const all = read().filter((x) => x.id !== item.id);
@@ -276,3 +296,9 @@ export async function drainQueue(
   }
   return { ok, failed };
 }
+
+/** Public: clear all queued items (e.g., user gave up on retrying). */
+export function clearQueue() {
+  write([]);
+}
+
