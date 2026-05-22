@@ -173,7 +173,8 @@ export function LedgerPage({ module: mod }: Props) {
 
   const openProfileFor = useCallback(
     async (r: Row) => {
-      const party = String(r[groupField] ?? "").trim();
+      const gf = mod.groupBy?.field ?? "agent_name";
+      const party = String(r[gf] ?? "").trim();
       const isSelf = party.toLowerCase() === "self";
       if (!isSelf) {
         setProfileParty(party);
@@ -196,7 +197,6 @@ export function LedgerPage({ module: mod }: Props) {
           statusOrder: srcModule?.statuses,
         });
       } else {
-        // Fallback: use the ledger row itself
         setPassengerProfile({
           row: r,
           serviceTable: srcTable || mod.table,
@@ -205,7 +205,7 @@ export function LedgerPage({ module: mod }: Props) {
         });
       }
     },
-    [groupField, mod.table],
+    [mod],
   );
 
   const PAYMENT_METHODS = [
