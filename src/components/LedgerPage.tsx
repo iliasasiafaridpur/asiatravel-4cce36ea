@@ -806,7 +806,9 @@ export function LedgerPage({ module: mod }: Props) {
         const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
         if (!offline) {
           await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
-          toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+          notify.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`, {
+            meta: { vendor: String(payTarget), service: isAgency ? "Agent Advance Received" : "Vendor Advance Paid", refId: ledgerId, amount: amt },
+          });
         }
         setPayOpen(false);
         void load();
