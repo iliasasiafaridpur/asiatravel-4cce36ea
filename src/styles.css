@@ -198,6 +198,26 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
   filter: invert(70%) sepia(60%) saturate(500%) hue-rotate(170deg) brightness(110%) contrast(95%);
 }
 
+/* Sharper focus rings on inputs/textareas/selects/search bars (dark theme) */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select,
+.dark [role="combobox"] {
+  border-color: #475569;
+}
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.dark textarea:focus,
+.dark textarea:focus-visible,
+.dark select:focus,
+.dark [role="combobox"]:focus,
+.dark [role="combobox"][data-state="open"] {
+  outline: none;
+  border-color: #2dd4bf !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.45) !important;
+}
+
+
 @media print {
   body { background: white !important; background-image: none !important; color: black !important; }
   aside, nav, [data-sidebar], header.app-header { display: none !important; }
