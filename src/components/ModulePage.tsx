@@ -397,7 +397,15 @@ export function ModulePage({ module: mod }: Props) {
         .update(payload as never)
         .eq("id", row.id);
       if (error) throw error;
-      toast.success(`Status: ${newStatus}`);
+      toast.success(`Status: ${newStatus}`, {
+        meta: {
+          passenger: String(row.passenger_name ?? "") || undefined,
+          service: mod.label,
+          country: String(row.country_name ?? row.country_route ?? "") || undefined,
+          refId: String(row[mod.idColumn] ?? "") || undefined,
+          vendor: String(row.vendor_bought ?? "") || undefined,
+        },
+      } as Parameters<typeof toast.success>[1]);
       if (newStatus === "Delivered") speakDelivery(String(row.passenger_name ?? ""));
       void load(false);
     } catch (e) {
