@@ -198,9 +198,25 @@ export function PassengerProfileDrawer({
                 ) : (
                   <ol className="relative border-l-2 border-border ml-2 space-y-3">
                     {pipeline.map((stepStatus, i) => {
-                      const dt = dateForStatus(row, stepStatus);
+                      let dt = dateForStatus(row, stepStatus);
                       const reached = currentIdx >= 0 && i <= currentIdx;
                       const isCurrent = i === currentIdx;
+                      // If this step is reached but has no dedicated date,
+                      // fall back to the nearest known date from a later
+                      // reached step, then earlier — so completed steps
+                      // always show a date instead of just "Completed".
+                      if (!dt && reached) {
+                        for (let j = i + 1; j <= currentIdx; j++) {
+                          const d = dateForStatus(row, pipeline[j]);
+                          if (d) { dt = d; break; }
+                        }
+                        if (!dt) {
+                          for (let j = i - 1; j >= 0; j--) {
+                            const d = dateForStatus(row, pipeline[j]);
+                            if (d) { dt = d; break; }
+                          }
+                        }
+                      }
                       return (
                         <li key={stepStatus} className="ml-4">
                           <span
