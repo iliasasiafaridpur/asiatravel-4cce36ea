@@ -1,7 +1,13 @@
 // Mirror every sonner `toast.*` call into the notification center so the
-// user has a permanent history even though toasts auto-dismiss.
+// user has a permanent history even though toasts auto-dismiss. Sonner
+// option objects may carry our extension fields `meta` / `dedupeKey` which
+// are forwarded to the notification store but stripped from sonner itself.
 import { toast } from "sonner";
-import { pushNotification, type NotificationType } from "./notification-store";
+import {
+  pushNotification,
+  type NotificationType,
+  type NotificationMeta,
+} from "./notification-store";
 
 let installed = false;
 
@@ -21,9 +27,14 @@ function wrap(
   return (...args: unknown[]) => {
     try {
       const title = titleOf(args[0]);
-      const opts = args[1] as { description?: unknown } | undefined;
+      const opts = args[1] as
+        | { description?: unknown; meta?: NotificationMeta; dedupeKey?: string }
+        | undefined;
       const desc = typeof opts?.description === "string" ? opts.description : undefined;
-      pushNotification(type, title, desc);
+      pushNotification(type, title, desc, {
+        meta: opts?.meta,
+        dedupeKey: opts?.dedupeKey,
+      });
     } catch { /* never block toast */ }
     return orig(...args);
   };
