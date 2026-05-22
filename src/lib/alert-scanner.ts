@@ -27,18 +27,24 @@ type Row = {
   delivery_date?: string | null;
   updated_at?: string | null;
   entry_date?: string | null;
+  vendor_bought?: string | null;
+  // table-specific IDs (only one will be present per row)
+  bmet_id?: string | null;
+  saudi_id?: string | null;
+  kuwait_id?: string | null;
 };
 
 type Target = {
   table: "bmet_cards" | "saudi_visas" | "kuwait_visas";
   serviceLabel: string;        // human-readable module name
-  countryFallback?: string;    // for visa tables when country field is blank
+  idField: "bmet_id" | "saudi_id" | "kuwait_id";
+  countryFallback?: string;
 };
 
 const TARGETS: Target[] = [
-  { table: "bmet_cards",  serviceLabel: "BMET Card" },
-  { table: "saudi_visas", serviceLabel: "Saudi Visa", countryFallback: "Saudi Arabia" },
-  { table: "kuwait_visas", serviceLabel: "Kuwait Visa", countryFallback: "Kuwait" },
+  { table: "bmet_cards",  serviceLabel: "BMET Card",  idField: "bmet_id" },
+  { table: "saudi_visas", serviceLabel: "Saudi Visa", idField: "saudi_id",  countryFallback: "Saudi Arabia" },
+  { table: "kuwait_visas", serviceLabel: "Kuwait Visa", idField: "kuwait_id", countryFallback: "Kuwait" },
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
