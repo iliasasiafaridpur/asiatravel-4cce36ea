@@ -310,12 +310,12 @@ export function DueReceiveDialog({
       const me = displayName(profile, user);
       const today = todayIso();
 
-      // 1) update service row — apply payment to received, apply discount by reducing sold_price
+      // 1) update service row — cash goes to received; discount is stored separately.
       const newRecv = selected.received + appliedToDue;
-      const newSold = selected.sold - disc;
+      const newDiscount = selected.discount + disc;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
-      if (disc > 0) upd.sold_price = newSold;
+      if (disc > 0) upd.discount_amount = newDiscount;
       upd.received_by = user.id;
       if (withDelivery) {
         if (selected.service.hasDelivery) upd.delivery_date = today;
@@ -418,17 +418,16 @@ export function DueReceiveDialog({
       }
 
       // update local state
-      const newSoldLocal = selected.sold - disc;
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
-          ? { ...r, sold: newSoldLocal, received: newRecv, due: newSoldLocal - newRecv }
+          ? { ...r, received: newRecv, discount: newDiscount, due: r.sold - newRecv - newDiscount }
           : r)).filter((r) => r.due > 0)
       );
       const updated: DueRow = {
         ...selected,
-        sold: newSoldLocal,
+        discount: newDiscount,
         received: newRecv,
-        due: newSoldLocal - newRecv,
+        due: selected.sold - newRecv - newDiscount,
         deliveryDate: withDelivery ? today : (upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate),
       };
       if (updated.due <= 0) {
