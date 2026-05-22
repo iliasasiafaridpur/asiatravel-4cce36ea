@@ -169,12 +169,12 @@ function AccountsPage() {
         map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
       saudi_visas: {
-        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received_amount",
-        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount",
+        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
       kuwait_visas: {
-        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received",
-        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount",
+        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
     };
     let cancelled = false;
