@@ -209,7 +209,21 @@ function SignUpForm() {
       </div>
       <div className="space-y-1">
         <Label>পাসওয়ার্ড</Label>
-        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <div className="relative">
+          <Input type={showPw ? "text" : "password"} value={password}
+            className="pr-10"
+            onChange={(e) => setPassword(e.target.value)} required />
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            tabIndex={-1}
+            aria-label={showPw ? "Hide password" : "Show password"}
+            title={showPw ? "Hide password" : "Show password"}
+          >
+            {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy ? "Signing up…" : "Sign Up"}
