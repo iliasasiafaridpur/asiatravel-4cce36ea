@@ -66,6 +66,7 @@ export type Database = {
           country_route: string | null
           created_at: string
           created_by: string | null
+          discount_amount: number
           entry_date: string
           id: string
           ledger_id: string
@@ -90,6 +91,7 @@ export type Database = {
           country_route?: string | null
           created_at?: string
           created_by?: string | null
+          discount_amount?: number
           entry_date?: string
           id?: string
           ledger_id: string
@@ -114,6 +116,7 @@ export type Database = {
           country_route?: string | null
           created_at?: string
           created_by?: string | null
+          discount_amount?: number
           entry_date?: string
           id?: string
           ledger_id?: string
@@ -177,6 +180,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           delivery_date: string | null
+          discount_amount: number
           entry_by: string | null
           entry_date: string
           id: string
@@ -203,6 +207,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           id?: string
@@ -229,6 +234,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           id?: string
@@ -492,6 +498,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           delivery_date: string | null
+          discount_amount: number
           entry_by: string | null
           entry_date: string
           id: string
@@ -518,6 +525,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           id?: string
@@ -544,6 +552,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           id?: string
@@ -734,6 +743,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           delivery_date: string | null
+          discount_amount: number
           entry_by: string | null
           entry_date: string
           final_visa_no: string | null
@@ -772,6 +782,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           final_visa_no?: string | null
@@ -810,6 +821,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           final_visa_no?: string | null
@@ -848,6 +860,7 @@ export type Database = {
           cost_price: number | null
           created_at: string
           created_by: string | null
+          discount_amount: number
           entry_by: string | null
           entry_date: string
           flight_date: string | null
@@ -873,6 +886,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           flight_date?: string | null
@@ -898,6 +912,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
+          discount_amount?: number
           entry_by?: string | null
           entry_date?: string
           flight_date?: string | null
