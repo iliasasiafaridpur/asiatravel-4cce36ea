@@ -165,14 +165,24 @@ export default function AccountingModule() {
 }
 
 // ===== Summary card =====
+const summaryTint: Record<string, { bg: string; ring: string }> = {
+  "Cash in Hand":      { bg: "#064e3b", ring: "#10b981" }, // emerald
+  "Total Receivable":  { bg: "#7f1d1d", ring: "#f59e0b" }, // crimson/amber for due
+  "Today's Handover":  { bg: "#1e3a8a", ring: "#3b82f6" }, // royal navy
+  "Total Expense":     { bg: "#78350f", ring: "#f59e0b" }, // amber
+};
 function SummaryCard({ label, value, icon, highlight }: { label: string; value: number; icon: React.ReactNode; highlight?: boolean }) {
+  const tint = summaryTint[label];
+  const style = tint
+    ? { background: tint.bg, boxShadow: `0 4px 22px -10px ${tint.ring}88, inset 0 0 0 1px ${tint.ring}55` }
+    : undefined;
   return (
-    <Card className={highlight ? "border-primary/40" : ""}>
+    <Card className={highlight ? "border-primary/40 text-white" : "text-white"} style={style}>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-xs opacity-90">
           <span>{label}</span>{icon}
         </div>
-        <div className={`mt-1 text-xl font-bold ${highlight ? "text-primary" : ""}`}>{fmt(value)}</div>
+        <div className="mt-1 text-xl font-bold">{fmt(value)}</div>
       </CardContent>
     </Card>
   );

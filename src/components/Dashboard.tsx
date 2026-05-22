@@ -124,11 +124,11 @@ export function Dashboard() {
 }
 
 const cardTint: Record<string, { bg: string; ring: string }> = {
-  "মোট":       { bg: "linear-gradient(180deg,#1e3a5f,#0f1f3a)", ring: "#3b82f6" },     // royal navy
-  Pending:    { bg: "linear-gradient(180deg,#78350f,#451a03)", ring: "#f59e0b" },     // amber/crimson
-  Processing: { bg: "linear-gradient(180deg,#1e3a8a,#172554)", ring: "#60a5fa" },     // deep blue
-  Done:       { bg: "linear-gradient(180deg,#064e3b,#022c22)", ring: "#10b981" },     // emerald
-  Cancelled:  { bg: "linear-gradient(180deg,#7f1d1d,#450a0a)", ring: "#ef4444" },     // crimson
+  "মোট":       { bg: "#1e3a8a", ring: "#3b82f6" },     // royal navy
+  Pending:    { bg: "#78350f", ring: "#f59e0b" },     // amber
+  Processing: { bg: "#1e40af", ring: "#60a5fa" },     // deep blue
+  Done:       { bg: "#064e3b", ring: "#10b981" },     // emerald
+  Cancelled:  { bg: "#7f1d1d", ring: "#ef4444" },     // crimson
 };
 
 function StatCard({ label, value, icon: Icon, accent }: { label: string; value: number; icon: React.ElementType; accent: string }) {
