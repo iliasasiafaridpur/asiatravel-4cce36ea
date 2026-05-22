@@ -284,16 +284,6 @@ export function ReceiptDialog({
                   <b>Sold Price</b>
                   <span className="tabular-nums">{fmt(receipt.sold)}</span>
                 </div>
-                <div className="row flex justify-between text-xs py-0.5">
-                  <b>Previously Received</b>
-                  <span className="tabular-nums">{fmt(receipt.previouslyReceived)}</span>
-                </div>
-                {receipt.paid > 0 && (
-                  <div className="row flex justify-between text-xs py-0.5">
-                    <b>Paid Now ({receipt.method})</b>
-                    <span className="tabular-nums text-emerald-600">+{fmt(receipt.paid)}</span>
-                  </div>
-                )}
                 {receipt.discount > 0 && (
                   <div className="row flex justify-between text-xs py-0.5">
                     <b>Discount</b>
@@ -301,9 +291,21 @@ export function ReceiptDialog({
                   </div>
                 )}
                 <div className="total flex justify-between text-sm font-bold border-t-2 border-foreground mt-2 pt-1.5">
-                  <span>Total Adjusted</span>
-                  <span className="tabular-nums">{fmt(total)}</span>
+                  <span>Net Payable Amount</span>
+                  <span className="tabular-nums">{fmt(netPayable)}</span>
                 </div>
+                {receipt.previouslyReceived > 0 && (
+                  <div className="row flex justify-between text-xs py-0.5 mt-1">
+                    <b>Previously Received</b>
+                    <span className="tabular-nums">{fmt(receipt.previouslyReceived)}</span>
+                  </div>
+                )}
+                {receipt.paid > 0 && (
+                  <div className="row flex justify-between text-xs py-0.5">
+                    <b>Paid Now ({receipt.method})</b>
+                    <span className="tabular-nums text-emerald-600">+{fmt(receipt.paid)}</span>
+                  </div>
+                )}
                 <div className="row flex justify-between text-xs py-0.5 mt-1">
                   <b>Remaining Due</b>
                   <span
