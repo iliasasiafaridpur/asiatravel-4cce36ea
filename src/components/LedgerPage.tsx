@@ -59,6 +59,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
