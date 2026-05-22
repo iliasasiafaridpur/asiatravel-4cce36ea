@@ -227,6 +227,7 @@ export function LedgerPage({ module: mod }: Props) {
   const isAgency = mod.key === "agency-ledger";
   const billCol = isAgency ? "total_bill" : "total_payable";
   const paidCol = isAgency ? "received_amount" : "paid_amount";
+  const discountOf = (r: Row) => isAgency ? Number(r.discount_amount ?? 0) : 0;
   const billLabel = isAgency ? "Total Bill" : "Total Payable";
   const paidLabel = isAgency ? "Total Received" : "Total Paid";
   const payTitle = isAgency ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি";
@@ -426,7 +427,7 @@ export function LedgerPage({ module: mod }: Props) {
     };
   }, [mod.table, load]);
 
-  const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+  const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r);
 
   // ADVANCE rows are a standalone wallet — never net them against bill rows.
   const isAdvanceRow = (r: Row) =>
@@ -438,10 +439,11 @@ export function LedgerPage({ module: mod }: Props) {
       if (isAdvanceRow(r)) continue;
       const applied = Number(r.advance_applied ?? 0);
       const cashPaid = Number(r[paidCol] ?? 0);
+      const discount = discountOf(r);
       adjusted.set(r.id, {
         applied,
         displayPaid: cashPaid + applied,
-        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - applied, 0),
+        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - discount - applied, 0),
       });
     }
     return adjusted;
@@ -453,7 +455,7 @@ export function LedgerPage({ module: mod }: Props) {
     for (const r of rows) {
       if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
-      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - Number(r.advance_applied ?? 0), 0));
+      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r) - Number(r.advance_applied ?? 0), 0));
     }
     const m = new Map<string, number>();
     due.forEach((v, k) => m.set(k, Math.max(v, 0)));
