@@ -789,11 +789,11 @@ export function ModulePage({ module: mod }: Props) {
                 {hasDateFilter && (
                   <>
                     <div className="space-y-1 w-32">
-                      <Label className="text-xs font-medium">Start Date</Label>
+                      <Label className="text-sm font-medium">Start Date</Label>
                       <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 px-2 text-sm" />
                     </div>
                     <div className="space-y-1 w-32">
-                      <Label className="text-xs font-medium">End Date</Label>
+                      <Label className="text-sm font-medium">End Date</Label>
                       <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 px-2 text-sm" />
                     </div>
                   </>
@@ -805,7 +805,7 @@ export function ModulePage({ module: mod }: Props) {
                   ])).sort();
                   return (
                     <div key={f.name} className="space-y-1 w-32">
-                      <Label className="text-xs font-medium">{f.label}</Label>
+                      <Label className="text-sm font-medium">{f.label}</Label>
                       <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
                         <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
                         <SelectContent>
@@ -818,7 +818,7 @@ export function ModulePage({ module: mod }: Props) {
                 })}
                 {mod.statuses && (
                   <div className="space-y-1 w-32">
-                    <Label className="text-xs font-medium">Status</Label>
+                    <Label className="text-sm font-medium">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="h-9 px-2 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1093,14 +1093,8 @@ export function FormSections({ mod, form, setForm }: {
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
-  const [showAll, setShowAll] = useState(false);
   const visibleFields = mod.fields.filter((f) => !f.hideInForm);
-  const isEssential = (f: Field) =>
-    !!f.required ||
-    !!f.showInList ||
-    ["passenger_name", "passport", "mobile", "entry_date", "status", "sub_agency", "agent_name", "vendor_bought", "sold_price", "cost_price", "received", "received_amount", "paid_amount"].includes(f.name);
-  const optionalCount = visibleFields.filter((f) => !isEssential(f)).length;
-  const shownFields = showAll ? visibleFields : visibleFields.filter(isEssential);
+  const shownFields = visibleFields;
   const sections: Section[] = ["passenger", "agency", "vendor"];
   const grouped = sections
     .map((s) => ({ section: s, fields: shownFields.filter((f) => (f.section ?? "passenger") === s) }))
@@ -1157,16 +1151,6 @@ export function FormSections({ mod, form, setForm }: {
           </div>
         </div>
       ))}
-      {optionalCount > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-        >
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
-          {showAll ? "কম দেখাও" : `আরও ${optionalCount}টি ফিল্ড দেখাও`}
-        </button>
-      )}
     </div>
   );
 }
@@ -1176,12 +1160,16 @@ function FormField({ field, value, onChange }: {
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const span = field.type === "textarea" ? "col-span-2 sm:col-span-3 lg:col-span-4" : "";
+  const span = field.type === "textarea"
+    ? "col-span-2 sm:col-span-3 lg:col-span-4"
+    : field.lookup
+      ? "col-span-2"
+      : "";
   const strVal = (value as string) ?? "";
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className={`space-y-1 ${span}`}>
-      <Label className="text-xs font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+    <div className={`space-y-1 min-w-0 ${span}`}>
+      <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
