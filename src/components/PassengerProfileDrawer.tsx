@@ -73,6 +73,8 @@ export function PassengerProfileDrawer({
         .select("id, entry_date, amount, method, receipt_id, remarks, received_by_name")
         .eq("service_table", serviceTable)
         .eq("service_row_id", row.id)
+        .not("source", "eq", "discount")
+        .not("method", "ilike", "discount")
         .order("entry_date", { ascending: false });
       if (!cancelled) {
         setReceipts((data ?? []) as Receipt[]);
@@ -89,14 +91,11 @@ export function PassengerProfileDrawer({
   const sold = Number(row.sold_price ?? 0);
   const cost = Number(row.cost_price ?? 0);
   const receivedField = Number(row.received ?? row.received_amount ?? 0);
-  // Money actually received (exclude discount receipts) + discount totals
-  const totalDiscount = receipts
-    .filter((r) => (r.method ?? "").toLowerCase() === "discount")
-    .reduce((acc, r) => acc + Number(r.amount ?? 0), 0);
-  const moneyReceipts = receipts.filter((r) => (r.method ?? "").toLowerCase() !== "discount");
-  const totalReceived = Math.max(0, receivedField - totalDiscount);
-  const due = Math.max(0, sold - receivedField);
-  const profit = sold - cost - totalDiscount;
+  const totalDiscount = Number(row.discount_amount ?? 0);
+  const moneyReceipts = receipts;
+  const totalReceived = Math.max(0, receivedField);
+  const due = Math.max(0, sold - totalReceived - totalDiscount);
+  const profit = sold - totalDiscount - cost;
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
 
@@ -105,7 +104,7 @@ export function PassengerProfileDrawer({
   const airline = String(row.airline ?? "");
   const flightDate = row.flight_date ? String(row.flight_date) : "";
   const openReceipt = (r: Receipt) => {
-    const isDiscount = (r.method ?? "").toLowerCase() === "discount";
+    const paid = Number(r.amount ?? 0);
     setSelectedReceipt({
       receiptId: r.receipt_id || "Receipt",
       date: r.entry_date || "",
@@ -116,9 +115,9 @@ export function PassengerProfileDrawer({
       ),
       serviceType: serviceTable,
       sold,
-      previouslyReceived: Math.max(0, receivedField - Number(r.amount ?? 0)),
-      paid: isDiscount ? 0 : Number(r.amount ?? 0),
-      discount: isDiscount ? Number(r.amount ?? 0) : 0,
+      previouslyReceived: Math.max(0, totalReceived - paid),
+      paid,
+      discount: totalDiscount,
       method: r.method || "Cash",
       remarks: r.remarks || undefined,
       receivedByName: r.received_by_name || "—",
