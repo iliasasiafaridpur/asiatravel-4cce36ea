@@ -271,9 +271,10 @@ export function ModulePage({ module: mod }: Props) {
     for (const f of mod.fields) {
       if (!f.required || f.hideInForm) continue;
       const v = form[f.name];
-      const empty = f.type === "number"
-        ? v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) || Number(v) <= 0
-        : v === undefined || v === null || (typeof v === "string" && !v.trim());
+      const empty =
+        f.type === "number"
+          ? v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) || Number(v) <= 0
+          : v === undefined || v === null || (typeof v === "string" && !v.trim());
       if (empty) {
         toast.error(`${f.label} আবশ্যক`);
         return;
