@@ -400,10 +400,17 @@ export function DueReceiveDialog({
 
       const wasOffline = updRes.offline || insRes.offline || ledgerOffline;
       if (!wasOffline) {
+        const meta = {
+          vendor: selected.agencySold,
+          service: `${selected.service.type} Receipt`,
+          passenger: selected.passenger,
+          refId: selected.refId,
+          amount: amt,
+        };
         if (excess > 0) {
-          toast.success(`✓ Due Cleared (৳${appliedToDue.toLocaleString()}) + Advance ৳${excess.toLocaleString()} → ${selected.agencySold}`);
+          notify.success(`✓ Due Cleared (৳${appliedToDue.toLocaleString()}) + Advance ৳${excess.toLocaleString()} → ${selected.agencySold}`, { meta });
         } else {
-          toast.success(`✓ Due Received: ${amt.toLocaleString()}`);
+          notify.success(`✓ Due Received: ${amt.toLocaleString()}`, { meta });
         }
       }
 
