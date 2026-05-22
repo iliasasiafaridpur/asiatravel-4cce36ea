@@ -59,6 +59,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
@@ -773,7 +774,9 @@ export function LedgerPage({ module: mod }: Props) {
           created_by: user?.id ?? null,
         };
         const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        if (!offline) toast.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`);
+        if (!offline) notify.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`, {
+          meta: { vendor: String(payTarget), service: "MD Sir Deposit (Vendor Advance)", refId: ledgerId, amount: amt },
+        });
         setPayOpen(false);
         void load();
         return;
@@ -803,7 +806,9 @@ export function LedgerPage({ module: mod }: Props) {
         const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
         if (!offline) {
           await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
-          toast.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`);
+          notify.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`, {
+            meta: { vendor: String(payTarget), service: isAgency ? "Agent Advance Received" : "Vendor Advance Paid", refId: ledgerId, amount: amt },
+          });
         }
         setPayOpen(false);
         void load();
@@ -819,7 +824,15 @@ export function LedgerPage({ module: mod }: Props) {
         await applyAllocationToRow(payRow, amt);
         await writeCashMirror(amt, String(payRow[mod.idColumn] ?? ""),
           `${String(payRow[mod.idColumn] ?? "")}=${amt}`);
-        toast.success(`✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`);
+        notify.success(`✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`, {
+          meta: {
+            vendor: String(payTarget),
+            service: String(payRow.service_type ?? (isAgency ? "Agent Receipt" : "Vendor Payment")),
+            passenger: String(payRow.passenger_name ?? ""),
+            refId: String(payRow[mod.idColumn] ?? ""),
+            amount: amt,
+          },
+        });
         setPayOpen(false);
         setPayRow(null);
         void load();
@@ -852,7 +865,14 @@ export function LedgerPage({ module: mod }: Props) {
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
         await writeCashMirror(total, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
-        toast.success(`✓ ${entries.length}টি বিলে পেমেন্ট সংরক্ষিত: ${total.toLocaleString()}`);
+        notify.success(`✓ ${entries.length}টি বিলে পেমেন্ট সংরক্ষিত: ${total.toLocaleString()}`, {
+          meta: {
+            vendor: String(payTarget),
+            service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (${entries.length} bills)`,
+            refId: parts.map((p) => p.split("=")[0]).join(", "),
+            amount: total,
+          },
+        });
         setPayOpen(false);
         void load();
         return;
@@ -882,7 +902,14 @@ export function LedgerPage({ module: mod }: Props) {
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
-      toast.success(`✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${parts.length}টি বিল)`);
+      notify.success(`✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${parts.length}টি বিল)`, {
+        meta: {
+          vendor: String(payTarget),
+          service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${parts.length} bills)`,
+          refId: parts.map((p) => p.split("=")[0]).join(", "),
+          amount: amt,
+        },
+      });
       setPayOpen(false);
       void load();
     } catch (e) {

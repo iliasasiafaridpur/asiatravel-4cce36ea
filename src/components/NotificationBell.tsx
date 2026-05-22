@@ -177,14 +177,16 @@ export function NotificationBell() {
                     {n.message && (
                       <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">{n.message}</p>
                     )}
-                    {n.meta && (n.meta.passenger || n.meta.country || n.meta.vendor || n.meta.receiptId) && (
+                    {n.meta && (n.meta.passenger || n.meta.country || n.meta.vendor || n.meta.service || n.meta.refId || n.meta.receiptId) && (
                       <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">
                         {[
+                          n.meta.vendor ? `→ ${n.meta.vendor}` : null,
+                          n.meta.service,
                           n.meta.passenger,
+                          n.meta.refId,
                           n.meta.country,
-                          n.meta.vendor,
                           n.meta.receiptId && n.meta.receiptId !== "—" ? `রিসিট: ${n.meta.receiptId}` : null,
-                        ].filter(Boolean).join(", ")}
+                        ].filter(Boolean).join(" · ")}
                       </p>
                     )}
                   </div>
