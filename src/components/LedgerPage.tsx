@@ -1608,7 +1608,7 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => startEdit(r)}
+                            onClick={(e) => { e.stopPropagation(); startEdit(r); }}
                             title="Edit"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -1617,7 +1617,7 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setDeleteRow(r)}
+                            onClick={(e) => { e.stopPropagation(); setDeleteRow(r); }}
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5 text-rose-500" />
