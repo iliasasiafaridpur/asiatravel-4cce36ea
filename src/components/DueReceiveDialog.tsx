@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Search, Wallet, History, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate } from "@/lib/modules";
