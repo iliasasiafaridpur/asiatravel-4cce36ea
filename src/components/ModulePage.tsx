@@ -1214,7 +1214,7 @@ function FormField({ field, value, onChange }: {
               : strVal
           }
           placeholder={field.type === "number" ? "0" : undefined}
-          className={`h-8 ${isEntryBy ? "bg-muted text-muted-foreground" : ""}`}
+          className={`h-7 text-xs py-1 ${isEntryBy ? "bg-muted text-muted-foreground" : ""}`}
           onChange={(e) => {
             if (field.type === "number") {
               const raw = e.target.value.trim();
