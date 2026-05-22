@@ -178,26 +178,16 @@ export function NotificationBell() {
                       <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">{n.message}</p>
                     )}
                     {n.meta && (n.meta.passenger || n.meta.service || n.meta.country || n.meta.refId || n.meta.vendor || n.meta.receiptId) && (
-                      <div className="mt-1 space-y-0.5">
-                        {n.meta.refId && (
-                          <MetaRow icon={<span className="font-mono text-[10px]">#</span>} text={`ID: ${n.meta.refId}`} />
-                        )}
-                        {n.meta.passenger && (
-                          <MetaRow icon={<User className="h-3 w-3" />} text={`যাত্রী: ${n.meta.passenger}`} />
-                        )}
-                        {n.meta.service && (
-                          <MetaRow icon={<Briefcase className="h-3 w-3" />} text={`সার্ভিস: ${n.meta.service}`} />
-                        )}
-                        {n.meta.country && (
-                          <MetaRow icon={<MapPin className="h-3 w-3" />} text={`দেশ/রুট: ${n.meta.country}`} />
-                        )}
-                        {n.meta.vendor && (
-                          <MetaRow icon={<Briefcase className="h-3 w-3" />} text={`ভেন্ডর: ${n.meta.vendor}`} />
-                        )}
-                        {(n.meta.receiptId || n.meta.amount !== undefined) && (
-                          <MetaRow icon={<span className="font-mono text-[10px]">৳</span>} text={`রিসিট: ${n.meta.receiptId ?? "—"}`} />
-                        )}
-                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">
+                        {[
+                          n.meta.refId,
+                          n.meta.passenger,
+                          n.meta.service,
+                          n.meta.country,
+                          n.meta.vendor,
+                          n.meta.receiptId && n.meta.receiptId !== "—" ? `রিসিট: ${n.meta.receiptId}` : null,
+                        ].filter(Boolean).join(", ")}
+                      </p>
                     )}
                   </div>
                 </li>
