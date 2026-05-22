@@ -418,6 +418,43 @@ export function StatusChangeDrawer({
             </div>
           )}
 
+          {(needsCostPrice || needsVendorForPD) && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                <Banknote className="h-3.5 w-3.5" />
+                Vendor Cost Entry আবশ্যক
+              </div>
+              <div className="text-[10px] text-muted-foreground -mt-1">
+                Pending Delivery করতে হলে আগে Vendor ও Cost Price দিন।
+              </div>
+              {needsVendorForPD && (
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Vendor <span className="text-rose-500">*</span></Label>
+                  <LookupSelect kind="vendor" value={vendor} onChange={setVendor} />
+                </div>
+              )}
+              {needsCostPrice && (
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Cost Price (৳) <span className="text-rose-500">*</span></Label>
+                  <Input
+                    className="h-8 text-sm"
+                    type="number"
+                    inputMode="decimal"
+                    value={costPriceInput}
+                    onChange={(e) => setCostPriceInput(e.target.value)}
+                    placeholder="0"
+                    autoFocus
+                  />
+                  {sold > 0 && effectiveCostPrice > 0 && (
+                    <div className="text-[10px] text-muted-foreground tabular-nums">
+                      Profit: <span className={`font-semibold ${sold - effectiveCostPrice >= 0 ? "text-emerald-600" : "text-rose-500"}`}>৳{(sold - effectiveCostPrice).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {isDeliveredWithDue && (() => {
             const payN = Number(amount) || 0;
             const discN = Number(discount) || 0;
