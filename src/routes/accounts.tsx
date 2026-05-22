@@ -755,8 +755,9 @@ ${node.innerHTML.replace(
                   if (isIn && r.method) primaryBits.push(`💳 ${r.method}`);
                   if (isIn && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
+                  const discountTotal = isIn && svc && typeof svc.discount === "number" ? svc.discount : 0;
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
-                    ? svc.sold - svc.received_total : null;
+                    ? svc.sold - svc.received_total - discountTotal : null;
 
                   const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
@@ -803,6 +804,9 @@ ${node.innerHTML.replace(
                             <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
                             {totalPaid !== null && (
                               <p className="text-muted-foreground">মোট জমা: <span className="font-semibold text-emerald-600 tabular-nums">{fmt(totalPaid)}</span></p>
+                            )}
+                            {discountTotal > 0 && (
+                              <p className="text-muted-foreground">Discount: <span className="font-semibold text-amber-600 tabular-nums">{fmt(discountTotal)}</span></p>
                             )}
                             {dueLeft !== null && (
                               <p className="text-muted-foreground">বাকি: <span className={`font-semibold tabular-nums ${dueLeft > 0.005 ? "text-rose-600" : "text-emerald-600"}`}>{fmt(dueLeft)}</span></p>
