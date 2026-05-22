@@ -227,6 +227,7 @@ export function LedgerPage({ module: mod }: Props) {
   const isAgency = mod.key === "agency-ledger";
   const billCol = isAgency ? "total_bill" : "total_payable";
   const paidCol = isAgency ? "received_amount" : "paid_amount";
+  const discountOf = (r: Row) => isAgency ? Number(r.discount_amount ?? 0) : 0;
   const billLabel = isAgency ? "Total Bill" : "Total Payable";
   const paidLabel = isAgency ? "Total Received" : "Total Paid";
   const payTitle = isAgency ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি";
@@ -426,7 +427,7 @@ export function LedgerPage({ module: mod }: Props) {
     };
   }, [mod.table, load]);
 
-  const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0);
+  const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r);
 
   // ADVANCE rows are a standalone wallet — never net them against bill rows.
   const isAdvanceRow = (r: Row) =>
@@ -438,10 +439,11 @@ export function LedgerPage({ module: mod }: Props) {
       if (isAdvanceRow(r)) continue;
       const applied = Number(r.advance_applied ?? 0);
       const cashPaid = Number(r[paidCol] ?? 0);
+      const discount = discountOf(r);
       adjusted.set(r.id, {
         applied,
         displayPaid: cashPaid + applied,
-        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - applied, 0),
+        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - discount - applied, 0),
       });
     }
     return adjusted;
@@ -453,7 +455,7 @@ export function LedgerPage({ module: mod }: Props) {
     for (const r of rows) {
       if (isAdvanceRow(r)) continue;
       const k = String(r[groupField] ?? "");
-      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - Number(r.advance_applied ?? 0), 0));
+      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r) - Number(r.advance_applied ?? 0), 0));
     }
     const m = new Map<string, number>();
     due.forEach((v, k) => m.set(k, Math.max(v, 0)));
@@ -501,6 +503,7 @@ export function LedgerPage({ module: mod }: Props) {
     let bill = 0,
       paid = 0,
       cashPaid = 0,
+      discount = 0,
       applied = 0,
       advance = 0;
     for (const r of filtered) {
@@ -509,6 +512,7 @@ export function LedgerPage({ module: mod }: Props) {
       } else {
         bill += Number(r[billCol] ?? 0);
         cashPaid += Number(r[paidCol] ?? 0);
+        discount += discountOf(r);
         applied += Number(r.advance_applied ?? 0);
       }
     }
@@ -516,8 +520,9 @@ export function LedgerPage({ module: mod }: Props) {
     return {
       bill,
       paid,
+      discount,
       advance: Math.max(advance - applied, 0),
-      due: Math.max(bill - paid, 0),
+      due: Math.max(bill - cashPaid - discount - applied, 0),
     };
   }, [filtered, billCol, paidCol]);
 
@@ -536,15 +541,16 @@ export function LedgerPage({ module: mod }: Props) {
   );
 
   const groupSummary = useMemo(() => {
-    const map = new Map<string, { bill: number; cashPaid: number; applied: number; advance: number }>();
+    const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number }>();
     for (const r of filtered) {
       const k = String(r[groupField] ?? "—") || "—";
-      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, applied: 0, advance: 0 };
+      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, discount: 0, applied: 0, advance: 0 };
       if (isAdvanceRow(r)) {
         cur.advance += Number(r[paidCol] ?? 0);
       } else if (countsForVendorDue(r)) {
         cur.bill += Number(r[billCol] ?? 0);
         cur.cashPaid += Number(r[paidCol] ?? 0);
+        cur.discount += discountOf(r);
         cur.applied += Number(r.advance_applied ?? 0);
       }
       map.set(k, cur);
@@ -555,7 +561,7 @@ export function LedgerPage({ module: mod }: Props) {
           key,
           bill: v.bill,
           paid: v.cashPaid + v.applied,
-          due: Math.max(v.bill - v.cashPaid - v.applied, 0),
+          due: Math.max(v.bill - v.cashPaid - v.discount - v.applied, 0),
           advance: Math.max(v.advance - v.applied, 0),
         };
       })
@@ -609,7 +615,7 @@ export function LedgerPage({ module: mod }: Props) {
           String(r[groupField] ?? "") === key &&
           String(r.service_type ?? "").toUpperCase() !== "PAYMENT" &&
           !isAdvanceRow(r) &&
-          (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0)) > 0.0001,
+          (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0)) > 0.0001,
       );
       list.sort((a, b) => {
         const ad = String(a.entry_date ?? "");
@@ -719,7 +725,7 @@ export function LedgerPage({ module: mod }: Props) {
     const list = openBookingsFor(payTarget);
     const out: Array<{ row: Row; alloc: number; due: number }> = [];
     for (const r of list) {
-      const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+      const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
       if (remaining <= 0.0001) {
         out.push({ row: r, alloc: 0, due });
         continue;
@@ -850,7 +856,7 @@ export function LedgerPage({ module: mod }: Props) {
         for (const e of entries) {
           const r = rowById.get(e.id);
           if (!r) return toast.error("বিল খুঁজে পাওয়া যায়নি");
-          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
+          const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
           if (e.amt > due + 0.001)
             return toast.error(
               `${String(r[mod.idColumn] ?? "")} — Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${due})`,

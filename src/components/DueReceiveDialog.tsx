@@ -45,6 +45,7 @@ interface DueRow {
   mobile: string;
   sold: number;
   received: number;
+  discount: number;
   due: number;
   entryDate: string;
   extra: string;       // country / road / etc.
@@ -103,7 +104,7 @@ export function DueReceiveDialog({
 
   // Helper — fetch a single row by id from a given service
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
-    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
     const { data, error } = await supabase
       .from(s.table as never)
       .select(cols)
@@ -113,6 +114,7 @@ export function DueReceiveDialog({
     const r = data as unknown as Record<string, unknown>;
     const sold = Number(r.sold_price ?? 0);
     const recv = Number(r[s.recvCol] ?? 0);
+    const disc = Number(r.discount_amount ?? 0);
     const statusStr = String(r.status ?? "");
     const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
     const deliveryDate = s.hasDelivery
@@ -125,7 +127,7 @@ export function DueReceiveDialog({
       passenger: String(r.passenger_name ?? ""),
       passport: String(r.passport ?? ""),
       mobile: String(r.mobile ?? ""),
-      sold, received: recv, due: sold - recv,
+      sold, received: recv, discount: disc, due: sold - recv - disc,
       entryDate: String(r.entry_date ?? ""),
       extra: String(r[s.extraCol] ?? ""),
       agencySold: String(r.agency_sold ?? ""),
@@ -162,7 +164,7 @@ export function DueReceiveDialog({
       try {
         const all: DueRow[] = [];
         for (const s of SERVICES) {
-          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
           const { data, error } = await supabase
             .from(s.table as never)
             .select(cols)
@@ -172,7 +174,8 @@ export function DueReceiveDialog({
           for (const r of (data as unknown as Record<string, unknown>[]) ?? []) {
             const sold = Number(r.sold_price ?? 0);
             const recv = Number(r[s.recvCol] ?? 0);
-            const due = sold - recv;
+            const disc = Number(r.discount_amount ?? 0);
+            const due = sold - recv - disc;
             if (due <= 0) continue;
             const statusStr = String(r.status ?? "");
             const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
@@ -186,7 +189,7 @@ export function DueReceiveDialog({
               passenger: String(r.passenger_name ?? ""),
               passport: String(r.passport ?? ""),
               mobile: String(r.mobile ?? ""),
-              sold, received: recv, due,
+              sold, received: recv, discount: disc, due,
               entryDate: String(r.entry_date ?? ""),
               extra: String(r[s.extraCol] ?? ""),
               agencySold: String(r.agency_sold ?? ""),
@@ -224,6 +227,8 @@ export function DueReceiveDialog({
         .from("payment_receipts")
         .select("id, receipt_id, amount, method, entry_date, remarks, received_by_name")
         .eq("service_row_id", selected.id)
+        .not("source", "eq", "discount")
+        .not("method", "ilike", "discount")
         .order("entry_date", { ascending: false });
       if (!cancelled) setHistory((data as ReceiptRow[]) ?? []);
       setHistoryLoading(false);
@@ -282,11 +287,11 @@ export function DueReceiveDialog({
   const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
     const amt = Number(amount) || 0;
-    const disc = Math.max(0, Number(discount) || 0);
+    const disc = Math.max(0, Math.min(selected.due, Number(discount) || 0));
     if (amt <= 0 && disc <= 0) return toast.error("সঠিক টাকার পরিমাণ অথবা ডিসকাউন্ট দিন");
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
 
-    const effectiveDue = Math.max(0, selected.due - disc);
+      const effectiveDue = Math.max(0, selected.due - disc);
     const excess = Math.max(0, amt - effectiveDue);
     const appliedToDue = amt - excess;
 
@@ -307,12 +312,12 @@ export function DueReceiveDialog({
       const me = displayName(profile, user);
       const today = todayIso();
 
-      // 1) update service row — apply payment to received, apply discount by reducing sold_price
+      // 1) update service row — cash goes to received; discount is stored separately.
       const newRecv = selected.received + appliedToDue;
-      const newSold = selected.sold - disc;
+      const newDiscount = selected.discount + disc;
       const upd: Record<string, unknown> = {};
       upd[selected.service.recvCol] = newRecv;
-      if (disc > 0) upd.sold_price = newSold;
+      if (disc > 0) upd.discount_amount = newDiscount;
       upd.received_by = user.id;
       if (withDelivery) {
         if (selected.service.hasDelivery) upd.delivery_date = today;
@@ -345,21 +350,23 @@ export function DueReceiveDialog({
       if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
       const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
-      const insRes = await resilientInsert("payment_receipts", {
-        receipt_id: receiptId,
-        entry_date: today,
-        service_type: selected.service.type,
-        service_table: selected.service.table,
-        service_row_id: selected.id,
-        ref_id: selected.refId,
-        passenger_name: selected.passenger,
-        amount: amt,
-        method,
-        source: "due",
-        remarks: receiptRemarks,
-        received_by: user.id,
-        received_by_name: me,
-      });
+      const insRes = amt > 0
+        ? await resilientInsert("payment_receipts", {
+            receipt_id: receiptId,
+            entry_date: today,
+            service_type: selected.service.type,
+            service_table: selected.service.table,
+            service_row_id: selected.id,
+            ref_id: selected.refId,
+            passenger_name: selected.passenger,
+            amount: amt,
+            method,
+            source: "due",
+            remarks: receiptRemarks,
+            received_by: user.id,
+            received_by_name: me,
+          })
+        : { offline: false };
 
       // 3) if excess → route to agency_ledger as Advance Received
       let ledgerOffline = false;
@@ -415,17 +422,16 @@ export function DueReceiveDialog({
       }
 
       // update local state
-      const newSoldLocal = selected.sold - disc;
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
-          ? { ...r, sold: newSoldLocal, received: newRecv, due: newSoldLocal - newRecv }
+          ? { ...r, received: newRecv, discount: newDiscount, due: r.sold - newRecv - newDiscount }
           : r)).filter((r) => r.due > 0)
       );
       const updated: DueRow = {
         ...selected,
-        sold: newSoldLocal,
+        discount: newDiscount,
         received: newRecv,
-        due: newSoldLocal - newRecv,
+        due: selected.sold - newRecv - newDiscount,
         deliveryDate: withDelivery ? today : (upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate),
       };
       if (updated.due <= 0) {
@@ -517,7 +523,8 @@ export function DueReceiveDialog({
                 </div>
                 <div><p className="text-xs text-muted-foreground">Sold</p><p className="tabular-nums">{selected.sold.toLocaleString()}</p></div>
                 <div><p className="text-xs text-muted-foreground">Received</p><p className="tabular-nums text-emerald-600">{selected.received.toLocaleString()}</p></div>
-                <div className="col-span-2 sm:col-span-3 pt-1 border-t sm:border-t-0 sm:border-l sm:pl-3">
+                <div><p className="text-xs text-muted-foreground">Discount</p><p className="tabular-nums text-amber-600">{selected.discount.toLocaleString()}</p></div>
+                <div className="col-span-2 sm:col-span-2 pt-1 border-t sm:border-t-0 sm:border-l sm:pl-3">
                   <p className="text-xs text-muted-foreground">Outstanding Due</p>
                   <p className="text-2xl font-bold text-rose-500 tabular-nums">{selected.due.toLocaleString()}</p>
                 </div>

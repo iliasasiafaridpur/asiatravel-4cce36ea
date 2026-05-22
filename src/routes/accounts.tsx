@@ -149,7 +149,7 @@ function AccountsPage() {
    type SvcDetail = {
      country?: string | null; route?: string | null; airline?: string | null;
      flight_date?: string | null; vendor?: string | null; cost?: number;
-     sold?: number; received_total?: number; agent?: string | null;
+      sold?: number; received_total?: number; discount?: number; agent?: string | null;
    };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
 
@@ -161,20 +161,20 @@ function AccountsPage() {
     }
     const tableConfigs: Record<string, { cols: string; map: (row: Record<string, unknown>) => SvcDetail }> = {
       tickets: {
-        cols: "id,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received",
-        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount",
+        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
       bmet_cards: {
-        cols: "id,country_name,vendor_bought,agency_sold,sold_price,cost_price,received_amount",
-        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,country_name,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount",
+        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
       saudi_visas: {
-        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received_amount",
-        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0) }),
+        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount",
+        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
       kuwait_visas: {
-        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received",
-        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0) }),
+        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount",
+        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
     };
     let cancelled = false;
@@ -755,8 +755,9 @@ ${node.innerHTML.replace(
                   if (isIn && r.method) primaryBits.push(`💳 ${r.method}`);
                   if (isIn && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
+                  const discountTotal = isIn && svc && typeof svc.discount === "number" ? svc.discount : 0;
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
-                    ? svc.sold - svc.received_total : null;
+                    ? svc.sold - svc.received_total - discountTotal : null;
 
                   const totalBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
@@ -803,6 +804,9 @@ ${node.innerHTML.replace(
                             <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
                             {totalPaid !== null && (
                               <p className="text-muted-foreground">মোট জমা: <span className="font-semibold text-emerald-600 tabular-nums">{fmt(totalPaid)}</span></p>
+                            )}
+                            {discountTotal > 0 && (
+                              <p className="text-muted-foreground">Discount: <span className="font-semibold text-amber-600 tabular-nums">{fmt(discountTotal)}</span></p>
                             )}
                             {dueLeft !== null && (
                               <p className="text-muted-foreground">বাকি: <span className={`font-semibold tabular-nums ${dueLeft > 0.005 ? "text-rose-600" : "text-emerald-600"}`}>{fmt(dueLeft)}</span></p>
@@ -880,15 +884,10 @@ ${node.innerHTML.replace(
                       region = svc.country;
                     }
                   }
-                  // Discount on current row from remarks — applied as straight deduction to Total Bill (NOT shown as separate column line)
-                  let discAmt = 0;
-                  if (isIn && r.remarks) {
-                    const m = /Discount\s*৳?\s*([\d,]+)/i.exec(r.remarks);
-                    if (m) discAmt = Number(m[1].replace(/,/g, "")) || 0;
-                  }
+                  const discAmt = isIn && svc ? Number(svc.discount ?? 0) : 0;
                   const grossBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
-                  const totalBill = grossBill !== null ? Math.max(0, grossBill - discAmt) : null;
-                  // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt (cash only — discount আর receipt নয়)
+                  const totalBill = grossBill !== null ? grossBill : null;
+                  // পূর্ববর্তী জমা/Discount: NOTE column only — calculation happens below explicitly.
                   const advLines: { text: string }[] = [];
                   let sumPrev = 0;
                   let lastAdvDate = "";
@@ -906,8 +905,9 @@ ${node.innerHTML.replace(
                     }
                     if (sumPrev > 0.005) advLines.push({ text: `${fmt(sumPrev)} (${formatDate(lastAdvDate)})` });
                   }
-                  // বাকি = নেট বিল − (এই আয় + পূর্বে জমা)
-                  const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev) : null;
+                  if (discAmt > 0.005) advLines.push({ text: `${fmt(discAmt)} Discount` });
+                  // বাকি = মোট বিল − নগদ জমা − Discount
+                  const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>

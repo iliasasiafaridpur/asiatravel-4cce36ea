@@ -55,11 +55,11 @@ const STATUS_TICKET = ["ISSUE", "DELIVERED"];
 const STATUS_VISA = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 
-const DUE = (sold: string, recv: string) => (r: Record<string, unknown>) =>
-  Number(r[sold] ?? 0) - Number(r[recv] ?? 0);
+const DUE = (sold: string, recv: string, discount?: string) => (r: Record<string, unknown>) =>
+  Number(r[sold] ?? 0) - Number(r[recv] ?? 0) - Number(discount ? r[discount] ?? 0 : 0);
 
-const PROFIT = (sold: string, cost: string) => (r: Record<string, unknown>) =>
-  Number(r[sold] ?? 0) - Number(r[cost] ?? 0);
+const PROFIT = (sold: string, cost: string, discount?: string) => (r: Record<string, unknown>) =>
+  Number(r[sold] ?? 0) - Number(discount ? r[discount] ?? 0 : 0) - Number(r[cost] ?? 0);
 
 export const MODULES: ModuleSchema[] = [
   {
@@ -160,6 +160,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -201,14 +208,15 @@ export const MODULES: ModuleSchema[] = [
       "sold_price",
       "cost_price",
       "received",
+      "discount_amount",
       "due",
       "profit",
       "notes",
       "entry_by",
     ],
     computed: [
-      { name: "due", label: "Due", compute: DUE("sold_price", "received") },
-      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
+      { name: "due", label: "Due", compute: DUE("sold_price", "received", "discount_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price", "discount_amount") },
     ],
   },
   {
@@ -308,6 +316,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -363,14 +378,15 @@ export const MODULES: ModuleSchema[] = [
       "sold_price",
       "cost_price",
       "received_amount",
+      "discount_amount",
       "due",
       "profit",
       "notes",
       "entry_by",
     ],
     computed: [
-      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount") },
-      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price") },
+      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount", "discount_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price", "discount_amount") },
     ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
@@ -490,6 +506,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -511,7 +534,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount") }],
+    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount", "discount_amount") }],
   },
   {
     key: "kuwait-visa",
@@ -587,6 +610,13 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "discount_amount",
+        label: "Discount",
+        type: "number",
+        showInList: true,
+        section: "agency",
+      },
+      {
         name: "payment_date",
         label: "Payment Date",
         type: "date",
@@ -599,7 +629,7 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received") }],
+    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received", "discount_amount") }],
   },
   {
     key: "agency-ledger",
@@ -646,6 +676,7 @@ export const MODULES: ModuleSchema[] = [
       },
       { name: "total_bill", label: "Total Bill", type: "number", showInList: true },
       { name: "received_amount", label: "Received", type: "number", showInList: true },
+      { name: "discount_amount", label: "Discount", type: "number", showInList: true },
       { name: "payment_date", label: "Payment Date", type: "date" },
       {
         name: "payment_method",
@@ -658,11 +689,12 @@ export const MODULES: ModuleSchema[] = [
       { name: "remarks", label: "Remarks", type: "textarea" },
     ],
     computed: [
-      { name: "balance", label: "Balance Due", compute: DUE("total_bill", "received_amount") },
+      { name: "balance", label: "Balance Due", compute: DUE("total_bill", "received_amount", "discount_amount") },
     ],
     summaryFields: [
       { name: "total_bill", label: "মোট বিল" },
       { name: "received_amount", label: "মোট Received" },
+      { name: "discount_amount", label: "মোট Discount" },
       { name: "balance", label: "মোট Due" },
     ],
     groupBy: {
@@ -671,6 +703,7 @@ export const MODULES: ModuleSchema[] = [
       metrics: [
         { name: "total_bill", label: "Total Bill" },
         { name: "received_amount", label: "Received" },
+        { name: "discount_amount", label: "Discount" },
         { name: "balance", label: "Due" },
       ],
     },
