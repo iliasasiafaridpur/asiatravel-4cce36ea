@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, statusBadgeClass, type ModuleSchema, type Field } from "@/lib/modules";
+import { formatDate, statusBadgeClass, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
+import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { LookupSelect } from "@/components/LookupSelect";
 import {
   Select,
