@@ -174,7 +174,7 @@ export function StatusChangeDrawer({
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
           if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
         }
-        if (crossesIntoPD) {
+        if (crossesIntoLedger) {
           if (needsCostPrice) patch.cost_price = effectiveCostPrice;
           if (needsVendorForPD) {
             patch.vendor_bought = effectiveVendor;
@@ -256,7 +256,7 @@ export function StatusChangeDrawer({
       }
 
       try {
-        if (crossesIntoPD && effectiveCostPrice > 0 && effectiveVendor) {
+        if (crossesIntoLedger && effectiveCostPrice > 0 && effectiveVendor) {
           const { data: existing } = await supabase
             .from("vendor_ledger").select("id")
             .eq("source_table", request.table).eq("source_id", request.row.id).limit(1);
@@ -288,7 +288,7 @@ export function StatusChangeDrawer({
               created_by: user?.id ?? null,
             });
           }
-        } else if (crossesOutOfPD) {
+        } else if (crossesOutOfLedger) {
           await supabase.from("vendor_ledger").delete()
             .eq("source_table", request.table).eq("source_id", request.row.id);
         }
