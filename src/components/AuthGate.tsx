@@ -166,6 +166,7 @@ function SignUpForm() {
   const [phone, setPhone] = useState("");
   const [designation, setDesignation] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
