@@ -777,35 +777,60 @@ export function ModulePage({ module: mod }: Props) {
               <Plus className="h-4 w-4" /> নতুন এন্ট্রি
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}</DialogTitle>
-            </DialogHeader>
-            <FormSections mod={mod} form={form} setForm={setForm} />
-
-            <DialogFooter className="sm:justify-between gap-2">
-              {!editing ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const f = emptyForm(mod);
-                    if (mod.fields.some((fld) => fld.name === "entry_by")) {
-                      f.entry_by = displayName(profile, user);
-                    }
-                    setForm(f);
-                    toast.success("ফর্ম খালি করা হয়েছে");
-                  }}
-                  className="gap-1.5"
-                >
-                  <RotateCcw className="h-4 w-4" /> CLEAR
-                </Button>
-              ) : <div />}
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setOpenForm(false)}>বাতিল</Button>
-                <Button onClick={submit} disabled={saving}>{saving ? "সেভ হচ্ছে..." : "সেভ"}</Button>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+            <DialogHeader className="sticky top-0 z-20 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b px-4 sm:px-6 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <DialogTitle className="text-base sm:text-lg truncate">
+                  {editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}
+                </DialogTitle>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {!editing && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const f = emptyForm(mod);
+                        if (mod.fields.some((fld) => fld.name === "entry_by")) {
+                          f.entry_by = displayName(profile, user);
+                        }
+                        setForm(f);
+                        toast.success("ফর্ম খালি করা হয়েছে");
+                      }}
+                      className="h-8 gap-1 px-2"
+                      title="Clear"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Clear</span>
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setOpenForm(false)}
+                    className="h-8 gap-1 px-2"
+                    title="Search / Close"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Search</span>
+                  </Button>
+                  <Button
+                    onClick={submit}
+                    disabled={saving}
+                    size="sm"
+                    className="h-8 gap-1 px-3 bg-emerald-600 hover:bg-emerald-700"
+                    title="Save"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {saving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
-            </DialogFooter>
+            </DialogHeader>
+            <div className="px-4 sm:px-6 pb-4 pt-3">
+              <FormSections mod={mod} form={form} setForm={setForm} />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
