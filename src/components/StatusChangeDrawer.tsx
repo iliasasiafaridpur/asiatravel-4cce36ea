@@ -129,15 +129,18 @@ export function StatusChangeDrawer({
   const currentIdx = idxOf(current);
   const _targetIdx = idxOf(next);
   const pdIdx = idxOf("Pending Delivery");
+  const dlIdx = order.findIndex((x) => eq(x, "Delivered") || eq(x, "DELIVERED"));
+  // Vendor ledger checkpoint: prefer Pending Delivery, else Delivered (e.g. tickets ISSUE→DELIVERED)
+  const ledgerIdx = pdIdx >= 0 ? pdIdx : dlIdx;
   const costPrice = Number(request.row.cost_price ?? 0);
   const vendorName = String(request.row.vendor_bought ?? "").trim();
-  const crossesIntoPD = pdIdx >= 0 && direction === "forward" && currentIdx < pdIdx && _targetIdx >= pdIdx;
-  const crossesOutOfPD = pdIdx >= 0 && direction === "backward" && currentIdx >= pdIdx && _targetIdx < pdIdx;
-  const needsCostPrice = crossesIntoPD && costPrice <= 0;
-  const needsVendorForPD = crossesIntoPD && !vendorName && request.hasVendorField;
+  const crossesIntoLedger = ledgerIdx >= 0 && direction === "forward" && currentIdx < ledgerIdx && _targetIdx >= ledgerIdx;
+  const crossesOutOfLedger = ledgerIdx >= 0 && direction === "backward" && currentIdx >= ledgerIdx && _targetIdx < ledgerIdx;
+  const needsCostPrice = crossesIntoLedger && costPrice <= 0;
+  const needsVendorForPD = crossesIntoLedger && !vendorName && request.hasVendorField;
   const effectiveCostPrice = needsCostPrice ? (Number(costPriceInput) || 0) : costPrice;
   const effectiveVendor = (needsVendorForPD ? vendor : vendorName).trim();
-  if (crossesIntoPD && effectiveCostPrice > 0 && effectiveVendor) {
+  if (crossesIntoLedger && effectiveCostPrice > 0 && effectiveVendor) {
     forwardEffects.push(`Vendor "${effectiveVendor}" এর খাতায় ৳${effectiveCostPrice.toLocaleString()} Credit`);
   }
   if (isDeliveredAny && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
@@ -146,11 +149,10 @@ export function StatusChangeDrawer({
   const backwardClears: string[] = [];
   const targetIdx = _targetIdx;
   const fpIdx = idxOf("File Process");
-  const dlIdx = idxOf("Delivered");
   if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) backwardClears.push("Vendor Sent Date");
   if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) backwardClears.push("Received Date");
   if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) backwardClears.push("Delivery Date");
-  if (crossesOutOfPD && costPrice > 0) backwardClears.push(`Vendor "${vendorName || "—"}" cost reverse`);
+  if (crossesOutOfLedger && costPrice > 0) backwardClears.push(`Vendor "${vendorName || "—"}" cost reverse`);
 
   const apply = async () => {
     if (isSame) return;
