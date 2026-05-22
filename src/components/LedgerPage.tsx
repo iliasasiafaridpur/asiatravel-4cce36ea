@@ -902,7 +902,14 @@ export function LedgerPage({ module: mod }: Props) {
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
-      toast.success(`✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${parts.length}টি বিল)`);
+      notify.success(`✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${parts.length}টি বিল)`, {
+        meta: {
+          vendor: String(payTarget),
+          service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${parts.length} bills)`,
+          refId: parts.map((p) => p.split("=")[0]).join(", "),
+          amount: amt,
+        },
+      });
       setPayOpen(false);
       void load();
     } catch (e) {
