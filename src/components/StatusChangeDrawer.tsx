@@ -254,7 +254,7 @@ export function StatusChangeDrawer({
       }
 
       try {
-        if (crossesIntoPD && costPrice > 0 && vendorName) {
+        if (crossesIntoPD && effectiveCostPrice > 0 && effectiveVendor) {
           const { data: existing } = await supabase
             .from("vendor_ledger").select("id")
             .eq("source_table", request.table).eq("source_id", request.row.id).limit(1);
