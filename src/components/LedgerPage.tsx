@@ -1508,7 +1508,14 @@ export function LedgerPage({ module: mod }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           {groupLabel}
                         </div>
-                        <div className="font-semibold">{String(r[groupField] ?? "—")}</div>
+                        <button
+                          type="button"
+                          onClick={() => setProfileParty(String(r[groupField] ?? ""))}
+                          className="font-semibold text-left hover:underline hover:text-primary"
+                          title={isAgency ? "Customer profile" : "Vendor profile"}
+                        >
+                          {String(r[groupField] ?? "—")}
+                        </button>
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
