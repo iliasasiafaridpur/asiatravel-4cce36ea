@@ -381,7 +381,9 @@ function AccountsPage() {
   th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
   td.wrap,th.wrap{white-space:normal;word-break:break-word}
   th{background:#f5f5f5;font-weight:600}
+  th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.num.in{text-align:left}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
   tfoot td{font-weight:700;background:#fafafa}
   @media print{body{padding:2px}}
