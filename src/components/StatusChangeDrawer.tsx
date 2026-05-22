@@ -133,8 +133,12 @@ export function StatusChangeDrawer({
   const vendorName = String(request.row.vendor_bought ?? "").trim();
   const crossesIntoPD = pdIdx >= 0 && direction === "forward" && currentIdx < pdIdx && _targetIdx >= pdIdx;
   const crossesOutOfPD = pdIdx >= 0 && direction === "backward" && currentIdx >= pdIdx && _targetIdx < pdIdx;
-  if (crossesIntoPD && costPrice > 0 && vendorName) {
-    forwardEffects.push(`Vendor "${vendorName}" এর খাতায় ৳${costPrice.toLocaleString()} Credit`);
+  const needsCostPrice = crossesIntoPD && costPrice <= 0;
+  const needsVendorForPD = crossesIntoPD && !vendorName && request.hasVendorField;
+  const effectiveCostPrice = needsCostPrice ? (Number(costPriceInput) || 0) : costPrice;
+  const effectiveVendor = (needsVendorForPD ? vendor : vendorName).trim();
+  if (crossesIntoPD && effectiveCostPrice > 0 && effectiveVendor) {
+    forwardEffects.push(`Vendor "${effectiveVendor}" এর খাতায় ৳${effectiveCostPrice.toLocaleString()} Credit`);
   }
   if (isDeliveredAny && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
   if (isDeliveredWithDue) forwardEffects.push(`Due ৳${due.toLocaleString()} আদায় রসিদ`);
