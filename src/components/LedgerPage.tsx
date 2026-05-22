@@ -503,6 +503,7 @@ export function LedgerPage({ module: mod }: Props) {
     let bill = 0,
       paid = 0,
       cashPaid = 0,
+      discount = 0,
       applied = 0,
       advance = 0;
     for (const r of filtered) {
@@ -511,6 +512,7 @@ export function LedgerPage({ module: mod }: Props) {
       } else {
         bill += Number(r[billCol] ?? 0);
         cashPaid += Number(r[paidCol] ?? 0);
+        discount += discountOf(r);
         applied += Number(r.advance_applied ?? 0);
       }
     }
@@ -518,8 +520,9 @@ export function LedgerPage({ module: mod }: Props) {
     return {
       bill,
       paid,
+      discount,
       advance: Math.max(advance - applied, 0),
-      due: Math.max(bill - paid, 0),
+      due: Math.max(bill - cashPaid - discount - applied, 0),
     };
   }, [filtered, billCol, paidCol]);
 
@@ -538,15 +541,16 @@ export function LedgerPage({ module: mod }: Props) {
   );
 
   const groupSummary = useMemo(() => {
-    const map = new Map<string, { bill: number; cashPaid: number; applied: number; advance: number }>();
+    const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number }>();
     for (const r of filtered) {
       const k = String(r[groupField] ?? "—") || "—";
-      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, applied: 0, advance: 0 };
+      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, discount: 0, applied: 0, advance: 0 };
       if (isAdvanceRow(r)) {
         cur.advance += Number(r[paidCol] ?? 0);
       } else if (countsForVendorDue(r)) {
         cur.bill += Number(r[billCol] ?? 0);
         cur.cashPaid += Number(r[paidCol] ?? 0);
+        cur.discount += discountOf(r);
         cur.applied += Number(r.advance_applied ?? 0);
       }
       map.set(k, cur);
@@ -557,7 +561,7 @@ export function LedgerPage({ module: mod }: Props) {
           key,
           bill: v.bill,
           paid: v.cashPaid + v.applied,
-          due: Math.max(v.bill - v.cashPaid - v.applied, 0),
+          due: Math.max(v.bill - v.cashPaid - v.discount - v.applied, 0),
           advance: Math.max(v.advance - v.applied, 0),
         };
       })
