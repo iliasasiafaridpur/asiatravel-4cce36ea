@@ -45,6 +45,7 @@ interface DueRow {
   mobile: string;
   sold: number;
   received: number;
+  discount: number;
   due: number;
   entryDate: string;
   extra: string;       // country / road / etc.
@@ -103,7 +104,7 @@ export function DueReceiveDialog({
 
   // Helper — fetch a single row by id from a given service
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
-    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
     const { data, error } = await supabase
       .from(s.table as never)
       .select(cols)
@@ -113,6 +114,7 @@ export function DueReceiveDialog({
     const r = data as unknown as Record<string, unknown>;
     const sold = Number(r.sold_price ?? 0);
     const recv = Number(r[s.recvCol] ?? 0);
+    const disc = Number(r.discount_amount ?? 0);
     const statusStr = String(r.status ?? "");
     const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
     const deliveryDate = s.hasDelivery
@@ -125,7 +127,7 @@ export function DueReceiveDialog({
       passenger: String(r.passenger_name ?? ""),
       passport: String(r.passport ?? ""),
       mobile: String(r.mobile ?? ""),
-      sold, received: recv, due: sold - recv,
+      sold, received: recv, discount: disc, due: sold - recv - disc,
       entryDate: String(r.entry_date ?? ""),
       extra: String(r[s.extraCol] ?? ""),
       agencySold: String(r.agency_sold ?? ""),
@@ -162,7 +164,7 @@ export function DueReceiveDialog({
       try {
         const all: DueRow[] = [];
         for (const s of SERVICES) {
-          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
           const { data, error } = await supabase
             .from(s.table as never)
             .select(cols)
@@ -172,7 +174,8 @@ export function DueReceiveDialog({
           for (const r of (data as unknown as Record<string, unknown>[]) ?? []) {
             const sold = Number(r.sold_price ?? 0);
             const recv = Number(r[s.recvCol] ?? 0);
-            const due = sold - recv;
+            const disc = Number(r.discount_amount ?? 0);
+            const due = sold - recv - disc;
             if (due <= 0) continue;
             const statusStr = String(r.status ?? "");
             const deliveredByStatus = statusStr.toLowerCase() === s.deliveredStatus.toLowerCase();
@@ -186,7 +189,7 @@ export function DueReceiveDialog({
               passenger: String(r.passenger_name ?? ""),
               passport: String(r.passport ?? ""),
               mobile: String(r.mobile ?? ""),
-              sold, received: recv, due,
+              sold, received: recv, discount: disc, due,
               entryDate: String(r.entry_date ?? ""),
               extra: String(r[s.extraCol] ?? ""),
               agencySold: String(r.agency_sold ?? ""),
