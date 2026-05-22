@@ -227,6 +227,8 @@ export function DueReceiveDialog({
         .from("payment_receipts")
         .select("id, receipt_id, amount, method, entry_date, remarks, received_by_name")
         .eq("service_row_id", selected.id)
+        .not("source", "eq", "discount")
+        .not("method", "ilike", "discount")
         .order("entry_date", { ascending: false });
       if (!cancelled) setHistory((data as ReceiptRow[]) ?? []);
       setHistoryLoading(false);
@@ -520,7 +522,8 @@ export function DueReceiveDialog({
                 </div>
                 <div><p className="text-xs text-muted-foreground">Sold</p><p className="tabular-nums">{selected.sold.toLocaleString()}</p></div>
                 <div><p className="text-xs text-muted-foreground">Received</p><p className="tabular-nums text-emerald-600">{selected.received.toLocaleString()}</p></div>
-                <div className="col-span-2 sm:col-span-3 pt-1 border-t sm:border-t-0 sm:border-l sm:pl-3">
+                <div><p className="text-xs text-muted-foreground">Discount</p><p className="tabular-nums text-amber-600">{selected.discount.toLocaleString()}</p></div>
+                <div className="col-span-2 sm:col-span-2 pt-1 border-t sm:border-t-0 sm:border-l sm:pl-3">
                   <p className="text-xs text-muted-foreground">Outstanding Due</p>
                   <p className="text-2xl font-bold text-rose-500 tabular-nums">{selected.due.toLocaleString()}</p>
                 </div>
