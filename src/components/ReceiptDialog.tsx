@@ -137,10 +137,10 @@ export function ReceiptDialog({
       </div>
       <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;">
         <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Sold Price</b><span>${fmt(receipt.sold)}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Previously Received</b><span>${fmt(receipt.previouslyReceived)}</span></div>
-        ${receipt.paid > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Paid Now (${receipt.method})</b><span style="color:#059669;">+${fmt(receipt.paid)}</span></div>` : ""}
         ${receipt.discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Discount</b><span style="color:#d97706;">−${fmt(receipt.discount)}</span></div>` : ""}
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:2px solid #111;margin-top:8px;padding-top:6px;"><span>Total Adjusted</span><span>${fmt(total)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:2px solid #111;margin-top:8px;padding-top:6px;"><span>Net Payable Amount</span><span>${fmt(netPayable)}</span></div>
+        ${receipt.previouslyReceived > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Previously Received</b><span>${fmt(receipt.previouslyReceived)}</span></div>` : ""}
+        ${receipt.paid > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Paid Now (${receipt.method})</b><span style="color:#059669;">+${fmt(receipt.paid)}</span></div>` : ""}
         <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Remaining Due</b><span style="font-weight:600;color:${remaining > 0 ? "#e11d48" : "#059669"};">${fmt(remaining)}</span></div>
       </div>
       ${receipt.remarks ? `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;font-size:12px;"><b>Remarks:</b> ${receipt.remarks}</div>` : ""}
