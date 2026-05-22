@@ -256,6 +256,7 @@ export const MODULES: ModuleSchema[] = [
         filterable: true,
         lookup: "country",
         section: "passenger",
+        required: true,
       },
       {
         name: "attested_date",
@@ -270,6 +271,7 @@ export const MODULES: ModuleSchema[] = [
         type: "number",
         showInList: true,
         section: "passenger",
+        required: true,
       },
       {
         name: "status",
