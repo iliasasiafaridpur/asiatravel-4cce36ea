@@ -167,6 +167,7 @@ export const MODULES: ModuleSchema[] = [
         name: "vendor_bought",
         label: "Vendor",
         type: "text",
+        required: true,
         showInList: true,
         lookup: "vendor",
         section: "vendor",
