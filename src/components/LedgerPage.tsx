@@ -2058,7 +2058,7 @@ export function LedgerPage({ module: mod }: Props) {
                           const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0), 0);
                           const checked = r.id in selectedLines;
                           return (
-                            <TableRow key={r.id}>
+                            <TableRow key={r.id} className={`row-tint-${idx % 6}`}>
                               <TableCell>
                                 <Checkbox
                                   checked={checked}
