@@ -27,18 +27,24 @@ type Row = {
   delivery_date?: string | null;
   updated_at?: string | null;
   entry_date?: string | null;
+  vendor_bought?: string | null;
+  // table-specific IDs (only one will be present per row)
+  bmet_id?: string | null;
+  saudi_id?: string | null;
+  kuwait_id?: string | null;
 };
 
 type Target = {
   table: "bmet_cards" | "saudi_visas" | "kuwait_visas";
   serviceLabel: string;        // human-readable module name
-  countryFallback?: string;    // for visa tables when country field is blank
+  idField: "bmet_id" | "saudi_id" | "kuwait_id";
+  countryFallback?: string;
 };
 
 const TARGETS: Target[] = [
-  { table: "bmet_cards",  serviceLabel: "BMET Card" },
-  { table: "saudi_visas", serviceLabel: "Saudi Visa", countryFallback: "Saudi Arabia" },
-  { table: "kuwait_visas", serviceLabel: "Kuwait Visa", countryFallback: "Kuwait" },
+  { table: "bmet_cards",  serviceLabel: "BMET Card",  idField: "bmet_id" },
+  { table: "saudi_visas", serviceLabel: "Saudi Visa", idField: "saudi_id",  countryFallback: "Saudi Arabia" },
+  { table: "kuwait_visas", serviceLabel: "Kuwait Visa", idField: "kuwait_id", countryFallback: "Kuwait" },
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -69,7 +75,7 @@ async function scanTarget(t: Target) {
   const q: any = supabase.from(t.table as any);
   const { data, error } = await q
     .select(
-      "id, passenger_name, country_name, country_route, status, sold_price, received_amount, delivery_date, updated_at, entry_date",
+      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, delivery_date, updated_at, entry_date, vendor_bought`,
     )
     .in("status", ["Card Ready", "Pending Delivery"])
     .is("delivery_date", null)
@@ -79,7 +85,9 @@ async function scanTarget(t: Target) {
   for (const r of data as Row[]) {
     const passenger = r.passenger_name || "(নাম নেই)";
     const country = countryOf(r, t);
-    const meta = { passenger, service: t.serviceLabel, country };
+    const refId = (r[t.idField] as string | null | undefined) || undefined;
+    const vendor = r.vendor_bought || undefined;
+    const meta = { passenger, service: t.serviceLabel, country, refId, vendor };
     const outstanding = due(r);
 
     // 1) Financial alert
@@ -105,7 +113,6 @@ async function scanTarget(t: Target) {
           `${t.serviceLabel} — ${days} দিন ধরে Card Ready, এখনো ডেলিভারি হয়নি`,
           {
             meta,
-            // bucket by day so we re-notify once per day at most
             dedupeKey: `aging:${t.table}:${r.id}:${Math.floor(Date.now() / DAY_MS)}`,
           },
         );

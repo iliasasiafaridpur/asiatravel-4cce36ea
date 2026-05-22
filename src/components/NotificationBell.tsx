@@ -177,8 +177,11 @@ export function NotificationBell() {
                     {n.message && (
                       <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">{n.message}</p>
                     )}
-                    {n.meta && (n.meta.passenger || n.meta.service || n.meta.country) && (
+                    {n.meta && (n.meta.passenger || n.meta.service || n.meta.country || n.meta.refId || n.meta.vendor) && (
                       <div className="mt-1 space-y-0.5">
+                        {n.meta.refId && (
+                          <MetaRow icon={<span className="font-mono text-[10px]">#</span>} text={`ID: ${n.meta.refId}`} />
+                        )}
                         {n.meta.passenger && (
                           <MetaRow icon={<User className="h-3 w-3" />} text={`যাত্রী: ${n.meta.passenger}`} />
                         )}
@@ -187,6 +190,9 @@ export function NotificationBell() {
                         )}
                         {n.meta.country && (
                           <MetaRow icon={<MapPin className="h-3 w-3" />} text={`দেশ/রুট: ${n.meta.country}`} />
+                        )}
+                        {n.meta.vendor && (
+                          <MetaRow icon={<Briefcase className="h-3 w-3" />} text={`ভেন্ডর: ${n.meta.vendor}`} />
                         )}
                       </div>
                     )}

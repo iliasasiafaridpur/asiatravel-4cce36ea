@@ -15,6 +15,8 @@ export type NotificationMeta = {
   service?: string;     // সার্ভিসের নাম (BMET Card, Air Ticket, ...)
   country?: string;     // দেশ / রুট
   amount?: number;      // optional financial figure
+  refId?: string;       // ID নাম্বার (BMET ID, Saudi ID, Kuwait ID, Ledger ID, ...)
+  vendor?: string;      // ভেন্ডর নাম
 };
 
 export type NotificationItem = {
