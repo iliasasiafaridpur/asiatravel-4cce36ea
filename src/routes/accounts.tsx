@@ -884,15 +884,10 @@ ${node.innerHTML.replace(
                       region = svc.country;
                     }
                   }
-                  // Discount on current row from remarks — applied as straight deduction to Total Bill (NOT shown as separate column line)
-                  let discAmt = 0;
-                  if (isIn && r.remarks) {
-                    const m = /Discount\s*৳?\s*([\d,]+)/i.exec(r.remarks);
-                    if (m) discAmt = Number(m[1].replace(/,/g, "")) || 0;
-                  }
+                  const discAmt = isIn && svc ? Number(svc.discount ?? 0) : 0;
                   const grossBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
-                  const totalBill = grossBill !== null ? Math.max(0, grossBill - discAmt) : null;
-                  // পূর্ববর্তী জমা: এই service_row_id-এর জন্য বর্তমান এন্ট্রির আগের সব receipt (cash only — discount আর receipt নয়)
+                  const totalBill = grossBill !== null ? grossBill : null;
+                  // পূর্ববর্তী জমা/Discount: NOTE column only — calculation happens below explicitly.
                   const advLines: { text: string }[] = [];
                   let sumPrev = 0;
                   let lastAdvDate = "";
@@ -910,8 +905,9 @@ ${node.innerHTML.replace(
                     }
                     if (sumPrev > 0.005) advLines.push({ text: `${fmt(sumPrev)} (${formatDate(lastAdvDate)})` });
                   }
-                  // বাকি = নেট বিল − (এই আয় + পূর্বে জমা)
-                  const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev) : null;
+                  if (discAmt > 0.005) advLines.push({ text: `${fmt(discAmt)} Discount` });
+                  // বাকি = মোট বিল − নগদ জমা − Discount
+                  const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
