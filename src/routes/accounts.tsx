@@ -42,6 +42,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; handover_id?: string | null; }
+interface DayLock { user_id: string; locked_date: string; }
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
@@ -74,6 +75,7 @@ function AccountsPage() {
   const [received, setReceived] = useState<Recv[]>([]);
   const [handovers, setHandovers] = useState<Hand[]>([]);
   const [expenses, setExpenses] = useState<Exp[]>([]);
+  const [lockedDates, setLockedDates] = useState<DayLock[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [latestInput, setLatestInput] = useState("10");
@@ -105,6 +107,7 @@ function AccountsPage() {
     let recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by,handover_id").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false });
     let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date").order("created_at", { ascending: false });
     let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by,handover_id").order("created_at", { ascending: false });
+    let lockQuery = supabase.from("day_locks").select("user_id,locked_date");
 
     if (dateFrom) {
       recvQuery = recvQuery.gte("entry_date", dateFrom);
@@ -122,10 +125,11 @@ function AccountsPage() {
       expQuery = expQuery.limit(parsedLimit);
     }
 
-    const [r, h, e] = await Promise.all([
+    const [r, h, e, l] = await Promise.all([
       seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
       seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`),
       seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`),
+      seeAll ? lockQuery : lockQuery.eq("user_id", user.id),
     ]);
 
     const err = r.error || h.error || e.error;
@@ -136,6 +140,7 @@ function AccountsPage() {
     setReceived(r.error ? [] : (((r.data as unknown) as Recv[]) ?? []));
     setHandovers(h.error ? [] : (((h.data as unknown) as Hand[]) ?? []));
     setExpenses(e.error ? [] : (((e.data as unknown) as Exp[]) ?? []));
+    setLockedDates(l.error ? [] : (((l.data as unknown) as DayLock[]) ?? []));
 
     setSyncing(false);
     setLoading(false);
