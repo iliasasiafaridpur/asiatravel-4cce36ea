@@ -766,22 +766,23 @@ ${node.innerHTML.replace(
                   const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
-                   // Col 1: Name
+                  // Col 1: উৎস/নাম (source/name)
                   const name = isIn
-                    ? (r.passenger_name || "—")
+                    ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
                     : isHand
                     ? (h.to_name || "প্রাপক")
-                    : (e.purpose || e.category || "খরচ");
+                    : (e.category || "খরচ");
 
-                  // Col 2: Service primary + secondary lines
+                  // Col 2: উদ্দেশ্য (purpose) — primary line
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const servicePrimary = isIn
                     ? (r.source === "manual"
-                        ? (r.passenger_name ? `ম্যানুয়াল আয় — ${r.passenger_name}` : "ম্যানুয়াল আয়")
+                        ? (r.remarks || "ম্যানুয়াল আয়")
                         : (r.service_type || "Service"))
                     : isHand
                     ? "জমা / Handover"
-                    : (e.purpose ? `${e.category || "খরচ"} — ${e.purpose}` : (e.category || "খরচ"));
+                    : (e.purpose || "—");
+
                   const svcLines: string[] = [];
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
