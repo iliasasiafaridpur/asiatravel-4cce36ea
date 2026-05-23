@@ -21,7 +21,9 @@ import { generateNextId } from "@/lib/idgen";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
   CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
+  Lock as LockIcon,
 } from "lucide-react";
+import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "আমার হিসাব — My Accounts" }] }),
