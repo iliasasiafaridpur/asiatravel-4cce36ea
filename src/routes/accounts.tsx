@@ -74,7 +74,8 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
-  const { isAdmin, isStaff, loading: roleLoading } = useRole();
+  const { isAdmin, isMd, isStaff, loading: roleLoading } = useRole();
+  const seeAll = isAdmin || isMd;
   const [acct, setAcct] = useState<Acct | null>(null);
   const [received, setReceived] = useState<Recv[]>([]);
   const [handovers, setHandovers] = useState<Hand[]>([]);
