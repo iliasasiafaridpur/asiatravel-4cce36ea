@@ -563,8 +563,8 @@ function HandoverCard({
                   const ledgerId = `${h.id}:${r.id}`;
                   const isOpen = openLedger === ledgerId;
                   return (
-                    <>
-                      <tr key={r.id} className="border-t align-top">
+                    <Fragment key={r.id}>
+                      <tr className="border-t align-top">
                         <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
                         <td className="px-2 py-1.5">
                           <div className="flex items-center gap-1">
@@ -606,7 +606,7 @@ function HandoverCard({
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
