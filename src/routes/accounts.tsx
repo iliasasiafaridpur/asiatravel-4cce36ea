@@ -132,7 +132,7 @@ function AccountsPage() {
       seeAll ? lockQuery : lockQuery.eq("user_id", user.id),
     ]);
 
-    const err = r.error || h.error || e.error;
+    const err = r.error || h.error || e.error || l.error;
     if (seq !== reloadSeqRef.current) return;
     if (err) {
       if (!quiet) toast.error("সিঙ্ক সমস্যা: " + err.message);
@@ -218,6 +218,10 @@ function AccountsPage() {
   const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
+  const lockedDateSet = useMemo(() => new Set(lockedDates.map((l) => `${l.user_id}:${l.locked_date}`)), [lockedDates]);
+  const isReceiptSubmitted = (r: Recv) => Boolean(r.handover_id);
+  const isExpenseSubmitted = (e: Exp) => Boolean(e.handover_id) || Boolean(e.spent_by && lockedDateSet.has(`${e.spent_by}:${e.entry_date}`));
+  const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
