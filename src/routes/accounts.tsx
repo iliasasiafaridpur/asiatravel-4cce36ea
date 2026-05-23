@@ -914,6 +914,7 @@ ${node.innerHTML.replace(
                 {fRecv.map((r) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
+                  const submitted = isReceiptSubmitted(r);
                   if (svc) {
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
@@ -936,7 +937,7 @@ ${node.innerHTML.replace(
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
-                       <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
+                       <ConfirmDeleteButton allowOwner disabled={submitted} onConfirm={() => deleteRecv(r.id)} description={submitted ? "এই আয় MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>
                    );
                  })}
@@ -949,7 +950,9 @@ ${node.innerHTML.replace(
           <Card><CardContent className="p-0">
             {fExp.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো খরচ নেই</EmptyRow>
               : <div className="divide-y">
-                {fExp.map((e) => (
+                {fExp.map((e) => {
+                  const submitted = isExpenseSubmitted(e);
+                  return (
                   <div key={e.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-amber-500/10 text-amber-600 border border-amber-500/20">
                       <Receipt className="h-4 w-4" />
@@ -964,9 +967,10 @@ ${node.innerHTML.replace(
                       </p>
                       {e.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton allowOwner onConfirm={() => deleteExp(e.id)} description={`খরচ ${e.expense_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner disabled={submitted} onConfirm={() => deleteExp(e.id)} description={submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
-                ))}
+                );
+                })}
               </div>}
           </CardContent></Card>
         </TabsContent>
@@ -976,7 +980,9 @@ ${node.innerHTML.replace(
           <Card><CardContent className="p-0">
             {fHand.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো জমা নেই</EmptyRow>
               : <div className="divide-y">
-                {fHand.map((h) => (
+                {fHand.map((h) => {
+                  const submitted = isHandoverSubmitted(h);
+                  return (
                   <div key={h.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-sky-500/10 text-sky-600 border border-sky-500/20">
                       <Send className="h-4 w-4" />
@@ -992,9 +998,10 @@ ${node.innerHTML.replace(
                       </p>
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton allowOwner onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner disabled={submitted} onConfirm={() => deleteHand(h.id)} description={submitted ? "এই cash handover MD-কে submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
-                ))}
+                );
+                })}
               </div>}
           </CardContent></Card>
         </TabsContent>
