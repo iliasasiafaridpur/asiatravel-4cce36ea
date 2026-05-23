@@ -11,7 +11,9 @@ import {
   Wallet,
   Settings as SettingsIcon,
   ShieldCheck,
+  Crown,
 } from "lucide-react";
+import { useRole } from "@/hooks/useRole";
 import {
   Sidebar,
   SidebarContent,
