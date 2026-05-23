@@ -44,7 +44,7 @@ interface Acct {
   total_received: number; total_received_today?: number;
   total_handed_over: number; total_expenses: number; current_balance: number;
 }
-interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; }
+interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; }
 
@@ -110,7 +110,7 @@ function AccountsPage() {
     const [a, r, h, e] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
       supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").eq("received_by", user.id).not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false }).limit(500),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user").eq("from_user", user.id).order("created_at", { ascending: false }).limit(500),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount").eq("from_user", user.id).order("created_at", { ascending: false }).limit(500),
       supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").eq("spent_by", user.id).order("created_at", { ascending: false }).limit(500),
     ]);
 
@@ -203,7 +203,7 @@ function AccountsPage() {
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
-  const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
+  const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
 
   // Build full chronological timeline (all data) with running balance from 0
@@ -222,6 +222,7 @@ function AccountsPage() {
     let bal = 0;
     return items.map((it) => {
       if (it.kind === "received") bal += Number(it.row.amount);
+      else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
     });
