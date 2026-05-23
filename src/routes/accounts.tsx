@@ -749,9 +749,10 @@ ${node.innerHTML.replace(
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
-                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "ব্যয়";
+                  const kindLabel = isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                    // Col 1: Name
                   const name = isIn
                     ? (r.passenger_name || "—")
@@ -807,7 +808,7 @@ ${node.innerHTML.replace(
                         ))}
                         {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
-                            {primaryBits.join(" · ")}
+                          {[...primaryBits, isPendingHand ? "MD approval pending" : ""].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
@@ -860,6 +861,7 @@ ${node.innerHTML.replace(
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
+                        {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
