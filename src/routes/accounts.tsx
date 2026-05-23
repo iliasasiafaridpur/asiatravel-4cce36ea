@@ -911,6 +911,7 @@ ${node.innerHTML.replace(
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
                   const submitted = isReceiptSubmitted(r);
+                  const canOwnerDelete = isManualReceipt(r) && !submitted;
                   if (svc) {
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
@@ -933,7 +934,7 @@ ${node.innerHTML.replace(
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
-                       <ConfirmDeleteButton allowOwner disabled={submitted} onConfirm={() => deleteRecv(r.id)} description={submitted ? "এই আয় MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `আয় ${r.receipt_id} ডিলেট করতে চান?`} />
+                       <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={submitted || (!isAdmin && !canOwnerDelete)} onConfirm={() => deleteRecv(r.id)} description={submitted ? "এই আয় MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualReceipt(r) ? "এই আয় সার্ভিস/লেজার থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>
                    );
                  })}
@@ -948,6 +949,7 @@ ${node.innerHTML.replace(
               : <div className="divide-y">
                 {fExp.map((e) => {
                   const submitted = isExpenseSubmitted(e);
+                  const canOwnerDelete = isManualExpense(e) && !submitted;
                   return (
                   <div key={e.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-amber-500/10 text-amber-600 border border-amber-500/20">
@@ -963,7 +965,7 @@ ${node.innerHTML.replace(
                       </p>
                       {e.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton allowOwner disabled={submitted} onConfirm={() => deleteExp(e.id)} description={submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={submitted || (!isAdmin && !canOwnerDelete)} onConfirm={() => deleteExp(e.id)} description={submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualExpense(e) ? "এই খরচ লেজার/সিস্টেম থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
                 );
                 })}
@@ -994,7 +996,7 @@ ${node.innerHTML.replace(
                       </p>
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton allowOwner disabled={submitted} onConfirm={() => deleteHand(h.id)} description={submitted ? "এই cash handover MD-কে submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `জমা ${h.handover_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton disabled={submitted || !isAdmin} onConfirm={() => deleteHand(h.id)} description={submitted ? "এই cash handover MD-কে submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
                 );
                 })}
