@@ -52,7 +52,7 @@ export function StaffHandoverDialog({
           .order("entry_date", { ascending: false }),
         supabase
           .from("cash_expenses")
-          .select("id,expense_id,amount,category,purpose,entry_date")
+          .select("id,expense_id,amount,category,purpose,entry_date,created_at")
           .eq("spent_by", user.id)
           .eq("entry_date", closingDate)
           .is("handover_id", null)
