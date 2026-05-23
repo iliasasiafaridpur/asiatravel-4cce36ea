@@ -103,7 +103,7 @@ function AccountsPage() {
     const hasDateFilter = !!(dateFrom || dateTo);
     const parsedLimit = /^\d+$/.test(latestInput.trim()) ? Math.max(parseInt(latestInput.trim(), 10), 1) : 1000;
     let recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by,handover_id").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false });
-    let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date").order("created_at", { ascending: false });
+    let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date,approved_at,approved_by").order("created_at", { ascending: false });
     let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by,handover_id,linked_source_table,linked_source_id").order("created_at", { ascending: false });
 
     if (dateFrom) {
