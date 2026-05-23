@@ -775,7 +775,13 @@ ${node.innerHTML.replace(
 
                   // Col 2: Service primary + secondary lines
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-                  const servicePrimary = isIn ? (r.service_type || "Service") : isHand ? "জমা / Handover" : (e.category || "খরচ");
+                  const servicePrimary = isIn
+                    ? (r.source === "manual"
+                        ? (r.passenger_name ? `ম্যানুয়াল আয় — ${r.passenger_name}` : "ম্যানুয়াল আয়")
+                        : (r.service_type || "Service"))
+                    : isHand
+                    ? "জমা / Handover"
+                    : (e.purpose ? `${e.category || "খরচ"} — ${e.purpose}` : (e.category || "খরচ"));
                   const svcLines: string[] = [];
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
