@@ -55,6 +55,7 @@ type Receipt = {
   received_by_name: string | null;
   handover_id: string | null;
   source: string;
+  created_at?: string | null;
 };
 
 type ServiceInfo = {
