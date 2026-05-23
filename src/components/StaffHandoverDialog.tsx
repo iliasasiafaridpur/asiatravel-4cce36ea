@@ -58,8 +58,8 @@ export function StaffHandoverDialog({
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
-      setReceipts((r.data ?? []) as Receipt[]);
-      setExpenses((e.data ?? []) as Expense[]);
+      setReceipts(((r.data ?? []) as unknown) as Receipt[]);
+      setExpenses(((e.data ?? []) as unknown) as Expense[]);
       setLoading(false);
     })();
     return () => {
