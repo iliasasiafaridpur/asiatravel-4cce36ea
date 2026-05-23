@@ -19,6 +19,7 @@ type Receipt = {
   receipt_id: string | null;
   remarks: string | null;
   received_by_name: string | null;
+  approval_status: string | null;
 };
 
 const DASH = "—";
