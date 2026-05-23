@@ -320,6 +320,10 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number
+          approved_at: string | null
+          approved_by: string | null
+          closing_date: string | null
+          confirmed_amount: number | null
           created_at: string
           created_by: string | null
           entry_date: string
@@ -329,12 +333,18 @@ export type Database = {
           id: string
           method: string
           remarks: string | null
+          status: string
+          submitted_amount: number | null
           to_name: string
           updated_at: string
         }
         Insert: {
           account_id?: string | null
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          closing_date?: string | null
+          confirmed_amount?: number | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
@@ -344,12 +354,18 @@ export type Database = {
           id?: string
           method?: string
           remarks?: string | null
+          status?: string
+          submitted_amount?: number | null
           to_name?: string
           updated_at?: string
         }
         Update: {
           account_id?: string | null
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          closing_date?: string | null
+          confirmed_amount?: number | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
@@ -359,6 +375,8 @@ export type Database = {
           id?: string
           method?: string
           remarks?: string | null
+          status?: string
+          submitted_amount?: number | null
           to_name?: string
           updated_at?: string
         }
@@ -433,6 +451,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      day_locks: {
+        Row: {
+          created_at: string
+          handover_id: string | null
+          id: string
+          locked_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          handover_id?: string | null
+          id?: string
+          locked_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          handover_id?: string | null
+          id?: string
+          locked_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       fund_transfers: {
         Row: {
@@ -633,9 +675,13 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           created_by: string | null
           entry_date: string
+          handover_id: string | null
           id: string
           method: string
           passenger_name: string
@@ -653,9 +699,13 @@ export type Database = {
         Insert: {
           account_id?: string | null
           amount?: number
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
+          handover_id?: string | null
           id?: string
           method?: string
           passenger_name?: string
@@ -673,9 +723,13 @@ export type Database = {
         Update: {
           account_id?: string | null
           amount?: number
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
+          handover_id?: string | null
           id?: string
           method?: string
           passenger_name?: string
@@ -1068,13 +1122,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_handover: {
+        Args: { _confirmed_amount: number; _handover_id: string }
+        Returns: undefined
+      }
       get_accounts_overview: {
         Args: never
         Returns: {
           current_balance: number
           full_name: string
+          role: string
           total_expenses: number
           total_handed_over: number
+          total_pending: number
           total_received: number
           user_id: string
         }[]
@@ -1114,8 +1174,10 @@ export type Database = {
         Returns: {
           current_balance: number
           full_name: string
+          role: string
           total_expenses: number
           total_handed_over: number
+          total_pending: number
           total_received: number
           total_received_today: number
           user_id: string
@@ -1145,6 +1207,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_md: { Args: { _uid: string }; Returns: boolean }
       next_module_id: {
         Args: { _column: string; _prefix: string; _table: string }
         Returns: string
@@ -1165,6 +1228,18 @@ export type Database = {
       recalculate_vendor_advance: {
         Args: { _vendor_name: string }
         Returns: undefined
+      }
+      reject_handover: {
+        Args: { _handover_id: string; _reason?: string }
+        Returns: undefined
+      }
+      submit_handover: {
+        Args: {
+          _closing_date?: string
+          _remarks?: string
+          _submitted_amount: number
+        }
+        Returns: string
       }
     }
     Enums: {

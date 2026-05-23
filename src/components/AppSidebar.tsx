@@ -11,7 +11,9 @@ import {
   Wallet,
   Settings as SettingsIcon,
   ShieldCheck,
+  Crown,
 } from "lucide-react";
+import { useRole } from "@/hooks/useRole";
 import {
   Sidebar,
   SidebarContent,
@@ -75,6 +77,19 @@ const NAV: { group: string; items: NavItem[] }[] = [
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
+  const { canApprove } = useRole();
+  const nav = canApprove
+    ? [
+        ...NAV.slice(0, 3),
+        {
+          group: "Owner",
+          items: [
+            { to: "/md-panel", title: "MD Panel", icon: Crown, color: "text-amber-400", bg: "bg-amber-500/15" } as NavItem,
+          ],
+        },
+        ...NAV.slice(3),
+      ]
+    : NAV;
 
   return (
     <Sidebar collapsible="icon">
@@ -93,7 +108,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {NAV.map((g) => (
+        {nav.map((g) => (
           <SidebarGroup key={g.group}>
             <SidebarGroupLabel>{g.group}</SidebarGroupLabel>
             <SidebarGroupContent>

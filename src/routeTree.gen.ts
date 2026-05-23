@@ -15,6 +15,7 @@ import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
+import { Route as MdPanelRouteImport } from './routes/md-panel'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as BmetRouteImport } from './routes/bmet'
@@ -53,6 +54,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SaudiVisaRoute = SaudiVisaRouteImport.update({
   id: '/saudi-visa',
   path: '/saudi-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MdPanelRoute = MdPanelRouteImport.update({
+  id: '/md-panel',
+  path: '/md-panel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KuwaitVisaRoute = KuwaitVisaRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/bmet': typeof BmetRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
+  '/md-panel': typeof MdPanelRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/bmet': typeof BmetRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
+  '/md-panel': typeof MdPanelRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/bmet': typeof BmetRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
+  '/md-panel': typeof MdPanelRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/bmet'
     | '/invoice'
     | '/kuwait-visa'
+    | '/md-panel'
     | '/saudi-visa'
     | '/settings'
     | '/tickets'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/bmet'
     | '/invoice'
     | '/kuwait-visa'
+    | '/md-panel'
     | '/saudi-visa'
     | '/settings'
     | '/tickets'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/bmet'
     | '/invoice'
     | '/kuwait-visa'
+    | '/md-panel'
     | '/saudi-visa'
     | '/settings'
     | '/tickets'
@@ -217,6 +229,7 @@ export interface RootRouteChildren {
   BmetRoute: typeof BmetRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
+  MdPanelRoute: typeof MdPanelRoute
   SaudiVisaRoute: typeof SaudiVisaRoute
   SettingsRoute: typeof SettingsRoute
   TicketsRoute: typeof TicketsRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/saudi-visa'
       fullPath: '/saudi-visa'
       preLoaderRoute: typeof SaudiVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/md-panel': {
+      id: '/md-panel'
+      path: '/md-panel'
+      fullPath: '/md-panel'
+      preLoaderRoute: typeof MdPanelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kuwait-visa': {
@@ -345,6 +365,7 @@ const rootRouteChildren: RootRouteChildren = {
   BmetRoute: BmetRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
+  MdPanelRoute: MdPanelRoute,
   SaudiVisaRoute: SaudiVisaRoute,
   SettingsRoute: SettingsRoute,
   TicketsRoute: TicketsRoute,
@@ -355,13 +376,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -21,7 +21,9 @@ import { generateNextId } from "@/lib/idgen";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
   CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
+  Lock as LockIcon,
 } from "lucide-react";
+import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "আমার হিসাব — My Accounts" }] }),
@@ -530,6 +532,9 @@ ${node.innerHTML.replace(
             </div>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
+              <Lock className="h-4 w-4" /> Submit Daily Handover
+            </Button>
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5 h-9">
