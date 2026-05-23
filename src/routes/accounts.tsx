@@ -934,7 +934,7 @@ ${node.innerHTML.replace(
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
-                       <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={submitted || (!isAdmin && !canOwnerDelete)} onConfirm={() => deleteRecv(r.id)} description={submitted ? "এই আয় MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualReceipt(r) ? "এই আয় সার্ভিস/লেজার থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `আয় ${r.receipt_id} ডিলেট করতে চান?`} />
+                       <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={!isAdmin && (submitted || !canOwnerDelete)} onConfirm={() => deleteRecv(r.id)} description={isAdmin ? `আয় ${r.receipt_id} ডিলেট করতে চান?` : submitted ? "এই আয় MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualReceipt(r) ? "এই আয় সার্ভিস/লেজার থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>
                    );
                  })}
@@ -965,7 +965,7 @@ ${node.innerHTML.replace(
                       </p>
                       {e.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={submitted || (!isAdmin && !canOwnerDelete)} onConfirm={() => deleteExp(e.id)} description={submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualExpense(e) ? "এই খরচ লেজার/সিস্টেম থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={!isAdmin && (submitted || !canOwnerDelete)} onConfirm={() => deleteExp(e.id)} description={isAdmin ? `খরচ ${e.expense_id} ডিলেট করতে চান?` : submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualExpense(e) ? "এই খরচ লেজার/সিস্টেম থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
                 );
                 })}
@@ -1036,7 +1036,7 @@ ${node.innerHTML.replace(
                       )}
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton disabled={submitted || !isAdmin} onConfirm={() => deleteHand(h.id)} description={submitted ? "এই cash handover MD-কে submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `জমা ${h.handover_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton disabled={!isAdmin} onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
                 );
                 })}

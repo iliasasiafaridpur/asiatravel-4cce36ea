@@ -4,7 +4,7 @@
 //   • Static assets (JS/CSS/fonts/images): StaleWhileRevalidate → instant + fresh.
 //   • Supabase / API: NetworkFirst with short timeout, fall back to cache when offline.
 
-const VERSION = "v4";
+const VERSION = "v5";
 const HTML_CACHE = `html-${VERSION}`;
 const ASSET_CACHE = `assets-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
@@ -78,23 +78,22 @@ self.addEventListener("fetch", (event) => {
   const isSameOrigin = url.origin === self.location.origin;
   const isSupabase = url.hostname.endsWith(".supabase.co");
 
-  // 1) Navigations → Stale-While-Revalidate (HTML)
-  //    Serve cached shell INSTANTLY, refresh in background. This removes the
-  //    multi-second blank "Loading..." wait on slow networks / 2nd visits.
+  // 1) Navigations → Network-first (HTML)
+  //    Always try the latest app shell first so published UI updates appear
+  //    after refresh instead of being hidden by an old offline cache.
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(HTML_CACHE);
-      const cachedShell = await cache.match(APP_SHELL);
-      const networkPromise = fetch(req).then((resp) => {
+      const fresh = await fetch(req).then((resp) => {
         if (resp && resp.ok) {
           try { cache.put(APP_SHELL, resp.clone()); } catch { /* ignore */ }
         }
         return resp;
       }).catch(() => null);
 
-      if (cachedShell) return cachedShell;
-      const fresh = await networkPromise;
       if (fresh) return fresh;
+      const cachedShell = await cache.match(APP_SHELL);
+      if (cachedShell) return cachedShell;
       return new Response(
         "<!doctype html><meta charset='utf-8'><title>Offline</title><body style='font-family:system-ui;background:#0f172a;color:#e5e7eb;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:1rem'><div><h1>আপনি অফলাইনে আছেন</h1><p>ইন্টারনেট সংযোগ ফিরে এলে স্বয়ংক্রিয়ভাবে আপডেট হবে।</p></div></body>",
         { status: 200, headers: { "content-type": "text/html; charset=utf-8" } }

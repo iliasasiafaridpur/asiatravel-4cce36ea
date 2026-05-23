@@ -168,15 +168,15 @@ function MdPanelPage() {
 
   const staffOptions = useMemo(() => {
     const map = new Map<string, string>();
-    for (const r of pendingReceipts) {
+    for (const r of allReceipts) {
       if (r.received_by) map.set(r.received_by, r.received_by_name ?? "Staff");
     }
     return Array.from(map.entries());
-  }, [pendingReceipts]);
+  }, [allReceipts]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return pendingReceipts.filter((r) => {
+    return allReceipts.filter((r) => {
       if (staffFilter !== "all" && r.received_by !== staffFilter) return false;
       if (!q) return true;
       return (
@@ -186,13 +186,14 @@ function MdPanelPage() {
         (r.service_type ?? "").toLowerCase().includes(q)
       );
     });
-  }, [pendingReceipts, search, staffFilter]);
+  }, [allReceipts, search, staffFilter]);
 
   // Metrics
   const metrics = useMemo(() => {
-    const pendingCash = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const pendingRows = filtered.filter((r) => r.approval_status === "pending_md");
+    const pendingCash = pendingRows.reduce((s, r) => s + Number(r.amount || 0), 0);
     let dueRecov = 0;
-    for (const r of filtered) {
+    for (const r of pendingRows) {
       if (!r.service_row_id) continue;
       const earlier = allReceipts.some(
         (x) => x.service_table === r.service_table && x.service_row_id === r.service_row_id && x.id !== r.id && (x.created_at ?? x.entry_date) < (r.created_at ?? r.entry_date)
@@ -268,7 +269,7 @@ function MdPanelPage() {
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Passenger, receipt, staff…" className="h-8 pl-7" />
             </div>
           </div>
-          <div className="text-xs text-muted-foreground ml-auto">{filtered.length} pending row(s)</div>
+          <div className="text-xs text-muted-foreground ml-auto">{filtered.length} payment row(s)</div>
         </CardContent>
       </Card>
 
@@ -288,7 +289,7 @@ function MdPanelPage() {
               {loading ? (
                 <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">Loading…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">✅ কোনো pending payment নেই</td></tr>
+                <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">কোনো payment পাওয়া যায়নি</td></tr>
               ) : filtered.map((r) => {
                 const key = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
                 const info = key ? serviceMap[key] : undefined;
@@ -374,16 +375,22 @@ function MdPanelPage() {
                     </td>
                     {/* Col 5: Approve action */}
                     <td className="px-3 py-2 text-center">
-                      <Button
-                        size="sm"
-                        onClick={() => approveReceipt(r)}
-                        disabled={busy === r.id || !r.handover_id}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        🟢 টাকা পেলাম
-                      </Button>
-                      {!r.handover_id && (
+                      {r.approval_status === "approved" ? (
+                        <div className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Approved
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => approveReceipt(r)}
+                          disabled={busy === r.id || !r.handover_id}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          🟢 টাকা পেলাম
+                        </Button>
+                      )}
+                      {r.approval_status !== "approved" && !r.handover_id && (
                         <div className="text-[9px] text-amber-600 mt-1">staff এখনো submit করেননি</div>
                       )}
                     </td>
