@@ -416,7 +416,7 @@ ${node.innerHTML.replace(
   };
 
   if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
-  if (isAdmin) return <Navigate to="/" />;
+  // TEMP: Admin has full master access — no redirect.
 
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-8">
