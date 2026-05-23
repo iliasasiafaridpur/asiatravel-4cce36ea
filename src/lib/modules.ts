@@ -848,6 +848,20 @@ export function formatDate(d?: string | null): string {
   return `${dd}-${mmm}-${yyyy}`;
 }
 
+export function formatDateTime(d?: string | null): string {
+  if (!d) return "";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return String(d);
+  const base = formatDate(d);
+  // If input is a pure date (YYYY-MM-DD) without time, don't fake a time.
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return base;
+  let h = date.getHours();
+  const m = String(date.getMinutes()).padStart(2, "0");
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${base} ${String(h).padStart(2, "0")}:${m} ${ampm}`;
+}
+
 export function statusBadgeClass(status?: string | null): string {
   const s = String(status ?? "").toLowerCase();
   switch (s) {

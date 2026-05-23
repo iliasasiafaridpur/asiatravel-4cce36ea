@@ -17,7 +17,7 @@ import {
   Clock, History, Wallet, Hourglass, Repeat, Info, User2, Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/modules";
+import { formatDate, formatDateTime } from "@/lib/modules";
 
 export const Route = createFileRoute("/md-panel")({
   head: () => ({ meta: [{ title: "MD Cash Control Panel" }] }),
@@ -55,6 +55,7 @@ type Receipt = {
   received_by_name: string | null;
   handover_id: string | null;
   source: string;
+  created_at?: string | null;
 };
 
 type ServiceInfo = {
@@ -150,7 +151,7 @@ function MdPanelPage() {
         .limit(200),
       supabase
         .from("payment_receipts")
-        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source")
+        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,created_at")
         .not("source", "eq", "discount")
         .not("method", "ilike", "discount")
         .order("entry_date", { ascending: false })
@@ -167,7 +168,7 @@ function MdPanelPage() {
     if (handoverIds.length) {
       const { data: linkedData } = await supabase
         .from("payment_receipts")
-        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source")
+        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,created_at")
         .in("handover_id", handoverIds);
       linked = (linkedData ?? []) as Receipt[];
     }
@@ -438,7 +439,7 @@ function MdPanelPage() {
                     const ctx = paymentContext(r, paidByService, allReceipts);
                     return (
                       <tr key={r.id} className="border-t">
-                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDateTime(r.created_at || r.entry_date)}</td>
                         <td className="px-2 py-1.5">{r.passenger_name}</td>
                         <td className="px-2 py-1.5">{r.service_type}</td>
                         <td className="px-2 py-1.5 text-muted-foreground">
@@ -503,7 +504,7 @@ function HandoverCard({
               {h.from_name ?? "Staff"} <StatusBadge status={status} />
             </CardTitle>
             <p className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-              {h.handover_id} · Closing {formatDate(h.closing_date || h.entry_date)} · {receipts.length} receipt(s)
+              {h.handover_id} · Submitted {formatDateTime(h.created_at)} · Closing {formatDate(h.closing_date || h.entry_date)} · {receipts.length} receipt(s)
             </p>
           </div>
           <Button size="sm" variant="ghost" onClick={onToggle} className="gap-1">
@@ -565,7 +566,7 @@ function HandoverCard({
                   return (
                     <Fragment key={r.id}>
                       <tr className="border-t align-top">
-                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDateTime(r.created_at || r.entry_date)}</td>
                         <td className="px-2 py-1.5">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">{r.passenger_name}</span>
@@ -654,7 +655,7 @@ function LedgerTimeline({ serviceKey, currentReceiptId, allReceipts, sold }: {
               <div key={r.id}
                 className={`flex items-center justify-between gap-2 text-[11px] rounded px-2 py-1 ${isCurrent ? "bg-primary/10 border border-primary/30" : "bg-background/60"}`}>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-muted-foreground">{formatDate(r.entry_date)}</span>
+                  <span className="font-mono text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</span>
                   <span className="font-mono">{r.receipt_id ?? r.id.slice(0, 6)}</span>
                   <ApprovalBadge status={r.approval_status} />
                   {isCurrent && <Badge variant="outline" className="text-primary border-primary/40">This</Badge>}

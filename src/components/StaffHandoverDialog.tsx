@@ -10,12 +10,13 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, History as HistoryIcon } from "lucide-react";
 import { StaffHandoverHistoryDialog } from "@/components/StaffHandoverHistoryDialog";
+import { formatDateTime } from "@/lib/modules";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
-type Receipt = { id: string; receipt_id?: string | null; amount: number; passenger_name?: string | null; entry_date: string };
-type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string };
+type Receipt = { id: string; receipt_id?: string | null; amount: number; passenger_name?: string | null; entry_date: string; created_at?: string | null };
+type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null };
 
 export function StaffHandoverDialog({
   open,
@@ -44,7 +45,7 @@ export function StaffHandoverDialog({
       const [r, e] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("id,receipt_id,amount,passenger_name,entry_date")
+          .select("id,receipt_id,amount,passenger_name,entry_date,created_at")
           .eq("received_by", user.id)
           .eq("approval_status", "pending_md")
           .lte("entry_date", closingDate)
@@ -52,7 +53,7 @@ export function StaffHandoverDialog({
           .order("entry_date", { ascending: false }),
         supabase
           .from("cash_expenses")
-          .select("id,expense_id,amount,category,purpose,entry_date")
+          .select("id,expense_id,amount,category,purpose,entry_date,created_at")
           .eq("spent_by", user.id)
           .eq("entry_date", closingDate)
           .is("handover_id", null)
@@ -167,7 +168,7 @@ export function StaffHandoverDialog({
                     <div className="min-w-0">
                       <div className="truncate">{r.passenger_name || "—"}</div>
                       <div className="text-[10px] text-muted-foreground font-mono">
-                        {r.receipt_id || r.id.slice(0, 8)} • {r.entry_date}
+                        {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                       </div>
                     </div>
                     <div className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
@@ -195,7 +196,7 @@ export function StaffHandoverDialog({
                     <div className="min-w-0">
                       <div className="truncate">{e.category}{e.purpose ? ` — ${e.purpose}` : ""}</div>
                       <div className="text-[10px] text-muted-foreground font-mono">
-                        {e.expense_id || e.id.slice(0, 8)} • {e.entry_date}
+                        {e.expense_id || e.id.slice(0, 8)} • {formatDateTime(e.created_at || e.entry_date)}
                       </div>
                     </div>
                     <div className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
