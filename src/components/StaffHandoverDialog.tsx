@@ -8,8 +8,8 @@ import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
-import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, History as HistoryIcon } from "lucide-react";
-import { StaffHandoverHistoryDialog } from "@/components/StaffHandoverHistoryDialog";
+import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, BookOpen } from "lucide-react";
+import { HandoverLedgerBook } from "@/components/HandoverLedgerBook";
 import { formatDateTime } from "@/lib/modules";
 
 const today = () => new Date().toISOString().slice(0, 10);
