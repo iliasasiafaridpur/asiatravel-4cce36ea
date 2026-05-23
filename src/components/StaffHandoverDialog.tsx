@@ -34,6 +34,7 @@ export function StaffHandoverDialog({
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [openHistory, setOpenHistory] = useState(false);
 
   useEffect(() => {
     if (!open || !user?.id) return;
