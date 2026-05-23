@@ -39,11 +39,6 @@ const RECEIVERS = ["MD Sir", "Office", "Bank Deposit", "Other"];
 const today = () => new Date().toISOString().slice(0, 10);
 
 
-interface Acct {
-  user_id: string; full_name: string;
-  total_received: number; total_received_today?: number;
-  total_handed_over: number; total_expenses: number; current_balance: number;
-}
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; }
@@ -76,7 +71,6 @@ function AccountsPage() {
   const { user, profile } = useCurrentUser();
   const { isAdmin, isMd, isStaff, loading: roleLoading } = useRole();
   const seeAll = isAdmin || isMd;
-  const [acct, setAcct] = useState<Acct | null>(null);
   const [received, setReceived] = useState<Recv[]>([]);
   const [handovers, setHandovers] = useState<Hand[]>([]);
   const [expenses, setExpenses] = useState<Exp[]>([]);
@@ -88,7 +82,7 @@ function AccountsPage() {
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
 
   const printRef = useRef<HTMLDivElement>(null);
-  const reloadingRef = useRef(false);
+  const reloadSeqRef = useRef(0);
 
   // Dialog forms
   const [handOpen, setHandOpen] = useState(false);
@@ -104,35 +98,50 @@ function AccountsPage() {
 
   const reload = useCallback(async (quiet = false) => {
     if (!user?.id) return;
-    if (reloadingRef.current) return;
-    reloadingRef.current = true;
+    const seq = reloadSeqRef.current + 1;
+    reloadSeqRef.current = seq;
     if (!quiet) setSyncing(true);
 
-    const recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false }).limit(1000);
-    const handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount").order("created_at", { ascending: false }).limit(1000);
-    const expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").order("created_at", { ascending: false }).limit(1000);
+    const hasDateFilter = !!(dateFrom || dateTo);
+    const parsedLimit = /^\d+$/.test(latestInput.trim()) ? Math.max(parseInt(latestInput.trim(), 10), 1) : 1000;
+    let recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false });
+    let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount").order("created_at", { ascending: false });
+    let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").order("created_at", { ascending: false });
 
-    const [a, r, h, e] = await Promise.all([
-      supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
-      seeAll ? recvQuery : recvQuery.eq("received_by", user.id),
-      seeAll ? handQuery : handQuery.eq("from_user", user.id),
-      seeAll ? expQuery  : expQuery.eq("spent_by", user.id),
-    ]);
-
-    const err = a.error || r.error || h.error || e.error;
-    if (err) {
-      if (!quiet) toast.error("সিঙ্ক সমস্যা: " + err.message);
-    } else {
-      setAcct((((a.data as unknown) as Acct[] | null)?.[0]) ?? null);
-      setReceived(((r.data as unknown) as Recv[]) ?? []);
-      setHandovers(((h.data as unknown) as Hand[]) ?? []);
-      setExpenses(((e.data as unknown) as Exp[]) ?? []);
+    if (dateFrom) {
+      recvQuery = recvQuery.gte("entry_date", dateFrom);
+      handQuery = handQuery.gte("entry_date", dateFrom);
+      expQuery = expQuery.gte("entry_date", dateFrom);
+    }
+    if (dateTo) {
+      recvQuery = recvQuery.lte("entry_date", dateTo);
+      handQuery = handQuery.lte("entry_date", dateTo);
+      expQuery = expQuery.lte("entry_date", dateTo);
+    }
+    if (!hasDateFilter) {
+      recvQuery = recvQuery.limit(parsedLimit);
+      handQuery = handQuery.limit(parsedLimit);
+      expQuery = expQuery.limit(parsedLimit);
     }
 
-    reloadingRef.current = false;
+    const [r, h, e] = await Promise.all([
+      seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
+      seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`),
+      seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`),
+    ]);
+
+    const err = r.error || h.error || e.error;
+    if (seq !== reloadSeqRef.current) return;
+    if (err) {
+      if (!quiet) toast.error("সিঙ্ক সমস্যা: " + err.message);
+    }
+    setReceived(r.error ? [] : (((r.data as unknown) as Recv[]) ?? []));
+    setHandovers(h.error ? [] : (((h.data as unknown) as Hand[]) ?? []));
+    setExpenses(e.error ? [] : (((e.data as unknown) as Exp[]) ?? []));
+
     setSyncing(false);
     setLoading(false);
-  }, [user?.id, seeAll]);
+  }, [user?.id, seeAll, dateFrom, dateTo, latestInput]);
 
   useEffect(() => {
     void reload(true);
@@ -210,6 +219,7 @@ function AccountsPage() {
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const balance = periodIncome - periodHand - periodExp;
 
   // Build full chronological timeline (all data) with running balance from 0
   type TLItem =
@@ -362,25 +372,6 @@ function AccountsPage() {
     void reload(true);
   };
 
-  // Today-only totals computed from the loaded arrays (user-scoped via query).
-  // This makes the cards always reflect what the user actually sees in the timeline.
-  const todayStr = today();
-  const todayIncome = useMemo(
-    () => received.filter((r) => r.entry_date === todayStr).reduce((s, r) => s + Number(r.amount || 0), 0),
-    [received, todayStr],
-  );
-  const todayHand = useMemo(
-    () => handovers
-      .filter((h) => h.entry_date === todayStr && (h.status ?? "approved") === "approved")
-      .reduce((s, h) => s + Number(h.amount || 0), 0),
-    [handovers, todayStr],
-  );
-  const todayExp = useMemo(
-    () => expenses.filter((e) => e.entry_date === todayStr).reduce((s, e) => s + Number(e.amount || 0), 0),
-    [expenses, todayStr],
-  );
-  const balance = todayIncome - todayHand - todayExp;
-
   // Print timeline
   const handlePrint = () => {
     const node = printRef.current;
@@ -466,9 +457,9 @@ ${node.innerHTML.replace(
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
-        <StatCard label="মোট আয়" value={todayIncome} icon={TrendingUp} tone="success" />
-        <StatCard label="মোট জমা" value={todayHand} icon={Send} tone="info" />
-        <StatCard label="মোট খরচ" value={todayExp} icon={TrendingDown} tone="warning" />
+        <StatCard label="মোট আয়" value={periodIncome} icon={TrendingUp} tone="success" />
+        <StatCard label="মোট জমা" value={periodHand} icon={Send} tone="info" />
+        <StatCard label="মোট খরচ" value={periodExp} icon={TrendingDown} tone="warning" />
       </div>
 
       {/* Action Bar */}
