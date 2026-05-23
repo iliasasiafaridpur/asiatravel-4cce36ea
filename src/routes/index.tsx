@@ -484,25 +484,12 @@ function DashboardPage() {
             <DigitalClock />
           </div>
           <div className="flex md:justify-end md:flex-shrink-0 flex-wrap gap-2">
-            {canHandover && (
-              <Button
-                size="sm"
-                onClick={() => setHandoverOpen(true)}
-                className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 shadow-md"
-              >
-                <HandCoins className="h-4 w-4" /> MD কে ক্যাশ বুঝিয়ে দিন
-              </Button>
-            )}
             <Link to="/action-board">
               <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
             </Link>
           </div>
         </div>
       </div>
-
-      {canHandover && (
-        <StaffHandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} onSubmitted={() => qc.invalidateQueries({ queryKey: ["dashboard"] })} />
-      )}
 
       {isMd && pendingHandoverCount > 0 && (
         <Card className="border-amber-400/40 bg-amber-500/10">
