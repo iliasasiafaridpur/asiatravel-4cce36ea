@@ -53,6 +53,7 @@ export function StaffHandoverDialog({
           .select("id,expense_id,amount,category,purpose,entry_date")
           .eq("spent_by", user.id)
           .eq("entry_date", closingDate)
+          .is("handover_id", null)
           .order("created_at", { ascending: false }),
       ]);
       if (cancelled) return;
