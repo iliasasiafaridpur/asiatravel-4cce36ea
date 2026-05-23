@@ -244,7 +244,7 @@ function DashboardPage() {
       const totalReceivedToday = nonDiscount.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
-      const totalHandedOver = handovers.filter((h) => h.status !== "rejected").reduce((s, h) => s + Number(h.amount || 0), 0);
+      const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
       const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
       return {
         currentBalance: totalReceived - totalExpenses - totalHandedOver,
@@ -284,10 +284,9 @@ function DashboardPage() {
         const isDiscount = row.source === "discount" || (row.method ?? "").toLowerCase() === "discount";
         return !isDiscount ? sum + Number(row.amount || 0) : sum;
       }, 0);
-      const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>).reduce(
-        (sum, row) => (row.status === "rejected" ? sum : sum + Number(row.amount || 0)),
-        0,
-      );
+      const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>)
+        .filter((row) => (row.status ?? "approved") === "approved")
+        .reduce((sum, row) => sum + Number(row.amount || 0), 0);
       const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number }>).reduce((sum, row) => sum + Number(row.amount || 0), 0);
       return totalReceived - totalHandedOver - totalExpenses;
     },

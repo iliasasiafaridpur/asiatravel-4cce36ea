@@ -44,7 +44,7 @@ interface Acct {
   total_received: number; total_received_today?: number;
   total_handed_over: number; total_expenses: number; current_balance: number;
 }
-interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; }
+interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; }
 
@@ -110,7 +110,7 @@ function AccountsPage() {
     const [a, r, h, e] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
       supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").eq("received_by", user.id).not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false }).limit(500),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user").eq("from_user", user.id).order("created_at", { ascending: false }).limit(500),
+      supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount").eq("from_user", user.id).order("created_at", { ascending: false }).limit(500),
       supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").eq("spent_by", user.id).order("created_at", { ascending: false }).limit(500),
     ]);
 
@@ -203,7 +203,7 @@ function AccountsPage() {
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
-  const periodHand   = fHand.reduce((s, h) => s + Number(h.amount || 0), 0);
+  const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
 
   // Build full chronological timeline (all data) with running balance from 0
@@ -222,6 +222,7 @@ function AccountsPage() {
     let bal = 0;
     return items.map((it) => {
       if (it.kind === "received") bal += Number(it.row.amount);
+      else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
     });
@@ -370,7 +371,9 @@ function AccountsPage() {
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
-        if (it.kind === "received") acc.inAmt += amt; else acc.outAmt += amt;
+        if (it.kind === "received") acc.inAmt += amt;
+        else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+        else acc.outAmt += amt;
         return acc;
       },
       { inAmt: 0, outAmt: 0 },
@@ -544,7 +547,7 @@ ${node.innerHTML.replace(
                 <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
                   <LockIcon className="h-4 w-4" /> Submit Daily Handover
                 </Button>
-                <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} />
+                <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} onSubmitted={() => void reload(true)} />
               </>
             )}
 
@@ -746,9 +749,10 @@ ${node.innerHTML.replace(
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const tone = isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
-                  const kindLabel = isIn ? "আয়" : isHand ? "জমা" : "ব্যয়";
+                  const kindLabel = isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                    // Col 1: Name
                   const name = isIn
                     ? (r.passenger_name || "—")
@@ -804,7 +808,7 @@ ${node.innerHTML.replace(
                         ))}
                         {primaryBits.length > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
-                            {primaryBits.join(" · ")}
+                          {[...primaryBits, isPendingHand ? "MD approval pending" : ""].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
@@ -857,6 +861,7 @@ ${node.innerHTML.replace(
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
+                        {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
@@ -1034,6 +1039,7 @@ ${node.innerHTML.replace(
                       </div>
                       <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                         <Banknote className="h-3 w-3" />{h.method} · {formatDate(h.entry_date)} · <span className="font-mono">{h.handover_id}</span>
+                        {(h.status ?? "approved") === "pending" && <span className="text-amber-600">· Pending MD</span>}
                       </p>
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
