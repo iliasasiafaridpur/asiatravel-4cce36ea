@@ -564,54 +564,6 @@ ${node.innerHTML.replace(
               </>
             )}
 
-            <Dialog open={handOpen} onOpenChange={setHandOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5 h-9">
-                  <Send className="h-4 w-4" /> জমা দিন
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>কতৃপক্ষের কাছে জমা</DialogTitle>
-                  <DialogDescription>আজকের আয় থেকে নির্দিষ্ট পরিমাণ জমা দিন।</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">তারিখ</Label>
-                      <DateInput value={hForm.entry_date} onChange={(e) => setHForm({ ...hForm, entry_date: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">প্রাপক</Label>
-                      <Select value={hForm.to_name} onValueChange={(v) => setHForm({ ...hForm, to_name: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{RECEIVERS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">পরিমাণ (৳)</Label>
-                      <Input type="number" inputMode="numeric" placeholder="0" value={hForm.amount} onChange={(e) => setHForm({ ...hForm, amount: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">মাধ্যম</Label>
-                      <Select value={hForm.method} onValueChange={(v) => setHForm({ ...hForm, method: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs">মন্তব্য</Label>
-                    <Textarea rows={2} placeholder="ঐচ্ছিক" value={hForm.remarks} onChange={(e) => setHForm({ ...hForm, remarks: e.target.value })} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={saveHandover} disabled={savingHandover} className="gap-1.5"><Plus className="h-4 w-4" />{savingHandover ? "সংরক্ষণ হচ্ছে..." : "সংরক্ষণ"}</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
             <Dialog open={manualOpen} onOpenChange={setManualOpen}>
               <DialogTrigger asChild>
