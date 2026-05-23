@@ -837,29 +837,48 @@ export const SERVICE_CATEGORIES = [
   { key: "kuwait-visa", label: "Kuwait Visa" },
 ];
 
+const APP_TZ = "Asia/Dhaka";
+const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+// Get tz-stable parts so SSR (UTC) and CSR (local) render identical strings.
+function tzParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: APP_TZ,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: true,
+  }).formatToParts(date);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return {
+    dd: get("day"),
+    mm: Number(get("month")),
+    yyyy: get("year"),
+    hh: get("hour"),
+    mi: get("minute"),
+    ampm: (get("dayPeriod") || "AM").toUpperCase(),
+  };
+}
+
 export function formatDate(d?: string | null): string {
   if (!d) return "";
+  // Pure date input — format without TZ conversion to avoid day-shift.
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) {
+    const [y, m, day] = d.trim().split("-");
+    return `${day}-${MONTHS[Number(m) - 1]}-${y}`;
+  }
   const date = new Date(d);
   if (isNaN(date.getTime())) return String(d);
-  const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mmm = months[date.getMonth()];
-  const yyyy = date.getFullYear();
-  return `${dd}-${mmm}-${yyyy}`;
+  const p = tzParts(date);
+  return `${p.dd}-${MONTHS[p.mm - 1]}-${p.yyyy}`;
 }
 
 export function formatDateTime(d?: string | null): string {
   if (!d) return "";
+  // Pure date without time — don't fabricate a time.
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return formatDate(d);
   const date = new Date(d);
   if (isNaN(date.getTime())) return String(d);
-  const base = formatDate(d);
-  // If input is a pure date (YYYY-MM-DD) without time, don't fake a time.
-  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return base;
-  let h = date.getHours();
-  const m = String(date.getMinutes()).padStart(2, "0");
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12 || 12;
-  return `${base} ${String(h).padStart(2, "0")}:${m} ${ampm}`;
+  const p = tzParts(date);
+  return `${p.dd}-${MONTHS[p.mm - 1]}-${p.yyyy} ${p.hh}:${p.mi} ${p.ampm}`;
 }
 
 export function statusBadgeClass(status?: string | null): string {
