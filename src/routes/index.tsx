@@ -242,9 +242,8 @@ function DashboardPage() {
       const err = receipts.error || handovers.error || expenses.error;
       if (err) throw err;
       const totalReceived = ((receipts.data ?? []) as Array<{ amount: number; approval_status: string; source: string | null; method: string | null }>).reduce((sum, row) => {
-        const isApproved = row.approval_status === "auto_approved" || row.approval_status === "approved";
         const isDiscount = row.source === "discount" || (row.method ?? "").toLowerCase() === "discount";
-        return isApproved && !isDiscount ? sum + Number(row.amount || 0) : sum;
+        return !isDiscount ? sum + Number(row.amount || 0) : sum;
       }, 0);
       const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>).reduce(
         (sum, row) => (row.status === "rejected" ? sum : sum + Number(row.amount || 0)),
