@@ -619,7 +619,7 @@ ${node.innerHTML.replace(
           <p className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">{fmt(periodIncome)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">জমা</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Submit Cash Handover</p>
           <p className="text-base sm:text-lg font-bold text-sky-600 tabular-nums">{fmt(periodHand)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
