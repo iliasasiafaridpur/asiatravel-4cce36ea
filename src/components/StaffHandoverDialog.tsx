@@ -14,8 +14,8 @@ import { StaffHandoverHistoryDialog } from "@/components/StaffHandoverHistoryDia
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
-type Receipt = { id: string; receipt_id?: string | null; amount: number; passenger_name?: string | null; entry_date: string };
-type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string };
+type Receipt = { id: string; receipt_id?: string | null; amount: number; passenger_name?: string | null; entry_date: string; created_at?: string | null };
+type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null };
 
 export function StaffHandoverDialog({
   open,
