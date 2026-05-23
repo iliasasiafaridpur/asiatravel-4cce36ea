@@ -219,7 +219,7 @@ function AccountsPage() {
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const lockedDateSet = useMemo(() => new Set(lockedDates.map((l) => `${l.user_id}:${l.locked_date}`)), [lockedDates]);
-  const isReceiptSubmitted = (r: Recv) => Boolean(r.handover_id);
+  const isReceiptSubmitted = (r: Recv) => Boolean(r.handover_id) || Boolean(r.received_by && lockedDates.some((l) => l.user_id === r.received_by && l.locked_date >= r.entry_date));
   const isExpenseSubmitted = (e: Exp) => Boolean(e.handover_id) || Boolean(e.spent_by && lockedDateSet.has(`${e.spent_by}:${e.entry_date}`));
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
 
