@@ -37,6 +37,8 @@ type Receipt = {
   passenger_name: string;
   amount: number;
   service_type: string;
+  service_table: string | null;
+  service_row_id: string | null;
   ref_id: string | null;
   approval_status: string;
   handover_id: string | null;
@@ -45,15 +47,22 @@ type Receipt = {
   created_at: string;
 };
 
-/**
- * Permanent shared "Handover Book". Renders a list of handover cards;
- * each card shows per-passenger breakdown:
- *   মোট বিল  |  পূর্বের জমা  |  এই বারের জমা  |  বাকি
- *
- * Mode:
- *   - "mine"  → staff view (from_user = me)
- *   - "to-me" → MD view (handovers approved by me / received from staff)
- */
+type ServiceInfo = {
+  country: string | null;
+  vendor: string | null;
+  passport: string | null;
+  sold_price: number;
+  discount: number;
+};
+
+const SERVICE_TABLES = [
+  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount" },
+] as const;
+
 export function HandoverLedgerBook({
   open,
   onOpenChange,
@@ -68,19 +77,18 @@ export function HandoverLedgerBook({
   const { user } = useCurrentUser();
   const [handovers, setHandovers] = useState<Handover[]>([]);
   const [receiptsByH, setReceiptsByH] = useState<Record<string, Receipt[]>>({});
-  // For each ref_id, list of all receipts (any handover) — to compute "previous"
-  const [receiptsByRef, setReceiptsByRef] = useState<Record<string, Receipt[]>>({});
-  // service ref_id → sold_price total bill
-  const [billByRef, setBillByRef] = useState<Record<string, number>>({});
+  // For each service key (table:rowId), all receipts (any handover) for previous-payment calc
+  const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
+  const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (!open || !user?.id) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
-      // 1) handovers
       let q = supabase
         .from("cash_handovers")
         .select("id,handover_id,entry_date,closing_date,from_user,from_name,to_name,submitted_amount,confirmed_amount,amount,status,remarks,approved_at,approved_by,created_at")
@@ -90,13 +98,12 @@ export function HandoverLedgerBook({
       const { data: hvData } = await q;
       const hvs = (hvData ?? []) as Handover[];
 
-      // 2) receipts linked to those handovers
       const ids = hvs.map((h) => h.id);
       let recs: Receipt[] = [];
       if (ids.length > 0) {
         const { data: recData } = await supabase
           .from("payment_receipts")
-          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
           .in("handover_id", ids)
           .not("source", "eq", "discount");
         recs = (recData ?? []) as Receipt[];
@@ -108,49 +115,81 @@ export function HandoverLedgerBook({
         (byH[r.handover_id] ??= []).push(r);
       }
 
-      // 3) For each ref_id seen, fetch ALL receipts with that ref_id (for previous-payment calc)
-      const refIds = Array.from(new Set(recs.map((r) => r.ref_id).filter((x): x is string => !!x)));
-      const byRef: Record<string, Receipt[]> = {};
-      const billRef: Record<string, number> = {};
-      if (refIds.length > 0) {
-        const { data: allForRef } = await supabase
-          .from("payment_receipts")
-          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
-          .in("ref_id", refIds)
-          .not("source", "eq", "discount");
-        for (const r of ((allForRef ?? []) as Receipt[])) {
-          if (!r.ref_id) continue;
-          (byRef[r.ref_id] ??= []).push(r);
-        }
-
-        // 4) Resolve total bill from agency_ledger by ledger_id == ref_id
-        const { data: ledgerRows } = await supabase
-          .from("agency_ledger")
-          .select("ledger_id,total_bill")
-          .in("ledger_id", refIds);
-        for (const row of ((ledgerRows ?? []) as Array<{ ledger_id: string; total_bill: number | null }>)) {
-          if (row.ledger_id) billRef[row.ledger_id] = Number(row.total_bill || 0);
+      // Collect service keys for "previous payment" + service-info fetch
+      const svcKeys = new Set<string>();
+      const byTable: Record<string, Set<string>> = {};
+      for (const r of recs) {
+        if (r.service_table && r.service_row_id) {
+          svcKeys.add(`${r.service_table}:${r.service_row_id}`);
+          (byTable[r.service_table] ??= new Set()).add(r.service_row_id);
         }
       }
+
+      // Fetch ALL receipts for those service rows (for previous-paid calc)
+      const byService: Record<string, Receipt[]> = {};
+      if (svcKeys.size > 0) {
+        const tables = Array.from(new Set(Array.from(svcKeys).map((k) => k.split(":")[0])));
+        for (const t of tables) {
+          const rowIds = Array.from(byTable[t] ?? []);
+          if (rowIds.length === 0) continue;
+          const { data: more } = await supabase
+            .from("payment_receipts")
+            .select("id,receipt_id,entry_date,passenger_name,amount,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+            .eq("service_table", t)
+            .in("service_row_id", rowIds)
+            .not("source", "eq", "discount");
+          for (const r of ((more ?? []) as Receipt[])) {
+            if (!r.service_table || !r.service_row_id) continue;
+            (byService[`${r.service_table}:${r.service_row_id}`] ??= []).push(r);
+          }
+        }
+      }
+
+      // Fetch service info (passport, vendor, country, sold_price, discount)
+      const svcMap: Record<string, ServiceInfo> = {};
+      await Promise.all(
+        SERVICE_TABLES.map(async (cfg) => {
+          const rowIds = Array.from(byTable[cfg.table] ?? []);
+          if (rowIds.length === 0) return;
+          const cols = ["id", "passport"];
+          if (typeof cfg.country === "string") cols.push(cfg.country);
+          cols.push(cfg.vendorField, cfg.soldField, cfg.discountField);
+          const { data } = await supabase
+            .from(cfg.table as never)
+            .select(cols.join(","))
+            .in("id", rowIds);
+          for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+            svcMap[`${cfg.table}:${row.id as string}`] = {
+              country: typeof cfg.country === "function"
+                ? cfg.country()
+                : (row[cfg.country] as string | null) ?? null,
+              vendor: (row[cfg.vendorField] as string | null) ?? null,
+              passport: (row.passport as string | null) ?? null,
+              sold_price: Number(row[cfg.soldField] ?? 0),
+              discount: Number(row[cfg.discountField] ?? 0),
+            };
+          }
+        })
+      );
 
       if (cancelled) return;
       setHandovers(hvs);
       setReceiptsByH(byH);
-      setReceiptsByRef(byRef);
-      setBillByRef(billRef);
+      setReceiptsByService(byService);
+      setServiceMap(svcMap);
       setLoading(false);
     })();
 
     const ch = supabase
       .channel(`handover-book-${mode}-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, () => {
-        if (!cancelled) onOpenChange(open);
+        if (!cancelled) setReloadTick((t) => t + 1);
       })
       .subscribe();
 
     return () => { cancelled = true; void supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, user?.id, mode]);
+  }, [open, user?.id, mode, reloadTick]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -159,17 +198,22 @@ export function HandoverLedgerBook({
       if (h.handover_id?.toLowerCase().includes(q)) return true;
       if ((h.from_name ?? "").toLowerCase().includes(q)) return true;
       const recs = receiptsByH[h.id] ?? [];
-      return recs.some((r) =>
-        r.passenger_name?.toLowerCase().includes(q) ||
-        (r.ref_id ?? "").toLowerCase().includes(q) ||
-        (r.receipt_id ?? "").toLowerCase().includes(q),
-      );
+      return recs.some((r) => {
+        if (r.passenger_name?.toLowerCase().includes(q)) return true;
+        if ((r.ref_id ?? "").toLowerCase().includes(q)) return true;
+        if ((r.receipt_id ?? "").toLowerCase().includes(q)) return true;
+        const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
+        const info = sk ? serviceMap[sk] : undefined;
+        if (info?.passport?.toLowerCase().includes(q)) return true;
+        if (info?.vendor?.toLowerCase().includes(q)) return true;
+        return false;
+      });
     });
-  }, [handovers, search, receiptsByH]);
+  }, [handovers, search, receiptsByH, serviceMap]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -185,7 +229,7 @@ export function HandoverLedgerBook({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="যাত্রীর নাম, রেফারেন্স ID, handover ID, বা স্টাফ…"
+            placeholder="যাত্রীর নাম, পাসপোর্ট, ভেন্ডর, রেফারেন্স ID, handover ID, বা স্টাফ…"
             className="h-9 pl-7"
           />
         </div>
@@ -201,8 +245,8 @@ export function HandoverLedgerBook({
                 key={h.id}
                 handover={h}
                 receipts={receiptsByH[h.id] ?? []}
-                receiptsByRef={receiptsByRef}
-                billByRef={billByRef}
+                receiptsByService={receiptsByService}
+                serviceMap={serviceMap}
                 mode={mode}
               />
             ))
@@ -214,12 +258,12 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, receiptsByRef, billByRef, mode,
+  handover, receipts, receiptsByService, serviceMap, mode,
 }: {
   handover: Handover;
   receipts: Receipt[];
-  receiptsByRef: Record<string, Receipt[]>;
-  billByRef: Record<string, number>;
+  receiptsByService: Record<string, Receipt[]>;
+  serviceMap: Record<string, ServiceInfo>;
   mode: "mine" | "to-me";
 }) {
   const status = handover.status ?? "pending";
@@ -240,7 +284,6 @@ function HandoverCard({
       <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 border">{status}</Badge>
     );
 
-  // Reference date for "previous payments" cutoff = handover created_at
   const cutoff = new Date(handover.created_at).getTime();
 
   return (
@@ -262,19 +305,17 @@ function HandoverCard({
         <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
       </div>
 
-      {/* Approved footer line */}
       {status === "approved" && handover.approved_at && (
         <div className="px-4 py-1.5 bg-emerald-500/5 text-[11px] text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/20">
           ✅ তারিখ: {formatDate(handover.approved_at)} | সময়: {new Date(handover.approved_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} | 👤 গ্রহীতা: {handover.to_name ?? "MD Sir"}
         </div>
       )}
 
-      {/* Per-passenger table */}
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-muted/30">
             <tr className="text-left">
-              <th className="px-3 py-1.5 font-semibold">যাত্রী / সার্ভিস</th>
+              <th className="px-3 py-1.5 font-semibold">যাত্রী</th>
               <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
@@ -285,39 +326,76 @@ function HandoverCard({
             {receipts.length === 0 ? (
               <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
             ) : receipts.map((r) => {
-              const refId = r.ref_id;
-              const allForRef = refId ? (receiptsByRef[refId] ?? []) : [];
-              const previousPaid = allForRef
-                .filter((x) => x.id !== r.id && new Date(x.created_at).getTime() < cutoff)
-                .reduce((s, x) => s + Number(x.amount || 0), 0);
-              const totalPaidIncl = allForRef.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const bill = refId ? (billByRef[refId] ?? 0) : 0;
-              const due = bill > 0 ? Math.max(0, bill - totalPaidIncl) : 0;
+              const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
+              const info = sk ? serviceMap[sk] : undefined;
+              const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+              const past = allForSvc.filter((x) => x.id !== r.id && new Date(x.created_at).getTime() < cutoff);
+              const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+              const lastPast = past.length
+                ? past.reduce((a, b) => (new Date(a.created_at).getTime() > new Date(b.created_at).getTime() ? a : b))
+                : null;
+              const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+              const bill = info?.sold_price ?? 0;
+              const discount = info?.discount ?? 0;
+              const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
 
               return (
                 <tr key={r.id} className="border-t align-top hover:bg-muted/20">
+                  {/* যাত্রী */}
                   <td className="px-3 py-2">
                     <div className="font-semibold">{r.passenger_name || "—"}</div>
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
                       {r.service_type}
-                      {refId && <> · <span className="font-mono">{refId}</span></>}
+                      {info?.country ? ` · ${info.country}` : ""}
+                      {info?.vendor ? ` (${info.vendor})` : ""}
                     </div>
+                    {info?.passport && (
+                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
+                    )}
+                    {r.ref_id && (
+                      <div className="text-[10px] text-muted-foreground font-mono">{r.ref_id}</div>
+                    )}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {bill > 0 ? <b>{fmt(bill)}</b> : <span className="text-muted-foreground">—</span>}
+                  {/* মোট বিল */}
+                  <td className="px-3 py-2 text-right">
+                    {bill > 0 ? (
+                      <>
+                        <div className="font-bold tabular-nums">{fmt(bill)}</div>
+                        {discount > 0 && (
+                          <div className="text-[10px] tabular-nums text-emerald-600">{fmt(discount)} (ডিসকাউন্ট)</div>
+                        )}
+                        {due > 0.005 && (
+                          <div className="text-[10px] tabular-nums text-rose-600">বাকি: {fmt(due)}</div>
+                        )}
+                        {due <= 0.005 && (
+                          <div className="text-[10px] text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
+                        )}
+                      </>
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {previousPaid > 0
-                      ? <span className="text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</span>
-                      : <span className="text-muted-foreground">—</span>}
+                  {/* পূর্বের জমা */}
+                  <td className="px-3 py-2 text-right">
+                    {previousPaid > 0 ? (
+                      <>
+                        <div className="font-semibold tabular-nums text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</div>
+                        {lastPast && (
+                          <div className="text-[10px] text-sky-600">{formatDate(lastPast.entry_date)}</div>
+                        )}
+                        {past.length > 1 && (
+                          <div className="text-[10px] text-muted-foreground">+{past.length - 1} আরও</div>
+                        )}
+                      </>
+                    ) : <span className="text-[11px] text-muted-foreground">— নতুন বিক্রি —</span>}
                   </td>
+                  {/* এই বারের জমা */}
                   <td className="px-3 py-2 text-right tabular-nums">
                     <b className="text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
                   </td>
+                  {/* বাকি (after this handover) */}
                   <td className="px-3 py-2 text-right tabular-nums">
                     {bill > 0
                       ? (due <= 0.005
-                        ? <span className="text-emerald-600">✓ পরিশোধিত</span>
+                        ? <span className="text-emerald-600">✓</span>
                         : <span className="text-rose-600">{fmt(due)}</span>)
                       : <span className="text-muted-foreground">—</span>}
                   </td>
@@ -333,7 +411,6 @@ function HandoverCard({
         </table>
       </div>
 
-      {/* Footer details */}
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
         <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
           {confirmed > 0 && confirmed !== submitted && (
