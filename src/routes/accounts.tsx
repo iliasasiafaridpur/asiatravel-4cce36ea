@@ -1039,6 +1039,7 @@ ${node.innerHTML.replace(
                       </div>
                       <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                         <Banknote className="h-3 w-3" />{h.method} · {formatDate(h.entry_date)} · <span className="font-mono">{h.handover_id}</span>
+                        {(h.status ?? "approved") === "pending" && <span className="text-amber-600">· Pending MD</span>}
                       </p>
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
