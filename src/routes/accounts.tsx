@@ -85,16 +85,14 @@ function AccountsPage() {
   const reloadSeqRef = useRef(0);
 
   // Dialog forms
-  const [handOpen, setHandOpen] = useState(false);
   const [eodOpen, setEodOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualTab, setManualTab] = useState<"income" | "expense">("income");
-  const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
   const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
-  const [savingHandover, setSavingHandover] = useState(false);
   const [savingIncome, setSavingIncome] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
+
 
   const reload = useCallback(async (quiet = false) => {
     if (!user?.id) return;
@@ -250,36 +248,6 @@ function AccountsPage() {
     return desc.slice(0, latestN);
   }, [fullAsc, latestN, useDateFilter, inDateRange]);
 
-  // Save handover
-  const saveHandover = async () => {
-    if (savingHandover) return;
-    if (!user?.id) return toast.error("লগ-ইন করুন");
-    const amt = Number(hForm.amount);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-    setSavingHandover(true);
-    try {
-      const { data: idData, error: idErr } = await supabase.rpc("next_module_id" as never, { _prefix: "HND", _table: "cash_handovers", _column: "handover_id" } as never);
-      if (idErr) return toast.error(idErr.message);
-      const { error } = await supabase.from("cash_handovers").insert({
-        handover_id: idData as unknown as string,
-        entry_date: hForm.entry_date,
-        from_user: user.id,
-        from_name: displayName(profile, user),
-        to_name: hForm.to_name,
-        amount: amt,
-        method: hForm.method,
-        remarks: hForm.remarks || null,
-        created_by: user.id,
-      });
-      if (error) return toast.error(error.message);
-      toast.success("✓ জমা সংরক্ষিত");
-      setHForm({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
-      setHandOpen(false);
-      void reload(true);
-    } finally {
-      setSavingHandover(false);
-    }
-  };
 
   // Save expense
   const saveExpense = async () => {
@@ -458,7 +426,7 @@ ${node.innerHTML.replace(
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
         <StatCard label="মোট আয়" value={periodIncome} icon={TrendingUp} tone="success" />
-        <StatCard label="মোট জমা" value={periodHand} icon={Send} tone="info" />
+        <StatCard label="Submit Cash Handover" value={periodHand} icon={Send} tone="info" />
         <StatCard label="মোট খরচ" value={periodExp} icon={TrendingDown} tone="warning" />
       </div>
 
@@ -564,54 +532,6 @@ ${node.innerHTML.replace(
               </>
             )}
 
-            <Dialog open={handOpen} onOpenChange={setHandOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5 h-9">
-                  <Send className="h-4 w-4" /> জমা দিন
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>কতৃপক্ষের কাছে জমা</DialogTitle>
-                  <DialogDescription>আজকের আয় থেকে নির্দিষ্ট পরিমাণ জমা দিন।</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">তারিখ</Label>
-                      <DateInput value={hForm.entry_date} onChange={(e) => setHForm({ ...hForm, entry_date: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">প্রাপক</Label>
-                      <Select value={hForm.to_name} onValueChange={(v) => setHForm({ ...hForm, to_name: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{RECEIVERS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">পরিমাণ (৳)</Label>
-                      <Input type="number" inputMode="numeric" placeholder="0" value={hForm.amount} onChange={(e) => setHForm({ ...hForm, amount: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">মাধ্যম</Label>
-                      <Select value={hForm.method} onValueChange={(v) => setHForm({ ...hForm, method: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs">মন্তব্য</Label>
-                    <Textarea rows={2} placeholder="ঐচ্ছিক" value={hForm.remarks} onChange={(e) => setHForm({ ...hForm, remarks: e.target.value })} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={saveHandover} disabled={savingHandover} className="gap-1.5"><Plus className="h-4 w-4" />{savingHandover ? "সংরক্ষণ হচ্ছে..." : "সংরক্ষণ"}</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
             <Dialog open={manualOpen} onOpenChange={setManualOpen}>
               <DialogTrigger asChild>
@@ -699,7 +619,7 @@ ${node.innerHTML.replace(
           <p className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">{fmt(periodIncome)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">জমা</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Submit Cash Handover</p>
           <p className="text-base sm:text-lg font-bold text-sky-600 tabular-nums">{fmt(periodHand)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
@@ -714,7 +634,7 @@ ${node.innerHTML.replace(
           <TabsTrigger value="timeline" className="text-xs gap-1"><Layers className="h-3.5 w-3.5" />Timeline</TabsTrigger>
           <TabsTrigger value="income"   className="text-xs gap-1"><ArrowDownLeft className="h-3.5 w-3.5" />আয়</TabsTrigger>
           <TabsTrigger value="expense"  className="text-xs gap-1"><Receipt className="h-3.5 w-3.5" />খরচ</TabsTrigger>
-          <TabsTrigger value="handover" className="text-xs gap-1"><ArrowUpRight className="h-3.5 w-3.5" />জমা</TabsTrigger>
+          <TabsTrigger value="handover" className="text-xs gap-1"><ArrowUpRight className="h-3.5 w-3.5" />Cash Handover</TabsTrigger>
         </TabsList>
 
         {/* Timeline */}
