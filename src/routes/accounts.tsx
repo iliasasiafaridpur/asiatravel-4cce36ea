@@ -415,6 +415,9 @@ ${node.innerHTML.replace(
     w.document.close();
   };
 
+  if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  if (isAdmin) return <Navigate to="/" />;
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-8">
       {/* Header */}
