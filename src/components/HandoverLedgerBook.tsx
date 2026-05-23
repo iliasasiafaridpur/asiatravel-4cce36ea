@@ -1,0 +1,362 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { formatDate, formatDateTime } from "@/lib/modules";
+import { BookOpen, CheckCircle2, Clock, Search, User2, Users } from "lucide-react";
+
+const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
+
+type Handover = {
+  id: string;
+  handover_id: string;
+  entry_date: string;
+  closing_date: string | null;
+  from_user: string | null;
+  from_name: string | null;
+  to_name: string | null;
+  submitted_amount: number | null;
+  confirmed_amount: number | null;
+  amount: number;
+  status: string;
+  remarks: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  created_at: string;
+};
+
+type Receipt = {
+  id: string;
+  receipt_id: string;
+  entry_date: string;
+  passenger_name: string;
+  amount: number;
+  service_type: string;
+  ref_id: string | null;
+  approval_status: string;
+  handover_id: string | null;
+  received_by: string | null;
+  received_by_name: string | null;
+  created_at: string;
+};
+
+/**
+ * Permanent shared "Handover Book". Renders a list of handover cards;
+ * each card shows per-passenger breakdown:
+ *   মোট বিল  |  পূর্বের জমা  |  এই বারের জমা  |  বাকি
+ *
+ * Mode:
+ *   - "mine"  → staff view (from_user = me)
+ *   - "to-me" → MD view (handovers approved by me / received from staff)
+ */
+export function HandoverLedgerBook({
+  open,
+  onOpenChange,
+  mode,
+  title,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  mode: "mine" | "to-me";
+  title?: string;
+}) {
+  const { user } = useCurrentUser();
+  const [handovers, setHandovers] = useState<Handover[]>([]);
+  const [receiptsByH, setReceiptsByH] = useState<Record<string, Receipt[]>>({});
+  // For each ref_id, list of all receipts (any handover) — to compute "previous"
+  const [receiptsByRef, setReceiptsByRef] = useState<Record<string, Receipt[]>>({});
+  // service ref_id → sold_price total bill
+  const [billByRef, setBillByRef] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (!open || !user?.id) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      // 1) handovers
+      let q = supabase
+        .from("cash_handovers")
+        .select("id,handover_id,entry_date,closing_date,from_user,from_name,to_name,submitted_amount,confirmed_amount,amount,status,remarks,approved_at,approved_by,created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (mode === "mine") q = q.eq("from_user", user.id);
+      const { data: hvData } = await q;
+      const hvs = (hvData ?? []) as Handover[];
+
+      // 2) receipts linked to those handovers
+      const ids = hvs.map((h) => h.id);
+      let recs: Receipt[] = [];
+      if (ids.length > 0) {
+        const { data: recData } = await supabase
+          .from("payment_receipts")
+          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+          .in("handover_id", ids)
+          .not("source", "eq", "discount");
+        recs = (recData ?? []) as Receipt[];
+      }
+
+      const byH: Record<string, Receipt[]> = {};
+      for (const r of recs) {
+        if (!r.handover_id) continue;
+        (byH[r.handover_id] ??= []).push(r);
+      }
+
+      // 3) For each ref_id seen, fetch ALL receipts with that ref_id (for previous-payment calc)
+      const refIds = Array.from(new Set(recs.map((r) => r.ref_id).filter((x): x is string => !!x)));
+      const byRef: Record<string, Receipt[]> = {};
+      const billRef: Record<string, number> = {};
+      if (refIds.length > 0) {
+        const { data: allForRef } = await supabase
+          .from("payment_receipts")
+          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+          .in("ref_id", refIds)
+          .not("source", "eq", "discount");
+        for (const r of ((allForRef ?? []) as Receipt[])) {
+          if (!r.ref_id) continue;
+          (byRef[r.ref_id] ??= []).push(r);
+        }
+
+        // 4) Resolve total bill from agency_ledger by ledger_id == ref_id
+        const { data: ledgerRows } = await supabase
+          .from("agency_ledger")
+          .select("ledger_id,total_bill")
+          .in("ledger_id", refIds);
+        for (const row of ((ledgerRows ?? []) as Array<{ ledger_id: string; total_bill: number | null }>)) {
+          if (row.ledger_id) billRef[row.ledger_id] = Number(row.total_bill || 0);
+        }
+      }
+
+      if (cancelled) return;
+      setHandovers(hvs);
+      setReceiptsByH(byH);
+      setReceiptsByRef(byRef);
+      setBillByRef(billRef);
+      setLoading(false);
+    })();
+
+    const ch = supabase
+      .channel(`handover-book-${mode}-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, () => {
+        if (!cancelled) onOpenChange(open);
+      })
+      .subscribe();
+
+    return () => { cancelled = true; void supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, user?.id, mode]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return handovers;
+    return handovers.filter((h) => {
+      if (h.handover_id?.toLowerCase().includes(q)) return true;
+      if ((h.from_name ?? "").toLowerCase().includes(q)) return true;
+      const recs = receiptsByH[h.id] ?? [];
+      return recs.some((r) =>
+        r.passenger_name?.toLowerCase().includes(q) ||
+        (r.ref_id ?? "").toLowerCase().includes(q) ||
+        (r.receipt_id ?? "").toLowerCase().includes(q),
+      );
+    });
+  }, [handovers, search, receiptsByH]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            {title ?? (mode === "mine" ? "আমার হিসাব বই (Handover Book)" : "স্টাফ থেকে রিসিভ করা ক্যাশের হিস্টোরি")}
+          </DialogTitle>
+          <DialogDescription>
+            প্রতিটি কার্ডে দেখুন — কোন কোন যাত্রীর জন্য, কত টাকা, কখন বুঝিয়ে দেওয়া/বুঝে নেওয়া হয়েছে।
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="যাত্রীর নাম, রেফারেন্স ID, handover ID, বা স্টাফ…"
+            className="h-9 pl-7"
+          />
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+          {loading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
+          ) : filtered.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>
+          ) : (
+            filtered.map((h) => (
+              <HandoverCard
+                key={h.id}
+                handover={h}
+                receipts={receiptsByH[h.id] ?? []}
+                receiptsByRef={receiptsByRef}
+                billByRef={billByRef}
+                mode={mode}
+              />
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function HandoverCard({
+  handover, receipts, receiptsByRef, billByRef, mode,
+}: {
+  handover: Handover;
+  receipts: Receipt[];
+  receiptsByRef: Record<string, Receipt[]>;
+  billByRef: Record<string, number>;
+  mode: "mine" | "to-me";
+}) {
+  const status = handover.status ?? "pending";
+  const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
+  const confirmed = Number(handover.confirmed_amount ?? 0);
+  const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+
+  const statusBadge =
+    status === "approved" ? (
+      <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 border gap-1">
+        <CheckCircle2 className="h-3 w-3" /> এমডি বুঝে নিয়েছেন
+      </Badge>
+    ) : status === "pending" ? (
+      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 border gap-1">
+        <Clock className="h-3 w-3" /> এমডিকে পাঠানো হয়েছে
+      </Badge>
+    ) : (
+      <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 border">{status}</Badge>
+    );
+
+  // Reference date for "previous payments" cutoff = handover created_at
+  const cutoff = new Date(handover.created_at).getTime();
+
+  return (
+    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="bg-muted/40 px-4 py-2.5 border-b flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {statusBadge}
+          <span className="font-mono text-[11px] text-muted-foreground">{handover.handover_id}</span>
+        </div>
+        <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+          <span>📅 {formatDateTime(handover.created_at)}</span>
+          {mode === "to-me" ? (
+            <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> স্টাফ: <b className="text-foreground">{handover.from_name ?? "—"}</b></span>
+          ) : (
+            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></span>
+          )}
+        </div>
+        <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
+      </div>
+
+      {/* Approved footer line */}
+      {status === "approved" && handover.approved_at && (
+        <div className="px-4 py-1.5 bg-emerald-500/5 text-[11px] text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/20">
+          ✅ তারিখ: {formatDate(handover.approved_at)} | সময়: {new Date(handover.approved_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} | 👤 গ্রহীতা: {handover.to_name ?? "MD Sir"}
+        </div>
+      )}
+
+      {/* Per-passenger table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-muted/30">
+            <tr className="text-left">
+              <th className="px-3 py-1.5 font-semibold">যাত্রী / সার্ভিস</th>
+              <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
+              <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
+              <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
+              <th className="px-3 py-1.5 font-semibold text-right">বাকি</th>
+            </tr>
+          </thead>
+          <tbody>
+            {receipts.length === 0 ? (
+              <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
+            ) : receipts.map((r) => {
+              const refId = r.ref_id;
+              const allForRef = refId ? (receiptsByRef[refId] ?? []) : [];
+              const previousPaid = allForRef
+                .filter((x) => x.id !== r.id && new Date(x.created_at).getTime() < cutoff)
+                .reduce((s, x) => s + Number(x.amount || 0), 0);
+              const totalPaidIncl = allForRef.reduce((s, x) => s + Number(x.amount || 0), 0);
+              const bill = refId ? (billByRef[refId] ?? 0) : 0;
+              const due = bill > 0 ? Math.max(0, bill - totalPaidIncl) : 0;
+
+              return (
+                <tr key={r.id} className="border-t align-top hover:bg-muted/20">
+                  <td className="px-3 py-2">
+                    <div className="font-semibold">{r.passenger_name || "—"}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {r.service_type}
+                      {refId && <> · <span className="font-mono">{refId}</span></>}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {bill > 0 ? <b>{fmt(bill)}</b> : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {previousPaid > 0
+                      ? <span className="text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</span>
+                      : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    <b className="text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {bill > 0
+                      ? (due <= 0.005
+                        ? <span className="text-emerald-600">✓ পরিশোধিত</span>
+                        : <span className="text-rose-600">{fmt(due)}</span>)
+                      : <span className="text-muted-foreground">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+            <tr className="border-t bg-muted/30 font-semibold">
+              <td className="px-3 py-1.5 text-right" colSpan={3}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
+              <td className="px-3 py-1.5" />
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer details */}
+      {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
+        <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
+          {confirmed > 0 && confirmed !== submitted && (
+            <div>Confirmed: <b className="text-foreground">{fmt(confirmed)}</b> · Variance: <b className={confirmed - submitted > 0 ? "text-emerald-600" : "text-rose-600"}>{confirmed - submitted > 0 ? "+" : ""}{fmt(confirmed - submitted)}</b></div>
+          )}
+          {handover.remarks && <div>📝 {handover.remarks}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function HandoverLedgerButton({
+  mode, label,
+}: { mode: "mine" | "to-me"; label?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+        <BookOpen className="h-3.5 w-3.5" />
+        {label ?? (mode === "mine" ? "আমার হিসাব বই" : "ক্যাশ রিসিভ হিস্টোরি")}
+      </Button>
+      <HandoverLedgerBook open={open} onOpenChange={setOpen} mode={mode} />
+    </>
+  );
+}
