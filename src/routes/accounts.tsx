@@ -40,7 +40,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; }
-interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; }
+interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; handover_id?: string | null; }
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
@@ -104,7 +104,7 @@ function AccountsPage() {
     const parsedLimit = /^\d+$/.test(latestInput.trim()) ? Math.max(parseInt(latestInput.trim(), 10), 1) : 1000;
     let recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by,handover_id").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false });
     let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date").order("created_at", { ascending: false });
-    let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by,handover_id").order("created_at", { ascending: false });
+    let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by,handover_id,linked_source_table,linked_source_id").order("created_at", { ascending: false });
 
     if (dateFrom) {
       recvQuery = recvQuery.gte("entry_date", dateFrom);
@@ -215,6 +215,8 @@ function AccountsPage() {
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const isReceiptSubmitted = (r: Recv) => Boolean(r.handover_id);
   const isExpenseSubmitted = (e: Exp) => Boolean(e.handover_id);
+  const isManualReceipt = (r: Recv) => r.source === "manual" && !r.service_table && !r.service_row_id;
+  const isManualExpense = (e: Exp) => !e.linked_source_table && !e.linked_source_id;
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
