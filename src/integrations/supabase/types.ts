@@ -263,6 +263,7 @@ export type Database = {
           created_by: string | null
           entry_date: string
           expense_id: string
+          handover_id: string | null
           id: string
           linked_source_id: string | null
           linked_source_table: string | null
@@ -280,6 +281,7 @@ export type Database = {
           created_by?: string | null
           entry_date?: string
           expense_id: string
+          handover_id?: string | null
           id?: string
           linked_source_id?: string | null
           linked_source_table?: string | null
@@ -297,6 +299,7 @@ export type Database = {
           created_by?: string | null
           entry_date?: string
           expense_id?: string
+          handover_id?: string | null
           id?: string
           linked_source_id?: string | null
           linked_source_table?: string | null
