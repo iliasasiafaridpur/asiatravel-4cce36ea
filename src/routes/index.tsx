@@ -229,6 +229,35 @@ function DashboardPage() {
     },
   });
 
+  const { data: officeCashBalance = 0 } = useQuery({
+    queryKey: ["dashboard", "office_cash_balance", isAdmin],
+    enabled: isAdmin,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const [receipts, handovers, expenses] = await Promise.all([
+        supabase.from("payment_receipts").select("amount,approval_status,source,method"),
+        supabase.from("cash_handovers").select("amount,status"),
+        supabase.from("cash_expenses").select("amount"),
+      ]);
+      const err = receipts.error || handovers.error || expenses.error;
+      if (err) throw err;
+      const totalReceived = ((receipts.data ?? []) as Array<{ amount: number; approval_status: string; source: string | null; method: string | null }>).reduce((sum, row) => {
+        const isApproved = row.approval_status === "auto_approved" || row.approval_status === "approved";
+        const isDiscount = row.source === "discount" || (row.method ?? "").toLowerCase() === "discount";
+        return isApproved && !isDiscount ? sum + Number(row.amount || 0) : sum;
+      }, 0);
+      const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>).reduce(
+        (sum, row) => (row.status === "rejected" ? sum : sum + Number(row.amount || 0)),
+        0,
+      );
+      const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number }>).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      return totalReceived - totalHandedOver - totalExpenses;
+    },
+  });
+
+  const shownCashBalance = isAdmin ? officeCashBalance : Number(myAccount?.current_balance ?? 0);
+  const shownCashLabel = isAdmin ? "Office Cash" : (myAccount?.full_name ?? meName);
+
   const profileName = (uid?: string | null) =>
     profiles.find((p) => p.user_id === uid)?.full_name ?? null;
 
