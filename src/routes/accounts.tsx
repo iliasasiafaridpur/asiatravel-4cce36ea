@@ -125,9 +125,9 @@ function AccountsPage() {
     }
 
     const [r, h, e] = await Promise.all([
-      seeAll ? recvQuery : recvQuery.eq("received_by", user.id),
-      seeAll ? handQuery : handQuery.eq("from_user", user.id),
-      seeAll ? expQuery  : expQuery.eq("spent_by", user.id),
+      seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
+      seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`),
+      seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`),
     ]);
 
     const err = r.error || h.error || e.error;
