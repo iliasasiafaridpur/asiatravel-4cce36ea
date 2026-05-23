@@ -44,7 +44,7 @@ export function StaffHandoverDialog({
       const [r, e] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("id,receipt_id,amount,passenger_name,entry_date")
+          .select("id,receipt_id,amount,passenger_name,entry_date,created_at")
           .eq("received_by", user.id)
           .eq("approval_status", "pending_md")
           .lte("entry_date", closingDate)
