@@ -42,7 +42,7 @@ export function StaffHandoverDialog({
       const [r, e] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("id,receipt_id,amount,payer_name,entry_date")
+          .select("id,receipt_id,amount,passenger_name,entry_date")
           .eq("received_by", user.id)
           .eq("approval_status", "pending_md")
           .lte("entry_date", closingDate)
@@ -149,7 +149,7 @@ export function StaffHandoverDialog({
                 receipts.map((r) => (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
-                      <div className="truncate">{r.payer_name || "—"}</div>
+                      <div className="truncate">{r.passenger_name || "—"}</div>
                       <div className="text-[10px] text-muted-foreground font-mono">
                         {r.receipt_id || r.id.slice(0, 8)} • {r.entry_date}
                       </div>
