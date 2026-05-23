@@ -82,7 +82,7 @@ function AccountsPage() {
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
 
   const printRef = useRef<HTMLDivElement>(null);
-  const reloadingRef = useRef(false);
+  const reloadSeqRef = useRef(0);
 
   // Dialog forms
   const [handOpen, setHandOpen] = useState(false);
@@ -98,8 +98,8 @@ function AccountsPage() {
 
   const reload = useCallback(async (quiet = false) => {
     if (!user?.id) return;
-    if (reloadingRef.current) return;
-    reloadingRef.current = true;
+    const seq = reloadSeqRef.current + 1;
+    reloadSeqRef.current = seq;
     if (!quiet) setSyncing(true);
 
     const hasDateFilter = !!(dateFrom || dateTo);
@@ -131,6 +131,7 @@ function AccountsPage() {
     ]);
 
     const err = r.error || h.error || e.error;
+    if (seq !== reloadSeqRef.current) return;
     if (err) {
       if (!quiet) toast.error("সিঙ্ক সমস্যা: " + err.message);
     }
@@ -138,7 +139,6 @@ function AccountsPage() {
     setHandovers(h.error ? [] : (((h.data as unknown) as Hand[]) ?? []));
     setExpenses(e.error ? [] : (((e.data as unknown) as Exp[]) ?? []));
 
-    reloadingRef.current = false;
     setSyncing(false);
     setLoading(false);
   }, [user?.id, seeAll, dateFrom, dateTo, latestInput]);
