@@ -980,6 +980,37 @@ ${node.innerHTML.replace(
               : <div className="divide-y">
                 {fHand.map((h) => {
                   const submitted = isHandoverSubmitted(h);
+                  const status = h.status ?? "approved";
+                  const isApproved = status === "approved";
+                  const isPending = status === "pending";
+                  const isRejected = status === "rejected";
+
+                  // Icon + Bengali label
+                  let statusIcon = "📤";
+                  let statusLabel = "এমডিকে পাঠানো হয়েছে";
+                  let statusCls = "text-sky-700 dark:text-sky-300 bg-sky-500/10 border-sky-500/30";
+                  if (isApproved) {
+                    statusIcon = "✅";
+                    statusLabel = "এমডি বুঝে নিয়েছেন";
+                    statusCls = "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/30";
+                  } else if (isRejected) {
+                    statusIcon = "❌";
+                    statusLabel = "এমডি ফেরত দিয়েছেন";
+                    statusCls = "text-rose-700 dark:text-rose-300 bg-rose-500/10 border-rose-500/30";
+                  } else if (isPending) {
+                    statusIcon = "📤";
+                    statusLabel = "এমডিকে পাঠানো হয়েছে";
+                  }
+
+                  // Approved details
+                  const approvedAt = (h as Hand & { approved_at?: string | null }).approved_at;
+                  const approvedTime = approvedAt
+                    ? new Date(approvedAt).toLocaleString("en-GB", {
+                        day: "2-digit", month: "2-digit", year: "numeric",
+                        hour: "2-digit", minute: "2-digit", hour12: true,
+                      })
+                    : null;
+
                   return (
                   <div key={h.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-sky-500/10 text-sky-600 border border-sky-500/20">
@@ -992,8 +1023,17 @@ ${node.innerHTML.replace(
                       </div>
                       <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                         <Banknote className="h-3 w-3" />{h.method} · {formatDate(h.entry_date)} · <span className="font-mono">{h.handover_id}</span>
-                        {(h.status ?? "approved") === "pending" && <span className="text-amber-600">· Pending MD</span>}
                       </p>
+                      <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] font-semibold ${statusCls}`}>
+                        <span>{statusIcon}</span><span>{statusLabel}</span>
+                      </div>
+                      {isApproved && (
+                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
+                          {approvedTime
+                            ? <>তারিখ ও সময়: <b>{approvedTime}</b> · 👤 গ্রহীতা: <b>MD (Elias)</b></>
+                            : <>👤 গ্রহীতা: <b>MD (Elias)</b></>}
+                        </p>
+                      )}
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
                     <ConfirmDeleteButton disabled={submitted || !isAdmin} onConfirm={() => deleteHand(h.id)} description={submitted ? "এই cash handover MD-কে submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : `জমা ${h.handover_id} ডিলেট করতে চান?`} />
@@ -1003,6 +1043,7 @@ ${node.innerHTML.replace(
               </div>}
           </CardContent></Card>
         </TabsContent>
+
       </Tabs>
     </div>
   );
