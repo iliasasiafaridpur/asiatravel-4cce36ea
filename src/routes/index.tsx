@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate, statusBadgeClass } from "@/lib/modules";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,6 +120,7 @@ function readDashboardCache(): Row[] | undefined {
 
 function DashboardPage() {
   const { user, profile } = useCurrentUser();
+  const { isAdmin } = useRole();
   const meName = displayName(profile, user);
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>("month");
@@ -129,7 +131,7 @@ function DashboardPage() {
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
   useEffect(() => {
-    const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
+    const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "payment_receipts", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
     const refresh = () => {
       if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = window.setTimeout(() => {
