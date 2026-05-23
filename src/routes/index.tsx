@@ -244,7 +244,7 @@ function DashboardPage() {
       const totalReceivedToday = nonDiscount.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
-      const totalHandedOver = handovers.filter((h) => h.status !== "rejected").reduce((s, h) => s + Number(h.amount || 0), 0);
+      const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
       const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
       return {
         currentBalance: totalReceived - totalExpenses - totalHandedOver,
