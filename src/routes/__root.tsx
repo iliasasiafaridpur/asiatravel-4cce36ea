@@ -19,6 +19,7 @@ import { Moon, Sun } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { NotificationBell } from "@/components/NotificationBell";
+import { HandoverHeaderButton } from "@/components/HandoverHeaderButton";
 import { installToastInterceptor } from "@/lib/toast-interceptor";
 import {
   clearStaleAssetRecoveryFlag,
@@ -186,7 +187,8 @@ function RootComponent() {
             <div className="flex-1 flex flex-col min-w-0">
               <header className="h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
                 <SidebarTrigger />
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
+                  <HandoverHeaderButton />
                   <NotificationBell />
                   <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
                     {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
