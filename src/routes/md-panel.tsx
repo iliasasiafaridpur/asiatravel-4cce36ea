@@ -151,7 +151,7 @@ function MdPanelPage() {
         .limit(200),
       supabase
         .from("payment_receipts")
-        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source")
+        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,created_at")
         .not("source", "eq", "discount")
         .not("method", "ilike", "discount")
         .order("entry_date", { ascending: false })
@@ -168,7 +168,7 @@ function MdPanelPage() {
     if (handoverIds.length) {
       const { data: linkedData } = await supabase
         .from("payment_receipts")
-        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source")
+        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,created_at")
         .in("handover_id", handoverIds);
       linked = (linkedData ?? []) as Receipt[];
     }
