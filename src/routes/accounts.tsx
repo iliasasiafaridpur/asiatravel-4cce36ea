@@ -539,7 +539,7 @@ ${node.innerHTML.replace(
             </div>
           </div>
           <div className="flex gap-2">
-            {isStaff && (
+            {(isStaff || isAdmin) && (
               <>
                 <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
                   <LockIcon className="h-4 w-4" /> Submit Daily Handover
