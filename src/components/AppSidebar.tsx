@@ -77,19 +77,29 @@ const NAV: { group: string; items: NavItem[] }[] = [
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
-  const { canApprove } = useRole();
-  const nav = canApprove
+  const { isMd, isAdmin } = useRole();
+
+  // Cash-flow routes hidden from Admin (technical-only role).
+  const CASH_ROUTES = new Set(["/accounts", "/agency-ledger", "/vendor-ledger"]);
+  const baseNav = NAV
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((it) => !(isAdmin && CASH_ROUTES.has(it.to))),
+    }))
+    .filter((g) => g.items.length > 0);
+
+  const nav = isMd
     ? [
-        ...NAV.slice(0, 3),
+        ...baseNav.slice(0, 3),
         {
           group: "Owner",
           items: [
             { to: "/md-panel", title: "MD Panel", icon: Crown, color: "text-amber-400", bg: "bg-amber-500/15" } as NavItem,
           ],
         },
-        ...NAV.slice(3),
+        ...baseNav.slice(3),
       ]
-    : NAV;
+    : baseNav;
 
   return (
     <Sidebar collapsible="icon">

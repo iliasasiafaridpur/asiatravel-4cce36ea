@@ -24,6 +24,8 @@ import {
   Lock as LockIcon,
 } from "lucide-react";
 import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
+import { useRole } from "@/hooks/useRole";
+import { Navigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "আমার হিসাব — My Accounts" }] }),
@@ -72,6 +74,7 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
+  const { isAdmin, isStaff, loading: roleLoading } = useRole();
   const [acct, setAcct] = useState<Acct | null>(null);
   const [received, setReceived] = useState<Recv[]>([]);
   const [handovers, setHandovers] = useState<Hand[]>([]);
@@ -412,6 +415,9 @@ ${node.innerHTML.replace(
     w.document.close();
   };
 
+  if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  if (isAdmin) return <Navigate to="/" />;
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-8">
       {/* Header */}
@@ -533,10 +539,14 @@ ${node.innerHTML.replace(
             </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
-              <LockIcon className="h-4 w-4" /> Submit Daily Handover
-            </Button>
-            <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} />
+            {isStaff && (
+              <>
+                <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
+                  <LockIcon className="h-4 w-4" /> Submit Daily Handover
+                </Button>
+                <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} />
+              </>
+            )}
 
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
               <DialogTrigger asChild>
