@@ -48,8 +48,8 @@ type Receipt = {
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
 function MdPanelPage() {
-  const { isMd, loading: roleLoading } = useRole();
-  const canApprove = isMd;
+  const { isMd, isAdmin, loading: roleLoading } = useRole();
+  const canApprove = isMd || isAdmin; // TEMP: Admin has full master access during testing.
   const { user, loading: userLoading } = useCurrentUser();
   const [pending, setPending] = useState<Handover[]>([]);
   const [all, setAll] = useState<Handover[]>([]);
