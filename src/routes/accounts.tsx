@@ -530,6 +530,9 @@ ${node.innerHTML.replace(
             </div>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
+              <Lock className="h-4 w-4" /> Submit Daily Handover
+            </Button>
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5 h-9">
