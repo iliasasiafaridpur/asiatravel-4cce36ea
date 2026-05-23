@@ -1007,7 +1007,7 @@ ${node.innerHTML.replace(
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
-                       <ConfirmDeleteButton onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
+                       <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>
                    );
                  })}
@@ -1035,7 +1035,7 @@ ${node.innerHTML.replace(
                       </p>
                       {e.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton onConfirm={() => deleteExp(e.id)} description={`খরচ ${e.expense_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner onConfirm={() => deleteExp(e.id)} description={`খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
                 ))}
               </div>}
@@ -1063,7 +1063,7 @@ ${node.innerHTML.replace(
                       </p>
                       {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
                 ))}
               </div>}
