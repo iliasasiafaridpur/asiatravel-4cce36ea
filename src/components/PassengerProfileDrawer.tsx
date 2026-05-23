@@ -333,6 +333,7 @@ export function PassengerProfileDrawer({
                             <th className="px-2 py-1.5 font-medium">Date</th>
                             <th className="px-2 py-1.5 font-medium text-right">Amount</th>
                             <th className="px-2 py-1.5 font-medium">Method</th>
+                            <th className="px-2 py-1.5 font-medium">Received By / Status</th>
                             <th className="px-2 py-1.5 font-medium text-right">Receipt</th>
                           </tr>
                         </thead>
@@ -344,6 +345,17 @@ export function PassengerProfileDrawer({
                             ),
                           ].map((r) => {
                             const isDisc = (r.method ?? "").toLowerCase() === "discount";
+                            const status = (r.approval_status ?? "").toLowerCase();
+                            const badge =
+                              status === "auto_approved"
+                                ? { label: "Self-Approved", cls: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" }
+                                : status === "approved"
+                                  ? { label: "Approved by MD", cls: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" }
+                                  : status === "rejected"
+                                    ? { label: "Rejected", cls: "bg-rose-500/15 text-rose-700 border-rose-500/30" }
+                                    : status === "pending_md"
+                                      ? { label: "Pending MD Approval", cls: "bg-amber-500/15 text-amber-700 border-amber-500/30" }
+                                      : null;
                             return (
                               <tr key={r.id} className="border-t">
                                 <td className="px-2 py-1.5 whitespace-nowrap">
@@ -355,6 +367,20 @@ export function PassengerProfileDrawer({
                                   {fmtMoney(Number(r.amount ?? 0))}
                                 </td>
                                 <td className="px-2 py-1.5">{r.method ?? DASH}</td>
+                                <td className="px-2 py-1.5">
+                                  {isDisc ? (
+                                    <span className="text-muted-foreground">—</span>
+                                  ) : (
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="font-medium">{r.received_by_name ?? DASH}</span>
+                                      {badge ? (
+                                        <Badge variant="outline" className={`w-fit text-[10px] py-0 px-1.5 ${badge.cls}`}>
+                                          {badge.label}
+                                        </Badge>
+                                      ) : null}
+                                    </div>
+                                  )}
+                                </td>
                                 <td className="px-2 py-1.5 text-right">
                                   <Button
                                     variant="ghost"
