@@ -48,7 +48,8 @@ type Receipt = {
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
 function MdPanelPage() {
-  const { canApprove, loading: roleLoading } = useRole();
+  const { isMd, loading: roleLoading } = useRole();
+  const canApprove = isMd;
   const { user, loading: userLoading } = useCurrentUser();
   const [pending, setPending] = useState<Handover[]>([]);
   const [all, setAll] = useState<Handover[]>([]);
