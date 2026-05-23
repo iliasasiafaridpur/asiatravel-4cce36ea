@@ -114,11 +114,11 @@ export function StaffHandoverDialog({
           className="w-full gap-2 mb-1"
           onClick={() => setOpenHistory(true)}
         >
-          <HistoryIcon className="h-4 w-4" />
-          Pending Approval ও পূর্বের Handover History দেখুন
+          <BookOpen className="h-4 w-4" />
+          📒 আমার হিসাব বই (Handover History)
         </Button>
 
-        <StaffHandoverHistoryDialog open={openHistory} onOpenChange={setOpenHistory} />
+        <HandoverLedgerBook open={openHistory} onOpenChange={setOpenHistory} mode="mine" />
 
 
         <div className="space-y-3">
