@@ -516,9 +516,9 @@ function DashboardPage() {
         <GradientStat label="Realized Profit" sublabel="নগদ লাভ" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
         <Link to="/accounts" className="block col-start-4 row-start-1 row-span-2">
           <GradientStat
-            label={myAccount?.full_name ?? meName}
+            label={shownCashLabel}
             sublabel="Current Balance"
-            value={Number(myAccount?.current_balance ?? 0)}
+            value={shownCashBalance}
             money
             icon={Wallet}
             from="from-amber-500"
