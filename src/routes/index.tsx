@@ -488,13 +488,60 @@ function DashboardPage() {
           <div className="flex md:justify-center md:flex-1">
             <DigitalClock />
           </div>
-          <div className="flex md:justify-end md:flex-shrink-0">
+          <div className="flex md:justify-end md:flex-shrink-0 flex-wrap gap-2">
+            {canHandover && (
+              <Button
+                size="sm"
+                onClick={() => setHandoverOpen(true)}
+                className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 shadow-md"
+              >
+                <HandCoins className="h-4 w-4" /> MD কে ক্যাশ বুঝিয়ে দিন
+              </Button>
+            )}
+            {isMd && (
+              <Link to="/md-panel">
+                <Button
+                  size="sm"
+                  className="gap-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:opacity-90 shadow-md relative"
+                >
+                  <Crown className="h-4 w-4" /> স্টাফ ক্যাশ রিকোয়েস্ট
+                  {pendingHandoverCount > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white text-amber-700 text-[11px] font-bold">
+                      {pendingHandoverCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
             <Link to="/action-board">
               <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
             </Link>
           </div>
         </div>
       </div>
+
+      {canHandover && (
+        <StaffHandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} onSubmitted={() => qc.invalidateQueries({ queryKey: ["dashboard"] })} />
+      )}
+
+      {isMd && pendingHandoverCount > 0 && (
+        <Card className="border-amber-400/40 bg-amber-500/10">
+          <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center">
+                <BellRing className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{pendingHandoverCount} টি স্টাফ ক্যাশ হ্যান্ডওভার অপেক্ষমাণ</p>
+                <p className="text-xs text-muted-foreground">Approve করলে স্টাফের Current Balance ০ হবে।</p>
+              </div>
+            </div>
+            <Link to="/md-panel">
+              <Button size="sm">Review &amp; Approve</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
 
       {/* Filters */}
