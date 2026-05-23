@@ -168,7 +168,7 @@ export function StaffHandoverDialog({
                     <div className="min-w-0">
                       <div className="truncate">{r.passenger_name || "—"}</div>
                       <div className="text-[10px] text-muted-foreground font-mono">
-                        {r.receipt_id || r.id.slice(0, 8)} • {r.entry_date}
+                        {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                       </div>
                     </div>
                     <div className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
