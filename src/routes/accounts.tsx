@@ -108,11 +108,15 @@ function AccountsPage() {
     reloadingRef.current = true;
     if (!quiet) setSyncing(true);
 
+    const recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false }).limit(1000);
+    const handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount").order("created_at", { ascending: false }).limit(1000);
+    const expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").order("created_at", { ascending: false }).limit(1000);
+
     const [a, r, h, e] = await Promise.all([
       supabase.rpc("get_user_account" as never, { _user_id: user.id } as never),
-      supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by").eq("received_by", user.id).not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false }).limit(500),
-      supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount").eq("from_user", user.id).order("created_at", { ascending: false }).limit(500),
-      supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by").eq("spent_by", user.id).order("created_at", { ascending: false }).limit(500),
+      seeAll ? recvQuery : recvQuery.eq("received_by", user.id),
+      seeAll ? handQuery : handQuery.eq("from_user", user.id),
+      seeAll ? expQuery  : expQuery.eq("spent_by", user.id),
     ]);
 
     const err = a.error || r.error || h.error || e.error;
