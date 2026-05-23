@@ -125,7 +125,8 @@ function HandList({ rows, loading, emptyText }: { rows: Hand[]; loading: boolean
               <div className="text-sm font-bold tabular-nums text-sky-500">{fmt(sub)}</div>
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
-              <span>📅 {h.closing_date || h.entry_date}</span>
+              <span>📅 Submitted: {formatDateTime(h.created_at)}</span>
+              <span>Closing: {formatDate(h.closing_date || h.entry_date)}</span>
               {h.to_name && <span>→ {h.to_name}</span>}
               {conf > 0 && <span>Confirmed: <span className="font-semibold text-foreground">{fmt(conf)}</span></span>}
               {variance !== 0 && (
