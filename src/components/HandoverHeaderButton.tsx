@@ -70,8 +70,8 @@ export function HandoverHeaderButton() {
       >
         <Link to="/md-panel">
           <Crown className="h-4 w-4" />
-          <span className="hidden sm:inline">MD Panel</span>
-          <span className="sm:hidden">MD</span>
+          <span className="hidden sm:inline">স্টাফ ক্যাশ রিকোয়েস্ট</span>
+          <span className="sm:hidden">ক্যাশ</span>
           {Badge}
           {hasPending && <Bell className="h-3.5 w-3.5 ml-0.5 animate-pulse" />}
         </Link>
@@ -93,20 +93,11 @@ export function HandoverHeaderButton() {
           {Badge}
           {hasPending && <Bell className="h-3.5 w-3.5 ml-0.5 animate-pulse" />}
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-9 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-          onClick={() => setOpenHistory(true)}
-          title="Pending ও History"
-        >
-          History
-        </Button>
         <StaffHandoverDialog open={openSubmit} onOpenChange={setOpenSubmit} onSubmitted={() => void load()} />
-        <StaffHandoverHistoryDialog open={openHistory} onOpenChange={setOpenHistory} />
       </>
     );
   }
+
 
   return null;
 }
