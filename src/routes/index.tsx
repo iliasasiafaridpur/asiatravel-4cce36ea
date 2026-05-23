@@ -18,9 +18,11 @@ import {
   PieChart, Pie, Legend, AreaChart, Area,
 } from "recharts";
 import { DigitalClock } from "@/components/DigitalClock";
+import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
+  HandCoins, Crown, BellRing,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -120,13 +122,14 @@ function readDashboardCache(): Row[] | undefined {
 
 function DashboardPage() {
   const { user, profile } = useCurrentUser();
-  const { isAdmin } = useRole();
+  const { isAdmin, isMd, isStaff } = useRole();
   const meName = displayName(profile, user);
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>("month");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [country, setCountry] = useState<string>("all");
+  const [handoverOpen, setHandoverOpen] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
@@ -218,14 +221,50 @@ function DashboardPage() {
     },
   });
 
-  const { data: myAccount } = useQuery({
-    queryKey: ["dashboard", "my_account", user?.id],
+  // Robust per-user balance: query receipts/expenses/handovers directly.
+  // Works even if RPC permissions/cache hiccup.
+  const { data: myBalance } = useQuery({
+    queryKey: ["dashboard", "my_balance", user?.id],
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_user_account" as never, { _user_id: user!.id } as never);
-      if (error) throw error;
-      return (((data as unknown) as Array<{ full_name: string; current_balance: number }> | null)?.[0] ?? null);
+      const [recv, exp, hand] = await Promise.all([
+        supabase.from("payment_receipts")
+          .select("amount,entry_date,approval_status,source,method,handover_id")
+          .eq("received_by", user!.id),
+        supabase.from("cash_expenses").select("amount,entry_date").eq("spent_by", user!.id),
+        supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id),
+      ]);
+      const today = new Date().toISOString().slice(0, 10);
+      const receipts = (recv.data ?? []) as Array<{ amount: number; entry_date: string; approval_status: string; source: string | null; method: string | null; handover_id: string | null }>;
+      const expenses = (exp.data ?? []) as Array<{ amount: number; entry_date: string }>;
+      const handovers = (hand.data ?? []) as Array<{ amount: number; status: string | null }>;
+      const nonDiscount = receipts.filter((r) => r.source !== "discount" && (r.method ?? "").toLowerCase() !== "discount");
+      const totalReceived = nonDiscount.reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalReceivedToday = nonDiscount.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalHandedOver = handovers.filter((h) => h.status !== "rejected").reduce((s, h) => s + Number(h.amount || 0), 0);
+      const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
+      return {
+        currentBalance: totalReceived - totalExpenses - totalHandedOver,
+        todayBalance: totalReceivedToday - totalExpensesToday,
+        pendingHandover,
+      };
+    },
+  });
+
+  // MD: count of pending handover requests
+  const { data: pendingHandoverCount = 0 } = useQuery({
+    queryKey: ["dashboard", "pending_handovers"],
+    enabled: isMd,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("cash_handovers")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      return count ?? 0;
     },
   });
 
@@ -254,8 +293,9 @@ function DashboardPage() {
     },
   });
 
-  const shownCashBalance = isAdmin ? officeCashBalance : Number(myAccount?.current_balance ?? 0);
-  const shownCashLabel = isAdmin ? "Office Cash" : (myAccount?.full_name ?? meName);
+  const shownCashBalance = isAdmin ? officeCashBalance : Number(myBalance?.currentBalance ?? 0);
+  const shownCashLabel = isAdmin ? "Office Cash" : meName;
+  const canHandover = (isStaff || isAdmin) && !isMd;
 
   const profileName = (uid?: string | null) =>
     profiles.find((p) => p.user_id === uid)?.full_name ?? null;
@@ -448,13 +488,60 @@ function DashboardPage() {
           <div className="flex md:justify-center md:flex-1">
             <DigitalClock />
           </div>
-          <div className="flex md:justify-end md:flex-shrink-0">
+          <div className="flex md:justify-end md:flex-shrink-0 flex-wrap gap-2">
+            {canHandover && (
+              <Button
+                size="sm"
+                onClick={() => setHandoverOpen(true)}
+                className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 shadow-md"
+              >
+                <HandCoins className="h-4 w-4" /> MD কে ক্যাশ বুঝিয়ে দিন
+              </Button>
+            )}
+            {isMd && (
+              <Link to="/md-panel">
+                <Button
+                  size="sm"
+                  className="gap-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:opacity-90 shadow-md relative"
+                >
+                  <Crown className="h-4 w-4" /> স্টাফ ক্যাশ রিকোয়েস্ট
+                  {pendingHandoverCount > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white text-amber-700 text-[11px] font-bold">
+                      {pendingHandoverCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
             <Link to="/action-board">
               <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
             </Link>
           </div>
         </div>
       </div>
+
+      {canHandover && (
+        <StaffHandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} onSubmitted={() => qc.invalidateQueries({ queryKey: ["dashboard"] })} />
+      )}
+
+      {isMd && pendingHandoverCount > 0 && (
+        <Card className="border-amber-400/40 bg-amber-500/10">
+          <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center">
+                <BellRing className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{pendingHandoverCount} টি স্টাফ ক্যাশ হ্যান্ডওভার অপেক্ষমাণ</p>
+                <p className="text-xs text-muted-foreground">Approve করলে স্টাফের Current Balance ০ হবে।</p>
+              </div>
+            </div>
+            <Link to="/md-panel">
+              <Button size="sm">Review &amp; Approve</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
 
       {/* Filters */}
