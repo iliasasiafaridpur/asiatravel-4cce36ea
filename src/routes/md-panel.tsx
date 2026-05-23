@@ -439,7 +439,7 @@ function MdPanelPage() {
                     const ctx = paymentContext(r, paidByService, allReceipts);
                     return (
                       <tr key={r.id} className="border-t">
-                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDateTime(r.created_at || r.entry_date)}</td>
                         <td className="px-2 py-1.5">{r.passenger_name}</td>
                         <td className="px-2 py-1.5">{r.service_type}</td>
                         <td className="px-2 py-1.5 text-muted-foreground">
