@@ -284,10 +284,9 @@ function DashboardPage() {
         const isDiscount = row.source === "discount" || (row.method ?? "").toLowerCase() === "discount";
         return !isDiscount ? sum + Number(row.amount || 0) : sum;
       }, 0);
-      const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>).reduce(
-        (sum, row) => (row.status === "rejected" ? sum : sum + Number(row.amount || 0)),
-        0,
-      );
+      const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>)
+        .filter((row) => (row.status ?? "approved") === "approved")
+        .reduce((sum, row) => sum + Number(row.amount || 0), 0);
       const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number }>).reduce((sum, row) => sum + Number(row.amount || 0), 0);
       return totalReceived - totalHandedOver - totalExpenses;
     },
