@@ -655,7 +655,7 @@ function LedgerTimeline({ serviceKey, currentReceiptId, allReceipts, sold }: {
               <div key={r.id}
                 className={`flex items-center justify-between gap-2 text-[11px] rounded px-2 py-1 ${isCurrent ? "bg-primary/10 border border-primary/30" : "bg-background/60"}`}>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-muted-foreground">{formatDate(r.entry_date)}</span>
+                  <span className="font-mono text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</span>
                   <span className="font-mono">{r.receipt_id ?? r.id.slice(0, 6)}</span>
                   <ApprovalBadge status={r.approval_status} />
                   {isCurrent && <Badge variant="outline" className="text-primary border-primary/40">This</Badge>}
