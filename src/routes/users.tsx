@@ -118,6 +118,7 @@ function UsersPage() {
                       <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="md">MD (Owner)</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
