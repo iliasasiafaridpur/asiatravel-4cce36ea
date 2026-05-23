@@ -24,6 +24,8 @@ import {
   Lock as LockIcon,
 } from "lucide-react";
 import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
+import { useRole } from "@/hooks/useRole";
+import { Navigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "আমার হিসাব — My Accounts" }] }),
