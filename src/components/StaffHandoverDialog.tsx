@@ -8,7 +8,8 @@ import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
-import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, History as HistoryIcon } from "lucide-react";
+import { StaffHandoverHistoryDialog } from "@/components/StaffHandoverHistoryDialog";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
@@ -33,6 +34,7 @@ export function StaffHandoverDialog({
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [openHistory, setOpenHistory] = useState(false);
 
   useEffect(() => {
     if (!open || !user?.id) return;
@@ -104,6 +106,19 @@ export function StaffHandoverDialog({
             দিনে একাধিক বার Handover দিতে পারবেন। MD আয়-ব্যয় দেখে Approve করবেন।
           </DialogDescription>
         </DialogHeader>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 mb-1"
+          onClick={() => setOpenHistory(true)}
+        >
+          <HistoryIcon className="h-4 w-4" />
+          Pending Approval ও পূর্বের Handover History দেখুন
+        </Button>
+
+        <StaffHandoverHistoryDialog open={openHistory} onOpenChange={setOpenHistory} />
+
 
         <div className="space-y-3">
           <div>
