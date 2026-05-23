@@ -20,7 +20,6 @@ export function HandoverHeaderButton() {
   const { isMd, isStaff, isAdmin } = useRole();
   const [pendingCount, setPendingCount] = useState(0);
   const [openSubmit, setOpenSubmit] = useState(false);
-  const [openHistory, setOpenHistory] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
