@@ -168,15 +168,15 @@ function MdPanelPage() {
 
   const staffOptions = useMemo(() => {
     const map = new Map<string, string>();
-    for (const r of pendingReceipts) {
+    for (const r of allReceipts) {
       if (r.received_by) map.set(r.received_by, r.received_by_name ?? "Staff");
     }
     return Array.from(map.entries());
-  }, [pendingReceipts]);
+  }, [allReceipts]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return pendingReceipts.filter((r) => {
+    return allReceipts.filter((r) => {
       if (staffFilter !== "all" && r.received_by !== staffFilter) return false;
       if (!q) return true;
       return (
@@ -186,13 +186,14 @@ function MdPanelPage() {
         (r.service_type ?? "").toLowerCase().includes(q)
       );
     });
-  }, [pendingReceipts, search, staffFilter]);
+  }, [allReceipts, search, staffFilter]);
 
   // Metrics
   const metrics = useMemo(() => {
-    const pendingCash = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const pendingRows = filtered.filter((r) => r.approval_status === "pending_md");
+    const pendingCash = pendingRows.reduce((s, r) => s + Number(r.amount || 0), 0);
     let dueRecov = 0;
-    for (const r of filtered) {
+    for (const r of pendingRows) {
       if (!r.service_row_id) continue;
       const earlier = allReceipts.some(
         (x) => x.service_table === r.service_table && x.service_row_id === r.service_row_id && x.id !== r.id && (x.created_at ?? x.entry_date) < (r.created_at ?? r.entry_date)
