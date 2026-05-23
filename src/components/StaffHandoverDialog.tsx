@@ -91,7 +91,7 @@ export function StaffHandoverDialog({
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Closing Date</Label>
-            <DateInput value={closingDate} onChange={(v) => setClosingDate(v)} />
+            <DateInput value={closingDate} onChange={(e) => setClosingDate(e.target.value)} />
           </div>
 
           <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
