@@ -88,6 +88,7 @@ function AccountsPage() {
 
   // Dialog forms
   const [handOpen, setHandOpen] = useState(false);
+  const [eodOpen, setEodOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualTab, setManualTab] = useState<"income" | "expense">("income");
   const [hForm, setHForm] = useState({ entry_date: today(), to_name: "MD Sir", amount: "", method: "Hand Cash", remarks: "" });
@@ -533,8 +534,10 @@ ${node.innerHTML.replace(
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
-              <Lock className="h-4 w-4" /> Submit Daily Handover
+              <LockIcon className="h-4 w-4" /> Submit Daily Handover
             </Button>
+            <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} />
+
             <Dialog open={handOpen} onOpenChange={setHandOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5 h-9">
