@@ -132,7 +132,7 @@ function AccountsPage() {
     reloadingRef.current = false;
     setSyncing(false);
     setLoading(false);
-  }, [user?.id]);
+  }, [user?.id, seeAll]);
 
   useEffect(() => {
     void reload(true);
