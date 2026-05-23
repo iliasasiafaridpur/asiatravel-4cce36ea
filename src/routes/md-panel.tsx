@@ -17,7 +17,7 @@ import {
   Clock, History, Wallet, Hourglass, Repeat, Info, User2, Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/modules";
+import { formatDate, formatDateTime } from "@/lib/modules";
 
 export const Route = createFileRoute("/md-panel")({
   head: () => ({ meta: [{ title: "MD Cash Control Panel" }] }),
