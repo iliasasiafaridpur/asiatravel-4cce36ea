@@ -8,10 +8,13 @@ import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
-import { Lock, AlertTriangle } from "lucide-react";
+import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
+
+type Receipt = { id: string; receipt_id?: string | null; amount: number; passenger_name?: string | null; entry_date: string };
+type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string };
 
 export function StaffHandoverDialog({
   open,
@@ -24,36 +27,49 @@ export function StaffHandoverDialog({
 }) {
   const { user } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
-  const [systemTotal, setSystemTotal] = useState<number>(0);
-  const [pendingCount, setPendingCount] = useState<number>(0);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cash, setCash] = useState("");
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
-  const [loadingTotal, setLoadingTotal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open || !user?.id) return;
     let cancelled = false;
     (async () => {
-      setLoadingTotal(true);
-      const { data, error } = await supabase
-        .from("payment_receipts")
-        .select("amount")
-        .eq("received_by", user.id)
-        .eq("approval_status", "pending_md")
-        .lte("entry_date", closingDate)
-        .is("handover_id", null);
+      setLoading(true);
+      const [r, e] = await Promise.all([
+        supabase
+          .from("payment_receipts")
+          .select("id,receipt_id,amount,passenger_name,entry_date")
+          .eq("received_by", user.id)
+          .eq("approval_status", "pending_md")
+          .lte("entry_date", closingDate)
+          .is("handover_id", null)
+          .order("entry_date", { ascending: false }),
+        supabase
+          .from("cash_expenses")
+          .select("id,expense_id,amount,category,purpose,entry_date")
+          .eq("spent_by", user.id)
+          .eq("entry_date", closingDate)
+          .order("created_at", { ascending: false }),
+      ]);
       if (cancelled) return;
-      if (error) toast.error(error.message);
-      const rows = (data ?? []) as { amount: number }[];
-      setSystemTotal(rows.reduce((s, r) => s + Number(r.amount || 0), 0));
-      setPendingCount(rows.length);
-      setLoadingTotal(false);
+      if (r.error) toast.error(r.error.message);
+      if (e.error) toast.error(e.error.message);
+      setReceipts((r.data ?? []) as Receipt[]);
+      setExpenses((e.data ?? []) as Expense[]);
+      setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [open, user?.id, closingDate]);
+
+  const totalReceived = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const netCash = totalReceived - totalExpense;
 
   const submit = async () => {
     const amt = Number(cash);
@@ -74,17 +90,17 @@ export function StaffHandoverDialog({
   };
 
   const declared = Number(cash) || 0;
-  const variance = declared - systemTotal;
+  const variance = declared - netCash;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Submit Daily Cash Handover
+            <Lock className="h-4 w-4" /> Submit Cash Handover
           </DialogTitle>
           <DialogDescription>
-            Once submitted, your receipts on or before this date are locked until MD approves.
+            দিনে একাধিক বার Handover দিতে পারবেন। MD আয়-ব্যয় দেখে Approve করবেন।
           </DialogDescription>
         </DialogHeader>
 
@@ -94,15 +110,84 @@ export function StaffHandoverDialog({
             <DateInput value={closingDate} onChange={(e) => setClosingDate(e.target.value)} />
           </div>
 
-          <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
-            <div className="flex items-baseline justify-between text-sm">
-              <span className="text-muted-foreground">System Total (pending)</span>
-              <span className="tabular-nums font-semibold">
-                {loadingTotal ? "…" : fmt(systemTotal)}
-              </span>
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border bg-emerald-500/10 p-2.5">
+              <div className="flex items-center gap-1 text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="h-3 w-3" /> আয়
+              </div>
+              <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
+              <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
             </div>
-            <div className="text-[11px] text-muted-foreground">
-              {pendingCount} pending receipt{pendingCount === 1 ? "" : "s"} will be locked
+            <div className="rounded-lg border bg-rose-500/10 p-2.5">
+              <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
+                <TrendingDown className="h-3 w-3" /> ব্যয়
+              </div>
+              <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalExpense)}</div>
+              <div className="text-[10px] text-muted-foreground">{expenses.length} expense</div>
+            </div>
+            <div className="rounded-lg border bg-primary/10 p-2.5">
+              <div className="flex items-center gap-1 text-[10px] uppercase text-primary">
+                <Wallet className="h-3 w-3" /> Net Cash
+              </div>
+              <div className="text-sm font-semibold tabular-nums mt-1">{fmt(netCash)}</div>
+              <div className="text-[10px] text-muted-foreground">আয় − ব্যয়</div>
+            </div>
+          </div>
+
+          {/* Income detail */}
+          <div className="rounded-lg border">
+            <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
+              আয় বিবরণ (Pending Receipts) — {receipts.length}
+            </div>
+            <div className="max-h-32 overflow-y-auto divide-y text-xs">
+              {loading ? (
+                <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
+              ) : receipts.length === 0 ? (
+                <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
+              ) : (
+                receipts.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                    <div className="min-w-0">
+                      <div className="truncate">{r.passenger_name || "—"}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">
+                        {r.receipt_id || r.id.slice(0, 8)} • {r.entry_date}
+                      </div>
+                    </div>
+                    <div className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
+                      +{fmt(Number(r.amount))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Expense detail */}
+          <div className="rounded-lg border">
+            <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
+              ব্যয় বিবরণ (আজকের) — {expenses.length}
+            </div>
+            <div className="max-h-32 overflow-y-auto divide-y text-xs">
+              {loading ? (
+                <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
+              ) : expenses.length === 0 ? (
+                <div className="p-3 text-muted-foreground">কোনো ব্যয় নেই</div>
+              ) : (
+                expenses.map((e) => (
+                  <div key={e.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                    <div className="min-w-0">
+                      <div className="truncate">{e.category}{e.purpose ? ` — ${e.purpose}` : ""}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">
+                        {e.expense_id || e.id.slice(0, 8)} • {e.entry_date}
+                      </div>
+                    </div>
+                    <div className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
+                      −{fmt(Number(e.amount))}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -111,7 +196,7 @@ export function StaffHandoverDialog({
             <Input
               type="number"
               inputMode="numeric"
-              placeholder="0"
+              placeholder={String(netCash || 0)}
               value={cash}
               onChange={(e) => setCash(e.target.value)}
               autoFocus
@@ -128,7 +213,7 @@ export function StaffHandoverDialog({
             >
               <AlertTriangle className="h-3.5 w-3.5" />
               Variance: {variance > 0 ? "+" : ""}
-              {fmt(variance)} vs system total
+              {fmt(variance)} vs Net Cash
             </div>
           )}
 
@@ -138,7 +223,7 @@ export function StaffHandoverDialog({
               rows={2}
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Notes for MD…"
+              placeholder="MD এর জন্য নোট…"
             />
           </div>
         </div>
