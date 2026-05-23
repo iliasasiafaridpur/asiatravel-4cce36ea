@@ -19,6 +19,8 @@ interface Props {
   title?: string;
   description?: ReactNode;
   disabled?: boolean;
+  /** Allow non-admin users (e.g. row owner on their personal accounts page). */
+  allowOwner?: boolean;
 }
 
 export function ConfirmDeleteButton({
@@ -26,6 +28,7 @@ export function ConfirmDeleteButton({
   title = "ডিলেট নিশ্চিত করুন?",
   description = "এই এন্ট্রি স্থায়ীভাবে মুছে যাবে এবং সংশ্লিষ্ট সকল হিসাব থেকেও সরে যাবে।",
   disabled,
+  allowOwner = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -33,7 +36,7 @@ export function ConfirmDeleteButton({
   const isAdmin = profile?.role === "admin";
 
   const handleClick = () => {
-    if (!isAdmin) {
+    if (!isAdmin && !allowOwner) {
       toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
       return;
     }
