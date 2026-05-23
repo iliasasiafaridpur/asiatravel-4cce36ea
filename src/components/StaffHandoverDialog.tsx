@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, History as HistoryIcon } from "lucide-react";
 import { StaffHandoverHistoryDialog } from "@/components/StaffHandoverHistoryDialog";
+import { formatDateTime } from "@/lib/modules";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
