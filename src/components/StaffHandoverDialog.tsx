@@ -196,7 +196,7 @@ export function StaffHandoverDialog({
                     <div className="min-w-0">
                       <div className="truncate">{e.category}{e.purpose ? ` — ${e.purpose}` : ""}</div>
                       <div className="text-[10px] text-muted-foreground font-mono">
-                        {e.expense_id || e.id.slice(0, 8)} • {e.entry_date}
+                        {e.expense_id || e.id.slice(0, 8)} • {formatDateTime(e.created_at || e.entry_date)}
                       </div>
                     </div>
                     <div className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
