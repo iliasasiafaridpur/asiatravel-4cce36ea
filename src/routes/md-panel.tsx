@@ -504,7 +504,7 @@ function HandoverCard({
               {h.from_name ?? "Staff"} <StatusBadge status={status} />
             </CardTitle>
             <p className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-              {h.handover_id} · Closing {formatDate(h.closing_date || h.entry_date)} · {receipts.length} receipt(s)
+              {h.handover_id} · Submitted {formatDateTime(h.created_at)} · Closing {formatDate(h.closing_date || h.entry_date)} · {receipts.length} receipt(s)
             </p>
           </div>
           <Button size="sm" variant="ghost" onClick={onToggle} className="gap-1">
