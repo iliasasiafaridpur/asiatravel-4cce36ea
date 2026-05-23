@@ -466,9 +466,9 @@ ${node.innerHTML.replace(
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
-        <StatCard label="মোট আয়" value={acct?.total_received ?? 0} icon={TrendingUp} tone="success" />
-        <StatCard label="মোট জমা" value={acct?.total_handed_over ?? 0} icon={Send} tone="info" />
-        <StatCard label="মোট খরচ" value={acct?.total_expenses ?? 0} icon={TrendingDown} tone="warning" />
+        <StatCard label="মোট আয়" value={todayIncome} icon={TrendingUp} tone="success" />
+        <StatCard label="মোট জমা" value={todayHand} icon={Send} tone="info" />
+        <StatCard label="মোট খরচ" value={todayExp} icon={TrendingDown} tone="warning" />
       </div>
 
       {/* Action Bar */}
