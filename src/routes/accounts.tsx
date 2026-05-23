@@ -362,7 +362,24 @@ function AccountsPage() {
     void reload(true);
   };
 
-  const balance = acct?.current_balance ?? (periodIncome - periodHand - periodExp);
+  // Today-only totals computed from the loaded arrays (user-scoped via query).
+  // This makes the cards always reflect what the user actually sees in the timeline.
+  const todayStr = today();
+  const todayIncome = useMemo(
+    () => received.filter((r) => r.entry_date === todayStr).reduce((s, r) => s + Number(r.amount || 0), 0),
+    [received, todayStr],
+  );
+  const todayHand = useMemo(
+    () => handovers
+      .filter((h) => h.entry_date === todayStr && (h.status ?? "approved") === "approved")
+      .reduce((s, h) => s + Number(h.amount || 0), 0),
+    [handovers, todayStr],
+  );
+  const todayExp = useMemo(
+    () => expenses.filter((e) => e.entry_date === todayStr).reduce((s, e) => s + Number(e.amount || 0), 0),
+    [expenses, todayStr],
+  );
+  const balance = todayIncome - todayHand - todayExp;
 
   // Print timeline
   const handlePrint = () => {
@@ -449,9 +466,9 @@ ${node.innerHTML.replace(
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
-        <StatCard label="মোট আয়" value={acct?.total_received ?? 0} icon={TrendingUp} tone="success" />
-        <StatCard label="মোট জমা" value={acct?.total_handed_over ?? 0} icon={Send} tone="info" />
-        <StatCard label="মোট খরচ" value={acct?.total_expenses ?? 0} icon={TrendingDown} tone="warning" />
+        <StatCard label="মোট আয়" value={todayIncome} icon={TrendingUp} tone="success" />
+        <StatCard label="মোট জমা" value={todayHand} icon={Send} tone="info" />
+        <StatCard label="মোট খরচ" value={todayExp} icon={TrendingDown} tone="warning" />
       </div>
 
       {/* Action Bar */}
