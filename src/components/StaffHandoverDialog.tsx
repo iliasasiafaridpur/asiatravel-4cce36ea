@@ -8,7 +8,8 @@ import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
-import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, History as HistoryIcon } from "lucide-react";
+import { StaffHandoverHistoryDialog } from "@/components/StaffHandoverHistoryDialog";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
