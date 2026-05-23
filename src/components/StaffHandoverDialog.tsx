@@ -107,6 +107,19 @@ export function StaffHandoverDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 mb-1"
+          onClick={() => setOpenHistory(true)}
+        >
+          <HistoryIcon className="h-4 w-4" />
+          Pending Approval ও পূর্বের Handover History দেখুন
+        </Button>
+
+        <StaffHandoverHistoryDialog open={openHistory} onOpenChange={setOpenHistory} />
+
+
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Closing Date</Label>
