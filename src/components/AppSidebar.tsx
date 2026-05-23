@@ -79,16 +79,10 @@ export function AppSidebar() {
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
   const { isMd, isAdmin } = useRole();
 
-  // Cash-flow routes hidden from Admin (technical-only role).
-  const CASH_ROUTES = new Set(["/accounts", "/agency-ledger", "/vendor-ledger"]);
-  const baseNav = NAV
-    .map((g) => ({
-      ...g,
-      items: g.items.filter((it) => !(isAdmin && CASH_ROUTES.has(it.to))),
-    }))
-    .filter((g) => g.items.length > 0);
+  // TEMP: Admin has full master access — sees all routes including MD Panel.
+  const baseNav = NAV;
 
-  const nav = isMd
+  const nav = (isMd || isAdmin)
     ? [
         ...baseNav.slice(0, 3),
         {

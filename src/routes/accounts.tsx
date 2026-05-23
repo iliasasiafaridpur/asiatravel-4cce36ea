@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
 import { useRole } from "@/hooks/useRole";
-import { Navigate } from "@tanstack/react-router";
+
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "আমার হিসাব — My Accounts" }] }),
@@ -416,7 +416,7 @@ ${node.innerHTML.replace(
   };
 
   if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
-  if (isAdmin) return <Navigate to="/" />;
+  // TEMP: Admin has full master access — no redirect.
 
   return (
     <div className="space-y-4 max-w-6xl mx-auto pb-8">
@@ -539,7 +539,7 @@ ${node.innerHTML.replace(
             </div>
           </div>
           <div className="flex gap-2">
-            {isStaff && (
+            {(isStaff || isAdmin) && (
               <>
                 <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
                   <LockIcon className="h-4 w-4" /> Submit Daily Handover
