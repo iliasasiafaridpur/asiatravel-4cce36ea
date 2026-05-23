@@ -71,7 +71,7 @@ export function PassengerProfileDrawer({
       setLoading(true);
       const { data } = await supabase
         .from("payment_receipts")
-        .select("id, entry_date, amount, method, receipt_id, remarks, received_by_name")
+        .select("id, entry_date, amount, method, receipt_id, remarks, received_by_name, approval_status")
         .eq("service_table", serviceTable)
         .eq("service_row_id", row.id)
         .not("source", "eq", "discount")
