@@ -221,14 +221,50 @@ function DashboardPage() {
     },
   });
 
-  const { data: myAccount } = useQuery({
-    queryKey: ["dashboard", "my_account", user?.id],
+  // Robust per-user balance: query receipts/expenses/handovers directly.
+  // Works even if RPC permissions/cache hiccup.
+  const { data: myBalance } = useQuery({
+    queryKey: ["dashboard", "my_balance", user?.id],
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_user_account" as never, { _user_id: user!.id } as never);
-      if (error) throw error;
-      return (((data as unknown) as Array<{ full_name: string; current_balance: number }> | null)?.[0] ?? null);
+      const [recv, exp, hand] = await Promise.all([
+        supabase.from("payment_receipts")
+          .select("amount,entry_date,approval_status,source,method,handover_id")
+          .eq("received_by", user!.id),
+        supabase.from("cash_expenses").select("amount,entry_date").eq("spent_by", user!.id),
+        supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id),
+      ]);
+      const today = new Date().toISOString().slice(0, 10);
+      const receipts = (recv.data ?? []) as Array<{ amount: number; entry_date: string; approval_status: string; source: string | null; method: string | null; handover_id: string | null }>;
+      const expenses = (exp.data ?? []) as Array<{ amount: number; entry_date: string }>;
+      const handovers = (hand.data ?? []) as Array<{ amount: number; status: string | null }>;
+      const nonDiscount = receipts.filter((r) => r.source !== "discount" && (r.method ?? "").toLowerCase() !== "discount");
+      const totalReceived = nonDiscount.reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalReceivedToday = nonDiscount.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalHandedOver = handovers.filter((h) => h.status !== "rejected").reduce((s, h) => s + Number(h.amount || 0), 0);
+      const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
+      return {
+        currentBalance: totalReceived - totalExpenses - totalHandedOver,
+        todayBalance: totalReceivedToday - totalExpensesToday,
+        pendingHandover,
+      };
+    },
+  });
+
+  // MD: count of pending handover requests
+  const { data: pendingHandoverCount = 0 } = useQuery({
+    queryKey: ["dashboard", "pending_handovers"],
+    enabled: isMd,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("cash_handovers")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      return count ?? 0;
     },
   });
 
@@ -257,8 +293,9 @@ function DashboardPage() {
     },
   });
 
-  const shownCashBalance = isAdmin ? officeCashBalance : Number(myAccount?.current_balance ?? 0);
-  const shownCashLabel = isAdmin ? "Office Cash" : (myAccount?.full_name ?? meName);
+  const shownCashBalance = isAdmin ? officeCashBalance : Number(myBalance?.currentBalance ?? 0);
+  const shownCashLabel = isAdmin ? "Office Cash" : meName;
+  const canHandover = (isStaff || isAdmin) && !isMd;
 
   const profileName = (uid?: string | null) =>
     profiles.find((p) => p.user_id === uid)?.full_name ?? null;
