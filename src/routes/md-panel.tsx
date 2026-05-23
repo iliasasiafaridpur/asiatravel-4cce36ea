@@ -566,7 +566,7 @@ function HandoverCard({
                   return (
                     <Fragment key={r.id}>
                       <tr className="border-t align-top">
-                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date)}</td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">{formatDateTime(r.created_at || r.entry_date)}</td>
                         <td className="px-2 py-1.5">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">{r.passenger_name}</span>
