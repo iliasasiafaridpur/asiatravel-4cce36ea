@@ -497,21 +497,6 @@ function DashboardPage() {
                 <HandCoins className="h-4 w-4" /> MD কে ক্যাশ বুঝিয়ে দিন
               </Button>
             )}
-            {isMd && (
-              <Link to="/md-panel">
-                <Button
-                  size="sm"
-                  className="gap-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:opacity-90 shadow-md relative"
-                >
-                  <Crown className="h-4 w-4" /> স্টাফ ক্যাশ রিকোয়েস্ট
-                  {pendingHandoverCount > 0 && (
-                    <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white text-amber-700 text-[11px] font-bold">
-                      {pendingHandoverCount}
-                    </span>
-                  )}
-                </Button>
-              </Link>
-            )}
             <Link to="/action-board">
               <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
             </Link>
