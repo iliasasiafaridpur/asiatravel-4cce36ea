@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate, statusBadgeClass } from "@/lib/modules";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,6 +120,7 @@ function readDashboardCache(): Row[] | undefined {
 
 function DashboardPage() {
   const { user, profile } = useCurrentUser();
+  const { isAdmin } = useRole();
   const meName = displayName(profile, user);
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>("month");
@@ -129,7 +131,7 @@ function DashboardPage() {
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
   useEffect(() => {
-    const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
+    const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "payment_receipts", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
     const refresh = () => {
       if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = window.setTimeout(() => {
@@ -226,6 +228,35 @@ function DashboardPage() {
       return (((data as unknown) as Array<{ full_name: string; current_balance: number }> | null)?.[0] ?? null);
     },
   });
+
+  const { data: officeCashBalance = 0 } = useQuery({
+    queryKey: ["dashboard", "office_cash_balance", isAdmin],
+    enabled: isAdmin,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const [receipts, handovers, expenses] = await Promise.all([
+        supabase.from("payment_receipts").select("amount,approval_status,source,method"),
+        supabase.from("cash_handovers").select("amount,status"),
+        supabase.from("cash_expenses").select("amount"),
+      ]);
+      const err = receipts.error || handovers.error || expenses.error;
+      if (err) throw err;
+      const totalReceived = ((receipts.data ?? []) as Array<{ amount: number; approval_status: string; source: string | null; method: string | null }>).reduce((sum, row) => {
+        const isApproved = row.approval_status === "auto_approved" || row.approval_status === "approved";
+        const isDiscount = row.source === "discount" || (row.method ?? "").toLowerCase() === "discount";
+        return isApproved && !isDiscount ? sum + Number(row.amount || 0) : sum;
+      }, 0);
+      const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>).reduce(
+        (sum, row) => (row.status === "rejected" ? sum : sum + Number(row.amount || 0)),
+        0,
+      );
+      const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number }>).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      return totalReceived - totalHandedOver - totalExpenses;
+    },
+  });
+
+  const shownCashBalance = isAdmin ? officeCashBalance : Number(myAccount?.current_balance ?? 0);
+  const shownCashLabel = isAdmin ? "Office Cash" : (myAccount?.full_name ?? meName);
 
   const profileName = (uid?: string | null) =>
     profiles.find((p) => p.user_id === uid)?.full_name ?? null;
@@ -485,9 +516,9 @@ function DashboardPage() {
         <GradientStat label="Realized Profit" sublabel="নগদ লাভ" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
         <Link to="/accounts" className="block col-start-4 row-start-1 row-span-2">
           <GradientStat
-            label={myAccount?.full_name ?? meName}
+            label={shownCashLabel}
             sublabel="Current Balance"
-            value={Number(myAccount?.current_balance ?? 0)}
+            value={shownCashBalance}
             money
             icon={Wallet}
             from="from-amber-500"
