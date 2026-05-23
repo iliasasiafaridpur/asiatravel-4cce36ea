@@ -371,7 +371,9 @@ function AccountsPage() {
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
-        if (it.kind === "received") acc.inAmt += amt; else acc.outAmt += amt;
+        if (it.kind === "received") acc.inAmt += amt;
+        else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+        else acc.outAmt += amt;
         return acc;
       },
       { inAmt: 0, outAmt: 0 },
@@ -545,7 +547,7 @@ ${node.innerHTML.replace(
                 <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
                   <LockIcon className="h-4 w-4" /> Submit Daily Handover
                 </Button>
-                <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} />
+                <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} onSubmitted={() => void reload(true)} />
               </>
             )}
 
