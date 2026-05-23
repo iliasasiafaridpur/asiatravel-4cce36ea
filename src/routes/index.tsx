@@ -122,13 +122,14 @@ function readDashboardCache(): Row[] | undefined {
 
 function DashboardPage() {
   const { user, profile } = useCurrentUser();
-  const { isAdmin } = useRole();
+  const { isAdmin, isMd, isStaff } = useRole();
   const meName = displayName(profile, user);
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>("month");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [country, setCountry] = useState<string>("all");
+  const [handoverOpen, setHandoverOpen] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
