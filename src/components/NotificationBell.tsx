@@ -98,7 +98,7 @@ async function forceResync() {
 
 function MetaRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
+    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
       <span className="opacity-70">{icon}</span>
       <span className="truncate">{text}</span>
     </div>
@@ -131,7 +131,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
           <Bell className="h-4 w-4" />
           {unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-[13px] font-bold text-white flex items-center justify-center leading-none">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center leading-none">
               {unread > 99 ? "99+" : unread}
             </span>
           )}
@@ -172,13 +172,13 @@ export function NotificationBell() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-xs font-medium leading-snug break-words">{n.title}</p>
-                      <span className="text-[13px] text-muted-foreground shrink-0">{timeAgo(n.created_at)}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(n.created_at)}</span>
                     </div>
                     {n.message && (
-                      <p className="text-[14px] text-muted-foreground leading-snug mt-0.5 break-words">{n.message}</p>
+                      <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">{n.message}</p>
                     )}
                     {n.meta && (n.meta.passenger || n.meta.country || n.meta.vendor || n.meta.service || n.meta.refId || n.meta.receiptId) && (
-                      <p className="text-[14px] text-muted-foreground leading-snug mt-0.5 break-words">
+                      <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 break-words">
                         {[
                           n.meta.vendor ? `→ ${n.meta.vendor}` : null,
                           n.meta.service,

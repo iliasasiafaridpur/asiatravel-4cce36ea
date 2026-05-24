@@ -257,7 +257,7 @@ function MdPanelPage() {
       <Card>
         <CardContent className="py-3 flex flex-wrap items-end gap-2">
           <div>
-            <label className="text-[13px] uppercase text-muted-foreground">Staff</label>
+            <label className="text-[10px] uppercase text-muted-foreground">Staff</label>
             <Select value={staffFilter} onValueChange={setStaffFilter}>
               <SelectTrigger className="h-8 w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -269,7 +269,7 @@ function MdPanelPage() {
             </Select>
           </div>
           <div className="flex-1 min-w-[180px]">
-            <label className="text-[13px] uppercase text-muted-foreground">Search</label>
+            <label className="text-[10px] uppercase text-muted-foreground">Search</label>
             <div className="relative">
               <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Passenger, receipt, staff…" className="h-8 pl-7" />
@@ -348,7 +348,7 @@ function Metric({ icon, label, value, tone }: {
   return (
     <Card className={`bg-gradient-to-br ${map[tone]}`}>
       <CardContent className="py-3">
-        <div className="flex items-center gap-2 text-[14px] uppercase tracking-wide opacity-80">{icon}{label}</div>
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide opacity-80">{icon}{label}</div>
         <div className="text-2xl font-bold tabular-nums mt-1 text-foreground">{value}</div>
       </CardContent>
     </Card>
@@ -428,13 +428,13 @@ function PastEodPanel({
                 >
                   <td className="px-2 py-1.5">
                     <div className={highlight ? "font-bold" : "font-medium"}>{r.passenger_name}</div>
-                    {highlight && <div className="text-[13px] text-yellow-800 dark:text-yellow-200 font-semibold">⬅ এই লেনদেনটি</div>}
+                    {highlight && <div className="text-[10px] text-yellow-800 dark:text-yellow-200 font-semibold">⬅ এই লেনদেনটি</div>}
                   </td>
                   <td className="px-2 py-1.5">
                     <div>{r.service_type}</div>
-                    {info?.country && <div className="text-[13px] text-muted-foreground">{info.country}</div>}
+                    {info?.country && <div className="text-[10px] text-muted-foreground">{info.country}</div>}
                     {info && info.discount > 0 && (
-                      <div className="text-[13px] tabular-nums text-amber-600 dark:text-amber-400">
+                      <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
                         ডিসকাউন্ট: {fmt(info.discount)}
                       </div>
                     )}

@@ -174,13 +174,13 @@ export function PartyProfileDrawer({
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-lg border bg-background p-3">
-                  <div className="text-[14px] text-muted-foreground">Advance Balance</div>
+                  <div className="text-[11px] text-muted-foreground">Advance Balance</div>
                   <div className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600">
                     {fmtMoney(stats.advance)}
                   </div>
                 </div>
                 <div className="rounded-lg border bg-background p-3">
-                  <div className="text-[14px] text-muted-foreground flex items-center gap-1">
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                     {isCustomer ? <TrendingUp className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
                     {isCustomer ? "Lifetime Profit" : "Total Files"}
                   </div>
@@ -313,11 +313,11 @@ export function PartyProfileDrawer({
                             <td className="px-2 py-1.5">{String(r.payment_method ?? "—")}</td>
                             <td className="px-2 py-1.5">
                               {adv ? (
-                                <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[13px]">
+                                <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
                                   Advance
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[13px]">
+                                <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
                                   Payment
                                 </Badge>
                               )}
@@ -340,13 +340,13 @@ export function PartyProfileDrawer({
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-lg border bg-background p-3">
-                      <div className="text-[14px] text-muted-foreground">Total Files</div>
+                      <div className="text-[11px] text-muted-foreground">Total Files</div>
                       <div className="mt-0.5 text-base font-semibold">
                         {rows.filter((r) => !isAdvance(r) && !isPayment(r)).length}
                       </div>
                     </div>
                     <div className="rounded-lg border bg-background p-3">
-                      <div className="text-[14px] text-muted-foreground flex items-center gap-1">
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                         <TrendingDown className="h-3 w-3" /> Pending Files
                       </div>
                       <div className="mt-0.5 text-base font-semibold text-amber-600">
