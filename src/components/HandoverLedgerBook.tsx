@@ -229,10 +229,14 @@ export function HandoverLedgerInline({
       <div className="space-y-3">
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
-        ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>
-        ) : (
-          filtered.map((h) => (
+        ) : (() => {
+          const visible = onlyPending
+            ? filtered.filter((h) => (h.status ?? "pending") === "pending")
+            : filtered;
+          if (visible.length === 0) {
+            return <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>;
+          }
+          return visible.map((h) => (
             <HandoverCard
               key={h.id}
               handover={h}
@@ -240,9 +244,10 @@ export function HandoverLedgerInline({
               receiptsByService={receiptsByService}
               serviceMap={serviceMap}
               mode={mode}
+              approveAction={approveAction}
             />
-          ))
-        )}
+          ));
+        })()}
       </div>
     </div>
   );
