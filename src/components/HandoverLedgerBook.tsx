@@ -50,17 +50,19 @@ type Receipt = {
 type ServiceInfo = {
   country: string | null;
   vendor: string | null;
+  agent: string | null;
+  airline: string | null;
   passport: string | null;
   sold_price: number;
   discount: number;
 };
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount" },
+  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount" },
+  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount" },
+  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount" },
+  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount" },
 ] as const;
 
 export function HandoverLedgerInline({
@@ -154,10 +156,12 @@ export function HandoverLedgerInline({
           if (rowIds.length === 0) return;
           const cols = ["id", "passport"];
           if (typeof cfg.country === "string") cols.push(cfg.country);
-          cols.push(cfg.vendorField, cfg.soldField, cfg.discountField);
+          cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.discountField);
+          if (cfg.airlineField) cols.push(cfg.airlineField);
+          const uniqueCols = Array.from(new Set(cols));
           const { data } = await supabase
             .from(cfg.table as never)
-            .select(cols.join(","))
+            .select(uniqueCols.join(","))
             .in("id", rowIds);
           for (const row of (data ?? []) as Array<Record<string, unknown>>) {
             svcMap[`${cfg.table}:${row.id as string}`] = {
@@ -165,6 +169,8 @@ export function HandoverLedgerInline({
                 ? cfg.country()
                 : (row[cfg.country] as string | null) ?? null,
               vendor: (row[cfg.vendorField] as string | null) ?? null,
+              agent: (row[cfg.agentField] as string | null) ?? null,
+              airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
               passport: (row.passport as string | null) ?? null,
               sold_price: Number(row[cfg.soldField] ?? 0),
               discount: Number(row[cfg.discountField] ?? 0),
@@ -372,7 +378,9 @@ function HandoverCard({
         <table className="w-full text-xs">
           <thead className="bg-muted/30">
             <tr className="text-left">
+              <th className="px-3 py-1.5 font-semibold">তারিখ</th>
               <th className="px-3 py-1.5 font-semibold">যাত্রী</th>
+              <th className="px-3 py-1.5 font-semibold">সার্ভিস</th>
               <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
@@ -382,7 +390,7 @@ function HandoverCard({
           </thead>
           <tbody>
             {receipts.length === 0 ? (
-              <tr><td colSpan={approveAction ? 6 : 5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
+              <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
             ) : receipts.map((r) => {
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
@@ -410,23 +418,38 @@ function HandoverCard({
                   id={`receipt-row-${r.id}`}
                   className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : "hover:bg-muted/20"}`}
                 >
+                  {/* তারিখ */}
+                  <td className="px-3 py-2 align-top">
+                    <div className="text-[11px] font-medium">{formatDate(r.entry_date)}</div>
+                    {r.ref_id && (
+                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{r.ref_id}</div>
+                    )}
+                    {r.received_by_name && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">by- {r.received_by_name}</div>
+                    )}
+                  </td>
                   {/* যাত্রী */}
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 align-top">
                     <div className="font-semibold">{r.passenger_name || "—"}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                      {r.service_type}
-                      {info?.country ? ` · ${info.country}` : ""}
-                      {info?.vendor ? ` (${info.vendor})` : ""}
-                    </div>
+                    {info?.agent && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">এজেন্ট: {info.agent}</div>
+                    )}
                     {info?.passport && (
                       <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
                     )}
-                    {r.ref_id && (
-                      <div className="text-[10px] text-muted-foreground font-mono">{r.ref_id}</div>
+                  </td>
+                  {/* সার্ভিস */}
+                  <td className="px-3 py-2 align-top">
+                    <div className="text-xs font-medium">{r.service_type}</div>
+                    {info?.country && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{info.country}</div>
+                    )}
+                    {info?.airline && (
+                      <div className="text-[10px] text-muted-foreground">{info.airline}</div>
                     )}
                   </td>
                   {/* মোট বিল */}
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-right align-top">
                     {bill > 0 ? (
                       <>
                         <div className="font-bold tabular-nums">{fmt(bill)}</div>
@@ -439,8 +462,18 @@ function HandoverCard({
                         {due <= 0.005 && (
                           <div className="text-[10px] text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
                         )}
+                        {info?.vendor && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                        )}
                       </>
-                    ) : <span className="text-muted-foreground">—</span>}
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">—</span>
+                        {info?.vendor && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                        )}
+                      </>
+                    )}
                   </td>
                   {/* পূর্বের জমা */}
                   <td className="px-3 py-2 text-right">
@@ -506,7 +539,7 @@ function HandoverCard({
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-3 py-1.5 text-right" colSpan={3}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-3 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
               <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
               <td className="px-3 py-1.5" />
               {approveAction && <td className="px-3 py-1.5 text-right">
