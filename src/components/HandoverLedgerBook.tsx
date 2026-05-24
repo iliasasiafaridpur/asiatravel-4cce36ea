@@ -425,7 +425,7 @@ function HandoverCard({
                       <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">by- {r.received_by_name}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">Rec:By {r.received_by_name}</div>
                     )}
                   </td>
                   {/* যাত্রী */}
