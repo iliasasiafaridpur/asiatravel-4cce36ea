@@ -1212,6 +1212,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
                 field={field}
                 value={form[field.name]}
                 onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+                disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
               />
             ))}
           </div>
