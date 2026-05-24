@@ -2,6 +2,12 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Global font-size bump: increases all text by 3px relative to default 16px.
+   This applies uniformly across every page (including my-handover and md-panel)
+   since all Tailwind sizes derive from rem. */
+html { font-size: 19px; }
+
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
