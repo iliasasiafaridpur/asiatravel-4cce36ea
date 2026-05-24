@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
-import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
 
 import { toast } from "sonner";
 
