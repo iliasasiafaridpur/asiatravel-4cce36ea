@@ -333,7 +333,11 @@ function DashboardPage() {
     const discount = filtered.reduce((s, r) => s + (r.discount ?? 0), 0);
     const cost = filtered.reduce((s, r) => s + (r.cost_price ?? 0), 0);
     const due = Math.max(0, sold - received - discount);
-    const profit = sold - discount - cost;
+    const profit = filtered.reduce((s, r) => {
+      const rRecv = r.received ?? 0;
+      if (rRecv <= 0) return s;
+      return s + (r.sold_price ?? 0) - (r.discount ?? 0) - (r.cost_price ?? 0);
+    }, 0);
     // Realized profit = Σ (profit_i / sold_i) * received_i  (cash-basis profit)
     const realizedProfit = filtered.reduce((s, r) => {
       const rSold = r.sold_price ?? 0;
