@@ -23,7 +23,7 @@ import {
   CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
   Lock as LockIcon,
 } from "lucide-react";
-import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
+import { Link } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 
 
@@ -529,12 +529,11 @@ ${node.innerHTML.replace(
           </div>
           <div className="flex gap-2">
             {(isStaff || isAdmin) && (
-              <>
-                <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setEodOpen(true)}>
-                  <LockIcon className="h-4 w-4" /> Submit Daily Handover
-                </Button>
-                <StaffHandoverDialog open={eodOpen} onOpenChange={setEodOpen} onSubmitted={() => void reload(true)} />
-              </>
+              <Button asChild size="sm" variant="outline" className="gap-1.5 h-9">
+                <Link to="/my-handover">
+                  <LockIcon className="h-4 w-4" /> আমার ক্যাশ হিসাব
+                </Link>
+              </Button>
             )}
 
 
