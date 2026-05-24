@@ -216,8 +216,15 @@ export function StaffHandoverDialog({
                         {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                       </div>
                     </div>
-                    <div className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-                      +{fmt(Number(r.amount))}
+                    <div className="text-right">
+                      <div className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
+                        +{fmt(Number(r.amount))}
+                      </div>
+                      {Number(r.discount || 0) > 0 && (
+                        <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
+                          ডিসকাউন্ট: {fmt(Number(r.discount))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
