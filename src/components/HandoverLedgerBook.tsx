@@ -348,11 +348,12 @@ function HandoverCard({
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">বাকি</th>
+              {approveAction && <th className="px-3 py-1.5 font-semibold text-center">অনুমোদন</th>}
             </tr>
           </thead>
           <tbody>
             {receipts.length === 0 ? (
-              <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
+              <tr><td colSpan={approveAction ? 6 : 5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
             ) : receipts.map((r) => {
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
