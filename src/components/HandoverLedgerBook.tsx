@@ -285,13 +285,14 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, receiptsByService, serviceMap, mode,
+  handover, receipts, receiptsByService, serviceMap, mode, approveAction,
 }: {
   handover: Handover;
   receipts: Receipt[];
   receiptsByService: Record<string, Receipt[]>;
   serviceMap: Record<string, ServiceInfo>;
   mode: "mine" | "to-me";
+  approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
 }) {
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
