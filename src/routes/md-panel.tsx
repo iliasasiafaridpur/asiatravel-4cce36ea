@@ -275,137 +275,17 @@ function MdPanelPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-muted/60">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold">যাত্রী</th>
-                <th className="px-3 py-2 font-semibold text-right">মোট বিল</th>
-                <th className="px-3 py-2 font-semibold text-right">পূর্বের জমা</th>
-                <th className="px-3 py-2 font-semibold text-right">এই বারের জমা</th>
-                <th className="px-3 py-2 font-semibold text-center">অনুমোদন</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">Loading…</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">কোনো payment পাওয়া যায়নি</td></tr>
-              ) : filtered.map((r) => {
-                const key = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
-                const info = key ? serviceMap[key] : undefined;
-                const totalPaidAll = key ? paidByService[key] ?? Number(r.amount) : Number(r.amount);
-                const sold = info?.sold_price ?? 0;
-                const discount = info?.discount ?? 0;
-                const remainingDue = sold > 0 ? Math.max(0, sold - totalPaidAll - discount) : 0;
-
-                // Past receipts (excluding current)
-                const pastReceipts = key
-                  ? allReceipts.filter((x) =>
-                    x.service_table === r.service_table &&
-                    x.service_row_id === r.service_row_id &&
-                    x.id !== r.id &&
-                    (x.created_at ?? x.entry_date) < (r.created_at ?? r.entry_date)
-                  )
-                  : [];
-                const pastTotal = pastReceipts.reduce((s, x) => s + Number(x.amount || 0), 0);
-                const lastPast = pastReceipts.length
-                  ? pastReceipts.reduce((a, b) =>
-                    (a.created_at ?? a.entry_date) > (b.created_at ?? b.entry_date) ? a : b
-                  )
-                  : null;
-
-                return (
-                  <tr key={r.id} className="border-t align-top hover:bg-muted/30">
-                    {/* Col 1: Passenger */}
-                    <td className="px-3 py-2">
-                      <div className="font-semibold">{r.passenger_name}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {r.service_type}
-                        {info?.country ? ` · ${info.country}` : ""}
-                        {info?.vendor ? ` (${info.vendor})` : ""}
-                      </div>
-                      {info?.passport && (
-                        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
-                      )}
-                      {r.ref_id && (
-                        <div className="text-[10px] text-muted-foreground font-mono">{r.ref_id}</div>
-                      )}
-                    </td>
-                    {/* Col 2: Bill / Discount / Due */}
-                    <td className="px-3 py-2 text-right">
-                      <div className="font-bold tabular-nums">{fmt(sold)}</div>
-                      {discount > 0 && (
-                        <div className="text-[10px] tabular-nums text-emerald-600">{fmt(discount)} (ডিসকাউন্ট)</div>
-                      )}
-                      {remainingDue > 0.005 && (
-                        <div className="text-[10px] tabular-nums text-rose-600">বাকি: {fmt(remainingDue)}</div>
-                      )}
-                      {sold > 0 && remainingDue <= 0.005 && (
-                        <div className="text-[10px] text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
-                      )}
-                    </td>
-                    {/* Col 3: Past paid (clickable) */}
-                    <td className="px-3 py-2 text-right">
-                      {lastPast ? (
-                        <button
-                          type="button"
-                          onClick={() => setDrawer({ receipt: r, pastReceipt: lastPast })}
-                          className="text-right group"
-                        >
-                          <div className="font-semibold tabular-nums text-foreground group-hover:underline">
-                            {fmt(pastTotal)}
-                          </div>
-                          <div className="text-[10px] text-sky-600 group-hover:underline">
-                            {formatDate(lastPast.entry_date)}
-                          </div>
-                          {pastReceipts.length > 1 && (
-                            <div className="text-[10px] text-muted-foreground">+{pastReceipts.length - 1} আরও</div>
-                          )}
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">— নতুন বিক্রি —</span>
-                      )}
-                    </td>
-                    {/* Col 4: Today's collected */}
-                    <td className="px-3 py-2 text-right">
-                      <div className="font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        আদায়কারী: {r.received_by_name ?? "—"}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {formatDateTime(r.created_at || r.entry_date)}
-                      </div>
-                    </td>
-                    {/* Col 5: Approve action */}
-                    <td className="px-3 py-2 text-center">
-                      {r.approval_status === "approved" ? (
-                        <div className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Approved
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => approveReceipt(r)}
-                          disabled={busy === r.id || !r.handover_id}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          🟢 টাকা পেলাম
-                        </Button>
-                      )}
-                      {r.approval_status !== "approved" && !r.handover_id && (
-                        <div className="text-[9px] text-amber-600 mt-1">staff এখনো submit করেননি</div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Hourglass className="h-4 w-4 text-amber-600" />
+          <h2 className="text-sm font-semibold">অপেক্ষমাণ অনুমোদন (Pending Handovers)</h2>
+        </div>
+        <HandoverLedgerInline
+          mode="to-me"
+          onlyPending
+          approveAction={{ busyId: busy, onApprove: approveReceipt }}
+        />
+      </div>
 
       {/* Right side drawer: historical EOD audit */}
       <Sheet open={!!drawer} onOpenChange={(o) => !o && setDrawer(null)}>
