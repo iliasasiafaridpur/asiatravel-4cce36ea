@@ -539,7 +539,7 @@ function HandoverCard({
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-3 py-1.5 text-right" colSpan={3}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-3 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
               <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
               <td className="px-3 py-1.5" />
               {approveAction && <td className="px-3 py-1.5 text-right">
