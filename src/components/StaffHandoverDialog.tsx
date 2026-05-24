@@ -166,7 +166,7 @@ export function StaffHandoverDialog({
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg border bg-emerald-500/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
                 <TrendingUp className="h-3 w-3" /> আয়
@@ -180,6 +180,13 @@ export function StaffHandoverDialog({
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalExpense)}</div>
               <div className="text-[10px] text-muted-foreground">{expenses.length} expense</div>
+            </div>
+            <div className="rounded-lg border bg-amber-500/10 p-2.5">
+              <div className="flex items-center gap-1 text-[10px] uppercase text-amber-600 dark:text-amber-400">
+                ডিসকাউন্ট
+              </div>
+              <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalDiscount)}</div>
+              <div className="text-[10px] text-muted-foreground">ক্যাশ নয় — শুধু নোট</div>
             </div>
             <div className="rounded-lg border bg-primary/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-primary">
