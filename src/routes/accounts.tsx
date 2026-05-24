@@ -55,7 +55,7 @@ function StatCard({ label, value, icon: Icon, tone }: { label: string; value: nu
   return (
     <div className={`rounded-xl border bg-gradient-to-br ${toneMap[tone]} p-3 sm:p-4 transition-all hover:shadow-md`}>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] sm:text-xs font-medium opacity-80">{label}</span>
+        <span className="text-[14px] sm:text-xs font-medium opacity-80">{label}</span>
         <Icon className="h-4 w-4 opacity-70" />
       </div>
       <div className="text-lg sm:text-2xl font-bold tabular-nums tracking-tight">{fmt(value)}</div>
@@ -452,7 +452,7 @@ ${node.innerHTML.replace(
                 placeholder="সংখ্যা (যেমন: 5)"
                 className="h-10 pl-9 pr-20 text-sm font-medium tabular-nums bg-gradient-to-br from-card to-muted/40 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary/50 shadow-sm rounded-xl disabled:opacity-50"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider flex items-center gap-1 pointer-events-none">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground font-medium uppercase tracking-wider flex items-center gap-1 pointer-events-none">
                 <History className="h-3 w-3" />
                 সর্বশেষ
               </span>
@@ -521,7 +521,7 @@ ${node.innerHTML.replace(
             })()}
 
             {/* Active badge */}
-            <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
+            <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[14px] font-semibold whitespace-nowrap">
               {useDateFilter
                 ? `${fRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
                 : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
@@ -619,15 +619,15 @@ ${node.innerHTML.replace(
       {/* Period summary strip */}
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">আয়</p>
+          <p className="text-[13px] text-muted-foreground uppercase tracking-wide">আয়</p>
           <p className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">{fmt(periodIncome)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Submit Cash Handover</p>
+          <p className="text-[13px] text-muted-foreground uppercase tracking-wide">Submit Cash Handover</p>
           <p className="text-base sm:text-lg font-bold text-sky-600 tabular-nums">{fmt(periodHand)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">খরচ</p>
+          <p className="text-[13px] text-muted-foreground uppercase tracking-wide">খরচ</p>
           <p className="text-base sm:text-lg font-bold text-amber-600 tabular-nums">{fmt(periodExp)}</p>
         </div>
       </div>
@@ -733,30 +733,30 @@ ${node.innerHTML.replace(
                       {/* Col 1: Name */}
                       <div className="min-w-0">
                         <p className="font-semibold text-[13px] leading-tight break-words">{name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+                        <p className="text-[13px] text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
+                        <p className="text-[13px] text-muted-foreground mt-1 flex items-center gap-0.5">
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
-                        {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
+                        {isIn && r.ref_id && <p className="text-[13px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
 
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
-                        <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
+                        <p className="font-medium text-[15px] leading-tight break-words">{servicePrimary}</p>
                         {svcLines.map((line, i) => (
-                          <p key={i} className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                          <p key={i} className="text-[13px] text-muted-foreground mt-0.5 leading-snug break-words">
                             {line}
                           </p>
                         ))}
                         {primaryBits.length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                          <p className="text-[13px] text-muted-foreground mt-0.5 leading-snug break-words">
                           {[...primaryBits, isPendingHand ? "MD approval pending" : ""].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
-                          <p className="text-[10px] text-muted-foreground/90 mt-1 flex items-start gap-1">
+                          <p className="text-[13px] text-muted-foreground/90 mt-1 flex items-start gap-1">
                             <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
                             <span className="break-words">{isIn ? r.remarks : isHand ? h.remarks : e.remarks}</span>
                           </p>
@@ -764,7 +764,7 @@ ${node.innerHTML.replace(
                       </div>
 
                       {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
-                      <div className="min-w-0 text-[10px] space-y-0.5">
+                      <div className="min-w-0 text-[13px] space-y-0.5">
                         {totalBill !== null ? (
                           <>
                             <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
@@ -786,17 +786,17 @@ ${node.innerHTML.replace(
                       {/* Col 4: Agent + Vendor + cost */}
                       <div className="min-w-0">
                         {isIn && svc?.agent && (
-                          <p className="text-[11px] font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
+                          <p className="text-[14px] font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
                         )}
                         {isIn && svc?.vendor ? (
                           <>
-                            <p className={`text-[11px] font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
+                            <p className={`text-[14px] font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
                             {typeof svc.cost === "number" && svc.cost > 0 && (
-                              <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
+                              <p className="text-[13px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
                             )}
                           </>
                         ) : (
-                          !svc?.agent && <p className="text-[10px] text-muted-foreground/50">—</p>
+                          !svc?.agent && <p className="text-[13px] text-muted-foreground/50">—</p>
                         )}
                       </div>
 
@@ -805,11 +805,11 @@ ${node.innerHTML.replace(
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
-                        {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
-                        <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
+                        {isPendingHand && <p className="text-[13px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
+                        <p className="text-[13px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
-                        <p className="text-[11px] tabular-nums whitespace-nowrap font-semibold text-primary">
+                        <p className="text-[14px] tabular-nums whitespace-nowrap font-semibold text-primary">
                           {fmt(it.running)}
                         </p>
                       </div>
@@ -929,7 +929,7 @@ ${node.innerHTML.replace(
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
                           <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
                         </div>
-                         <p className="text-[11px] text-muted-foreground break-words">
+                         <p className="text-[14px] text-muted-foreground break-words">
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
@@ -959,10 +959,10 @@ ${node.innerHTML.replace(
                         <p className="font-semibold text-sm truncate">{e.purpose || e.category}</p>
                         <p className="font-bold text-amber-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(e.amount))}</p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate">
+                      <p className="text-[14px] text-muted-foreground truncate">
                         {e.category} · {formatDate(e.entry_date)} · <span className="font-mono">{e.expense_id}</span>
                       </p>
-                      {e.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
+                      {e.remarks && <p className="text-[14px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
                     <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={!isAdmin && (submitted || !canOwnerDelete)} onConfirm={() => deleteExp(e.id)} description={isAdmin ? `খরচ ${e.expense_id} ডিলেট করতে চান?` : submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualExpense(e) ? "এই খরচ লেজার/সিস্টেম থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
@@ -1020,20 +1020,20 @@ ${node.innerHTML.replace(
                         <p className="font-semibold text-sm truncate">{h.to_name}</p>
                         <p className="font-bold text-sky-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(h.amount))}</p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                      <p className="text-[14px] text-muted-foreground truncate flex items-center gap-1">
                         <Banknote className="h-3 w-3" />{h.method} · {formatDate(h.entry_date)} · <span className="font-mono">{h.handover_id}</span>
                       </p>
-                      <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] font-semibold ${statusCls}`}>
+                      <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[14px] font-semibold ${statusCls}`}>
                         <span>{statusIcon}</span><span>{statusLabel}</span>
                       </div>
                       {isApproved && (
-                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
+                        <p className="text-[14px] text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
                           {approvedTime
                             ? <>তারিখ ও সময়: <b>{approvedTime}</b> · 👤 গ্রহীতা: <b>MD (Elias)</b></>
                             : <>👤 গ্রহীতা: <b>MD (Elias)</b></>}
                         </p>
                       )}
-                      {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
+                      {h.remarks && <p className="text-[14px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
                     <ConfirmDeleteButton disabled={!isAdmin} onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>

@@ -590,9 +590,9 @@ export function ModulePage({ module: mod }: Props) {
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="text-[14px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+              {r.entry_by ? <div className="text-[13px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -613,7 +613,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
-              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[13px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
@@ -643,9 +643,9 @@ export function ModulePage({ module: mod }: Props) {
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="text-[14px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+              {r.entry_by ? <div className="text-[13px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -667,7 +667,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
-              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[13px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
@@ -697,9 +697,9 @@ export function ModulePage({ module: mod }: Props) {
           { key: "ref", header: "Date / ID", render: (r) => (
             <div>
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
-              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="text-[14px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+              {r.entry_by ? <div className="text-[13px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -720,7 +720,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
-              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[13px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
@@ -751,7 +751,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "name", header: "Name", render: (r) => (
             <div>
               <div className="font-medium">{String(r.name ?? "—")}</div>
-              <div className="text-[11px] font-mono text-muted-foreground">{String(r[mod.idColumn] ?? "")}</div>
+              <div className="text-[14px] font-mono text-muted-foreground">{String(r[mod.idColumn] ?? "")}</div>
             </div>
           )},
           { key: "contact", header: "Contact", render: (r) => (
@@ -930,7 +930,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="grid grid-cols-3 gap-3">
               {summary.map((s) => (
                 <div key={s.name} className="rounded-md border bg-muted/30 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
+                  <div className="text-[14px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
                   <div className={`mt-1 text-lg font-bold tabular-nums ${s.name === "balance" ? "text-rose-500" : ""}`}>
                     {s.total.toLocaleString()}
                   </div>
@@ -1201,7 +1201,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       {(usesSections ? grouped : [{ section: "passenger" as Section, fields: shownFields }]).map((g) => (
         <div key={g.section}>
           {usesSections && (
-            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 pb-0.5 border-b">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 pb-0.5 border-b">
               {SECTION_LABELS[g.section]}
             </h3>
           )}

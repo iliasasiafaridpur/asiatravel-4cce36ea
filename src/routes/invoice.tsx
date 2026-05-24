@@ -301,7 +301,7 @@ function InvoicePage() {
                 </div>
                 <div className="min-w-0">
                   <h2 className="invoice-agency-name font-extrabold tracking-tight text-[#0b2545] leading-tight whitespace-nowrap">{AGENCY.name}</h2>
-                  <p className="text-[11px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
+                  <p className="text-[14px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
                 </div>
               </div>
               <div className="text-right shrink-0">
@@ -321,7 +321,7 @@ function InvoicePage() {
             </div>
 
             <div className="rounded-lg border border-slate-200 p-4 mt-6">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Passenger Info</p>
+              <p className="text-[13px] uppercase tracking-widest text-slate-500 font-semibold">Passenger Info</p>
               <p className="text-base font-bold mt-1">{bill.name || "—"}</p>
               <div className="text-xs text-slate-600 mt-1 space-y-0.5">
                 {bill.passport && <p>Passport: <span className="font-mono">{bill.passport}</span></p>}
@@ -365,7 +365,7 @@ function InvoicePage() {
                           </div>
                         )}
                         {it.airline && (
-                          <div className="text-[11px] text-slate-500">Airline: {it.airline}</div>
+                          <div className="text-[14px] text-slate-500">Airline: {it.airline}</div>
                         )}
                       </td>
                       <td className="p-2.5 text-right tabular-nums">{it.qty}</td>
@@ -395,7 +395,7 @@ function InvoicePage() {
 
             <div className="mt-auto pt-6 border-t border-slate-200 text-center">
               <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
-              <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
+              <p className="text-[14px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
             </div>
         </div>
       </div>

@@ -83,7 +83,7 @@ export function StaffHandoverHistoryDialog({
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="pending" className="gap-1.5">
               <Clock className="h-3.5 w-3.5" /> Pending Approval
-              {pending.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-amber-500 text-amber-950 text-[11px] font-bold">{pending.length}</span>}
+              {pending.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-amber-500 text-amber-950 text-[14px] font-bold">{pending.length}</span>}
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5" /> History ({history.length})
@@ -120,11 +120,11 @@ function HandList({ rows, loading, emptyText }: { rows: Hand[]; loading: boolean
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Badge variant="outline" className={cls}>{status}</Badge>
-                <span className="font-mono text-[11px] text-muted-foreground">{h.handover_id ?? h.id.slice(0, 8)}</span>
+                <span className="font-mono text-[14px] text-muted-foreground">{h.handover_id ?? h.id.slice(0, 8)}</span>
               </div>
               <div className="text-sm font-bold tabular-nums text-sky-500">{fmt(sub)}</div>
             </div>
-            <div className="mt-1 text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+            <div className="mt-1 text-[14px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
               <span>📅 Submitted: {formatDateTime(h.created_at)}</span>
               <span>Closing: {formatDate(h.closing_date || h.entry_date)}</span>
               {h.to_name && <span>→ {h.to_name}</span>}
@@ -135,7 +135,7 @@ function HandList({ rows, loading, emptyText }: { rows: Hand[]; loading: boolean
                 </span>
               )}
             </div>
-            {h.remarks && <p className="mt-1 text-[11px] text-muted-foreground/80 truncate">📝 {h.remarks}</p>}
+            {h.remarks && <p className="mt-1 text-[14px] text-muted-foreground/80 truncate">📝 {h.remarks}</p>}
           </div>
         );
       })}

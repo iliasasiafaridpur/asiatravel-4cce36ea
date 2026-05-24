@@ -836,7 +836,7 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
             <>
               <p className="text-xs uppercase tracking-wide text-muted-foreground leading-tight truncate font-semibold">{label}</p>
               {sublabel && (
-                <p className="text-[11px] tracking-wide text-muted-foreground/80 leading-tight truncate font-medium mt-0.5">{sublabel}</p>
+                <p className="text-[14px] tracking-wide text-muted-foreground/80 leading-tight truncate font-medium mt-0.5">{sublabel}</p>
               )}
             </>
           )}
