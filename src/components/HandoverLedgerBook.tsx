@@ -69,6 +69,7 @@ export function HandoverLedgerInline({
   enabled = true,
   approveAction,
   onlyPending = false,
+  excludePending = false,
 }: {
   mode: "mine" | "to-me";
   title?: string;
