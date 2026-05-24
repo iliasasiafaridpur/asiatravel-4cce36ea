@@ -194,8 +194,9 @@ function MdPanelPage() {
     // Pending Approval = sum of submitted_amount across pending cash_handovers
     const pendingHandovers = Object.values(handoverMap).filter((h) => (h.status ?? "pending") === "pending");
     const pendingCash = pendingHandovers.reduce((s, h) => s + Number(h.submitted_amount ?? h.amount ?? 0), 0);
-    const pendingCount = pendingHandovers.length;
     const pendingRows = filtered.filter((r) => r.approval_status === "pending_md");
+    const pendingHandoverIds = new Set(pendingHandovers.map((h) => h.id));
+    const pendingCount = pendingRows.filter((r) => r.handover_id && pendingHandoverIds.has(r.handover_id)).length;
     let dueRecov = 0;
     for (const r of pendingRows) {
       if (!r.service_row_id) continue;
