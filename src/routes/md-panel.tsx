@@ -279,9 +279,18 @@ function MdPanelPage() {
       </Card>
 
       <div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <Hourglass className="h-4 w-4 text-amber-600" />
-          <h2 className="text-sm font-semibold">অপেক্ষমাণ অনুমোদন (Pending Handovers)</h2>
+          <h2 className="text-sm font-semibold">
+            অপেক্ষমাণ অনুমোদন (Pending Handovers)
+            {metrics.pendingCount > 0 ? (
+              <span className="ml-2 text-amber-600 font-bold">
+                — {metrics.pendingCount} টি লেনদেন · {fmt(metrics.pendingCash)}
+              </span>
+            ) : (
+              <span className="ml-2 text-muted-foreground font-normal">(কোন পেন্ডিং নেই)</span>
+            )}
+          </h2>
         </div>
         <HandoverLedgerInline
           mode="to-me"
