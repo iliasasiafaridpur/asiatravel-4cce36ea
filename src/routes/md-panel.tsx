@@ -241,7 +241,7 @@ function MdPanelPage() {
           <h1 className="text-xl font-bold">MD Cash Control Panel</h1>
           <p className="text-xs text-muted-foreground">প্রতিটি Passenger Payment আলাদা সারিতে — সবুজ বাটনে চাপ দিয়ে অনুমোদন দিন</p>
         </div>
-        <HandoverLedgerButton mode="to-me" label="📒 ক্যাশ রিসিভ হিস্টোরি" />
+        
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
