@@ -424,6 +424,19 @@ function MdPanelPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      <div className="pt-4 border-t mt-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-emerald-500/15 text-emerald-600">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold">📒 ক্যাশ রিসিভ হিস্টোরি (Permanent Ledger)</h2>
+            <p className="text-xs text-muted-foreground">স্টাফ থেকে বুঝে নেওয়া সকল ক্যাশের স্থায়ী হিসাব — যাত্রী/মোট বিল/পূর্বের জমা/বাকি সহ</p>
+          </div>
+        </div>
+        <HandoverLedgerInline mode="to-me" />
+      </div>
     </div>
   );
 }
