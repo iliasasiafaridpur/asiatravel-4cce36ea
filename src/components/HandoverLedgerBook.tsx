@@ -303,6 +303,29 @@ function HandoverCard({
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
   const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const isPending = status === "pending";
+
+  // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (receipts.some((r) => r.id === id)) {
+        setHighlightId(id);
+        setTimeout(() => {
+          const el = document.getElementById(`receipt-row-${id}`);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+        setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 4000);
+      }
+    };
+    window.addEventListener("ledger-highlight-receipt", handler);
+    return () => window.removeEventListener("ledger-highlight-receipt", handler);
+  }, [receipts]);
+
+  const scrollToReceipt = (id: string) => {
+    window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
+  };
 
   const statusBadge =
     status === "approved" ? (
@@ -318,6 +341,7 @@ function HandoverCard({
     );
 
   const cutoff = new Date(handover.created_at).getTime();
+  const firstPendingReceipt = receipts.find((r) => r.approval_status !== "approved") ?? receipts[0];
 
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -352,7 +376,7 @@ function HandoverCard({
               <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
-              <th className="px-3 py-1.5 font-semibold text-right">বাকি</th>
+              <th className="px-3 py-1.5 font-bold text-right text-sm">বাকি</th>
               {approveAction && <th className="px-3 py-1.5 font-semibold text-center">অনুমোদন</th>}
             </tr>
           </thead>
@@ -364,17 +388,28 @@ function HandoverCard({
               const info = sk ? serviceMap[sk] : undefined;
               const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
               const past = allForSvc.filter((x) => x.id !== r.id && new Date(x.created_at).getTime() < cutoff);
+              const future = allForSvc.filter((x) => x.id !== r.id && new Date(x.created_at).getTime() > cutoff);
               const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+              const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
               const lastPast = past.length
                 ? past.reduce((a, b) => (new Date(a.created_at).getTime() > new Date(b.created_at).getTime() ? a : b))
+                : null;
+              const lastFuture = future.length
+                ? future.reduce((a, b) => (new Date(a.created_at).getTime() < new Date(b.created_at).getTime() ? a : b))
                 : null;
               const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
               const bill = info?.sold_price ?? 0;
               const discount = info?.discount ?? 0;
               const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+              const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+              const isHighlighted = highlightId === r.id;
 
               return (
-                <tr key={r.id} className="border-t align-top hover:bg-muted/20">
+                <tr
+                  key={r.id}
+                  id={`receipt-row-${r.id}`}
+                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : "hover:bg-muted/20"}`}
+                >
                   {/* যাত্রী */}
                   <td className="px-3 py-2">
                     <div className="font-semibold">{r.passenger_name || "—"}</div>
@@ -410,7 +445,12 @@ function HandoverCard({
                   {/* পূর্বের জমা */}
                   <td className="px-3 py-2 text-right">
                     {previousPaid > 0 ? (
-                      <>
+                      <button
+                        type="button"
+                        onClick={() => lastPast && scrollToReceipt(lastPast.id)}
+                        className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
+                        title="পূর্বের জমা দেখাও"
+                      >
                         <div className="font-semibold tabular-nums text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</div>
                         {lastPast && (
                           <div className="text-[10px] text-sky-600">{formatDate(lastPast.entry_date)}</div>
@@ -418,7 +458,7 @@ function HandoverCard({
                         {past.length > 1 && (
                           <div className="text-[10px] text-muted-foreground">+{past.length - 1} আরও</div>
                         )}
-                      </>
+                      </button>
                     ) : <span className="text-[11px] text-muted-foreground">— নতুন বিক্রি —</span>}
                   </td>
                   {/* এই বারের জমা */}
@@ -431,13 +471,23 @@ function HandoverCard({
                       <div className="text-[10px] text-muted-foreground font-normal">{formatDateTime(r.created_at)}</div>
                     )}
                   </td>
-                  {/* বাকি (after this handover) */}
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {bill > 0
-                      ? (due <= 0.005
-                        ? <span className="text-emerald-600">✓</span>
-                        : <span className="text-rose-600">{fmt(due)}</span>)
-                      : <span className="text-muted-foreground">—</span>}
+                  {/* বাকি (after this handover) — bolder + larger */}
+                  <td className="px-3 py-2 text-right tabular-nums text-sm font-bold">
+                    {bill > 0 ? (
+                      dueAfterThis <= 0.005 ? (
+                        <span className="text-emerald-600 text-base">✓</span>
+                      ) : (
+                        <>
+                          <div className="text-rose-600 text-sm font-extrabold">{fmt(dueAfterThis)}</div>
+                          {futurePaid > 0 && lastFuture && (
+                            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                              জমা: {fmt(futurePaid)}
+                              <div className="text-[10px]">{formatDate(lastFuture.entry_date)}</div>
+                            </div>
+                          )}
+                        </>
+                      )
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   {approveAction && (
                     <td className="px-3 py-2 text-center">
@@ -446,18 +496,9 @@ function HandoverCard({
                           <CheckCircle2 className="h-3.5 w-3.5" /> Approved
                         </div>
                       ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => approveAction.onApprove(r)}
-                          disabled={approveAction.busyId === r.id || !r.handover_id}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          🟢 টাকা পেলাম
-                        </Button>
-                      )}
-                      {r.approval_status !== "approved" && !r.handover_id && (
-                        <div className="text-[9px] text-amber-600 mt-1">staff এখনো submit করেননি</div>
+                        <div className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                          <Clock className="h-3.5 w-3.5" /> অপেক্ষমাণ
+                        </div>
                       )}
                     </td>
                   )}
@@ -473,6 +514,21 @@ function HandoverCard({
           </tbody>
         </table>
       </div>
+
+      {/* Full-handover approve button (MD only, pending only) */}
+      {approveAction && isPending && firstPendingReceipt && (
+        <div className="px-4 py-3 border-t bg-emerald-500/5 flex items-center justify-end">
+          <Button
+            size="lg"
+            onClick={() => approveAction.onApprove(firstPendingReceipt)}
+            disabled={approveAction.busyId === firstPendingReceipt.id || !firstPendingReceipt.handover_id}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold text-base h-11 px-6 shadow-md"
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            🟢 টাকা পেলাম ({fmt(submitted)})
+          </Button>
+        </div>
+      )}
 
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
         <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
