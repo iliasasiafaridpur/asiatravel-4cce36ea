@@ -329,6 +329,9 @@ function MdPanelPage() {
                       {info?.passport && (
                         <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
                       )}
+                      {r.ref_id && (
+                        <div className="text-[10px] text-muted-foreground font-mono">{r.ref_id}</div>
+                      )}
                     </td>
                     {/* Col 2: Bill / Discount / Due */}
                     <td className="px-3 py-2 text-right">
