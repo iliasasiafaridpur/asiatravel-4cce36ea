@@ -834,7 +834,7 @@ export function ModulePage({ module: mod }: Props) {
               </div>
             </DialogHeader>
             <div className="px-4 sm:px-6 pb-4 pt-3">
-              <FormSections mod={mod} form={form} setForm={setForm} />
+              <FormSections mod={mod} form={form} setForm={setForm} isEdit={!!editing} />
             </div>
           </DialogContent>
         </Dialog>
@@ -1153,10 +1153,11 @@ export const SECTION_LABELS: Record<Section, string> = {
   vendor: "৩. Vendor Information",
 };
 
-export function FormSections({ mod, form, setForm }: {
+export function FormSections({ mod, form, setForm, isEdit }: {
   mod: ModuleSchema;
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+  isEdit?: boolean;
 }) {
   const visibleFields = mod.fields.filter((f) => !f.hideInForm);
   const shownFields = visibleFields;
@@ -1211,6 +1212,7 @@ export function FormSections({ mod, form, setForm }: {
                 field={field}
                 value={form[field.name]}
                 onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+                disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
               />
             ))}
           </div>
@@ -1262,10 +1264,11 @@ function AutoGrowTextInput({
   );
 }
 
-function FormField({ field, value, onChange }: {
+function FormField({ field, value, onChange, disabled }: {
   field: Field;
   value: unknown;
   onChange: (v: unknown) => void;
+  disabled?: boolean;
 }) {
   const strVal = (value as string) ?? "";
   // Compact fixed widths with flex-wrap; textareas take full row.
@@ -1316,8 +1319,9 @@ function FormField({ field, value, onChange }: {
               : strVal
           }
           placeholder={field.type === "number" ? "0" : undefined}
-          className={isEntryBy ? "bg-muted text-muted-foreground" : ""}
+          className={(isEntryBy || disabled) ? "bg-muted text-muted-foreground" : ""}
           onChange={(e) => {
+            if (disabled) return;
             if (field.type === "number") {
               const raw = e.target.value.trim();
               if (raw === "") return onChange(0);
@@ -1342,7 +1346,7 @@ function FormField({ field, value, onChange }: {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
           required={field.required}
-          readOnly={isEntryBy}
+          readOnly={isEntryBy || disabled}
         />
       )}
     </div>
