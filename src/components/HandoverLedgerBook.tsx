@@ -377,11 +377,12 @@ function HandoverCard({
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-3 py-1.5 font-bold text-right text-sm">বাকি</th>
+              {approveAction && <th className="px-3 py-1.5 font-semibold text-center w-[300px]">অনুমোদন</th>}
             </tr>
           </thead>
           <tbody>
             {receipts.length === 0 ? (
-              <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
+              <tr><td colSpan={approveAction ? 6 : 5} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
             ) : receipts.map((r) => {
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
@@ -488,25 +489,39 @@ function HandoverCard({
                       )
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
+                  {approveAction && (
+                    <td className="px-3 py-2 text-center">
+                      {r.approval_status === "approved" ? (
+                        <div className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Approved
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                          <Clock className="h-3.5 w-3.5" /> অপেক্ষমাণ
+                        </div>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
               <td className="px-3 py-1.5 text-right" colSpan={3}>মোট ({receipts.length} যাত্রী)</td>
               <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
-              <td className="px-3 py-1.5 text-right">
+              <td className="px-3 py-1.5" />
+              {approveAction && <td className="px-3 py-1.5 text-right">
                 {approveAction && isPending && firstPendingReceipt && (
                   <Button
                     size="sm"
                     onClick={() => approveAction.onApprove(firstPendingReceipt)}
                     disabled={approveAction.busyId === firstPendingReceipt.id || !firstPendingReceipt.handover_id}
-                    className="w-2/3 min-w-[180px] bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold shadow-md"
+                    className="w-2/3 min-w-[190px] bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold shadow-md"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     🟢 টাকা পেলাম ({fmt(submitted)})
                   </Button>
                 )}
-              </td>
+              </td>}
             </tr>
           </tbody>
         </table>
