@@ -283,7 +283,7 @@ function MdPanelPage() {
                 <th className="px-3 py-2 font-semibold">যাত্রী</th>
                 <th className="px-3 py-2 font-semibold text-right">মোট বিল</th>
                 <th className="px-3 py-2 font-semibold text-right">পূর্বের জমা</th>
-                <th className="px-3 py-2 font-semibold text-right">আজকের জমা</th>
+                <th className="px-3 py-2 font-semibold text-right">এই বারের জমা</th>
                 <th className="px-3 py-2 font-semibold text-center">অনুমোদন</th>
               </tr>
             </thead>
