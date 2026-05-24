@@ -191,8 +191,11 @@ function MdPanelPage() {
 
   // Metrics
   const metrics = useMemo(() => {
+    // Pending Approval = sum of submitted_amount across pending cash_handovers
+    const pendingHandovers = Object.values(handoverMap).filter((h) => (h.status ?? "pending") === "pending");
+    const pendingCash = pendingHandovers.reduce((s, h) => s + Number(h.submitted_amount ?? h.amount ?? 0), 0);
+    const pendingCount = pendingHandovers.length;
     const pendingRows = filtered.filter((r) => r.approval_status === "pending_md");
-    const pendingCash = pendingRows.reduce((s, r) => s + Number(r.amount || 0), 0);
     let dueRecov = 0;
     for (const r of pendingRows) {
       if (!r.service_row_id) continue;
@@ -204,8 +207,8 @@ function MdPanelPage() {
     const approvedToday = allReceipts
       .filter((r) => r.approval_status === "approved" && r.entry_date === new Date().toISOString().slice(0, 10))
       .reduce((s, r) => s + Number(r.amount || 0), 0);
-    return { pendingCash, dueRecov, approvedToday };
-  }, [filtered, allReceipts]);
+    return { pendingCash, pendingCount, dueRecov, approvedToday };
+  }, [filtered, allReceipts, handoverMap]);
 
   if (userLoading || roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (!isMd) {
@@ -276,9 +279,18 @@ function MdPanelPage() {
       </Card>
 
       <div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <Hourglass className="h-4 w-4 text-amber-600" />
-          <h2 className="text-sm font-semibold">অপেক্ষমাণ অনুমোদন (Pending Handovers)</h2>
+          <h2 className="text-sm font-semibold">
+            অপেক্ষমাণ অনুমোদন (Pending Handovers)
+            {metrics.pendingCount > 0 ? (
+              <span className="ml-2 text-amber-600 font-bold">
+                — {metrics.pendingCount} টি লেনদেন · {fmt(metrics.pendingCash)}
+              </span>
+            ) : (
+              <span className="ml-2 text-muted-foreground font-normal">(কোন পেন্ডিং নেই)</span>
+            )}
+          </h2>
         </div>
         <HandoverLedgerInline
           mode="to-me"

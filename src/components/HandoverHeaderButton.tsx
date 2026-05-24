@@ -39,15 +39,17 @@ export function HandoverHeaderButton() {
     return () => { void supabase.removeChannel(ch); };
   }, [user?.id, load]);
 
-  // Toast every 2 minutes while pending
+  // Toast ONCE when pending count rises (no repeat interval)
+  const [lastNotified, setLastNotified] = useState(0);
   useEffect(() => {
-    if (pendingCount <= 0) return;
+    if (pendingCount <= 0) { setLastNotified(0); return; }
+    if (pendingCount === lastNotified) return;
     const msg = isMd
       ? `🔔 ${pendingCount} টি Cash Handover Approval এর অপেক্ষায়`
       : `🔔 ${pendingCount} টি Handover MD Approval এর অপেক্ষায়`;
-    const id = setInterval(() => toast.info(msg), 2 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [pendingCount, isMd]);
+    toast.info(msg);
+    setLastNotified(pendingCount);
+  }, [pendingCount, isMd, lastNotified]);
 
   if (!user) return null;
 
