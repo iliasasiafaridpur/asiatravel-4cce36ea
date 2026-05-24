@@ -73,7 +73,7 @@ export function HandoverLedgerInline({
   mode: "mine" | "to-me";
   title?: string;
   enabled?: boolean;
-  approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
+  approveAction?: { busyId: string | null; onApprove: (receipt: { id: string; handover_id: string | null; approval_status: string }) => void };
   onlyPending?: boolean;
 }) {
   const { user } = useCurrentUser();
