@@ -418,23 +418,38 @@ function HandoverCard({
                   id={`receipt-row-${r.id}`}
                   className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : "hover:bg-muted/20"}`}
                 >
+                  {/* তারিখ */}
+                  <td className="px-3 py-2 align-top">
+                    <div className="text-[11px] font-medium">{formatDate(r.entry_date)}</div>
+                    {r.ref_id && (
+                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{r.ref_id}</div>
+                    )}
+                    {r.received_by_name && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">by- {r.received_by_name}</div>
+                    )}
+                  </td>
                   {/* যাত্রী */}
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 align-top">
                     <div className="font-semibold">{r.passenger_name || "—"}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                      {r.service_type}
-                      {info?.country ? ` · ${info.country}` : ""}
-                      {info?.vendor ? ` (${info.vendor})` : ""}
-                    </div>
+                    {info?.agent && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">এজেন্ট: {info.agent}</div>
+                    )}
                     {info?.passport && (
                       <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
                     )}
-                    {r.ref_id && (
-                      <div className="text-[10px] text-muted-foreground font-mono">{r.ref_id}</div>
+                  </td>
+                  {/* সার্ভিস */}
+                  <td className="px-3 py-2 align-top">
+                    <div className="text-xs font-medium">{r.service_type}</div>
+                    {info?.country && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{info.country}</div>
+                    )}
+                    {info?.airline && (
+                      <div className="text-[10px] text-muted-foreground">{info.airline}</div>
                     )}
                   </td>
                   {/* মোট বিল */}
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-right align-top">
                     {bill > 0 ? (
                       <>
                         <div className="font-bold tabular-nums">{fmt(bill)}</div>
@@ -447,8 +462,18 @@ function HandoverCard({
                         {due <= 0.005 && (
                           <div className="text-[10px] text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
                         )}
+                        {info?.vendor && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                        )}
                       </>
-                    ) : <span className="text-muted-foreground">—</span>}
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">—</span>
+                        {info?.vendor && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                        )}
+                      </>
+                    )}
                   </td>
                   {/* পূর্বের জমা */}
                   <td className="px-3 py-2 text-right">
