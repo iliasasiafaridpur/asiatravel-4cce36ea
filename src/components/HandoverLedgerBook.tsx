@@ -375,7 +375,7 @@ function HandoverCard({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-sm">
           <thead className="bg-muted/30">
             <tr className="text-left">
               <th className="px-3 py-1.5 font-semibold">তারিখ</th>
@@ -420,9 +420,9 @@ function HandoverCard({
                 >
                   {/* তারিখ */}
                   <td className="px-3 py-2 align-top">
-                    <div className="text-[11px] font-medium">{formatDate(r.entry_date)}</div>
+                    <div className="text-sm font-medium">{formatDate(r.entry_date)}</div>
                     {r.ref_id && (
-                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{r.ref_id}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">Rec:By {r.received_by_name}</div>
@@ -430,47 +430,47 @@ function HandoverCard({
                   </td>
                   {/* যাত্রী */}
                   <td className="px-3 py-2 align-top">
-                    <div className="font-semibold">{r.passenger_name || "—"}</div>
+                    <div className="text-sm font-semibold">{r.passenger_name || "—"}</div>
                     {info?.agent && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">এজেন্ট: {info.agent}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">এজেন্ট: {info.agent}</div>
                     )}
                     {info?.passport && (
-                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
+                      <div className="text-xs text-muted-foreground font-mono mt-0.5">{info.passport}</div>
                     )}
                   </td>
                   {/* সার্ভিস */}
                   <td className="px-3 py-2 align-top">
-                    <div className="text-xs font-medium">{r.service_type}</div>
+                    <div className="text-sm font-medium">{r.service_type}</div>
                     {info?.country && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{info.country}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{info.country}</div>
                     )}
                     {info?.airline && (
-                      <div className="text-[10px] text-muted-foreground">{info.airline}</div>
+                      <div className="text-xs text-muted-foreground">{info.airline}</div>
                     )}
                   </td>
                   {/* মোট বিল */}
                   <td className="px-3 py-2 text-right align-top">
                     {bill > 0 ? (
                       <>
-                        <div className="font-bold tabular-nums">{fmt(bill)}</div>
+                        <div className="text-sm font-bold tabular-nums">{fmt(bill)}</div>
                         {discount > 0 && (
-                          <div className="text-[10px] tabular-nums text-emerald-600">{fmt(discount)} (ডিসকাউন্ট)</div>
+                          <div className="text-xs tabular-nums text-emerald-600">{fmt(discount)} (ডিসকাউন্ট)</div>
                         )}
                         {due > 0.005 && (
-                          <div className="text-[10px] tabular-nums text-rose-600">বাকি: {fmt(due)}</div>
+                          <div className="text-xs tabular-nums text-rose-600">বাকি: {fmt(due)}</div>
                         )}
                         {due <= 0.005 && (
-                          <div className="text-[10px] text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
+                          <div className="text-xs text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
                         )}
                         {info?.vendor && (
-                          <div className="text-[10px] text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
                         )}
                       </>
                     ) : (
                       <>
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
-                          <div className="text-[10px] text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
                         )}
                       </>
                     )}
@@ -484,24 +484,24 @@ function HandoverCard({
                         className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
                         title="পূর্বের জমা দেখাও"
                       >
-                        <div className="font-semibold tabular-nums text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</div>
+                        <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</div>
                         {lastPast && (
-                          <div className="text-[10px] text-sky-600">{formatDate(lastPast.entry_date)}</div>
+                          <div className="text-xs text-sky-600">{formatDate(lastPast.entry_date)}</div>
                         )}
                         {past.length > 1 && (
-                          <div className="text-[10px] text-muted-foreground">+{past.length - 1} আরও</div>
+                          <div className="text-xs text-muted-foreground">+{past.length - 1} আরও</div>
                         )}
                       </button>
-                    ) : <span className="text-[11px] text-muted-foreground">— নতুন বিক্রি —</span>}
+                    ) : <span className="text-xs text-muted-foreground">— নতুন বিক্রি —</span>}
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-3 py-2 text-right tabular-nums">
-                    <b className="text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                    <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
                     {r.received_by_name && (
-                      <div className="text-[10px] text-muted-foreground font-normal mt-0.5">আদায়কারী: {r.received_by_name}</div>
+                      <div className="text-xs text-muted-foreground font-normal mt-0.5">আদায়কারী: {r.received_by_name}</div>
                     )}
                     {r.created_at && (
-                      <div className="text-[10px] text-muted-foreground font-normal">{formatDateTime(r.created_at)}</div>
+                      <div className="text-xs text-muted-foreground font-normal">{formatDateTime(r.created_at)}</div>
                     )}
                   </td>
                   {/* বাকি (after this handover) — bolder + larger */}
@@ -513,9 +513,9 @@ function HandoverCard({
                         <>
                           <div className="text-rose-600 text-sm font-extrabold">{fmt(dueAfterThis)}</div>
                           {futurePaid > 0 && lastFuture && (
-                            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                            <div className="text-xs text-emerald-600 font-semibold mt-0.5">
                               জমা: {fmt(futurePaid)}
-                              <div className="text-[10px]">{formatDate(lastFuture.entry_date)}</div>
+                              <div className="text-xs">{formatDate(lastFuture.entry_date)}</div>
                             </div>
                           )}
                         </>

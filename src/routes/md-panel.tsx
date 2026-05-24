@@ -407,7 +407,7 @@ function PastEodPanel({
 
       <div className="rounded-md border overflow-hidden">
         <div className="bg-muted/60 px-3 py-2 text-xs font-semibold">EOD Receipts ({eodReceipts.length})</div>
-        <table className="w-full text-xs">
+        <table className="w-full text-sm">
           <thead className="bg-muted/40">
             <tr className="text-left">
               <th className="px-2 py-1.5">যাত্রী</th>
@@ -427,20 +427,20 @@ function PastEodPanel({
                   className={`border-t ${highlight ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500 animate-pulse" : ""}`}
                 >
                   <td className="px-2 py-1.5">
-                    <div className={highlight ? "font-bold" : "font-medium"}>{r.passenger_name}</div>
-                    {highlight && <div className="text-[10px] text-yellow-800 dark:text-yellow-200 font-semibold">⬅ এই লেনদেনটি</div>}
+                    <div className={`text-sm ${highlight ? "font-bold" : "font-medium"}`}>{r.passenger_name}</div>
+                    {highlight && <div className="text-[11px] text-yellow-800 dark:text-yellow-200 font-semibold">⬅ এই লেনদেনটি</div>}
                   </td>
                   <td className="px-2 py-1.5">
-                    <div>{r.service_type}</div>
-                    {info?.country && <div className="text-[10px] text-muted-foreground">{info.country}</div>}
+                    <div className="text-sm">{r.service_type}</div>
+                    {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
                     {info && info.discount > 0 && (
-                      <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
+                      <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
                         ডিসকাউন্ট: {fmt(info.discount)}
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-semibold tabular-nums">{fmt(r.amount)}</td>
-                  <td className="px-2 py-1.5 text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</td>
+                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">{fmt(r.amount)}</td>
+                  <td className="px-2 py-1.5 text-xs text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</td>
                 </tr>
               );
             })}
