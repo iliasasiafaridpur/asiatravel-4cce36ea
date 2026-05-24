@@ -375,7 +375,7 @@ function HandoverCard({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-sm">
           <thead className="bg-muted/30">
             <tr className="text-left">
               <th className="px-3 py-1.5 font-semibold">তারিখ</th>
