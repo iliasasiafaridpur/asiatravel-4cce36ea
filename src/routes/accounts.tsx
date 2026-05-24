@@ -744,19 +744,19 @@ ${node.innerHTML.replace(
 
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
-                        <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
+                        <p className="font-medium text-sm leading-tight break-words">{servicePrimary}</p>
                         {svcLines.map((line, i) => (
-                          <p key={i} className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                          <p key={i} className="text-xs text-muted-foreground mt-0.5 leading-snug break-words">
                             {line}
                           </p>
                         ))}
                         {primaryBits.length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-snug break-words">
                           {[...primaryBits, isPendingHand ? "MD approval pending" : ""].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
-                          <p className="text-[10px] text-muted-foreground/90 mt-1 flex items-start gap-1">
+                          <p className="text-xs text-muted-foreground/90 mt-1 flex items-start gap-1">
                             <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
                             <span className="break-words">{isIn ? r.remarks : isHand ? h.remarks : e.remarks}</span>
                           </p>
