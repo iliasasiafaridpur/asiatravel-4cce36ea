@@ -168,32 +168,32 @@ export function StaffHandoverDialog({
           {/* Summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg border bg-emerald-500/10 p-2.5">
-              <div className="flex items-center gap-1 text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-1 text-[13px] uppercase text-emerald-600 dark:text-emerald-400">
                 <TrendingUp className="h-3 w-3" /> আয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-              <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
+              <div className="text-[13px] text-muted-foreground">{receipts.length} receipt</div>
             </div>
             <div className="rounded-lg border bg-rose-500/10 p-2.5">
-              <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
+              <div className="flex items-center gap-1 text-[13px] uppercase text-rose-600 dark:text-rose-400">
                 <TrendingDown className="h-3 w-3" /> ব্যয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalExpense)}</div>
-              <div className="text-[10px] text-muted-foreground">{expenses.length} expense</div>
+              <div className="text-[13px] text-muted-foreground">{expenses.length} expense</div>
             </div>
             <div className="rounded-lg border bg-amber-500/10 p-2.5">
-              <div className="flex items-center gap-1 text-[10px] uppercase text-amber-600 dark:text-amber-400">
+              <div className="flex items-center gap-1 text-[13px] uppercase text-amber-600 dark:text-amber-400">
                 ডিসকাউন্ট
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalDiscount)}</div>
-              <div className="text-[10px] text-muted-foreground">ক্যাশ নয় — শুধু নোট</div>
+              <div className="text-[13px] text-muted-foreground">ক্যাশ নয় — শুধু নোট</div>
             </div>
             <div className="rounded-lg border bg-primary/10 p-2.5">
-              <div className="flex items-center gap-1 text-[10px] uppercase text-primary">
+              <div className="flex items-center gap-1 text-[13px] uppercase text-primary">
                 <Wallet className="h-3 w-3" /> Net Cash
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(netCash)}</div>
-              <div className="text-[10px] text-muted-foreground">আয় − ব্যয়</div>
+              <div className="text-[13px] text-muted-foreground">আয় − ব্যয়</div>
             </div>
           </div>
 
@@ -212,7 +212,7 @@ export function StaffHandoverDialog({
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
                       <div className="truncate">{r.passenger_name || "—"}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono">
+                      <div className="text-[13px] text-muted-foreground font-mono">
                         {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                       </div>
                     </div>
@@ -221,7 +221,7 @@ export function StaffHandoverDialog({
                         +{fmt(Number(r.amount))}
                       </div>
                       {Number(r.discount || 0) > 0 && (
-                        <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
+                        <div className="text-[13px] tabular-nums text-amber-600 dark:text-amber-400">
                           ডিসকাউন্ট: {fmt(Number(r.discount))}
                         </div>
                       )}
@@ -247,7 +247,7 @@ export function StaffHandoverDialog({
                   <div key={e.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
                       <div className="truncate">{e.category}{e.purpose ? ` — ${e.purpose}` : ""}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono">
+                      <div className="text-[13px] text-muted-foreground font-mono">
                         {e.expense_id || e.id.slice(0, 8)} • {formatDateTime(e.created_at || e.entry_date)}
                       </div>
                     </div>

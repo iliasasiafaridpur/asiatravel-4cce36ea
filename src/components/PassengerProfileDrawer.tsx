@@ -302,14 +302,14 @@ export function PassengerProfileDrawer({
                 {/* Cost / Profit — separated */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-lg border bg-background p-3">
-                    <div className="text-[11px] text-muted-foreground">Cost Price</div>
+                    <div className="text-[14px] text-muted-foreground">Cost Price</div>
                     <div className="mt-0.5 text-sm font-semibold tabular-nums">
                       {fmtMoney(cost)}
                     </div>
                   </div>
                   {showProfit ? (
                     <div className="rounded-lg border bg-background p-3">
-                      <div className="text-[11px] text-muted-foreground">Profit</div>
+                      <div className="text-[14px] text-muted-foreground">Profit</div>
                       <div className={`mt-0.5 text-sm font-semibold tabular-nums ${profitClass}`}>
                         {fmtMoney(profit)}
                       </div>
@@ -376,7 +376,7 @@ export function PassengerProfileDrawer({
                                     <div className="flex flex-col gap-0.5">
                                       <span className="font-medium">{r.received_by_name ?? DASH}</span>
                                       {badge ? (
-                                        <Badge variant="outline" className={`w-fit text-[10px] py-0 px-1.5 ${badge.cls}`}>
+                                        <Badge variant="outline" className={`w-fit text-[13px] py-0 px-1.5 ${badge.cls}`}>
                                           {badge.label}
                                         </Badge>
                                       ) : null}
@@ -387,7 +387,7 @@ export function PassengerProfileDrawer({
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 px-2 text-[11px]"
+                                    className="h-7 px-2 text-[14px]"
                                     onClick={() => openReceipt(r)}
                                   >
                                     <ReceiptText className="h-3.5 w-3.5" /> Receipt

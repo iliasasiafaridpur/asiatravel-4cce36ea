@@ -498,7 +498,7 @@ export function DueReceiveDialog({
                     <div className="text-right shrink-0">
                       <p className="text-xs text-muted-foreground">Due</p>
                       <p className="text-lg font-bold text-rose-500 tabular-nums">{r.due.toLocaleString()}</p>
-                      <p className="text-[10px] text-muted-foreground">of {r.sold.toLocaleString()}</p>
+                      <p className="text-[13px] text-muted-foreground">of {r.sold.toLocaleString()}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -580,13 +580,13 @@ export function DueReceiveDialog({
                     </Select>
                   </div>
                 </div>
-                <div className="text-[11px] text-muted-foreground -mt-1">
+                <div className="text-[14px] text-muted-foreground -mt-1">
                   Due: {selected.due.toLocaleString()}
                   {Number(discount) > 0 && <> · Discount: ৳{Number(discount).toLocaleString()} · Effective Due: ৳{Math.max(0, selected.due - Number(discount)).toLocaleString()}</>}
                   {" "}— অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
                 </div>
                 {Number(amount) > Math.max(0, selected.due - (Number(discount) || 0)) && (
-                  <p className="text-[11px] text-amber-600 font-semibold -mt-2">
+                  <p className="text-[14px] text-amber-600 font-semibold -mt-2">
                     অতিরিক্ত: ৳{(Number(amount) - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
                   </p>
                 )}

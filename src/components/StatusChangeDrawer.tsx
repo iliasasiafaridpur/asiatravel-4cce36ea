@@ -362,12 +362,12 @@ export function StatusChangeDrawer({
               <User2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="truncate">{String(row.passenger_name ?? "—")}</span>
             </div>
-            <div className="text-[10px] font-mono text-muted-foreground mt-0.5">{request.refId}</div>
-            {passport && <div className="text-[10px] text-muted-foreground">PP: <span className="font-mono">{passport}</span></div>}
-            {country && <div className="text-[10px] text-muted-foreground truncate">{country}</div>}
+            <div className="text-[13px] font-mono text-muted-foreground mt-0.5">{request.refId}</div>
+            {passport && <div className="text-[13px] text-muted-foreground">PP: <span className="font-mono">{passport}</span></div>}
+            {country && <div className="text-[13px] text-muted-foreground truncate">{country}</div>}
           </div>
           {isTicket && (airline || tripRoad || flightDate) && (
-            <div className="text-right text-[10px] leading-tight space-y-0.5 shrink-0 max-w-[45%]">
+            <div className="text-right text-[13px] leading-tight space-y-0.5 shrink-0 max-w-[45%]">
               {airline && <div>✈ <span className="font-medium text-foreground">{airline}</span></div>}
               {tripRoad && <div className="text-muted-foreground truncate">{tripRoad}</div>}
               {flightDate && <div className="text-muted-foreground">{flightDate}</div>}
@@ -383,18 +383,18 @@ export function StatusChangeDrawer({
             </SelectContent>
           </Select>
           <div className="flex items-center justify-center gap-1.5 rounded-md border bg-muted/40 py-1">
-            <Badge variant="outline" className={`${statusBadgeClass(current)} text-[10px]`}>{current || "—"}</Badge>
+            <Badge variant="outline" className={`${statusBadgeClass(current)} text-[13px]`}>{current || "—"}</Badge>
             {direction === "backward"
               ? <ArrowLeft className="h-3 w-3 text-amber-500" />
               : <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-            <Badge variant="outline" className={`${statusBadgeClass(next)} text-[10px]`}>{next}</Badge>
+            <Badge variant="outline" className={`${statusBadgeClass(next)} text-[13px]`}>{next}</Badge>
           </div>
 
           {isWarn && (
             <Alert variant="destructive" className="border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>svg]:text-amber-500 py-1.5">
               <AlertTriangle className="h-3.5 w-3.5" />
               <AlertTitle className="text-xs">পেছনের Status</AlertTitle>
-              <AlertDescription className="text-[10px] mt-0.5">
+              <AlertDescription className="text-[13px] mt-0.5">
                 {backwardClears.length > 0
                   ? <ul className="list-disc list-inside">{backwardClears.map((c) => <li key={c}>{c}</li>)}</ul>
                   : "শুধু Status পরিবর্তন হবে"}
@@ -403,7 +403,7 @@ export function StatusChangeDrawer({
           )}
 
           {direction === "forward" && forwardEffects.length > 0 && (
-            <div className="rounded-md border bg-emerald-500/5 border-emerald-500/30 p-1.5 text-[10px]">
+            <div className="rounded-md border bg-emerald-500/5 border-emerald-500/30 p-1.5 text-[13px]">
               <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-0.5">কী ঘটবে:</div>
               <ul className="list-disc list-inside text-foreground/80 space-y-0.5">
                 {forwardEffects.map((c) => <li key={c}>{c}</li>)}
@@ -413,7 +413,7 @@ export function StatusChangeDrawer({
 
           {next === "File Process" && request.hasVendorField && (
             <div className="space-y-1">
-              <Label className="text-[10px]">Vendor <span className="text-rose-500">*</span></Label>
+              <Label className="text-[13px]">Vendor <span className="text-rose-500">*</span></Label>
               <LookupSelect kind="vendor" value={vendor} onChange={setVendor} />
             </div>
           )}
@@ -424,18 +424,18 @@ export function StatusChangeDrawer({
                 <Banknote className="h-3.5 w-3.5" />
                 Vendor Cost Entry আবশ্যক
               </div>
-              <div className="text-[10px] text-muted-foreground -mt-1">
+              <div className="text-[13px] text-muted-foreground -mt-1">
                 {next} করতে হলে আগে Vendor ও Cost Price দিন।
               </div>
               {needsVendorForPD && (
                 <div className="space-y-1">
-                  <Label className="text-[10px]">Vendor <span className="text-rose-500">*</span></Label>
+                  <Label className="text-[13px]">Vendor <span className="text-rose-500">*</span></Label>
                   <LookupSelect kind="vendor" value={vendor} onChange={setVendor} />
                 </div>
               )}
               {needsCostPrice && (
                 <div className="space-y-1">
-                  <Label className="text-[10px]">Cost Price (৳) <span className="text-rose-500">*</span></Label>
+                  <Label className="text-[13px]">Cost Price (৳) <span className="text-rose-500">*</span></Label>
                   <Input
                     className="h-8 text-sm"
                     type="number"
@@ -446,7 +446,7 @@ export function StatusChangeDrawer({
                     autoFocus
                   />
                   {sold > 0 && effectiveCostPrice > 0 && (
-                    <div className="text-[10px] text-muted-foreground tabular-nums">
+                    <div className="text-[13px] text-muted-foreground tabular-nums">
                       Profit: <span className={`font-semibold ${sold - effectiveCostPrice >= 0 ? "text-emerald-600" : "text-rose-500"}`}>৳{(sold - effectiveCostPrice).toLocaleString()}</span>
                     </div>
                   )}
@@ -463,7 +463,7 @@ export function StatusChangeDrawer({
               <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> Due Receive</span>
-                  <span className="text-[10px] text-muted-foreground font-normal">
+                  <span className="text-[13px] text-muted-foreground font-normal">
                     Sold <span className="font-semibold text-foreground tabular-nums">৳{sold.toLocaleString()}</span>
                     {existingDiscount > 0 && <> · Discount <span className="font-semibold text-amber-600 tabular-nums">৳{existingDiscount.toLocaleString()}</span></>}
                     {" · "}Due <span className="font-semibold text-rose-500 tabular-nums">৳{due.toLocaleString()}</span>
@@ -471,12 +471,12 @@ export function StatusChangeDrawer({
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
                   <div className="space-y-0.5">
-                    <Label className="text-[10px]">Pay *</Label>
+                    <Label className="text-[13px]">Pay *</Label>
                     <Input className="h-8 text-sm" type="number" inputMode="decimal" value={amount}
                       onChange={(e) => setAmount(e.target.value)} placeholder="0" />
                   </div>
                   <div className="space-y-0.5">
-                    <Label className="text-[10px] text-amber-600">− Discount</Label>
+                    <Label className="text-[13px] text-amber-600">− Discount</Label>
                     <Input className="h-8 text-sm text-amber-600" type="number" inputMode="decimal" value={discount}
                       onChange={(e) => {
                         const d = e.target.value;
@@ -486,7 +486,7 @@ export function StatusChangeDrawer({
                       }} placeholder="0" />
                   </div>
                   <div className="space-y-0.5">
-                    <Label className="text-[10px]">Method</Label>
+                    <Label className="text-[13px]">Method</Label>
                     <Select value={method} onValueChange={setMethod}>
                       <SelectTrigger className="h-8 text-sm px-2"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -499,7 +499,7 @@ export function StatusChangeDrawer({
                   </div>
                 </div>
                 {(payN > 0 || discN > 0) && (
-                  <div className="text-[10px] flex justify-between items-center px-1 tabular-nums">
+                  <div className="text-[13px] flex justify-between items-center px-1 tabular-nums">
                     <span className="text-muted-foreground">
                       ৳{due.toLocaleString()} − ৳{payN.toLocaleString()}
                       {discN > 0 && <> − <span className="text-amber-600">৳{discN.toLocaleString()}</span></>}
@@ -515,7 +515,7 @@ export function StatusChangeDrawer({
 
 
           {isDeliveredAny && due === 0 && (
-            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px]">
+            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[14px]">
               ✅ বকেয়া নেই — Delivered হবে
             </div>
           )}
