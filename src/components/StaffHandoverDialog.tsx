@@ -53,11 +53,13 @@ export function StaffHandoverDialog({
       const [r, e] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("id,receipt_id,amount,passenger_name,entry_date,created_at")
+          .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type")
           .eq("received_by", user.id)
           .eq("approval_status", "pending_md")
           .lte("entry_date", closingDate)
           .is("handover_id", null)
+          .not("source", "eq", "discount")
+          .not("method", "ilike", "discount")
           .order("entry_date", { ascending: false }),
         supabase
           .from("cash_expenses")
@@ -70,7 +72,34 @@ export function StaffHandoverDialog({
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
-      setReceipts(((r.data ?? []) as unknown) as Receipt[]);
+      const recs = ((r.data ?? []) as unknown) as Receipt[];
+
+      // Enrich each receipt with the discount stored on its underlying service row.
+      const byTable: Record<string, Set<string>> = {};
+      for (const rec of recs) {
+        if (!rec.service_table || !rec.service_row_id) continue;
+        if (!(DISCOUNT_TABLES as readonly string[]).includes(rec.service_table)) continue;
+        byTable[rec.service_table] ??= new Set();
+        byTable[rec.service_table].add(rec.service_row_id);
+      }
+      const discMap: Record<string, number> = {};
+      await Promise.all(
+        Object.entries(byTable).map(async ([tbl, ids]) => {
+          const { data } = await supabase
+            .from(tbl as never)
+            .select("id,discount_amount")
+            .in("id", Array.from(ids));
+          for (const row of (data ?? []) as Array<{ id: string; discount_amount: number | null }>) {
+            discMap[`${tbl}:${row.id}`] = Number(row.discount_amount ?? 0);
+          }
+        })
+      );
+      for (const rec of recs) {
+        const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
+        rec.discount = k ? (discMap[k] ?? 0) : 0;
+      }
+
+      setReceipts(recs);
       setExpenses(((e.data ?? []) as unknown) as Expense[]);
       setLoading(false);
     })();
@@ -81,6 +110,7 @@ export function StaffHandoverDialog({
 
   const totalReceived = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
 
   const submit = async () => {
