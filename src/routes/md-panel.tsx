@@ -433,6 +433,11 @@ function PastEodPanel({
                   <td className="px-2 py-1.5">
                     <div>{r.service_type}</div>
                     {info?.country && <div className="text-[10px] text-muted-foreground">{info.country}</div>}
+                    {info && info.discount > 0 && (
+                      <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
+                        ডিসকাউন্ট: {fmt(info.discount)}
+                      </div>
+                    )}
                   </td>
                   <td className="px-2 py-1.5 text-right font-semibold tabular-nums">{fmt(r.amount)}</td>
                   <td className="px-2 py-1.5 text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</td>
