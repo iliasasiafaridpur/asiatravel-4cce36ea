@@ -1319,8 +1319,9 @@ function FormField({ field, value, onChange, disabled }: {
               : strVal
           }
           placeholder={field.type === "number" ? "0" : undefined}
-          className={isEntryBy ? "bg-muted text-muted-foreground" : ""}
+          className={(isEntryBy || disabled) ? "bg-muted text-muted-foreground" : ""}
           onChange={(e) => {
+            if (disabled) return;
             if (field.type === "number") {
               const raw = e.target.value.trim();
               if (raw === "") return onChange(0);
@@ -1345,7 +1346,7 @@ function FormField({ field, value, onChange, disabled }: {
             if (field.format === "name") onChange(capitalizeWords(e.target.value));
           }}
           required={field.required}
-          readOnly={isEntryBy}
+          readOnly={isEntryBy || disabled}
         />
       )}
     </div>
