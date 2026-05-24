@@ -233,7 +233,9 @@ export function HandoverLedgerInline({
         ) : (() => {
           const visible = onlyPending
             ? filtered.filter((h) => (h.status ?? "pending") === "pending")
-            : filtered;
+            : excludePending
+              ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
+              : filtered;
           if (visible.length === 0) {
             return <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>;
           }
