@@ -318,7 +318,7 @@ function MdPanelPage() {
             <p className="text-xs text-muted-foreground">স্টাফ থেকে বুঝে নেওয়া সকল ক্যাশের স্থায়ী হিসাব — যাত্রী/মোট বিল/পূর্বের জমা/বাকি সহ</p>
           </div>
         </div>
-        <HandoverLedgerInline mode="to-me" />
+        <HandoverLedgerInline mode="to-me" excludePending />
       </div>
     </div>
   );
