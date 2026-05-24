@@ -554,10 +554,19 @@ export function DueReceiveDialog({
                     <Label>Discount</Label>
                     <Input
                       type="number" inputMode="decimal" min={0}
-                      value={discount} onChange={(e) => setDiscount(e.target.value)}
+                      value={discount}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setDiscount(v);
+                        if (selected) {
+                          const d = Math.max(0, Math.min(selected.due, Number(v) || 0));
+                          setAmount(String(Math.max(0, selected.due - d)));
+                        }
+                      }}
                       className="mt-1.5 text-lg font-semibold"
                       placeholder="0"
                     />
+
                   </div>
                   <div>
                     <Label>Method</Label>
