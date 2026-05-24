@@ -1153,10 +1153,11 @@ export const SECTION_LABELS: Record<Section, string> = {
   vendor: "৩. Vendor Information",
 };
 
-export function FormSections({ mod, form, setForm }: {
+export function FormSections({ mod, form, setForm, isEdit }: {
   mod: ModuleSchema;
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+  isEdit?: boolean;
 }) {
   const visibleFields = mod.fields.filter((f) => !f.hideInForm);
   const shownFields = visibleFields;
