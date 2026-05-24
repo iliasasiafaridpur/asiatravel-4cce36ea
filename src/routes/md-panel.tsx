@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatDateTime } from "@/lib/modules";
-import { HandoverLedgerButton } from "@/components/HandoverLedgerBook";
+import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 
 export const Route = createFileRoute("/md-panel")({
   head: () => ({ meta: [{ title: "MD Cash Control Panel" }] }),
@@ -241,7 +241,7 @@ function MdPanelPage() {
           <h1 className="text-xl font-bold">MD Cash Control Panel</h1>
           <p className="text-xs text-muted-foreground">প্রতিটি Passenger Payment আলাদা সারিতে — সবুজ বাটনে চাপ দিয়ে অনুমোদন দিন</p>
         </div>
-        <HandoverLedgerButton mode="to-me" label="📒 ক্যাশ রিসিভ হিস্টোরি" />
+        
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -424,6 +424,19 @@ function MdPanelPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      <div className="pt-4 border-t mt-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-emerald-500/15 text-emerald-600">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold">📒 ক্যাশ রিসিভ হিস্টোরি (Permanent Ledger)</h2>
+            <p className="text-xs text-muted-foreground">স্টাফ থেকে বুঝে নেওয়া সকল ক্যাশের স্থায়ী হিসাব — যাত্রী/মোট বিল/পূর্বের জমা/বাকি সহ</p>
+          </div>
+        </div>
+        <HandoverLedgerInline mode="to-me" />
+      </div>
     </div>
   );
 }

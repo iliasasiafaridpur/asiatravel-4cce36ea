@@ -63,21 +63,18 @@ const SERVICE_TABLES = [
   { table: "agency_ledger", country: "country_route", vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount" },
 ] as const;
 
-export function HandoverLedgerBook({
-  open,
-  onOpenChange,
+export function HandoverLedgerInline({
   mode,
   title,
+  enabled = true,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
   mode: "mine" | "to-me";
   title?: string;
+  enabled?: boolean;
 }) {
   const { user } = useCurrentUser();
   const [handovers, setHandovers] = useState<Handover[]>([]);
   const [receiptsByH, setReceiptsByH] = useState<Record<string, Receipt[]>>({});
-  // For each service key (table:rowId), all receipts (any handover) for previous-payment calc
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [loading, setLoading] = useState(false);
@@ -85,7 +82,7 @@ export function HandoverLedgerBook({
   const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
-    if (!open || !user?.id) return;
+    if (!enabled || !user?.id) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -115,7 +112,6 @@ export function HandoverLedgerBook({
         (byH[r.handover_id] ??= []).push(r);
       }
 
-      // Collect service keys for "previous payment" + service-info fetch
       const svcKeys = new Set<string>();
       const byTable: Record<string, Set<string>> = {};
       for (const r of recs) {
@@ -125,7 +121,6 @@ export function HandoverLedgerBook({
         }
       }
 
-      // Fetch ALL receipts for those service rows (for previous-paid calc)
       const byService: Record<string, Receipt[]> = {};
       if (svcKeys.size > 0) {
         const tables = Array.from(new Set(Array.from(svcKeys).map((k) => k.split(":")[0])));
@@ -145,7 +140,6 @@ export function HandoverLedgerBook({
         }
       }
 
-      // Fetch service info (passport, vendor, country, sold_price, discount)
       const svcMap: Record<string, ServiceInfo> = {};
       await Promise.all(
         SERVICE_TABLES.map(async (cfg) => {
@@ -189,7 +183,7 @@ export function HandoverLedgerBook({
 
     return () => { cancelled = true; void supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, user?.id, mode, reloadTick]);
+  }, [enabled, user?.id, mode, reloadTick]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -212,6 +206,56 @@ export function HandoverLedgerBook({
   }, [handovers, search, receiptsByH, serviceMap]);
 
   return (
+    <div className="flex flex-col gap-3">
+      {title && (
+        <div className="flex items-center gap-2 text-base font-semibold">
+          <BookOpen className="h-5 w-5" />
+          {title}
+        </div>
+      )}
+      <div className="relative">
+        <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="যাত্রীর নাম, পাসপোর্ট, ভেন্ডর, রেফারেন্স ID, handover ID, বা স্টাফ…"
+          className="h-9 pl-7"
+        />
+      </div>
+      <div className="space-y-3">
+        {loading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>
+        ) : (
+          filtered.map((h) => (
+            <HandoverCard
+              key={h.id}
+              handover={h}
+              receipts={receiptsByH[h.id] ?? []}
+              receiptsByService={receiptsByService}
+              serviceMap={serviceMap}
+              mode={mode}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function HandoverLedgerBook({
+  open,
+  onOpenChange,
+  mode,
+  title,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  mode: "mine" | "to-me";
+  title?: string;
+}) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -223,34 +267,8 @@ export function HandoverLedgerBook({
             প্রতিটি কার্ডে দেখুন — কোন কোন যাত্রীর জন্য, কত টাকা, কখন বুঝিয়ে দেওয়া/বুঝে নেওয়া হয়েছে।
           </DialogDescription>
         </DialogHeader>
-
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="যাত্রীর নাম, পাসপোর্ট, ভেন্ডর, রেফারেন্স ID, handover ID, বা স্টাফ…"
-            className="h-9 pl-7"
-          />
-        </div>
-
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-          {loading ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>
-          ) : (
-            filtered.map((h) => (
-              <HandoverCard
-                key={h.id}
-                handover={h}
-                receipts={receiptsByH[h.id] ?? []}
-                receiptsByService={receiptsByService}
-                serviceMap={serviceMap}
-                mode={mode}
-              />
-            ))
-          )}
+        <div className="flex-1 overflow-y-auto pr-1">
+          <HandoverLedgerInline mode={mode} enabled={open} />
         </div>
       </DialogContent>
     </Dialog>
