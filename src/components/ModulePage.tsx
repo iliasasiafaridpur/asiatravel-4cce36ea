@@ -1264,10 +1264,11 @@ function AutoGrowTextInput({
   );
 }
 
-function FormField({ field, value, onChange }: {
+function FormField({ field, value, onChange, disabled }: {
   field: Field;
   value: unknown;
   onChange: (v: unknown) => void;
+  disabled?: boolean;
 }) {
   const strVal = (value as string) ?? "";
   // Compact fixed widths with flex-wrap; textareas take full row.
