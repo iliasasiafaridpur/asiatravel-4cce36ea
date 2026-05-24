@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -79,6 +79,7 @@ export function HandoverLedgerInline({
   excludePending?: boolean;
 }) {
   const { user } = useCurrentUser();
+  const instanceId = useId();
   const [handovers, setHandovers] = useState<Handover[]>([]);
   const [receiptsByH, setReceiptsByH] = useState<Record<string, Receipt[]>>({});
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
@@ -181,7 +182,7 @@ export function HandoverLedgerInline({
     })();
 
     const ch = supabase
-      .channel(`handover-book-${mode}-${user.id}`)
+      .channel(`handover-book-${mode}-${user.id}-${instanceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, () => {
         if (!cancelled) setReloadTick((t) => t + 1);
       })
