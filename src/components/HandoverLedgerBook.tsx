@@ -75,6 +75,7 @@ export function HandoverLedgerInline({
   enabled?: boolean;
   approveAction?: { busyId: string | null; onApprove: (receipt: { id: string; handover_id: string | null; approval_status: string }) => void };
   onlyPending?: boolean;
+  excludePending?: boolean;
 }) {
   const { user } = useCurrentUser();
   const [handovers, setHandovers] = useState<Handover[]>([]);
