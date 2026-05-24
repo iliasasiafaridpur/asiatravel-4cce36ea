@@ -85,7 +85,7 @@ function AccountsPage() {
   const reloadSeqRef = useRef(0);
 
   // Dialog forms
-  const [eodOpen, setEodOpen] = useState(false);
+  
   const [manualOpen, setManualOpen] = useState(false);
   const [manualTab, setManualTab] = useState<"income" | "expense">("income");
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
