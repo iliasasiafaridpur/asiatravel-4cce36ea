@@ -732,31 +732,31 @@ ${node.innerHTML.replace(
                     <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
                       {/* Col 1: Name */}
                       <div className="min-w-0">
-                        <p className="font-semibold text-[10px] leading-tight break-words">{name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+                        <p className="font-semibold text-sm leading-tight break-words">{name}</p>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-0.5">
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
-                        {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
+                        {isIn && r.ref_id && <p className="text-xs text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
 
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
-                        <p className="font-medium text-[12px] leading-tight break-words">{servicePrimary}</p>
+                        <p className="font-medium text-sm leading-tight break-words">{servicePrimary}</p>
                         {svcLines.map((line, i) => (
-                          <p key={i} className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                          <p key={i} className="text-xs text-muted-foreground mt-0.5 leading-snug break-words">
                             {line}
                           </p>
                         ))}
                         {primaryBits.length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug break-words">
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-snug break-words">
                           {[...primaryBits, isPendingHand ? "MD approval pending" : ""].filter(Boolean).join(" · ")}
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
-                          <p className="text-[10px] text-muted-foreground/90 mt-1 flex items-start gap-1">
+                          <p className="text-xs text-muted-foreground/90 mt-1 flex items-start gap-1">
                             <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
                             <span className="break-words">{isIn ? r.remarks : isHand ? h.remarks : e.remarks}</span>
                           </p>
@@ -764,7 +764,7 @@ ${node.innerHTML.replace(
                       </div>
 
                       {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
-                      <div className="min-w-0 text-[10px] space-y-0.5">
+                      <div className="min-w-0 text-xs space-y-0.5">
                         {totalBill !== null ? (
                           <>
                             <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
@@ -786,17 +786,17 @@ ${node.innerHTML.replace(
                       {/* Col 4: Agent + Vendor + cost */}
                       <div className="min-w-0">
                         {isIn && svc?.agent && (
-                          <p className="text-[11px] font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
+                          <p className="text-sm font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
                         )}
                         {isIn && svc?.vendor ? (
                           <>
-                            <p className={`text-[11px] font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
+                            <p className={`text-xs font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
                             {typeof svc.cost === "number" && svc.cost > 0 && (
-                              <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
+                              <p className="text-xs text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
                             )}
                           </>
                         ) : (
-                          !svc?.agent && <p className="text-[10px] text-muted-foreground/50">—</p>
+                          !svc?.agent && <p className="text-xs text-muted-foreground/50">—</p>
                         )}
                       </div>
 
@@ -929,7 +929,7 @@ ${node.innerHTML.replace(
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
                           <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
                         </div>
-                         <p className="text-[11px] text-muted-foreground break-words">
+                         <p className="text-xs text-muted-foreground break-words">
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
@@ -959,10 +959,10 @@ ${node.innerHTML.replace(
                         <p className="font-semibold text-sm truncate">{e.purpose || e.category}</p>
                         <p className="font-bold text-amber-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(e.amount))}</p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {e.category} · {formatDate(e.entry_date)} · <span className="font-mono">{e.expense_id}</span>
                       </p>
-                      {e.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
+                      {e.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
                     <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={!isAdmin && (submitted || !canOwnerDelete)} onConfirm={() => deleteExp(e.id)} description={isAdmin ? `খরচ ${e.expense_id} ডিলেট করতে চান?` : submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualExpense(e) ? "এই খরচ লেজার/সিস্টেম থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
@@ -1020,20 +1020,20 @@ ${node.innerHTML.replace(
                         <p className="font-semibold text-sm truncate">{h.to_name}</p>
                         <p className="font-bold text-sky-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(h.amount))}</p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
                         <Banknote className="h-3 w-3" />{h.method} · {formatDate(h.entry_date)} · <span className="font-mono">{h.handover_id}</span>
                       </p>
                       <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] font-semibold ${statusCls}`}>
                         <span>{statusIcon}</span><span>{statusLabel}</span>
                       </div>
                       {isApproved && (
-                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
                           {approvedTime
                             ? <>তারিখ ও সময়: <b>{approvedTime}</b> · 👤 গ্রহীতা: <b>MD (Elias)</b></>
                             : <>👤 গ্রহীতা: <b>MD (Elias)</b></>}
                         </p>
                       )}
-                      {h.remarks && <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
+                      {h.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
                     <ConfirmDeleteButton disabled={!isAdmin} onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
