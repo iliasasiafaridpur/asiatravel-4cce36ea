@@ -245,7 +245,7 @@ function MyHandoverPage() {
               <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
                 ব্যয় বিবরণ (আজকের) — {expenses.length}
               </div>
-              <div className="max-h-48 overflow-y-auto divide-y text-xs">
+              <div className="max-h-48 overflow-y-auto divide-y text-sm">
                 {loading ? (
                   <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
                 ) : expenses.length === 0 ? (
@@ -254,12 +254,12 @@ function MyHandoverPage() {
                   expenses.map((e) => (
                     <div key={e.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                       <div className="min-w-0">
-                        <div className="truncate">{e.category}{e.purpose ? ` — ${e.purpose}` : ""}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">
+                        <div className="text-sm truncate">{e.category}{e.purpose ? ` — ${e.purpose}` : ""}</div>
+                        <div className="text-xs text-muted-foreground font-mono">
                           {e.expense_id || e.id.slice(0, 8)} • {formatDateTime(e.created_at || e.entry_date)}
                         </div>
                       </div>
-                      <div className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
+                      <div className="text-sm tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                         −{fmt(Number(e.amount))}
                       </div>
                     </div>
