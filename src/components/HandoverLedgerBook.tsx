@@ -513,9 +513,9 @@ function HandoverCard({
                         <>
                           <div className="text-rose-600 text-sm font-extrabold">{fmt(dueAfterThis)}</div>
                           {futurePaid > 0 && lastFuture && (
-                            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                            <div className="text-xs text-emerald-600 font-semibold mt-0.5">
                               জমা: {fmt(futurePaid)}
-                              <div className="text-[10px]">{formatDate(lastFuture.entry_date)}</div>
+                              <div className="text-xs">{formatDate(lastFuture.entry_date)}</div>
                             </div>
                           )}
                         </>
