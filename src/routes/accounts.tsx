@@ -732,14 +732,14 @@ ${node.innerHTML.replace(
                     <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
                       {/* Col 1: Name */}
                       <div className="min-w-0">
-                        <p className="font-semibold text-[10px] leading-tight break-words">{name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+                        <p className="font-semibold text-sm leading-tight break-words">{name}</p>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-0.5">
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
-                        {isIn && r.ref_id && <p className="text-[10px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
+                        {isIn && r.ref_id && <p className="text-[11px] text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
 
                       {/* Col 2: Service + secondary (no due here) */}
