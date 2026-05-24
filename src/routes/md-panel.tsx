@@ -283,7 +283,7 @@ function MdPanelPage() {
                 <th className="px-3 py-2 font-semibold">যাত্রী</th>
                 <th className="px-3 py-2 font-semibold text-right">মোট বিল</th>
                 <th className="px-3 py-2 font-semibold text-right">পূর্বের জমা</th>
-                <th className="px-3 py-2 font-semibold text-right">আজকের জমা</th>
+                <th className="px-3 py-2 font-semibold text-right">এই বারের জমা</th>
                 <th className="px-3 py-2 font-semibold text-center">অনুমোদন</th>
               </tr>
             </thead>
@@ -328,6 +328,9 @@ function MdPanelPage() {
                       </div>
                       {info?.passport && (
                         <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{info.passport}</div>
+                      )}
+                      {r.ref_id && (
+                        <div className="text-[10px] text-muted-foreground font-mono">{r.ref_id}</div>
                       )}
                     </td>
                     {/* Col 2: Bill / Discount / Due */}
