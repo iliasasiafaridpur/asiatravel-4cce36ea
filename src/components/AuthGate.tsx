@@ -32,6 +32,16 @@ function hasStoredSession(): boolean {
   return false;
 }
 
+function withTimeout<T>(promise: PromiseLike<T>, ms = 3000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = globalThis.setTimeout(() => reject(new Error("auth timeout")), ms);
+    promise.then(
+      (value) => { globalThis.clearTimeout(timer); resolve(value); },
+      (error) => { globalThis.clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
 export function AuthGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   // Optimistic: if a token exists locally, treat as ready immediately.
@@ -56,7 +66,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    withTimeout(supabase.auth.getSession()).then(({ data: { session } }) => {
       if (!active) return;
       setSession(session);
       setAuthReady(true);

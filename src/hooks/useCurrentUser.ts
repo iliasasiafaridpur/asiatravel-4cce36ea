@@ -26,6 +26,16 @@ let _initialized = false;
 let _initPromise: Promise<void> | null = null;
 const listeners = new Set<(u: User | null) => void>();
 
+function withTimeout<T>(promise: PromiseLike<T>, ms = 3000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = globalThis.setTimeout(() => reject(new Error("auth timeout")), ms);
+    promise.then(
+      (value) => { globalThis.clearTimeout(timer); resolve(value); },
+      (error) => { globalThis.clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
 function setUser(u: User | null) {
   _user = u;
   listeners.forEach((l) => l(u));
@@ -36,8 +46,12 @@ function ensureInit(): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = new Promise<void>((resolve) => {
     supabase.auth.onAuthStateChange((_e, s) => setUser(s?.user ?? null));
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    withTimeout(supabase.auth.getSession()).then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      _initialized = true;
+      resolve();
+    }).catch(() => {
+      setUser(null);
       _initialized = true;
       resolve();
     });
