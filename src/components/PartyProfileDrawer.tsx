@@ -84,7 +84,7 @@ export function PartyProfileDrawer({
       bill += b;
       cashPaid += p;
       applied += applyAmt;
-      profit += Number(r.profit ?? 0);
+      if (p + applyAmt > 0) profit += Number(r.profit ?? 0);
       const svc = String(r.service_type ?? "Other");
       const cur = byService.get(svc) ?? { count: 0, bill: 0, paid: 0, due: 0 };
       cur.count += 1;
