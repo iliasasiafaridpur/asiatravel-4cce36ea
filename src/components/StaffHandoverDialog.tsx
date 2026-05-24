@@ -15,8 +15,16 @@ import { formatDateTime } from "@/lib/modules";
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
-type Receipt = { id: string; receipt_id?: string | null; amount: number; passenger_name?: string | null; entry_date: string; created_at?: string | null };
+type Receipt = {
+  id: string; receipt_id?: string | null; amount: number;
+  passenger_name?: string | null; entry_date: string; created_at?: string | null;
+  service_table?: string | null; service_row_id?: string | null;
+  service_type?: string | null;
+  discount?: number;
+};
 type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null };
+
+const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
 
 export function StaffHandoverDialog({
   open,
