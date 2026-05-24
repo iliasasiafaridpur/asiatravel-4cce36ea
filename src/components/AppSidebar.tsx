@@ -12,6 +12,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   Crown,
+  HandCoins,
 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import {
@@ -79,7 +80,7 @@ export function AppSidebar() {
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
   const { isMd } = useRole();
 
-  // Simple rule: only MD sees the MD Panel. Admin & Staff share standard ops.
+  // Simple rule: only MD sees the MD Panel. Staff/Admin see আমার ক্যাশ হিসাব.
   const nav = isMd
     ? [
         ...NAV.slice(0, 3),
@@ -91,7 +92,16 @@ export function AppSidebar() {
         },
         ...NAV.slice(3),
       ]
-    : NAV;
+    : [
+        ...NAV.slice(0, 3),
+        {
+          group: "ক্যাশ",
+          items: [
+            { to: "/my-handover", title: "আমার ক্যাশ হিসাব", icon: HandCoins, color: "text-sky-400", bg: "bg-sky-500/15" } as NavItem,
+          ],
+        },
+        ...NAV.slice(3),
+      ];
 
 
   return (

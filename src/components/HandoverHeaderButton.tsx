@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
-import { StaffHandoverDialog } from "@/components/StaffHandoverDialog";
 
 import { toast } from "sonner";
 
@@ -20,7 +19,6 @@ export function HandoverHeaderButton() {
   const { isMd, isStaff, isAdmin } = useRole();
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingIds, setPendingIds] = useState<string[]>([]);
-  const [openSubmit, setOpenSubmit] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -92,20 +90,19 @@ export function HandoverHeaderButton() {
 
   if (isStaff || isAdmin) {
     return (
-      <>
-        <Button
-          size="sm"
-          onClick={() => setOpenSubmit(true)}
-          className={`h-10 px-3 gap-1.5 font-semibold ${hasPending ? "bg-amber-500 hover:bg-amber-500/90 text-amber-950" : "bg-sky-500/15 hover:bg-sky-500/25 text-sky-400"}`}
-        >
+      <Button
+        asChild
+        size="sm"
+        className={`h-10 px-3 gap-1.5 font-semibold ${hasPending ? "bg-amber-500 hover:bg-amber-500/90 text-amber-950" : "bg-sky-500/15 hover:bg-sky-500/25 text-sky-400"}`}
+      >
+        <Link to="/my-handover">
           <HandCoins className="h-4 w-4" />
           <span className="hidden sm:inline">MD কে ক্যাশ দিন</span>
           <span className="sm:hidden">ক্যাশ</span>
           {Badge}
           {hasPending && <Bell className="h-3.5 w-3.5 ml-0.5 animate-pulse" />}
-        </Button>
-        <StaffHandoverDialog open={openSubmit} onOpenChange={setOpenSubmit} onSubmitted={() => void load()} />
-      </>
+        </Link>
+      </Button>
     );
   }
 

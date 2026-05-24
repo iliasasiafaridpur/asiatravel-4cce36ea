@@ -15,6 +15,7 @@ import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
+import { Route as MyHandoverRouteImport } from './routes/my-handover'
 import { Route as MdPanelRouteImport } from './routes/md-panel'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
@@ -54,6 +55,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SaudiVisaRoute = SaudiVisaRouteImport.update({
   id: '/saudi-visa',
   path: '/saudi-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyHandoverRoute = MyHandoverRouteImport.update({
+  id: '/my-handover',
+  path: '/my-handover',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MdPanelRoute = MdPanelRouteImport.update({
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/md-panel': typeof MdPanelRoute
+  '/my-handover': typeof MyHandoverRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/md-panel': typeof MdPanelRoute
+  '/my-handover': typeof MyHandoverRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/md-panel': typeof MdPanelRoute
+  '/my-handover': typeof MyHandoverRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/kuwait-visa'
     | '/md-panel'
+    | '/my-handover'
     | '/saudi-visa'
     | '/settings'
     | '/tickets'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/kuwait-visa'
     | '/md-panel'
+    | '/my-handover'
     | '/saudi-visa'
     | '/settings'
     | '/tickets'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/kuwait-visa'
     | '/md-panel'
+    | '/my-handover'
     | '/saudi-visa'
     | '/settings'
     | '/tickets'
@@ -230,6 +242,7 @@ export interface RootRouteChildren {
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
   MdPanelRoute: typeof MdPanelRoute
+  MyHandoverRoute: typeof MyHandoverRoute
   SaudiVisaRoute: typeof SaudiVisaRoute
   SettingsRoute: typeof SettingsRoute
   TicketsRoute: typeof TicketsRoute
@@ -280,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/saudi-visa'
       fullPath: '/saudi-visa'
       preLoaderRoute: typeof SaudiVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-handover': {
+      id: '/my-handover'
+      path: '/my-handover'
+      fullPath: '/my-handover'
+      preLoaderRoute: typeof MyHandoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/md-panel': {
@@ -366,6 +386,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
   MdPanelRoute: MdPanelRoute,
+  MyHandoverRoute: MyHandoverRoute,
   SaudiVisaRoute: SaudiVisaRoute,
   SettingsRoute: SettingsRoute,
   TicketsRoute: TicketsRoute,
