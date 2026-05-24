@@ -764,7 +764,7 @@ ${node.innerHTML.replace(
                       </div>
 
                       {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
-                      <div className="min-w-0 text-[10px] space-y-0.5">
+                      <div className="min-w-0 text-xs space-y-0.5">
                         {totalBill !== null ? (
                           <>
                             <p className="text-muted-foreground">মোট বিল: <span className="font-semibold text-foreground tabular-nums">{fmt(totalBill)}</span></p>
@@ -786,17 +786,17 @@ ${node.innerHTML.replace(
                       {/* Col 4: Agent + Vendor + cost */}
                       <div className="min-w-0">
                         {isIn && svc?.agent && (
-                          <p className="text-[11px] font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
+                          <p className="text-sm font-semibold leading-tight break-words text-foreground">{svc.agent}</p>
                         )}
                         {isIn && svc?.vendor ? (
                           <>
-                            <p className={`text-[11px] font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
+                            <p className={`text-xs font-medium leading-tight break-words ${svc?.agent ? "mt-0.5 text-muted-foreground" : ""}`}>{svc.vendor}</p>
                             {typeof svc.cost === "number" && svc.cost > 0 && (
-                              <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
+                              <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">{fmt(svc.cost)}</p>
                             )}
                           </>
                         ) : (
-                          !svc?.agent && <p className="text-[10px] text-muted-foreground/50">—</p>
+                          !svc?.agent && <p className="text-xs text-muted-foreground/50">—</p>
                         )}
                       </div>
 
