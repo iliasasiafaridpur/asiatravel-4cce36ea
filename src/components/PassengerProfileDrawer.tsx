@@ -97,6 +97,8 @@ export function PassengerProfileDrawer({
   const totalReceived = Math.max(0, receivedField);
   const due = Math.max(0, sold - totalReceived - totalDiscount);
   const profit = sold - totalDiscount - cost;
+  const showProfit = totalReceived > 0;
+  const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
 
@@ -305,14 +307,14 @@ export function PassengerProfileDrawer({
                       {fmtMoney(cost)}
                     </div>
                   </div>
-                  <div className="rounded-lg border bg-background p-3">
-                    <div className="text-[11px] text-muted-foreground">Profit</div>
-                    <div
-                      className={`mt-0.5 text-sm font-semibold tabular-nums ${profit < 0 ? "text-rose-600" : "text-emerald-600"}`}
-                    >
-                      {fmtMoney(profit)}
+                  {showProfit ? (
+                    <div className="rounded-lg border bg-background p-3">
+                      <div className="text-[11px] text-muted-foreground">Profit</div>
+                      <div className={`mt-0.5 text-sm font-semibold tabular-nums ${profitClass}`}>
+                        {fmtMoney(profit)}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
 
                 <div className="mt-4">
