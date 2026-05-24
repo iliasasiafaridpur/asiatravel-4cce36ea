@@ -116,7 +116,7 @@ export function AppSidebar() {
           </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <p className="font-bold text-sm leading-tight">Travel Manager</p>
-            <p className="text-[13px] text-muted-foreground leading-tight truncate">All-in-one Office</p>
+            <p className="text-[10px] text-muted-foreground leading-tight truncate">All-in-one Office</p>
           </div>
         </div>
       </SidebarHeader>

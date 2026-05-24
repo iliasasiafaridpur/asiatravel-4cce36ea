@@ -1295,7 +1295,7 @@ export function LedgerPage({ module: mod }: Props) {
         <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[14px] uppercase tracking-wide text-muted-foreground">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 {billLabel}
               </div>
               <div className="mt-1 text-lg font-bold tabular-nums">
@@ -1303,7 +1303,7 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             </div>
             <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[14px] uppercase tracking-wide text-muted-foreground">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 {paidLabel}
               </div>
               <div className="mt-1 text-lg font-bold tabular-nums">
@@ -1311,7 +1311,7 @@ export function LedgerPage({ module: mod }: Props) {
               </div>
             </div>
             <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[14px] uppercase tracking-wide text-muted-foreground">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Total Due
               </div>
               <div
@@ -1542,52 +1542,52 @@ export function LedgerPage({ module: mod }: Props) {
                       style={{ background: "var(--gradient-card)" }}
                     >
                       <div className="min-w-0">
-                        <div className="hidden text-[13px] uppercase tracking-wide text-muted-foreground mb-1">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Date / ID
                         </div>
                         <div className="font-bold whitespace-nowrap">
                           {formatDate(r.entry_date as string | null)}
                         </div>
-                        <div className="text-[14px] font-mono text-muted-foreground whitespace-nowrap">
+                        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
                           {String(r[mod.idColumn] ?? "")}
                         </div>
                         {status && (
                           <Badge
                             variant="outline"
-                            className={cn("mt-1 text-[13px] whitespace-nowrap", statusBadgeClass(status))}
+                            className={cn("mt-1 text-[10px] whitespace-nowrap", statusBadgeClass(status))}
                           >
                             {status}
                           </Badge>
                         )}
                         {byName && (
-                          <div className="text-[13px] text-muted-foreground whitespace-nowrap">
+                          <div className="text-[10px] text-muted-foreground whitespace-nowrap">
                             by {byName}
                           </div>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="hidden text-[13px] uppercase tracking-wide text-muted-foreground mb-1">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Passenger
                         </div>
                         <div className="font-bold">{passenger || "—"}</div>
                         {passport && (
-                          <div className="text-[14px] text-muted-foreground leading-tight font-mono">
+                          <div className="text-[11px] text-muted-foreground leading-tight font-mono">
                             PP: {passport}
                           </div>
                         )}
                         {mobile && (
-                          <div className="text-[14px] text-muted-foreground leading-tight">
+                          <div className="text-[11px] text-muted-foreground leading-tight">
                             📱 {mobile}
                           </div>
                         )}
                         {remarks && (
-                          <div className="text-[14px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">
+                          <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">
                             {remarks}
                           </div>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="hidden text-[13px] uppercase tracking-wide text-muted-foreground mb-1">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Service
                         </div>
                         <div className="text-sm font-semibold">{serviceLabel}</div>
@@ -1613,7 +1613,7 @@ export function LedgerPage({ module: mod }: Props) {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="hidden text-[13px] uppercase tracking-wide text-muted-foreground mb-1">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           {groupLabel}
                         </div>
                         <button
@@ -1628,7 +1628,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {String(r[groupField] ?? "—")}
                         </button>
                         {isAgency && info?.vendor && (
-                          <div className="text-[14px] text-muted-foreground leading-tight">
+                          <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {typeof info?.cost === "number" && info.cost > 0 && (
                               <span className="tabular-nums"> · ৳{info.cost.toLocaleString()}</span>
@@ -1636,7 +1636,7 @@ export function LedgerPage({ module: mod }: Props) {
                           </div>
                         )}
                         {!isAgency && info?.agency_sold && (
-                          <div className="text-[14px] text-muted-foreground leading-tight">
+                          <div className="text-[11px] text-muted-foreground leading-tight">
                             C: {info.agency_sold}
                             {typeof info?.sold === "number" && info.sold > 0 && (
                               <span className="tabular-nums"> · ৳{info.sold.toLocaleString()}</span>
@@ -1645,7 +1645,7 @@ export function LedgerPage({ module: mod }: Props) {
                         )}
                       </div>
                       <div className="tabular-nums whitespace-nowrap text-right">
-                        <div className="hidden text-[13px] uppercase tracking-wide text-muted-foreground mb-1">
+                        <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Amount
                         </div>
                         <div className="font-bold text-base">
@@ -1655,7 +1655,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()}
                         </div>
                         {appliedAdvance > 0 && (
-                          <div className="text-[14px] text-muted-foreground">
+                          <div className="text-[11px] text-muted-foreground">
                             Advance Adjusted: {appliedAdvance.toLocaleString()}
                           </div>
                         )}
@@ -1675,7 +1675,7 @@ export function LedgerPage({ module: mod }: Props) {
                           ) : bal >= 0 || appliedAdvance > 0 ? (
                             <Badge
                               variant="outline"
-                              className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[13px]"
+                              className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 text-[10px]"
                             >
                               Paid
                             </Badge>
@@ -1688,7 +1688,7 @@ export function LedgerPage({ module: mod }: Props) {
                         {displayPaid > 0 && (
                           <div
                             className={cn(
-                              "text-[14px] font-medium",
+                              "text-[11px] font-medium",
                               profit < 0
                                 ? "text-rose-500"
                                 : displayDue <= 0 && Number(r[billCol] ?? 0) > 0
@@ -2012,7 +2012,7 @@ export function LedgerPage({ module: mod }: Props) {
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
                   Mark as Advance Payment
-                  <span className="block text-[14px] text-muted-foreground font-normal">
+                  <span className="block text-[11px] text-muted-foreground font-normal">
                     কোনো বুকিং-এর সাথে যুক্ত না করে advance হিসেবে রাখুন — পরের বুকিং থেকে auto adjust হবে
                   </span>
                 </Label>
@@ -2032,7 +2032,7 @@ export function LedgerPage({ module: mod }: Props) {
                 />
                 <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
                   Mark as Vendor Deposit From MD Sir
-                  <span className="block text-[14px] text-muted-foreground font-normal">
+                  <span className="block text-[11px] text-muted-foreground font-normal">
                     টিকেটিং পোর্টাল এ Deposit করুন। যা লেজারের বাহিরের টাকা। User এর ব্যালেঞ্জ অপরিবর্তিত থাকবে।
                   </span>
                 </Label>
@@ -2108,7 +2108,7 @@ export function LedgerPage({ module: mod }: Props) {
                             >
                               <TableCell className="text-xs">
                                 <div>{formatDate(row.entry_date as string | null)}</div>
-                                <div className="font-mono text-[13px] text-muted-foreground">
+                                <div className="font-mono text-[10px] text-muted-foreground">
                                   {String(row[mod.idColumn] ?? "")}
                                 </div>
                               </TableCell>
@@ -2123,7 +2123,7 @@ export function LedgerPage({ module: mod }: Props) {
                               </TableCell>
                               <TableCell className="text-right tabular-nums text-xs">
                                 {alloc >= due ? (
-                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[13px]">✓ Cleared</Badge>
+                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">✓ Cleared</Badge>
                                 ) : alloc > 0 ? (
                                   <span className="text-amber-600 font-semibold">৳ {(due - alloc).toLocaleString()} due</span>
                                 ) : (
@@ -2179,7 +2179,7 @@ export function LedgerPage({ module: mod }: Props) {
                               </TableCell>
                               <TableCell className="text-xs">
                                 <div>{formatDate(r.entry_date as string | null)}</div>
-                                <div className="font-mono text-[13px] text-muted-foreground">
+                                <div className="font-mono text-[10px] text-muted-foreground">
                                   {String(r[mod.idColumn] ?? "")}
                                 </div>
                               </TableCell>

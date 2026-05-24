@@ -228,7 +228,7 @@ export function ReceiptDialog({
             <div className="r">
               <div className="h text-center border-b-2 border-foreground pb-2 mb-3">
                 <h1 className="text-base font-bold m-0">Asia Travels & Tours</h1>
-                <div className="sub text-[13px] text-muted-foreground">Bariplaza, Faridpur. 01721-399599</div>
+                <div className="sub text-[10px] text-muted-foreground">Bariplaza, Faridpur. 01721-399599</div>
               </div>
 
               <div className="row flex justify-between text-xs py-0.5">
@@ -322,7 +322,7 @@ export function ReceiptDialog({
                 </div>
               )}
 
-              <div className="sig mt-6 flex justify-between text-[14px]">
+              <div className="sig mt-6 flex justify-between text-[11px]">
                 <div className="border-t border-foreground pt-1 w-[40%] text-center">
                   Received by
                   <br />
@@ -333,7 +333,7 @@ export function ReceiptDialog({
                 </div>
               </div>
 
-              <div className="ft mt-4 text-[13px] text-center text-muted-foreground">
+              <div className="ft mt-4 text-[10px] text-center text-muted-foreground">
                 Thank you for choosing us. This is a computer generated receipt.
               </div>
             </div>

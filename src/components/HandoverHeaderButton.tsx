@@ -63,7 +63,7 @@ export function HandoverHeaderButton() {
   const hasPending = pendingCount > 0;
   const Badge = hasPending ? (
     <span
-      className="ml-1 inline-flex items-center justify-center min-w-[26px] h-[26px] px-1.5 rounded-full bg-rose-500 text-white text-[13px] font-extrabold tabular-nums ring-2 ring-background animate-pulse shadow-lg"
+      className="ml-1 inline-flex items-center justify-center min-w-[26px] h-[26px] px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-extrabold tabular-nums ring-2 ring-background animate-pulse shadow-lg"
       aria-label={`${pendingCount} pending`}
     >
       {pendingCount}

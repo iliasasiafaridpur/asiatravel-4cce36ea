@@ -180,7 +180,7 @@ function ActionBoardPage() {
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl font-bold leading-tight truncate">Action Board</h1>
-            <p className="text-[14px] text-muted-foreground hidden sm:flex items-center gap-1">
+            <p className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1">
               <Keyboard className="h-3 w-3" /> Ctrl+S সেভ · Ctrl+K সার্চ · Alt+1-9 ক্যাটাগরি · Enter পরের ফিল্ড
             </p>
           </div>
