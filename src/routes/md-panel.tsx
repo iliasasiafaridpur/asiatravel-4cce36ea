@@ -191,8 +191,11 @@ function MdPanelPage() {
 
   // Metrics
   const metrics = useMemo(() => {
+    // Pending Approval = sum of submitted_amount across pending cash_handovers
+    const pendingHandovers = Object.values(handoverMap).filter((h) => (h.status ?? "pending") === "pending");
+    const pendingCash = pendingHandovers.reduce((s, h) => s + Number(h.submitted_amount ?? h.amount ?? 0), 0);
+    const pendingCount = pendingHandovers.length;
     const pendingRows = filtered.filter((r) => r.approval_status === "pending_md");
-    const pendingCash = pendingRows.reduce((s, r) => s + Number(r.amount || 0), 0);
     let dueRecov = 0;
     for (const r of pendingRows) {
       if (!r.service_row_id) continue;
@@ -204,8 +207,8 @@ function MdPanelPage() {
     const approvedToday = allReceipts
       .filter((r) => r.approval_status === "approved" && r.entry_date === new Date().toISOString().slice(0, 10))
       .reduce((s, r) => s + Number(r.amount || 0), 0);
-    return { pendingCash, dueRecov, approvedToday };
-  }, [filtered, allReceipts]);
+    return { pendingCash, pendingCount, dueRecov, approvedToday };
+  }, [filtered, allReceipts, handoverMap]);
 
   if (userLoading || roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (!isMd) {
