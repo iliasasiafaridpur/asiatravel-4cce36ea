@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatDateTime } from "@/lib/modules";
-import { HandoverLedgerButton } from "@/components/HandoverLedgerBook";
+import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 
 export const Route = createFileRoute("/md-panel")({
   head: () => ({ meta: [{ title: "MD Cash Control Panel" }] }),
