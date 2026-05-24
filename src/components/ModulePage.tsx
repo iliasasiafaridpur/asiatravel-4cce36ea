@@ -834,7 +834,7 @@ export function ModulePage({ module: mod }: Props) {
               </div>
             </DialogHeader>
             <div className="px-4 sm:px-6 pb-4 pt-3">
-              <FormSections mod={mod} form={form} setForm={setForm} />
+              <FormSections mod={mod} form={form} setForm={setForm} isEdit={!!editing} />
             </div>
           </DialogContent>
         </Dialog>
