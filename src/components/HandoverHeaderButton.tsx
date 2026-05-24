@@ -13,20 +13,23 @@ import { toast } from "sonner";
  * Header button shown in the top menu:
  *  - For MD: "MD Panel" with big pending-handover count badge.
  *  - For Staff: "MD কে ক্যাশ বুঝিয়ে দিন" with own pending-submission badge.
- * Re-notifies via toast every 2 minutes while pending > 0.
+ * Notifies only once for each new pending handover id.
  */
 export function HandoverHeaderButton() {
   const { user } = useCurrentUser();
   const { isMd, isStaff, isAdmin } = useRole();
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingIds, setPendingIds] = useState<string[]>([]);
   const [openSubmit, setOpenSubmit] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
-    let q = supabase.from("cash_handovers").select("id", { count: "exact", head: true }).eq("status", "pending");
+    let q = supabase.from("cash_handovers").select("id").eq("status", "pending");
     if (isStaff && !isMd && !isAdmin) q = q.eq("from_user", user.id);
-    const { count } = await q;
-    setPendingCount(count ?? 0);
+    const { data } = await q;
+    const ids = ((data ?? []) as Array<{ id: string }>).map((r) => r.id).filter(Boolean);
+    setPendingIds(ids);
+    setPendingCount(ids.length);
   }, [user?.id, isMd, isStaff, isAdmin]);
 
   useEffect(() => {
@@ -39,17 +42,23 @@ export function HandoverHeaderButton() {
     return () => { void supabase.removeChannel(ch); };
   }, [user?.id, load]);
 
-  // Toast ONCE when pending count rises (no repeat interval)
-  const [lastNotified, setLastNotified] = useState(0);
+  // Toast ONCE per pending handover id, persisted so remount/reload cannot repeat it.
   useEffect(() => {
-    if (pendingCount <= 0) { setLastNotified(0); return; }
-    if (pendingCount === lastNotified) return;
+    if (!user?.id || pendingIds.length === 0) return;
+    const storageKey = `handover_notified_once_${isMd ? "md" : "staff"}_${user.id}`;
+    let seen = new Set<string>();
+    try {
+      seen = new Set(JSON.parse(localStorage.getItem(storageKey) || "[]") as string[]);
+    } catch { /* ignore bad localStorage */ }
+    const freshIds = pendingIds.filter((id) => !seen.has(id));
+    if (freshIds.length === 0) return;
     const msg = isMd
       ? `🔔 ${pendingCount} টি Cash Handover Approval এর অপেক্ষায়`
       : `🔔 ${pendingCount} টি Handover MD Approval এর অপেক্ষায়`;
     toast.info(msg);
-    setLastNotified(pendingCount);
-  }, [pendingCount, isMd, lastNotified]);
+    for (const id of freshIds) seen.add(id);
+    try { localStorage.setItem(storageKey, JSON.stringify(Array.from(seen).slice(-300))); } catch { /* ignore quota */ }
+  }, [pendingCount, pendingIds, isMd, user?.id]);
 
   if (!user) return null;
 

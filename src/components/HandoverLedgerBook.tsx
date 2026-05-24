@@ -377,7 +377,7 @@ function HandoverCard({
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-3 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-3 py-1.5 font-semibold text-center">অনুমোদন</th>}
+              {approveAction && <th className="px-3 py-1.5 font-semibold text-center w-[300px]">অনুমোদন</th>}
             </tr>
           </thead>
           <tbody>
@@ -509,26 +509,23 @@ function HandoverCard({
               <td className="px-3 py-1.5 text-right" colSpan={3}>মোট ({receipts.length} যাত্রী)</td>
               <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
               <td className="px-3 py-1.5" />
-              {approveAction && <td className="px-3 py-1.5" />}
+              {approveAction && <td className="px-3 py-1.5 text-right">
+                {approveAction && isPending && firstPendingReceipt && (
+                  <Button
+                    size="sm"
+                    onClick={() => approveAction.onApprove(firstPendingReceipt)}
+                    disabled={approveAction.busyId === firstPendingReceipt.id || !firstPendingReceipt.handover_id}
+                    className="w-2/3 min-w-[190px] bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold shadow-md"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    🟢 টাকা পেলাম ({fmt(submitted)})
+                  </Button>
+                )}
+              </td>}
             </tr>
           </tbody>
         </table>
       </div>
-
-      {/* Full-handover approve button (MD only, pending only) */}
-      {approveAction && isPending && firstPendingReceipt && (
-        <div className="px-4 py-3 border-t bg-emerald-500/5 flex items-center justify-end">
-          <Button
-            size="lg"
-            onClick={() => approveAction.onApprove(firstPendingReceipt)}
-            disabled={approveAction.busyId === firstPendingReceipt.id || !firstPendingReceipt.handover_id}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold text-base h-11 px-6 shadow-md"
-          >
-            <CheckCircle2 className="h-5 w-5" />
-            🟢 টাকা পেলাম ({fmt(submitted)})
-          </Button>
-        </div>
-      )}
 
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
         <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
