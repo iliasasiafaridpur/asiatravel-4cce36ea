@@ -419,6 +419,12 @@ function HandoverCard({
                   {/* এই বারের জমা */}
                   <td className="px-3 py-2 text-right tabular-nums">
                     <b className="text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                    {r.received_by_name && (
+                      <div className="text-[10px] text-muted-foreground font-normal mt-0.5">আদায়কারী: {r.received_by_name}</div>
+                    )}
+                    {r.created_at && (
+                      <div className="text-[10px] text-muted-foreground font-normal">{formatDateTime(r.created_at)}</div>
+                    )}
                   </td>
                   {/* বাকি (after this handover) */}
                   <td className="px-3 py-2 text-right tabular-nums">
@@ -428,6 +434,28 @@ function HandoverCard({
                         : <span className="text-rose-600">{fmt(due)}</span>)
                       : <span className="text-muted-foreground">—</span>}
                   </td>
+                  {approveAction && (
+                    <td className="px-3 py-2 text-center">
+                      {r.approval_status === "approved" ? (
+                        <div className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Approved
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => approveAction.onApprove(r)}
+                          disabled={approveAction.busyId === r.id || !r.handover_id}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          🟢 টাকা পেলাম
+                        </Button>
+                      )}
+                      {r.approval_status !== "approved" && !r.handover_id && (
+                        <div className="text-[9px] text-amber-600 mt-1">staff এখনো submit করেননি</div>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -435,6 +463,7 @@ function HandoverCard({
               <td className="px-3 py-1.5 text-right" colSpan={3}>মোট ({receipts.length} যাত্রী)</td>
               <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
               <td className="px-3 py-1.5" />
+              {approveAction && <td className="px-3 py-1.5" />}
             </tr>
           </tbody>
         </table>
