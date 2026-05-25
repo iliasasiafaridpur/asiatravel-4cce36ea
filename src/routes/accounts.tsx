@@ -905,8 +905,8 @@ ${node.innerHTML.replace(
         <TabsContent value="income" className="mt-3">
           <Card><CardContent className="p-0">
             {fRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
-              : <div className="divide-y">
-                {fRecv.map((r) => {
+              : <div>
+                {fRecv.map((r, idx) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
                   const submitted = isReceiptSubmitted(r);
@@ -920,7 +920,7 @@ ${node.innerHTML.replace(
                     }
                   }
                   return (
-                    <div key={r.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                    <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                       <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                         <ArrowDownLeft className="h-4 w-4" />
                       </div>
