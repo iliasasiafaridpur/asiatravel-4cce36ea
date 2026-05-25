@@ -729,7 +729,7 @@ ${node.innerHTML.replace(
                   const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
                       {/* Col 1: Name */}
                       <div className="min-w-0">
                         <p className="font-semibold text-sm leading-tight break-words">{name}</p>
