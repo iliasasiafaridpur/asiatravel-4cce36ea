@@ -167,19 +167,32 @@ body { font-size: 1rem !important; }
 .row-tint-2 { background-color: #d8ead9 !important; color: #0f172a !important; } /* C: sage */
 .row-tint-3 { background-color: #f4e6c8 !important; color: #0f172a !important; } /* D: warm cream */
 .row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover, .row-tint-3:hover {
-  filter: brightness(0.94);
+  background-color: rgba(6, 182, 212, 0.18) !important;
+  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
+  filter: none;
 }
 /* Dark mode: deeper, more saturated tones — clearly distinct from background */
-.dark .row-tint-0 { background-color: #2a3a55 !important; color: #ffffff !important; } /* A: deeper navy */
-.dark .row-tint-1 { background-color: #353048 !important; color: #ffffff !important; } /* B: indigo plum */
-.dark .row-tint-2 { background-color: #253a3a !important; color: #ffffff !important; } /* C: deep teal */
-.dark .row-tint-3 { background-color: #4a3a2a !important; color: #ffffff !important; } /* D: warm bronze */
+.dark .row-tint-0 { background-color: #2a3a55 !important; color: #ffffff !important; }
+.dark .row-tint-1 { background-color: #353048 !important; color: #ffffff !important; }
+.dark .row-tint-2 { background-color: #253a3a !important; color: #ffffff !important; }
+.dark .row-tint-3 { background-color: #4a3a2a !important; color: #ffffff !important; }
 .dark .row-tint-0:hover, .dark .row-tint-1:hover,
 .dark .row-tint-2:hover, .dark .row-tint-3:hover {
-  background-color: #475569 !important;
+  background-color: rgba(6, 182, 212, 0.22) !important;
   color: #ffffff !important;
-  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.35), 0 0 8px rgba(45, 212, 191, 0.15);
+  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
   filter: none;
+}
+
+/* Global cyan hover for ALL table rows */
+table tbody tr { transition: background-color 0.15s ease, box-shadow 0.15s ease; }
+table tbody tr:hover {
+  background-color: rgba(6, 182, 212, 0.18) !important;
+  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
+}
+.dark table tbody tr:hover {
+  background-color: rgba(6, 182, 212, 0.22) !important;
+  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
 }
 
 
