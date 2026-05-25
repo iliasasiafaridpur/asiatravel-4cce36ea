@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Crown,
   HandCoins,
+  BookOpen,
 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import {
