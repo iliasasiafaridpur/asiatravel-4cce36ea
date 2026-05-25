@@ -434,12 +434,10 @@ function HandoverCard({
                       <div className="text-[10px] text-muted-foreground mt-0.5">Rec:By {r.received_by_name}</div>
                     )}
                   </td>
-                  {/* যাত্রী */}
+                  {/* কাস্টমার */}
                   <td className="px-3 py-2 align-top">
                     <div className="text-sm font-semibold">{r.passenger_name || "—"}</div>
-                    {info?.agent && (
-                      <div className="text-xs text-muted-foreground mt-0.5">এজেন্ট: {info.agent}</div>
-                    )}
+                    <div className="text-xs text-muted-foreground mt-0.5">A: {info?.agent || "Self"}</div>
                     {info?.passport && (
                       <div className="text-xs text-muted-foreground font-mono mt-0.5">{info.passport}</div>
                     )}
@@ -451,7 +449,9 @@ function HandoverCard({
                       <div className="text-xs text-muted-foreground mt-0.5">{info.country}</div>
                     )}
                     {info?.airline && (
-                      <div className="text-xs text-muted-foreground">{info.airline}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
+                      </div>
                     )}
                   </td>
                   {/* মোট বিল */}
@@ -469,14 +469,18 @@ function HandoverCard({
                           <div className="text-xs text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
                         )}
                         {info?.vendor && (
-                          <div className="text-xs text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            V: {info.vendor}{info.vendor_price > 0 ? `-${Math.round(info.vendor_price).toLocaleString()}/` : ""}
+                          </div>
                         )}
                       </>
                     ) : (
                       <>
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
-                          <div className="text-xs text-muted-foreground mt-0.5">ভেন্ডর: {info.vendor}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            V: {info.vendor}{info.vendor_price > 0 ? `-${Math.round(info.vendor_price).toLocaleString()}/` : ""}
+                          </div>
                         )}
                       </>
                     )}
