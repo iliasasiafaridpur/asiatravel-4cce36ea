@@ -1011,7 +1011,7 @@ ${node.innerHTML.replace(
                     : null;
 
                   return (
-                  <div key={h.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                  <div key={h.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-sky-500/10 text-sky-600 border border-sky-500/20">
                       <Send className="h-4 w-4" />
                     </div>
