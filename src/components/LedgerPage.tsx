@@ -1349,7 +1349,7 @@ export function LedgerPage({ module: mod }: Props) {
                   {groupSummary.map((g, idx) => {
                     const isSelfGroup = g.key.trim().toLowerCase() === "self";
                     return (
-                    <TableRow key={g.key} className={`row-tint-${idx % 6}`}>
+                    <TableRow key={g.key} className={`row-tint-${idx % 4}`}>
                       <TableCell className="font-medium">
                         {isSelfGroup ? (
                           <span
@@ -2105,7 +2105,7 @@ export function LedgerPage({ module: mod }: Props) {
                           {fifoPreview.map(({ row, alloc, due }, idx) => (
                             <TableRow
                               key={row.id}
-                              className={alloc > 0 ? `row-tint-${idx % 6}` : `row-tint-${idx % 6} opacity-40`}
+                              className={alloc > 0 ? `row-tint-${idx % 4}` : `row-tint-${idx % 4} opacity-40`}
                             >
                               <TableCell className="text-xs">
                                 <div>{formatDate(row.entry_date as string | null)}</div>
@@ -2164,7 +2164,7 @@ export function LedgerPage({ module: mod }: Props) {
                           const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
                           const checked = r.id in selectedLines;
                           return (
-                            <TableRow key={r.id} className={`row-tint-${idx % 6}`}>
+                            <TableRow key={r.id} className={`row-tint-${idx % 4}`}>
                               <TableCell>
                                 <Checkbox
                                   checked={checked}
