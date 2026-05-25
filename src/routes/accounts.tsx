@@ -877,7 +877,7 @@ ${node.innerHTML.replace(
                   const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
                   return (
-                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
+                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
                       <td className="wrap">{name}</td>
