@@ -945,12 +945,12 @@ ${node.innerHTML.replace(
         <TabsContent value="expense" className="mt-3">
           <Card><CardContent className="p-0">
             {fExp.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো খরচ নেই</EmptyRow>
-              : <div className="divide-y">
-                {fExp.map((e) => {
+              : <div>
+                {fExp.map((e, idx) => {
                   const submitted = isExpenseSubmitted(e);
                   const canOwnerDelete = isManualExpense(e) && !submitted;
                   return (
-                  <div key={e.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                  <div key={e.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-amber-500/10 text-amber-600 border border-amber-500/20">
                       <Receipt className="h-4 w-4" />
                     </div>
