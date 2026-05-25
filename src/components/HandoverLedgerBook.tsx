@@ -160,6 +160,8 @@ export function HandoverLedgerInline({
           if (typeof cfg.country === "string") cols.push(cfg.country);
           cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.discountField);
           if (cfg.airlineField) cols.push(cfg.airlineField);
+          if (cfg.costField) cols.push(cfg.costField);
+          if (cfg.flightDateField) cols.push(cfg.flightDateField);
           const uniqueCols = Array.from(new Set(cols));
           const { data } = await supabase
             .from(cfg.table as never)
@@ -176,6 +178,8 @@ export function HandoverLedgerInline({
               passport: (row.passport as string | null) ?? null,
               sold_price: Number(row[cfg.soldField] ?? 0),
               discount: Number(row[cfg.discountField] ?? 0),
+              vendor_price: cfg.costField ? Number(row[cfg.costField] ?? 0) : 0,
+              flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
             };
           }
         })
