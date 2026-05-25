@@ -417,14 +417,14 @@ function PastEodPanel({
             </tr>
           </thead>
           <tbody>
-            {eodReceipts.map((r) => {
+            {eodReceipts.map((r, idx) => {
               const highlight = r.id === pastReceipt.id;
               const key = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = key ? serviceMap[key] : undefined;
               return (
                 <tr
                   key={r.id}
-                  className={`border-t ${highlight ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500 animate-pulse" : ""}`}
+                  className={`border-t ${highlight ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500 animate-pulse" : `row-tint-${idx % 4}`}`}
                 >
                   <td className="px-2 py-1.5">
                     <div className={`text-sm ${highlight ? "font-bold" : "font-medium"}`}>{r.passenger_name}</div>
