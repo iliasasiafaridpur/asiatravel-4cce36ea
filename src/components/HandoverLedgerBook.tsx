@@ -385,7 +385,7 @@ function HandoverCard({
           <thead className="bg-muted/30">
             <tr className="text-left">
               <th className="px-3 py-1.5 font-semibold">তারিখ</th>
-              <th className="px-3 py-1.5 font-semibold">যাত্রী</th>
+              <th className="px-3 py-1.5 font-semibold">কাস্টমার</th>
               <th className="px-3 py-1.5 font-semibold">সার্ভিস</th>
               <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
               <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
