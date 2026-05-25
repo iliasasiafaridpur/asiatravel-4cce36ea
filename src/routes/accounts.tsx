@@ -750,9 +750,9 @@ ${node.innerHTML.replace(
                             {line}
                           </p>
                         ))}
-                        {primaryBits.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-0.5 leading-snug break-words">
-                          {[...primaryBits, isPendingHand ? "MD approval pending" : ""].filter(Boolean).join(" · ")}
+                        {isPendingHand && (
+                          <p className="text-xs text-amber-600 mt-0.5 leading-snug break-words">
+                            MD approval pending
                           </p>
                         )}
                         {(isIn ? r.remarks : isHand ? h.remarks : e.remarks) && (
