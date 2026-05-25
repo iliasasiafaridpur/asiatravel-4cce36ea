@@ -1538,9 +1538,8 @@ export function LedgerPage({ module: mod }: Props) {
                           void openProfileFor(r);
                         }
                       }}
-                      className="grid gap-3 rounded-md border border-border/70 bg-card/80 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors"
+                      className={`row-tint-${idx % 4} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
                       title={isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
-                      style={{ background: "var(--gradient-card)" }}
                     >
                       <div className="min-w-0">
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
