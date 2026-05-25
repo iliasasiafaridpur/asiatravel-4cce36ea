@@ -160,27 +160,28 @@ body { font-size: 1rem !important; }
   input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
-/* Global 4-color repeating row tints (A B C D A B C D ...) */
-/* Light mode: ultra-light desaturated pastels, dark text for max readability */
-.row-tint-0 { background-color: #f0f5fb !important; color: #0f172a !important; } /* A: cool blue mist */
-.row-tint-1 { background-color: #f4f1f8 !important; color: #0f172a !important; } /* B: soft lavender */
-.row-tint-2 { background-color: #f1f6f2 !important; color: #0f172a !important; } /* C: pale sage */
-.row-tint-3 { background-color: #faf5ec !important; color: #0f172a !important; } /* D: warm cream */
+/* Global 4-color repeating row tints (A B C D A B C D ...) — DARKER, clearly distinguishable */
+/* Light mode: noticeably tinted but still readable with dark text */
+.row-tint-0 { background-color: #d6e4f5 !important; color: #0f172a !important; } /* A: clear blue */
+.row-tint-1 { background-color: #e2dcef !important; color: #0f172a !important; } /* B: lavender */
+.row-tint-2 { background-color: #d8ead9 !important; color: #0f172a !important; } /* C: sage */
+.row-tint-3 { background-color: #f4e6c8 !important; color: #0f172a !important; } /* D: warm cream */
 .row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover, .row-tint-3:hover {
-  filter: brightness(0.96);
+  filter: brightness(0.94);
 }
-/* Dark mode: four desaturated deep tones, white text, high contrast */
-.dark .row-tint-0 { background-color: #1e293b !important; color: #ffffff !important; } /* A: deep slate */
-.dark .row-tint-1 { background-color: #1b2a3a !important; color: #ffffff !important; } /* B: navy steel */
-.dark .row-tint-2 { background-color: #1f2a35 !important; color: #ffffff !important; } /* C: gunmetal */
-.dark .row-tint-3 { background-color: #232733 !important; color: #ffffff !important; } /* D: charcoal indigo */
+/* Dark mode: deeper, more saturated tones — clearly distinct from background */
+.dark .row-tint-0 { background-color: #2a3a55 !important; color: #ffffff !important; } /* A: deeper navy */
+.dark .row-tint-1 { background-color: #353048 !important; color: #ffffff !important; } /* B: indigo plum */
+.dark .row-tint-2 { background-color: #253a3a !important; color: #ffffff !important; } /* C: deep teal */
+.dark .row-tint-3 { background-color: #4a3a2a !important; color: #ffffff !important; } /* D: warm bronze */
 .dark .row-tint-0:hover, .dark .row-tint-1:hover,
 .dark .row-tint-2:hover, .dark .row-tint-3:hover {
   background-color: #475569 !important;
   color: #ffffff !important;
-  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.22), 0 0 6px rgba(45, 212, 191, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.35), 0 0 8px rgba(45, 212, 191, 0.15);
   filter: none;
 }
+
 
 /* Make the native date/time picker indicator clearly visible */
 input[type="date"]::-webkit-calendar-picker-indicator,
