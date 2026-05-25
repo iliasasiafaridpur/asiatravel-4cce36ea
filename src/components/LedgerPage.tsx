@@ -1237,7 +1237,6 @@ export function LedgerPage({ module: mod }: Props) {
                 />
               </div>
               <div className="space-y-1.5 flex flex-col">
-                <Label className="text-sm font-medium opacity-0 hidden sm:block">.</Label>
                 <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
