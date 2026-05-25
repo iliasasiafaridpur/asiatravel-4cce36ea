@@ -160,27 +160,22 @@ body { font-size: 1rem !important; }
   input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
-/* Soft cool-tone tints for table rows (per-ID alternating colors) */
-/* Light mode: very light pastel backgrounds, dark text */
-.row-tint-0 { background-color: #eff6ff !important; color: #0f172a !important; }
-.row-tint-1 { background-color: #f5f3ff !important; color: #0f172a !important; }
-.row-tint-2 { background-color: #fdf2f8 !important; color: #0f172a !important; }
-.row-tint-3 { background-color: #ecfeff !important; color: #0f172a !important; }
-.row-tint-4 { background-color: #f0fdf4 !important; color: #0f172a !important; }
-.row-tint-5 { background-color: #fefce8 !important; color: #0f172a !important; }
-.row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover,
-.row-tint-3:hover, .row-tint-4:hover, .row-tint-5:hover {
+/* Global 4-color repeating row tints (A B C D A B C D ...) */
+/* Light mode: ultra-light desaturated pastels, dark text for max readability */
+.row-tint-0 { background-color: #f0f5fb !important; color: #0f172a !important; } /* A: cool blue mist */
+.row-tint-1 { background-color: #f4f1f8 !important; color: #0f172a !important; } /* B: soft lavender */
+.row-tint-2 { background-color: #f1f6f2 !important; color: #0f172a !important; } /* C: pale sage */
+.row-tint-3 { background-color: #faf5ec !important; color: #0f172a !important; } /* D: warm cream */
+.row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover, .row-tint-3:hover {
   filter: brightness(0.96);
 }
-/* Dark mode: alternating muted navy steel (odd) / deep slate charcoal (even) */
-.dark .row-tint-0,
-.dark .row-tint-2,
-.dark .row-tint-4 { background-color: #1e293b !important; color: #ffffff !important; }
-.dark .row-tint-1,
-.dark .row-tint-3,
-.dark .row-tint-5 { background-color: #0f111a !important; color: #e2e8f0 !important; }
-.dark .row-tint-0:hover, .dark .row-tint-1:hover, .dark .row-tint-2:hover,
-.dark .row-tint-3:hover, .dark .row-tint-4:hover, .dark .row-tint-5:hover {
+/* Dark mode: four desaturated deep tones, white text, high contrast */
+.dark .row-tint-0 { background-color: #1e293b !important; color: #ffffff !important; } /* A: deep slate */
+.dark .row-tint-1 { background-color: #1b2a3a !important; color: #ffffff !important; } /* B: navy steel */
+.dark .row-tint-2 { background-color: #1f2a35 !important; color: #ffffff !important; } /* C: gunmetal */
+.dark .row-tint-3 { background-color: #232733 !important; color: #ffffff !important; } /* D: charcoal indigo */
+.dark .row-tint-0:hover, .dark .row-tint-1:hover,
+.dark .row-tint-2:hover, .dark .row-tint-3:hover {
   background-color: #475569 !important;
   color: #ffffff !important;
   box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.22), 0 0 6px rgba(45, 212, 191, 0.08);
