@@ -681,7 +681,7 @@ ${node.innerHTML.replace(
               )
               : timeline.length === 0 ? <EmptyRow>কোনো লেনদেন পাওয়া যায়নি</EmptyRow>
               : <div className="divide-y">
-                {timeline.map((it) => {
+                {timeline.map((it, idx) => {
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
