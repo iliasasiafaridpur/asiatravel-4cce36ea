@@ -1172,29 +1172,27 @@ export function LedgerPage({ module: mod }: Props) {
       <Card className="print:hidden">
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3">
-            <div className="flex flex-row flex-nowrap gap-3 items-end overflow-x-auto">
-              <div className="space-y-1.5 shrink-0 min-w-[150px]">
-                <Label className="text-sm font-medium whitespace-nowrap">Start Date</Label>
+            <div className="flex flex-row flex-nowrap gap-2 items-end w-full">
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <Label className="text-xs font-medium truncate block">Start Date</Label>
                 <DateInput
-                  
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="h-10 text-base"
+                  className="h-10 text-sm w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5 shrink-0 min-w-[150px]">
-                <Label className="text-sm font-medium whitespace-nowrap">End Date</Label>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <Label className="text-xs font-medium truncate block">End Date</Label>
                 <DateInput
-                  
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="h-10 text-base"
+                  className="h-10 text-sm w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5 shrink-0 min-w-[180px]">
-                <Label className="text-sm font-medium whitespace-nowrap">{groupLabel}</Label>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <Label className="text-xs font-medium truncate block">{groupLabel}</Label>
                 <Select value={groupFilter} onValueChange={setGroupFilter}>
-                  <SelectTrigger className="h-10 text-base">
+                  <SelectTrigger className="h-10 text-sm w-full min-w-0">
                     <SelectValue placeholder={`সব ${groupLabel}`} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1207,10 +1205,10 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 shrink-0 min-w-[170px]">
-                <Label className="text-sm font-medium whitespace-nowrap">সার্ভিস মডিউল</Label>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <Label className="text-xs font-medium truncate block">সার্ভিস মডিউল</Label>
                 <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                  <SelectTrigger className="h-10 text-base">
+                  <SelectTrigger className="h-10 text-sm w-full min-w-0">
                     <SelectValue placeholder="সব সার্ভিস" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1223,8 +1221,8 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 shrink-0 min-w-[130px]">
-                <Label className="text-sm font-medium whitespace-nowrap">সর্বশেষ N</Label>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <Label className="text-xs font-medium truncate block">সর্বশেষ N</Label>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -1232,19 +1230,21 @@ export function LedgerPage({ module: mod }: Props) {
                   value={latestInput}
                   disabled={!!(startDate || endDate)}
                   onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
-                  placeholder="যেমন: 5"
-                  className="h-10 text-base tabular-nums disabled:opacity-50"
+                  placeholder="N"
+                  className="h-10 text-sm tabular-nums disabled:opacity-50 w-full min-w-0"
                 />
               </div>
               <div className="space-y-1.5 flex flex-col shrink-0">
-                <div className="flex gap-2 flex-nowrap [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+                <div className="flex gap-1.5 flex-nowrap">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
                     onClick={() => setDueOnly((v) => !v)}
-                    className="h-10 gap-1.5"
+                    className="h-10 gap-1.5 px-2 shrink-0"
+                    title="শুধু Due"
                   >
-                    <Wallet className="h-4 w-4" /> শুধু Due
+                    <Wallet className="h-4 w-4" />
+                    <span className="hidden xl:inline whitespace-nowrap">শুধু Due</span>
                   </Button>
                   {(() => {
                     const t = todayIso();
@@ -1257,10 +1257,11 @@ export function LedgerPage({ module: mod }: Props) {
                           if (isToday) { setStartDate(""); setEndDate(""); }
                           else { setStartDate(t); setEndDate(t); }
                         }}
-                        className="h-10 gap-1.5 whitespace-nowrap"
+                        className="h-10 gap-1.5 px-2 shrink-0"
                         title="আজকের লেনদেন"
                       >
-                        <Wallet className="h-4 w-4" /> আজকের গুলো
+                        <Wallet className="h-4 w-4" />
+                        <span className="hidden xl:inline whitespace-nowrap">আজকের গুলো</span>
                       </Button>
                     );
                   })()}
@@ -1268,10 +1269,11 @@ export function LedgerPage({ module: mod }: Props) {
                     type="button"
                     variant="outline"
                     onClick={resetFilters}
-                    className="h-10 gap-1.5"
+                    className="h-10 gap-1.5 px-2 shrink-0"
                     title="Reset"
                   >
-                    <RotateCcw className="h-4 w-4" /> Reset
+                    <RotateCcw className="h-4 w-4" />
+                    <span className="hidden xl:inline whitespace-nowrap">Reset</span>
                   </Button>
                 </div>
               </div>
