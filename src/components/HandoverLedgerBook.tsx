@@ -55,14 +55,16 @@ type ServiceInfo = {
   passport: string | null;
   sold_price: number;
   discount: number;
+  vendor_price: number;
+  flight_date: string | null;
 };
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount" },
-  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount" },
-  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount" },
-  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount" },
+  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
+  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
+  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
+  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date" },
+  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null },
 ] as const;
 
 export function HandoverLedgerInline({
