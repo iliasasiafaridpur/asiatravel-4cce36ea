@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Crown,
   HandCoins,
+  BookOpen,
 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import {
@@ -69,6 +70,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "System",
     items: [
+      { to: "/help", title: "সহায়িকা / Help", icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/15" },
       { to: "/users", title: "User Management", icon: ShieldCheck, color: "text-indigo-400", bg: "bg-indigo-500/15" },
       { to: "/settings", title: "Settings", icon: SettingsIcon, color: "text-slate-300", bg: "bg-slate-500/20" },
     ],

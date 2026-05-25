@@ -19,6 +19,7 @@ import { Route as MyHandoverRouteImport } from './routes/my-handover'
 import { Route as MdPanelRouteImport } from './routes/md-panel'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
@@ -77,6 +78,11 @@ const InvoiceRoute = InvoiceRouteImport.update({
   path: '/invoice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BmetRoute = BmetRouteImport.update({
   id: '/bmet',
   path: '/bmet',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
+  '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/md-panel': typeof MdPanelRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
+  '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/md-panel': typeof MdPanelRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
+  '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
   '/md-panel': typeof MdPanelRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
+    | '/help'
     | '/invoice'
     | '/kuwait-visa'
     | '/md-panel'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
+    | '/help'
     | '/invoice'
     | '/kuwait-visa'
     | '/md-panel'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/agency-ledger'
     | '/agents'
     | '/bmet'
+    | '/help'
     | '/invoice'
     | '/kuwait-visa'
     | '/md-panel'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   AgencyLedgerRoute: typeof AgencyLedgerRoute
   AgentsRoute: typeof AgentsRoute
   BmetRoute: typeof BmetRoute
+  HelpRoute: typeof HelpRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
   MdPanelRoute: typeof MdPanelRoute
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bmet': {
       id: '/bmet'
       path: '/bmet'
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgencyLedgerRoute: AgencyLedgerRoute,
   AgentsRoute: AgentsRoute,
   BmetRoute: BmetRoute,
+  HelpRoute: HelpRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
   MdPanelRoute: MdPanelRoute,
