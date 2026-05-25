@@ -391,7 +391,7 @@ function HandoverCard({
           <tbody>
             {receipts.length === 0 ? (
               <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
-            ) : receipts.map((r) => {
+            ) : receipts.map((r, idx) => {
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
               const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
@@ -416,7 +416,7 @@ function HandoverCard({
                 <tr
                   key={r.id}
                   id={`receipt-row-${r.id}`}
-                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : "hover:bg-muted/20"}`}
+                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : `row-tint-${idx % 4}`}`}
                 >
                   {/* তারিখ */}
                   <td className="px-3 py-2 align-top">
