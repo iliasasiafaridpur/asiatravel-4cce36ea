@@ -132,7 +132,7 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive(item.to)}
                       tooltip={item.title}
-                      className="h-9"
+                      className="h-9 data-[active=true]:bg-primary/20 data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:ring-1 data-[active=true]:ring-primary/40 data-[active=true]:shadow-[0_0_12px_-2px_var(--primary)] data-[active=true]:border-l-4 data-[active=true]:border-primary"
                     >
                       <Link to={item.to} className="flex items-center gap-2">
                         <span
