@@ -1172,7 +1172,7 @@ export function LedgerPage({ module: mod }: Props) {
       <Card className="print:hidden">
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3">
-            <div className="flex flex-row flex-wrap gap-3 items-end">
+            <div className="flex flex-row flex-nowrap gap-3 items-end overflow-x-auto">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Start Date</Label>
                 <DateInput
@@ -1237,7 +1237,7 @@ export function LedgerPage({ module: mod }: Props) {
                 />
               </div>
               <div className="space-y-1.5 flex flex-col">
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-nowrap">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
