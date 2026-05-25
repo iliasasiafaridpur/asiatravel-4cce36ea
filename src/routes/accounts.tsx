@@ -976,8 +976,8 @@ ${node.innerHTML.replace(
         <TabsContent value="handover" className="mt-3">
           <Card><CardContent className="p-0">
             {fHand.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো জমা নেই</EmptyRow>
-              : <div className="divide-y">
-                {fHand.map((h) => {
+              : <div>
+                {fHand.map((h, idx) => {
                   const submitted = isHandoverSubmitted(h);
                   const status = h.status ?? "approved";
                   const isApproved = status === "approved";
