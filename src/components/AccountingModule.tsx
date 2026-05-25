@@ -412,7 +412,7 @@ function LedgerTab({ users, txs }: { users: AcctUser[]; txs: Transaction[] }) {
               {withRunning.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">কোনো transaction নেই</TableCell></TableRow>
               ) : withRunning.map((t, idx) => (
-                <TableRow key={t.id} className={`row-tint-${idx % 6}`}>
+                <TableRow key={t.id} className={`row-tint-${idx % 4}`}>
                   <TableCell>{t.date}</TableCell>
                   <TableCell>{t.userId ? userMap.get(t.userId) ?? "—" : "—"}</TableCell>
                   <TableCell>
@@ -454,7 +454,7 @@ function BalancesTab({ users, txs, onAddUser }: { users: AcctUser[]; txs: Transa
               {users.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">কোনো user নেই</TableCell></TableRow>
               ) : users.map((u, idx) => (
-                <TableRow key={u.id} className={`cursor-pointer row-tint-${idx % 6}`} onClick={() => setOpenUser(u)}>
+                <TableRow key={u.id} className={`cursor-pointer row-tint-${idx % 4}`} onClick={() => setOpenUser(u)}>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.phone || "—"}</TableCell>
                   <TableCell className={`text-right font-semibold ${u.currentBalance > 0 ? "text-green-600" : u.currentBalance < 0 ? "text-red-600" : ""}`}>{fmt(u.currentBalance)}</TableCell>
@@ -477,7 +477,7 @@ function BalancesTab({ users, txs, onAddUser }: { users: AcctUser[]; txs: Transa
               <TableBody>
                 {userTxs.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No transactions</TableCell></TableRow>
                   : userTxs.map((t, idx) => (
-                    <TableRow key={t.id} className={`row-tint-${idx % 6}`}>
+                    <TableRow key={t.id} className={`row-tint-${idx % 4}`}>
                       <TableCell>{t.date}</TableCell>
                       <TableCell><Badge variant={t.type === "received" ? "default" : "secondary"}>{t.type}</Badge></TableCell>
                       <TableCell>{t.category}</TableCell>

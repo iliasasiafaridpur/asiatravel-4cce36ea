@@ -681,7 +681,7 @@ ${node.innerHTML.replace(
               )
               : timeline.length === 0 ? <EmptyRow>কোনো লেনদেন পাওয়া যায়নি</EmptyRow>
               : <div className="divide-y">
-                {timeline.map((it) => {
+                {timeline.map((it, idx) => {
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
@@ -729,7 +729,7 @@ ${node.innerHTML.replace(
                   const totalPaid = isIn && svc && typeof svc.received_total === "number" ? svc.received_total : null;
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className="grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 hover:bg-muted/30 transition-colors items-start">
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
                       {/* Col 1: Name */}
                       <div className="min-w-0">
                         <p className="font-semibold text-sm leading-tight break-words">{name}</p>
@@ -877,7 +877,7 @@ ${node.innerHTML.replace(
                   const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
                   return (
-                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`}>
+                    <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
                       <td className="wrap">{name}</td>
@@ -905,8 +905,8 @@ ${node.innerHTML.replace(
         <TabsContent value="income" className="mt-3">
           <Card><CardContent className="p-0">
             {fRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
-              : <div className="divide-y">
-                {fRecv.map((r) => {
+              : <div>
+                {fRecv.map((r, idx) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
                   const submitted = isReceiptSubmitted(r);
@@ -920,7 +920,7 @@ ${node.innerHTML.replace(
                     }
                   }
                   return (
-                    <div key={r.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                    <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                       <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                         <ArrowDownLeft className="h-4 w-4" />
                       </div>
@@ -945,12 +945,12 @@ ${node.innerHTML.replace(
         <TabsContent value="expense" className="mt-3">
           <Card><CardContent className="p-0">
             {fExp.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো খরচ নেই</EmptyRow>
-              : <div className="divide-y">
-                {fExp.map((e) => {
+              : <div>
+                {fExp.map((e, idx) => {
                   const submitted = isExpenseSubmitted(e);
                   const canOwnerDelete = isManualExpense(e) && !submitted;
                   return (
-                  <div key={e.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                  <div key={e.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-amber-500/10 text-amber-600 border border-amber-500/20">
                       <Receipt className="h-4 w-4" />
                     </div>
@@ -976,8 +976,8 @@ ${node.innerHTML.replace(
         <TabsContent value="handover" className="mt-3">
           <Card><CardContent className="p-0">
             {fHand.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো জমা নেই</EmptyRow>
-              : <div className="divide-y">
-                {fHand.map((h) => {
+              : <div>
+                {fHand.map((h, idx) => {
                   const submitted = isHandoverSubmitted(h);
                   const status = h.status ?? "approved";
                   const isApproved = status === "approved";
@@ -1011,7 +1011,7 @@ ${node.innerHTML.replace(
                     : null;
 
                   return (
-                  <div key={h.id} className="flex items-start gap-3 p-3 hover:bg-muted/30">
+                  <div key={h.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-sky-500/10 text-sky-600 border border-sky-500/20">
                       <Send className="h-4 w-4" />
                     </div>

@@ -37,7 +37,7 @@ function VendorsPage() {
               <TableBody>
                 {bals.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
-                    <TableRow key={b.vendor_name} className={`row-tint-${idx % 6}`}>
+                    <TableRow key={b.vendor_name} className={`row-tint-${idx % 4}`}>
                       <TableCell className="font-medium">{b.vendor_name}</TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_payable).toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums text-emerald-600">৳ {Number(b.total_paid).toLocaleString()}</TableCell>
