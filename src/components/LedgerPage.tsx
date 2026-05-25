@@ -1173,8 +1173,8 @@ export function LedgerPage({ module: mod }: Props) {
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3">
             <div className="flex flex-row flex-nowrap gap-3 items-end overflow-x-auto">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Start Date</Label>
+              <div className="space-y-1.5 shrink-0 min-w-[150px]">
+                <Label className="text-sm font-medium whitespace-nowrap">Start Date</Label>
                 <DateInput
                   
                   value={startDate}
@@ -1182,8 +1182,8 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-base"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">End Date</Label>
+              <div className="space-y-1.5 shrink-0 min-w-[150px]">
+                <Label className="text-sm font-medium whitespace-nowrap">End Date</Label>
                 <DateInput
                   
                   value={endDate}
@@ -1191,8 +1191,8 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-base"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{groupLabel}</Label>
+              <div className="space-y-1.5 shrink-0 min-w-[180px]">
+                <Label className="text-sm font-medium whitespace-nowrap">{groupLabel}</Label>
                 <Select value={groupFilter} onValueChange={setGroupFilter}>
                   <SelectTrigger className="h-10 text-base">
                     <SelectValue placeholder={`সব ${groupLabel}`} />
@@ -1207,8 +1207,8 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">সার্ভিস মডিউল</Label>
+              <div className="space-y-1.5 shrink-0 min-w-[170px]">
+                <Label className="text-sm font-medium whitespace-nowrap">সার্ভিস মডিউল</Label>
                 <Select value={serviceFilter} onValueChange={setServiceFilter}>
                   <SelectTrigger className="h-10 text-base">
                     <SelectValue placeholder="সব সার্ভিস" />
@@ -1223,8 +1223,8 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">সর্বশেষ N</Label>
+              <div className="space-y-1.5 shrink-0 min-w-[130px]">
+                <Label className="text-sm font-medium whitespace-nowrap">সর্বশেষ N</Label>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -1236,8 +1236,8 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-base tabular-nums disabled:opacity-50"
                 />
               </div>
-              <div className="space-y-1.5 flex flex-col">
-                <div className="flex gap-2 flex-nowrap">
+              <div className="space-y-1.5 flex flex-col shrink-0">
+                <div className="flex gap-2 flex-nowrap [&>button]:shrink-0 [&>button]:whitespace-nowrap">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
