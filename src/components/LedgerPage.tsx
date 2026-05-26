@@ -330,13 +330,15 @@ export function LedgerPage({ module: mod }: Props) {
       for (const t of (tk.data as unknown as T[]) ?? []) {
         if (t.flight_date) fm.set(t.id, t.flight_date);
         if (t.trip_road) rm.set(t.id, t.trip_road);
+        // Tickets in BOOK status: hide vendor + cost everywhere (only surface once ISSUE'd).
+        const isBook = (t.status ?? "").toUpperCase() === "BOOK";
         info.set(t.id, {
           passport: t.passport ?? undefined,
           mobile: t.mobile ?? undefined,
-          vendor: t.vendor_bought ?? undefined,
+          vendor: isBook ? undefined : (t.vendor_bought ?? undefined),
           agency_sold: t.agency_sold ?? undefined,
           sold: t.sold_price ?? undefined,
-          cost: t.cost_price ?? undefined,
+          cost: isBook ? undefined : (t.cost_price ?? undefined),
           discount: t.discount_amount ?? undefined,
           status: t.status ?? undefined,
           airline: t.airline ?? undefined,
