@@ -901,6 +901,7 @@ export function statusBadgeClass(status?: string | null): string {
     case "pending delivery":
       return "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30";
     case "new":
+    case "book":
       return "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30";
     case "cancelled":
       return "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30";
