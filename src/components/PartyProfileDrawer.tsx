@@ -113,7 +113,7 @@ export function PartyProfileDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
-        <SheetHeader className="px-5 pt-5 pb-3 border-b">
+        <SheetHeader className="px-5 pt-5 pb-3 pr-14 border-b">
           <SheetTitle className="flex items-center justify-between gap-2">
             <span className="truncate">{isCustomer ? "Customer Profile" : "Vendor Profile"}</span>
             <Badge variant="outline" className={isCustomer ? "border-sky-500/50 text-sky-600" : "border-violet-500/50 text-violet-600"}>
