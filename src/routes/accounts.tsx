@@ -70,7 +70,8 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
   const { isAdmin, isMd, isStaff, loading: roleLoading } = useRole();
-  const seeAll = isAdmin || isMd;
+  // "আমার হিসাব" — সব ইউজার (MD/Admin সহ) শুধুমাত্র নিজের এন্ট্রি দেখবে
+  const seeAll = false;
   const [received, setReceived] = useState<Recv[]>([]);
   const [handovers, setHandovers] = useState<Hand[]>([]);
   const [expenses, setExpenses] = useState<Exp[]>([]);
