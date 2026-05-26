@@ -498,11 +498,15 @@ export function ModulePage({ module: mod }: Props) {
   type StackedCol = { key: string; header: string; align?: "right"; className?: string; render: (r: Row) => React.ReactNode };
   const stackedCols: StackedCol[] | null = useMemo(() => {
     const fmt = (n: unknown) => Number(n ?? 0).toLocaleString();
+    // For tickets in BOOK status: cost/vendor are pre-filled but should not
+    // surface anywhere (no vendor ledger, no profit, no cost display).
+    const isTicketBook = (r: Row) =>
+      mod.key === "tickets" && String(r.status ?? "").toUpperCase() === "BOOK";
     const money = (r: Row, recvField: string) => {
       const sold = Number(r.sold_price ?? 0);
       const recv = Number(r[recvField] ?? 0);
       const discount = Number(r.discount_amount ?? 0);
-      const cost = Number(r.cost_price ?? 0);
+      const cost = isTicketBook(r) ? 0 : Number(r.cost_price ?? 0);
       const due = Math.max(0, sold - recv - discount);
       const profit = sold - discount - cost;
       return { sold, recv, discount, cost, due, profit };
@@ -613,7 +617,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "parties", header: "Agency / Vendor", render: (r) => (
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
-              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : <span title="Vendor cost এন্ট্রি হয়নি" className="text-[10px] ml-1 text-amber-500">⚠️</span>}</div> : null}
+              {!isTicketBook(r) && r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : <span title="Vendor cost এন্ট্রি হয়নি" className="text-[10px] ml-1 text-amber-500">⚠️</span>}</div> : null}
               
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
