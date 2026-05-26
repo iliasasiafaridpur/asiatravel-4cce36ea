@@ -335,8 +335,10 @@ function DashboardPage() {
     const due = Math.max(0, sold - received - discount);
     const profit = filtered.reduce((s, r) => {
       const rRecv = r.received ?? 0;
-      if (rRecv <= 0) return s;
-      return s + (r.sold_price ?? 0) - (r.discount ?? 0) - (r.cost_price ?? 0);
+      const rCost = r.cost_price ?? 0;
+      // Profit hidden until vendor cost is entered
+      if (rRecv <= 0 || rCost <= 0) return s;
+      return s + (r.sold_price ?? 0) - (r.discount ?? 0) - rCost;
     }, 0);
     // Realized profit = Σ (profit_i / sold_i) * received_i  (cash-basis profit)
     const realizedProfit = filtered.reduce((s, r) => {
@@ -344,7 +346,7 @@ function DashboardPage() {
       const rCost = r.cost_price ?? 0;
       const rDiscount = r.discount ?? 0;
       const rRecv = r.received ?? 0;
-      if (rSold <= 0) return s;
+      if (rSold <= 0 || rCost <= 0) return s;
       const margin = (rSold - rDiscount - rCost) / rSold;
       return s + margin * rRecv;
     }, 0);

@@ -1685,7 +1685,7 @@ export function LedgerPage({ module: mod }: Props) {
                             </span>
                           )}
                         </div>
-                        {displayPaid > 0 && (
+                        {displayPaid > 0 && typeof info?.cost === "number" && info.cost > 0 && (
                           <div
                             className={cn(
                               "text-[11px] font-medium",
