@@ -44,12 +44,18 @@ function withTimeout<T>(promise: PromiseLike<T>, ms = 3000): Promise<T> {
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  // Optimistic: if a token exists locally, treat as ready immediately.
-  const [authReady, setAuthReady] = useState<boolean>(() => hasStoredSession());
-  const [optimisticSession] = useState<boolean>(() => hasStoredSession());
+  // SSR-safe: always start with deterministic values, flip in useEffect.
+  // Reading localStorage during initial render causes hydration mismatch
+  // (server has no localStorage, client does), which makes React discard
+  // the entire tree and re-render — producing the "stuck on loading" bug.
+  const [authReady, setAuthReady] = useState<boolean>(false);
+  const [optimisticSession, setOptimisticSession] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
+
+    // Optimistically render children if a token exists locally.
+    if (hasStoredSession()) setOptimisticSession(true);
 
     const checkActive = async (s: Session | null) => {
       if (!s?.user) return;
@@ -83,8 +89,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
-  // If we have a stored token, render children optimistically — the real
-  // session resolves in the background, and any 401s are handled per-query.
   if (!authReady) {
     if (optimisticSession) return <>{children}</>;
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
