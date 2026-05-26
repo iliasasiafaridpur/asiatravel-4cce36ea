@@ -232,14 +232,28 @@ export function HandoverLedgerInline({
           {title}
         </div>
       )}
-      <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="যাত্রীর নাম, পাসপোর্ট, ভেন্ডর, রেফারেন্স ID, handover ID, বা স্টাফ…"
-          className="h-9 pl-7"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 min-w-0 max-w-md">
+          <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="খুঁজুন…"
+            className="h-9 pl-7"
+          />
+        </div>
+        {(() => {
+          const visibleCount = (onlyPending
+            ? filtered.filter((h) => (h.status ?? "pending") === "pending")
+            : excludePending
+              ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
+              : filtered).length;
+          return (
+            <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
+              ফলাফল: <span className="font-semibold text-foreground tabular-nums">{visibleCount}</span>
+            </div>
+          );
+        })()}
       </div>
       <div className="space-y-3">
         {loading ? (

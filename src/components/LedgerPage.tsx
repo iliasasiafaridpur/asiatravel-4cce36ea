@@ -1278,14 +1278,19 @@ export function LedgerPage({ module: mod }: Props) {
                 </div>
               </div>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="খুঁজুন... (নাম, পাসপোর্ট, ID যেকোনো ফিল্ড)"
-                className="pl-9 h-11 text-base"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="খুঁজুন…"
+                  className="pl-9 h-11 text-base"
+                />
+              </div>
+              <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
+                ফলাফল: <span className="font-semibold text-foreground tabular-nums">{filtered.length}</span>
+              </div>
             </div>
           </div>
         </CardContent>
