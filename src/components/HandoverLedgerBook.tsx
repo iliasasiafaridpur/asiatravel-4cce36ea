@@ -470,7 +470,12 @@ function HandoverCard({
                         )}
                         {info?.vendor && (
                           <div className="text-xs text-muted-foreground mt-0.5">
-                            V: {info.vendor}{info.vendor_price > 0 ? `-${Math.round(info.vendor_price).toLocaleString()}/` : ""}
+                            V: {info.vendor}
+                            {info.vendor_price > 0 ? (
+                              `-${Math.round(info.vendor_price).toLocaleString()}/`
+                            ) : (
+                              <span title="Vendor cost এন্ট্রি হয়নি" className="ml-1 text-amber-500">⚠️</span>
+                            )}
                           </div>
                         )}
                       </>
@@ -479,7 +484,12 @@ function HandoverCard({
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
                           <div className="text-xs text-muted-foreground mt-0.5">
-                            V: {info.vendor}{info.vendor_price > 0 ? `-${Math.round(info.vendor_price).toLocaleString()}/` : ""}
+                            V: {info.vendor}
+                            {info.vendor_price > 0 ? (
+                              `-${Math.round(info.vendor_price).toLocaleString()}/`
+                            ) : (
+                              <span title="Vendor cost এন্ট্রি হয়নি" className="ml-1 text-amber-500">⚠️</span>
+                            )}
                           </div>
                         )}
                       </>
