@@ -1302,29 +1302,29 @@ export function LedgerPage({ module: mod }: Props) {
       {/* Summary — ModulePage-style plain boxes */}
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
+              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                 {billLabel}
               </div>
-              <div className="mt-1 text-lg font-bold tabular-nums">
+              <div className="mt-1 text-sm sm:text-lg font-bold tabular-nums truncate">
                 {totals.bill.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
+              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                 {paidLabel}
               </div>
-              <div className="mt-1 text-lg font-bold tabular-nums">
+              <div className="mt-1 text-sm sm:text-lg font-bold tabular-nums truncate">
                 {totals.paid.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
+              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                 Total Due
               </div>
               <div
-                className={`mt-1 text-lg font-bold tabular-nums ${totals.due > 0 ? "text-rose-500" : ""}`}
+                className={`mt-1 text-sm sm:text-lg font-bold tabular-nums truncate ${totals.due > 0 ? "text-rose-500" : ""}`}
               >
                 {totals.due.toLocaleString()}
               </div>
