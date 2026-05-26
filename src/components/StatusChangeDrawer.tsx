@@ -355,9 +355,18 @@ export function StatusChangeDrawer({
         sideOffset={8}
         collisionPadding={12}
         avoidCollisions
-        className="w-[min(22rem,calc(100vw-1.5rem))] p-2.5 max-h-[85vh] overflow-y-auto"
+        className="w-[min(22rem,calc(100vw-1.5rem))] p-2.5 pt-3 max-h-[85vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          type="button"
+          onClick={() => onClose()}
+          aria-label="Close"
+          className="absolute right-2 top-2 z-50 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm hover:bg-destructive hover:text-destructive-foreground hover:border-destructive focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
 
         {/* Passenger meta header — name left, trip info right */}
         <div className="rounded-md border bg-muted/40 p-2 mb-2 flex items-start justify-between gap-2">
