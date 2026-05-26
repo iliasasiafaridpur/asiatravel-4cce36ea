@@ -90,7 +90,12 @@ export function PassengerProfileDrawer({
   if (!row) return null;
 
   const sold = Number(row.sold_price ?? 0);
-  const cost = Number(row.cost_price ?? 0);
+  const status = String(row.status ?? "");
+  const isTicket = moduleKey === "tickets";
+  // Tickets in BOOK status: vendor + cost are pre-filled but not yet "live" —
+  // hide cost, vendor, and profit until status moves to ISSUE.
+  const isTicketBook = isTicket && status.toUpperCase() === "BOOK";
+  const cost = isTicketBook ? 0 : Number(row.cost_price ?? 0);
   const receivedField = Number(row.received ?? row.received_amount ?? 0);
   const totalDiscount = Number(row.discount_amount ?? 0);
   const moneyReceipts = receipts;
@@ -102,8 +107,6 @@ export function PassengerProfileDrawer({
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
 
-  const status = String(row.status ?? "");
-  const isTicket = moduleKey === "tickets";
   const airline = String(row.airline ?? "");
   const flightDate = row.flight_date ? String(row.flight_date) : "";
   const openReceipt = (r: Receipt) => {
