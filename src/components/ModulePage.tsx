@@ -498,11 +498,15 @@ export function ModulePage({ module: mod }: Props) {
   type StackedCol = { key: string; header: string; align?: "right"; className?: string; render: (r: Row) => React.ReactNode };
   const stackedCols: StackedCol[] | null = useMemo(() => {
     const fmt = (n: unknown) => Number(n ?? 0).toLocaleString();
+    // For tickets in BOOK status: cost/vendor are pre-filled but should not
+    // surface anywhere (no vendor ledger, no profit, no cost display).
+    const isTicketBook = (r: Row) =>
+      mod.key === "tickets" && String(r.status ?? "").toUpperCase() === "BOOK";
     const money = (r: Row, recvField: string) => {
       const sold = Number(r.sold_price ?? 0);
       const recv = Number(r[recvField] ?? 0);
       const discount = Number(r.discount_amount ?? 0);
-      const cost = Number(r.cost_price ?? 0);
+      const cost = isTicketBook(r) ? 0 : Number(r.cost_price ?? 0);
       const due = Math.max(0, sold - recv - discount);
       const profit = sold - discount - cost;
       return { sold, recv, discount, cost, due, profit };
