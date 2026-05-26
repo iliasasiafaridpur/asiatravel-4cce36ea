@@ -1630,8 +1630,10 @@ export function LedgerPage({ module: mod }: Props) {
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
-                            {typeof info?.cost === "number" && info.cost > 0 && (
+                            {typeof info?.cost === "number" && info.cost > 0 ? (
                               <span className="tabular-nums"> · ৳{info.cost.toLocaleString()}</span>
+                            ) : (
+                              <span title="Vendor cost এন্ট্রি হয়নি" className="ml-1 text-amber-500">⚠️</span>
                             )}
                           </div>
                         )}
