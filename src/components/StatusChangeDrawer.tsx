@@ -350,13 +350,15 @@ export function StatusChangeDrawer({
     <Popover open={open && !receipt} onOpenChange={(v) => { if (!v && !receipt) onClose(); }}>
       <PopoverAnchor virtualRef={anchorRef} />
       <PopoverContent
-        side="right"
-        align="start"
+        side="bottom"
+        align="center"
         sideOffset={8}
         collisionPadding={12}
-        className="w-[22rem] p-2.5 max-h-[85vh] overflow-y-auto"
+        avoidCollisions
+        className="w-[min(22rem,calc(100vw-1.5rem))] p-2.5 max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+
         {/* Passenger meta header — name left, trip info right */}
         <div className="rounded-md border bg-muted/40 p-2 mb-2 flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
