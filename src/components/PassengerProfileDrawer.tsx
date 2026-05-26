@@ -97,7 +97,7 @@ export function PassengerProfileDrawer({
   const totalReceived = Math.max(0, receivedField);
   const due = Math.max(0, sold - totalReceived - totalDiscount);
   const profit = sold - totalDiscount - cost;
-  const showProfit = totalReceived > 0;
+  const showProfit = totalReceived > 0 && cost > 0;
   const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
