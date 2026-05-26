@@ -164,7 +164,7 @@ export function StatusChangeDrawer({
       toast.error("Vendor নির্বাচন করুন"); return;
     }
     if (needsCostPrice && effectiveCostPrice <= 0) {
-      toast.error("Vendor Cost Price দিন (Pending Delivery এর জন্য আবশ্যক)"); return;
+      toast.error(`Vendor Cost Price দিন (${next} এর জন্য আবশ্যক)`); return;
     }
     if (needsVendorForPD && !effectiveVendor) {
       toast.error("Vendor নির্বাচন করুন"); return;
