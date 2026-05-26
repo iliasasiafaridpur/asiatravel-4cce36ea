@@ -1174,8 +1174,8 @@ export function LedgerPage({ module: mod }: Props) {
       <Card className="print:hidden">
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3">
-            <div className="flex flex-row flex-nowrap gap-2 items-end w-full">
-              <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row lg:flex-nowrap gap-2 items-end w-full">
+              <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">Start Date</Label>
                 <DateInput
                   value={startDate}
@@ -1183,7 +1183,7 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-sm w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">End Date</Label>
                 <DateInput
                   value={endDate}
@@ -1191,7 +1191,7 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-sm w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">{groupLabel}</Label>
                 <Select value={groupFilter} onValueChange={setGroupFilter}>
                   <SelectTrigger className="h-10 text-sm w-full min-w-0">
@@ -1207,7 +1207,7 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">সার্ভিস মডিউল</Label>
                 <Select value={serviceFilter} onValueChange={setServiceFilter}>
                   <SelectTrigger className="h-10 text-sm w-full min-w-0">
@@ -1223,7 +1223,7 @@ export function LedgerPage({ module: mod }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">সর্বশেষ N</Label>
                 <Input
                   type="text"
@@ -1236,17 +1236,17 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-sm tabular-nums disabled:opacity-50 w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5 flex flex-col shrink-0">
+              <div className="space-y-1.5 flex flex-col col-span-2 sm:col-span-3 lg:col-span-1 lg:shrink-0">
                 <div className="flex gap-1.5 flex-nowrap">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
                     onClick={() => setDueOnly((v) => !v)}
-                    className="h-10 gap-1.5 px-2 shrink-0"
+                    className="h-10 gap-1.5 px-2 flex-1 lg:flex-none lg:shrink-0"
                     title="শুধু Due"
                   >
                     <Wallet className="h-4 w-4" />
-                    <span className="hidden xl:inline whitespace-nowrap">শুধু Due</span>
+                    <span className="lg:hidden xl:inline whitespace-nowrap">শুধু Due</span>
                   </Button>
                   {(() => {
                     const t = todayIso();
@@ -1259,11 +1259,11 @@ export function LedgerPage({ module: mod }: Props) {
                           if (isToday) { setStartDate(""); setEndDate(""); }
                           else { setStartDate(t); setEndDate(t); }
                         }}
-                        className="h-10 gap-1.5 px-2 shrink-0"
+                        className="h-10 gap-1.5 px-2 flex-1 lg:flex-none lg:shrink-0"
                         title="আজকের লেনদেন"
                       >
                         <Wallet className="h-4 w-4" />
-                        <span className="hidden xl:inline whitespace-nowrap">আজকের গুলো</span>
+                        <span className="lg:hidden xl:inline whitespace-nowrap">আজকের গুলো</span>
                       </Button>
                     );
                   })()}
@@ -1271,15 +1271,16 @@ export function LedgerPage({ module: mod }: Props) {
                     type="button"
                     variant="outline"
                     onClick={resetFilters}
-                    className="h-10 gap-1.5 px-2 shrink-0"
+                    className="h-10 gap-1.5 px-2 flex-1 lg:flex-none lg:shrink-0"
                     title="Reset"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    <span className="hidden xl:inline whitespace-nowrap">Reset</span>
+                    <span className="lg:hidden xl:inline whitespace-nowrap">Reset</span>
                   </Button>
                 </div>
               </div>
             </div>
+
             <div className="flex items-center gap-2">
               <div className="relative flex-1 min-w-0 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
