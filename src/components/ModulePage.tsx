@@ -673,7 +673,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
             const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
-            const showProfit = recv > 0;
+            const showProfit = recv > 0 && cost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
               : due <= 0
