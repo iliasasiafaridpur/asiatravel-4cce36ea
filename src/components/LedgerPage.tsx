@@ -1236,17 +1236,17 @@ export function LedgerPage({ module: mod }: Props) {
                   className="h-10 text-sm tabular-nums disabled:opacity-50 w-full min-w-0"
                 />
               </div>
-              <div className="space-y-1.5 flex flex-col col-span-2 sm:col-span-3 lg:col-span-1 lg:shrink-0">
-                <div className="flex gap-1.5 flex-nowrap">
+              <div className="space-y-1.5 flex flex-col col-span-2 sm:col-span-3 lg:col-span-1 lg:shrink-0 min-w-0">
+                <div className="flex gap-1.5 flex-nowrap w-full min-w-0">
                   <Button
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
                     onClick={() => setDueOnly((v) => !v)}
-                    className="h-10 gap-1.5 px-2 flex-1 lg:flex-none lg:shrink-0"
+                    className="h-10 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
                     title="শুধু Due"
                   >
-                    <Wallet className="h-4 w-4" />
-                    <span className="lg:hidden xl:inline whitespace-nowrap">শুধু Due</span>
+                    <Wallet className="h-4 w-4 shrink-0" />
+                    <span className="lg:hidden xl:inline truncate">শুধু Due</span>
                   </Button>
                   {(() => {
                     const t = todayIso();
@@ -1259,11 +1259,11 @@ export function LedgerPage({ module: mod }: Props) {
                           if (isToday) { setStartDate(""); setEndDate(""); }
                           else { setStartDate(t); setEndDate(t); }
                         }}
-                        className="h-10 gap-1.5 px-2 flex-1 lg:flex-none lg:shrink-0"
+                        className="h-10 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
                         title="আজকের লেনদেন"
                       >
-                        <Wallet className="h-4 w-4" />
-                        <span className="lg:hidden xl:inline whitespace-nowrap">আজকের গুলো</span>
+                        <Wallet className="h-4 w-4 shrink-0" />
+                        <span className="lg:hidden xl:inline truncate">আজকের</span>
                       </Button>
                     );
                   })()}
@@ -1271,11 +1271,11 @@ export function LedgerPage({ module: mod }: Props) {
                     type="button"
                     variant="outline"
                     onClick={resetFilters}
-                    className="h-10 gap-1.5 px-2 flex-1 lg:flex-none lg:shrink-0"
+                    className="h-10 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
                     title="Reset"
                   >
-                    <RotateCcw className="h-4 w-4" />
-                    <span className="lg:hidden xl:inline whitespace-nowrap">Reset</span>
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                    <span className="lg:hidden xl:inline truncate">Reset</span>
                   </Button>
                 </div>
               </div>
@@ -1302,29 +1302,29 @@ export function LedgerPage({ module: mod }: Props) {
       {/* Summary — ModulePage-style plain boxes */}
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
+              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                 {billLabel}
               </div>
-              <div className="mt-1 text-lg font-bold tabular-nums">
+              <div className="mt-1 text-sm sm:text-lg font-bold tabular-nums truncate">
                 {totals.bill.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
+              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                 {paidLabel}
               </div>
-              <div className="mt-1 text-lg font-bold tabular-nums">
+              <div className="mt-1 text-sm sm:text-lg font-bold tabular-nums truncate">
                 {totals.paid.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
+              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                 Total Due
               </div>
               <div
-                className={`mt-1 text-lg font-bold tabular-nums ${totals.due > 0 ? "text-rose-500" : ""}`}
+                className={`mt-1 text-sm sm:text-lg font-bold tabular-nums truncate ${totals.due > 0 ? "text-rose-500" : ""}`}
               >
                 {totals.due.toLocaleString()}
               </div>
