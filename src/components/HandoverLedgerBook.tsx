@@ -162,23 +162,28 @@ export function HandoverLedgerInline({
           if (cfg.airlineField) cols.push(cfg.airlineField);
           if (cfg.costField) cols.push(cfg.costField);
           if (cfg.flightDateField) cols.push(cfg.flightDateField);
+          // Need status for tickets to hide vendor/cost while in BOOK.
+          if (cfg.table === "tickets") cols.push("status");
           const uniqueCols = Array.from(new Set(cols));
           const { data } = await supabase
             .from(cfg.table as never)
             .select(uniqueCols.join(","))
             .in("id", rowIds);
           for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+            const isTicketBook =
+              cfg.table === "tickets" &&
+              String(row.status ?? "").toUpperCase() === "BOOK";
             svcMap[`${cfg.table}:${row.id as string}`] = {
               country: typeof cfg.country === "function"
                 ? cfg.country()
                 : (row[cfg.country] as string | null) ?? null,
-              vendor: (row[cfg.vendorField] as string | null) ?? null,
+              vendor: isTicketBook ? null : ((row[cfg.vendorField] as string | null) ?? null),
               agent: (row[cfg.agentField] as string | null) ?? null,
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
               passport: (row.passport as string | null) ?? null,
               sold_price: Number(row[cfg.soldField] ?? 0),
               discount: Number(row[cfg.discountField] ?? 0),
-              vendor_price: cfg.costField ? Number(row[cfg.costField] ?? 0) : 0,
+              vendor_price: isTicketBook ? 0 : (cfg.costField ? Number(row[cfg.costField] ?? 0) : 0),
               flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
             };
           }
