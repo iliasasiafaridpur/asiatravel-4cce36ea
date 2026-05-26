@@ -587,10 +587,10 @@ function HandoverCard({
                     size="sm"
                     onClick={() => approveAction.onApprove(firstPendingReceipt)}
                     disabled={approveAction.busyId === firstPendingReceipt.id || !firstPendingReceipt.handover_id}
-                    className="w-2/3 min-w-[190px] bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold shadow-md"
+                    className="w-full max-w-full h-auto min-h-9 py-2 px-3 whitespace-normal break-words bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold shadow-md text-xs sm:text-sm leading-tight"
                   >
-                    <CheckCircle2 className="h-4 w-4" />
-                    🟢 টাকা পেলাম ({fmt(submitted)})
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span className="break-words">🟢 টাকা পেলাম ({fmt(submitted)})</span>
                   </Button>
                 )}
               </td>}
