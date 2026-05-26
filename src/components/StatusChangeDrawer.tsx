@@ -369,7 +369,7 @@ export function StatusChangeDrawer({
 
 
         {/* Passenger meta header — name left, trip info right */}
-        <div className="rounded-md border bg-muted/40 p-2 mb-2 flex items-start justify-between gap-2">
+        <div className="rounded-md border bg-muted/40 p-2 pr-10 mb-2 flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold">
               <User2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
