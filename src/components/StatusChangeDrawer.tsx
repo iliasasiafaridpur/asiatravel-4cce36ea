@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowRight, ArrowLeft, AlertTriangle, Wallet, Loader2, User2, Banknote } from "lucide-react";
+import { ArrowRight, ArrowLeft, AlertTriangle, Wallet, Loader2, User2, Banknote, X } from "lucide-react";
 import { LookupSelect } from "@/components/LookupSelect";
 import { statusBadgeClass } from "@/lib/modules";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
