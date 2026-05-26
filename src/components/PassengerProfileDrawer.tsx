@@ -304,12 +304,14 @@ export function PassengerProfileDrawer({
 
                 {/* Cost / Profit — separated */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="rounded-lg border bg-background p-3">
-                    <div className="text-[11px] text-muted-foreground">Cost Price</div>
-                    <div className="mt-0.5 text-sm font-semibold tabular-nums">
-                      {fmtMoney(cost)}
+                  {!isTicketBook ? (
+                    <div className="rounded-lg border bg-background p-3">
+                      <div className="text-[11px] text-muted-foreground">Cost Price</div>
+                      <div className="mt-0.5 text-sm font-semibold tabular-nums">
+                        {fmtMoney(cost)}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                   {showProfit ? (
                     <div className="rounded-lg border bg-background p-3">
                       <div className="text-[11px] text-muted-foreground">Profit</div>
