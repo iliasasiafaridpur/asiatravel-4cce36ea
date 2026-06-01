@@ -215,7 +215,7 @@ export function StatusChangeDrawer({
 
       let firstReceiptId = "";
       const me = displayName(profile, user);
-      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
+      if (receiveDue && (paid > 0 || discAmt > 0)) {
         const mkReceiptId = async (): Promise<string> => {
           try {
             return await generateNextId({
@@ -295,7 +295,7 @@ export function StatusChangeDrawer({
         if (!isNetworkError(le)) toast.warning("Vendor ledger update failed: " + errMsg(le));
       }
 
-      toast.success(`Status: ${next}${request.refId ? `-${request.refId}` : ""}`, {
+      toast.success(`Status: ${finalStatus}${request.refId ? `-${request.refId}` : ""}`, {
         meta: {
           passenger: String(request.row.passenger_name ?? "") || undefined,
           country: String(request.row.country_name ?? request.row.country_route ?? "") || undefined,
@@ -303,9 +303,9 @@ export function StatusChangeDrawer({
           receiptId: firstReceiptId || undefined,
         },
       } as Parameters<typeof toast.success>[1]);
-      if (isDeliveredAny) speakDelivery(String(request.row.passenger_name ?? ""));
+      if (markDelivered) speakDelivery(String(request.row.passenger_name ?? ""));
       onApplied();
-      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
+      if (receiveDue && (paid > 0 || discAmt > 0)) {
         setReceipt({
           receiptId: firstReceiptId || `RCPT-${Date.now()}`,
           date: todayIso(),
