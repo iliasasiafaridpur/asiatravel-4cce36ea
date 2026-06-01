@@ -224,6 +224,9 @@ export function LedgerPage({ module: mod }: Props) {
   const loadingRef = useRef(false);
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
+  // Preserve list scroll position when the add/edit dialog opens & closes.
+  const saveScroll = useScrollRestore(openForm);
+
   const groupField = mod.groupBy?.field ?? "agent_name";
   const groupLabel = mod.groupBy?.label ?? "Agent";
   const isAgency = mod.key === "agency-ledger";
