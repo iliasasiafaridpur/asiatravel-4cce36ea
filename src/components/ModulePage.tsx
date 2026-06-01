@@ -251,6 +251,7 @@ export function ModulePage({ module: mod }: Props) {
   }, [filtered, mod.groupBy, computeValue]);
 
   const startCreate = () => {
+    saveScroll();
     setEditing(null);
     const f = emptyForm(mod);
     // Auto-fill "Entry By" with current user's name
@@ -262,6 +263,7 @@ export function ModulePage({ module: mod }: Props) {
   };
 
   const startEdit = (r: Row) => {
+    saveScroll();
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
