@@ -98,6 +98,7 @@ export function StatusChangeDrawer({
   const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") ? due > 0 : false;
   const isFileProcess = eq(next, "File Process");
   const isPendingDelivery = eq(next, "Pending Delivery");
+  const isDeliveryButDue = eq(next, "Delivery But Due");
   const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED");
   const isSame = direction === "same";
 
