@@ -61,6 +61,7 @@ import {
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
