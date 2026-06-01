@@ -119,6 +119,9 @@ export function ModulePage({ module: mod }: Props) {
   const columns = useMemo(() => selectColumns(mod), [mod]);
   const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
 
+  // Preserve list scroll position when the add/edit dialog opens & closes.
+  const saveScroll = useScrollRestore(openForm);
+
   // Auto-save draft for NEW entries only (not while editing existing rows)
   const { clear: clearDraft } = useFormDraft(
     `module:${mod.key}:new`,
