@@ -13,6 +13,7 @@ import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 
 export function ActionBoard() {
   const qc = useQueryClient();
