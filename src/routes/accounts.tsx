@@ -910,7 +910,6 @@ ${node.innerHTML.replace(
                 {fRecv.map((r, idx) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
-                  const bits2 = bits;
                   if (svc) {
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
