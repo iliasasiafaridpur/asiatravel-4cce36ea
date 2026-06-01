@@ -98,6 +98,7 @@ export function StatusChangeDrawer({
   const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") ? due > 0 : false;
   const isFileProcess = eq(next, "File Process");
   const isPendingDelivery = eq(next, "Pending Delivery");
+  const isDeliveryButDue = eq(next, "Delivery But Due");
   const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED");
   const isSame = direction === "same";
 
@@ -146,8 +147,9 @@ export function StatusChangeDrawer({
   if (crossesIntoLedger && effectiveCostPrice > 0 && effectiveVendor) {
     forwardEffects.push(`Vendor "${effectiveVendor}" এর খাতায় ৳${effectiveCostPrice.toLocaleString()} Credit`);
   }
-  if (isDeliveredAny && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
+  if ((isDeliveredAny || isDeliveryButDue) && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
   if (isDeliveredWithDue) forwardEffects.push(`Due ৳${due.toLocaleString()} আদায় রসিদ`);
+  if (isDeliveryButDue && due > 0) forwardEffects.push(`Due ৳${due.toLocaleString()} বকেয়া থাকবে`);
 
   const backwardClears: string[] = [];
   const targetIdx = _targetIdx;
@@ -157,21 +159,25 @@ export function StatusChangeDrawer({
   if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) backwardClears.push("Delivery Date");
   if (crossesOutOfLedger && costPrice > 0) backwardClears.push(`Vendor "${vendorName || "—"}" cost reverse`);
 
-  const apply = async () => {
-    if (isSame) return;
-    if (!user?.id && isDeliveredWithDue) { toast.error("লগইন প্রয়োজন"); return; }
-    if (isFileProcess && request.hasVendorField && !vendor.trim()) {
+  const apply = async (asDeliveryButDue = false) => {
+    if (isSame && !asDeliveryButDue) return;
+    // "Delivery But Due" = mark delivered today but keep the outstanding due (no receive).
+    const finalStatus = asDeliveryButDue ? "Delivery But Due" : next;
+    const receiveDue = isDeliveredWithDue && !asDeliveryButDue;
+    const markDelivered = isDeliveredAny || isDeliveryButDue || asDeliveryButDue;
+    if (!user?.id && receiveDue) { toast.error("লগইন প্রয়োজন"); return; }
+    if (!asDeliveryButDue && isFileProcess && request.hasVendorField && !vendor.trim()) {
       toast.error("Vendor নির্বাচন করুন"); return;
     }
-    if (needsCostPrice && effectiveCostPrice <= 0) {
+    if (!asDeliveryButDue && needsCostPrice && effectiveCostPrice <= 0) {
       toast.error(`Vendor Cost Price দিন (${next} এর জন্য আবশ্যক)`); return;
     }
-    if (needsVendorForPD && !effectiveVendor) {
+    if (!asDeliveryButDue && needsVendorForPD && !effectiveVendor) {
       toast.error("Vendor নির্বাচন করুন"); return;
     }
     setSaving(true);
     try {
-      const patch: Record<string, unknown> = { status: next };
+      const patch: Record<string, unknown> = { status: finalStatus };
       if (direction === "forward") {
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
@@ -185,7 +191,7 @@ export function StatusChangeDrawer({
           }
         }
         if (isPendingDelivery && request.hasReceivedDate) patch.received_date = todayIso();
-        if (isDeliveredAny && request.hasDeliveryDate) patch.delivery_date = todayIso();
+        if (markDelivered && request.hasDeliveryDate) patch.delivery_date = todayIso();
       } else if (direction === "backward") {
         if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) patch.vendor_sent_date = null;
         if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) patch.received_date = null;
@@ -194,7 +200,7 @@ export function StatusChangeDrawer({
 
       let paid = 0;
       let discAmt = 0;
-      if (isDeliveredWithDue) {
+      if (receiveDue) {
         discAmt = Math.max(0, Math.min(due, Number(discount) || 0));
         const maxPay = Math.max(0, due - discAmt);
         paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
@@ -209,7 +215,7 @@ export function StatusChangeDrawer({
 
       let firstReceiptId = "";
       const me = displayName(profile, user);
-      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
+      if (receiveDue && (paid > 0 || discAmt > 0)) {
         const mkReceiptId = async (): Promise<string> => {
           try {
             return await generateNextId({
@@ -289,7 +295,7 @@ export function StatusChangeDrawer({
         if (!isNetworkError(le)) toast.warning("Vendor ledger update failed: " + errMsg(le));
       }
 
-      toast.success(`Status: ${next}${request.refId ? `-${request.refId}` : ""}`, {
+      toast.success(`Status: ${finalStatus}${request.refId ? `-${request.refId}` : ""}`, {
         meta: {
           passenger: String(request.row.passenger_name ?? "") || undefined,
           country: String(request.row.country_name ?? request.row.country_route ?? "") || undefined,
@@ -297,9 +303,9 @@ export function StatusChangeDrawer({
           receiptId: firstReceiptId || undefined,
         },
       } as Parameters<typeof toast.success>[1]);
-      if (isDeliveredAny) speakDelivery(String(request.row.passenger_name ?? ""));
+      if (markDelivered) speakDelivery(String(request.row.passenger_name ?? ""));
       onApplied();
-      if (isDeliveredWithDue && (paid > 0 || discAmt > 0)) {
+      if (receiveDue && (paid > 0 || discAmt > 0)) {
         setReceipt({
           receiptId: firstReceiptId || `RCPT-${Date.now()}`,
           date: todayIso(),
@@ -534,9 +540,22 @@ export function StatusChangeDrawer({
           )}
 
           <div className="flex gap-2 pt-1">
-            <Button variant="outline" size="sm" className="flex-1" onClick={onClose} disabled={saving}>বাতিল</Button>
+            {isDeliveredWithDue ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 border-yellow-500/60 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10"
+                onClick={() => apply(true)}
+                disabled={saving}
+              >
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Delivery But Due
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" className="flex-1" onClick={onClose} disabled={saving}>বাতিল</Button>
+            )}
             <Button size="sm" className={`flex-1 ${isWarn ? "bg-amber-600 hover:bg-amber-700 text-white" : isDeliveredWithDue ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
-              onClick={apply}
+              onClick={() => apply(false)}
               disabled={saving || isSame}
             >
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

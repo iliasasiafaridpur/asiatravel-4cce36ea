@@ -53,7 +53,7 @@ const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancell
 const STATUS_TICKET = ["BOOK", "ISSUE", "DELIVERED"];
 // Visa modules now share BMET's exact hierarchy per product requirement.
 const STATUS_VISA = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
-const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
+const STATUS_BMET = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivery But Due", "Delivered"];
 
 const DUE = (sold: string, recv: string, discount?: string) => (r: Record<string, unknown>) =>
   Math.max(0, Number(r[sold] ?? 0) - Number(r[recv] ?? 0) - Number(discount ? r[discount] ?? 0 : 0));
@@ -390,7 +390,11 @@ export const MODULES: ModuleSchema[] = [
     ],
     deriveStatus: (r) => {
       // Auto-update status based on date fields. Manual selection wins only when no later date is set.
-      if (r.delivery_date) return "Delivered";
+      if (r.delivery_date) {
+        // Delivered with leftover due is a distinct "Delivery But Due" stage.
+        const due = Number(r.sold_price ?? 0) - Number(r.received_amount ?? 0) - Number(r.discount_amount ?? 0);
+        return due > 0 ? "Delivery But Due" : "Delivered";
+      }
       const cur = String(r.status ?? "");
       if (r.received_date) return "Pending Delivery";
       if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
@@ -900,6 +904,8 @@ export function statusBadgeClass(status?: string | null): string {
       return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30";
     case "pending delivery":
       return "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30";
+    case "delivery but due":
+      return "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/30";
     case "new":
     case "book":
       return "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30";
