@@ -191,7 +191,7 @@ export function StatusChangeDrawer({
           }
         }
         if (isPendingDelivery && request.hasReceivedDate) patch.received_date = todayIso();
-        if (isDeliveredAny && request.hasDeliveryDate) patch.delivery_date = todayIso();
+        if (markDelivered && request.hasDeliveryDate) patch.delivery_date = todayIso();
       } else if (direction === "backward") {
         if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) patch.vendor_sent_date = null;
         if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) patch.received_date = null;
@@ -200,7 +200,7 @@ export function StatusChangeDrawer({
 
       let paid = 0;
       let discAmt = 0;
-      if (isDeliveredWithDue) {
+      if (receiveDue) {
         discAmt = Math.max(0, Math.min(due, Number(discount) || 0));
         const maxPay = Math.max(0, due - discAmt);
         paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
