@@ -214,10 +214,6 @@ function AccountsPage() {
   const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
-  const isReceiptSubmitted = (r: Recv) => Boolean(r.handover_id);
-  const isExpenseSubmitted = (e: Exp) => Boolean(e.handover_id);
-  const isManualReceipt = (r: Recv) => r.source === "manual" && !r.service_table && !r.service_row_id;
-  const isManualExpense = (e: Exp) => !e.linked_source_table && !e.linked_source_id;
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -910,8 +906,6 @@ ${node.innerHTML.replace(
                 {fRecv.map((r, idx) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
-                  const submitted = isReceiptSubmitted(r);
-                  const canOwnerDelete = isManualReceipt(r) && !submitted;
                   if (svc) {
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
@@ -934,7 +928,7 @@ ${node.innerHTML.replace(
                            {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                        </div>
-                       <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={!isAdmin && (submitted || !canOwnerDelete)} onConfirm={() => deleteRecv(r.id)} description={isAdmin ? `আয় ${r.receipt_id} ডিলেট করতে চান?` : submitted ? "এই আয় MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualReceipt(r) ? "এই আয় সার্ভিস/লেজার থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `আয় ${r.receipt_id} ডিলেট করতে চান?`} />
+                       <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>
                    );
                  })}
@@ -948,8 +942,6 @@ ${node.innerHTML.replace(
             {fExp.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো খরচ নেই</EmptyRow>
               : <div>
                 {fExp.map((e, idx) => {
-                  const submitted = isExpenseSubmitted(e);
-                  const canOwnerDelete = isManualExpense(e) && !submitted;
                   return (
                   <div key={e.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-amber-500/10 text-amber-600 border border-amber-500/20">
@@ -965,7 +957,7 @@ ${node.innerHTML.replace(
                       </p>
                       {e.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{e.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton allowOwner={canOwnerDelete} disabled={!isAdmin && (submitted || !canOwnerDelete)} onConfirm={() => deleteExp(e.id)} description={isAdmin ? `খরচ ${e.expense_id} ডিলেট করতে চান?` : submitted ? "এই খরচ MD handover submit করা হয়েছে, তাই ডিলেট করা যাবে না।" : !isManualExpense(e) ? "এই খরচ লেজার/সিস্টেম থেকে তৈরি হয়েছে, তাই শুধু Admin ডিলেট করতে পারবেন।" : `খরচ ${e.expense_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner onConfirm={() => deleteExp(e.id)} description={`খরচ ${e.expense_id} ডিলেট করতে চান?`} />
                   </div>
                 );
                 })}
@@ -1036,7 +1028,7 @@ ${node.innerHTML.replace(
                       )}
                       {h.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
                     </div>
-                    <ConfirmDeleteButton disabled={!isAdmin} onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
+                    <ConfirmDeleteButton allowOwner onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
                 );
                 })}
