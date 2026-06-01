@@ -946,8 +946,6 @@ ${node.innerHTML.replace(
             {fExp.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো খরচ নেই</EmptyRow>
               : <div>
                 {fExp.map((e, idx) => {
-                  const submitted = isExpenseSubmitted(e);
-                  const canOwnerDelete = isManualExpense(e) && !submitted;
                   return (
                   <div key={e.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-amber-500/10 text-amber-600 border border-amber-500/20">
