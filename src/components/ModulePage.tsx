@@ -30,6 +30,7 @@ import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save } fr
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
@@ -117,6 +118,9 @@ export function ModulePage({ module: mod }: Props) {
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
   const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
+
+  // Preserve list scroll position when the add/edit dialog opens & closes.
+  const saveScroll = useScrollRestore(openForm);
 
   // Auto-save draft for NEW entries only (not while editing existing rows)
   const { clear: clearDraft } = useFormDraft(
@@ -247,6 +251,7 @@ export function ModulePage({ module: mod }: Props) {
   }, [filtered, mod.groupBy, computeValue]);
 
   const startCreate = () => {
+    saveScroll();
     setEditing(null);
     const f = emptyForm(mod);
     // Auto-fill "Entry By" with current user's name
@@ -258,6 +263,7 @@ export function ModulePage({ module: mod }: Props) {
   };
 
   const startEdit = (r: Row) => {
+    saveScroll();
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");

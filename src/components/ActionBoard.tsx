@@ -13,6 +13,7 @@ import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 
 export function ActionBoard() {
   const qc = useQueryClient();
@@ -21,6 +22,7 @@ export function ActionBoard() {
   const [tab, setTab] = useState<"all" | Status>("all");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const saveScroll = useScrollRestore(dialogOpen);
   const [editing, setEditing] = useState<PassengerRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -86,7 +88,7 @@ export function ActionBoard() {
           <h2 className="text-2xl font-bold tracking-tight">একশন বোর্ড</h2>
           <p className="text-sm text-muted-foreground">কাজের স্ট্যাটাস ম্যানেজ করুন</p>
         </div>
-        <Button onClick={() => { setEditing(null); setDialogOpen(true); }} size="lg" className="w-full sm:w-auto">
+        <Button onClick={() => { saveScroll(); setEditing(null); setDialogOpen(true); }} size="lg" className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> নতুন এন্ট্রি
         </Button>
       </div>
@@ -150,7 +152,7 @@ export function ActionBoard() {
                 </SelectContent>
               </Select>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => { setEditing(r); setDialogOpen(true); }}>
+                <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => { saveScroll(); setEditing(r); setDialogOpen(true); }}>
                   <Pencil className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">এডিট</span>
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-destructive hover:text-destructive" onClick={() => {

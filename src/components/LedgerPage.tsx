@@ -61,6 +61,7 @@ import {
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
@@ -222,6 +223,9 @@ export function LedgerPage({ module: mod }: Props) {
   ];
   const loadingRef = useRef(false);
   const columns = useMemo(() => selectColumns(mod), [mod]);
+
+  // Preserve list scroll position when the add/edit dialog opens & closes.
+  const saveScroll = useScrollRestore(openForm);
 
   const groupField = mod.groupBy?.field ?? "agent_name";
   const groupLabel = mod.groupBy?.label ?? "Agent";
@@ -591,6 +595,7 @@ export function LedgerPage({ module: mod }: Props) {
 
   // ---- form actions ----
   const startCreate = () => {
+    saveScroll();
     setEditing(null);
     const f = emptyForm(mod);
     if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
@@ -599,6 +604,7 @@ export function LedgerPage({ module: mod }: Props) {
   };
 
   const startEdit = (r: Row) => {
+    saveScroll();
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields)
