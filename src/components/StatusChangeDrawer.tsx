@@ -159,21 +159,25 @@ export function StatusChangeDrawer({
   if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) backwardClears.push("Delivery Date");
   if (crossesOutOfLedger && costPrice > 0) backwardClears.push(`Vendor "${vendorName || "—"}" cost reverse`);
 
-  const apply = async () => {
-    if (isSame) return;
-    if (!user?.id && isDeliveredWithDue) { toast.error("লগইন প্রয়োজন"); return; }
-    if (isFileProcess && request.hasVendorField && !vendor.trim()) {
+  const apply = async (asDeliveryButDue = false) => {
+    if (isSame && !asDeliveryButDue) return;
+    // "Delivery But Due" = mark delivered today but keep the outstanding due (no receive).
+    const finalStatus = asDeliveryButDue ? "Delivery But Due" : next;
+    const receiveDue = isDeliveredWithDue && !asDeliveryButDue;
+    const markDelivered = isDeliveredAny || isDeliveryButDue || asDeliveryButDue;
+    if (!user?.id && receiveDue) { toast.error("লগইন প্রয়োজন"); return; }
+    if (!asDeliveryButDue && isFileProcess && request.hasVendorField && !vendor.trim()) {
       toast.error("Vendor নির্বাচন করুন"); return;
     }
-    if (needsCostPrice && effectiveCostPrice <= 0) {
+    if (!asDeliveryButDue && needsCostPrice && effectiveCostPrice <= 0) {
       toast.error(`Vendor Cost Price দিন (${next} এর জন্য আবশ্যক)`); return;
     }
-    if (needsVendorForPD && !effectiveVendor) {
+    if (!asDeliveryButDue && needsVendorForPD && !effectiveVendor) {
       toast.error("Vendor নির্বাচন করুন"); return;
     }
     setSaving(true);
     try {
-      const patch: Record<string, unknown> = { status: next };
+      const patch: Record<string, unknown> = { status: finalStatus };
       if (direction === "forward") {
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
