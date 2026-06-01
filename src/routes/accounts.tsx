@@ -214,10 +214,6 @@ function AccountsPage() {
   const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
-  const isReceiptSubmitted = (r: Recv) => Boolean(r.handover_id);
-  const isExpenseSubmitted = (e: Exp) => Boolean(e.handover_id);
-  const isManualReceipt = (r: Recv) => r.source === "manual" && !r.service_table && !r.service_row_id;
-  const isManualExpense = (e: Exp) => !e.linked_source_table && !e.linked_source_id;
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
 
   const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
