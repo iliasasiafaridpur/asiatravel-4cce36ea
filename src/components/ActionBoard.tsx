@@ -21,6 +21,7 @@ export function ActionBoard() {
   const [tab, setTab] = useState<"all" | Status>("all");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const saveScroll = useScrollRestore(dialogOpen);
   const [editing, setEditing] = useState<PassengerRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
