@@ -595,6 +595,7 @@ export function LedgerPage({ module: mod }: Props) {
 
   // ---- form actions ----
   const startCreate = () => {
+    saveScroll();
     setEditing(null);
     const f = emptyForm(mod);
     if (mod.fields.some((fld) => fld.name === "entry_by")) f.entry_by = displayName(profile, user);
@@ -603,6 +604,7 @@ export function LedgerPage({ module: mod }: Props) {
   };
 
   const startEdit = (r: Row) => {
+    saveScroll();
     setEditing(r);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields)
