@@ -152,7 +152,7 @@ export function ActionBoard() {
                 </SelectContent>
               </Select>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => { setEditing(r); setDialogOpen(true); }}>
+                <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => { saveScroll(); setEditing(r); setDialogOpen(true); }}>
                   <Pencil className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">এডিট</span>
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-destructive hover:text-destructive" onClick={() => {
