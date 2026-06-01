@@ -540,9 +540,22 @@ export function StatusChangeDrawer({
           )}
 
           <div className="flex gap-2 pt-1">
-            <Button variant="outline" size="sm" className="flex-1" onClick={onClose} disabled={saving}>বাতিল</Button>
+            {isDeliveredWithDue ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 border-yellow-500/60 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10"
+                onClick={() => apply(true)}
+                disabled={saving}
+              >
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Delivery But Due
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" className="flex-1" onClick={onClose} disabled={saving}>বাতিল</Button>
+            )}
             <Button size="sm" className={`flex-1 ${isWarn ? "bg-amber-600 hover:bg-amber-700 text-white" : isDeliveredWithDue ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
-              onClick={apply}
+              onClick={() => apply(false)}
               disabled={saving || isSame}
             >
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
