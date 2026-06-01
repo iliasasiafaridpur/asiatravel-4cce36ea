@@ -30,6 +30,7 @@ import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save } fr
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
