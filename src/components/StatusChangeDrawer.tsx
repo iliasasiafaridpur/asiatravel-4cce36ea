@@ -147,8 +147,9 @@ export function StatusChangeDrawer({
   if (crossesIntoLedger && effectiveCostPrice > 0 && effectiveVendor) {
     forwardEffects.push(`Vendor "${effectiveVendor}" এর খাতায় ৳${effectiveCostPrice.toLocaleString()} Credit`);
   }
-  if (isDeliveredAny && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
+  if ((isDeliveredAny || isDeliveryButDue) && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
   if (isDeliveredWithDue) forwardEffects.push(`Due ৳${due.toLocaleString()} আদায় রসিদ`);
+  if (isDeliveryButDue && due > 0) forwardEffects.push(`Due ৳${due.toLocaleString()} বকেয়া থাকবে`);
 
   const backwardClears: string[] = [];
   const targetIdx = _targetIdx;
