@@ -88,7 +88,7 @@ export function ActionBoard() {
           <h2 className="text-2xl font-bold tracking-tight">একশন বোর্ড</h2>
           <p className="text-sm text-muted-foreground">কাজের স্ট্যাটাস ম্যানেজ করুন</p>
         </div>
-        <Button onClick={() => { setEditing(null); setDialogOpen(true); }} size="lg" className="w-full sm:w-auto">
+        <Button onClick={() => { saveScroll(); setEditing(null); setDialogOpen(true); }} size="lg" className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> নতুন এন্ট্রি
         </Button>
       </div>
