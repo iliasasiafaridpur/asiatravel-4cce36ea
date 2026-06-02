@@ -542,7 +542,8 @@ export function LedgerPage({ module: mod }: Props) {
     for (const r of filtered) {
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
-      } else {
+      } else if (countsForVendorDue(r)) {
+        // Skip not-yet-payable vendor bills so the card matches the per-vendor summary.
         bill += Number(r[billCol] ?? 0);
         cashPaid += Number(r[paidCol] ?? 0);
         discount += discountOf(r);
@@ -557,7 +558,7 @@ export function LedgerPage({ module: mod }: Props) {
       advance: Math.max(advance - applied, 0),
       due: Math.max(bill - cashPaid - discount - applied, 0),
     };
-  }, [filtered, billCol, paidCol]);
+  }, [filtered, billCol, paidCol, countsForVendorDue]);
 
 
 
