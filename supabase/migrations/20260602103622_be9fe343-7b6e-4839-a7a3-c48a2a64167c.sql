@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.next_module_id(text, text, text);
