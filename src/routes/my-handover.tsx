@@ -118,6 +118,7 @@ function MyHandoverPage() {
   const submit = async () => {
     const amt = Number(cash);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    if (receipts.length + expenses.length === 0) return toast.error("এই closing date পর্যন্ত handover করার মতো কোনো pending আয়/খরচ নেই");
     setSaving(true);
     const { error } = await supabase.rpc("submit_handover" as never, {
       _submitted_amount: amt,
@@ -290,7 +291,7 @@ function MyHandoverPage() {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={submit} disabled={saving || !cash} className="gap-1.5">
+            <Button onClick={submit} disabled={saving || !cash || receipts.length + expenses.length === 0} className="gap-1.5">
               <Lock className="h-4 w-4" />
               {saving ? "Submitting…" : "Submit to MD"}
             </Button>
