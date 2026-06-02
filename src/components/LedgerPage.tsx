@@ -259,7 +259,7 @@ export function LedgerPage({ module: mod }: Props) {
         .select(columns)
         .order("entry_date", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(5000);
       if (error) throw error;
       const list = (data as unknown as Row[]) ?? [];
       setRows(list);
@@ -483,19 +483,19 @@ export function LedgerPage({ module: mod }: Props) {
     return adjusted;
   }, [rows, billCol, paidCol, countsForVendorDue]);
 
-  // Net due per group: bill rows minus cash payment and persisted advance adjustment.
+  // Net due per group — SINGLE SOURCE OF TRUTH.
+  // Built from advanceAdjustedRows.displayDue, the exact same per-row value the
+  // FIFO dialog, the FIFO preview, the per-vendor "Vendor-Due" column and the
+  // "Total Due" card all use. This guarantees those four surfaces can never diverge.
   const dueByGroup = useMemo(() => {
     const due = new Map<string, number>();
     for (const r of rows) {
       if (isAdvanceRow(r)) continue;
-      if (!countsForVendorDue(r)) continue;
       const k = String(r[groupField] ?? "");
-      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r) - Number(r.advance_applied ?? 0), 0));
+      due.set(k, (due.get(k) ?? 0) + (advanceAdjustedRows.get(r.id)?.displayDue ?? 0));
     }
-    const m = new Map<string, number>();
-    due.forEach((v, k) => m.set(k, Math.max(v, 0)));
-    return m;
-  }, [rows, groupField, billCol, paidCol, countsForVendorDue]);
+    return due;
+  }, [rows, groupField, advanceAdjustedRows]);
 
 
 
@@ -540,7 +540,8 @@ export function LedgerPage({ module: mod }: Props) {
       cashPaid = 0,
       discount = 0,
       applied = 0,
-      advance = 0;
+      advance = 0,
+      due = 0;
     for (const r of filtered) {
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
@@ -550,6 +551,8 @@ export function LedgerPage({ module: mod }: Props) {
         cashPaid += Number(r[paidCol] ?? 0);
         discount += discountOf(r);
         applied += Number(r.advance_applied ?? 0);
+        // Single source of truth: per-row clamped due (same as FIFO + per-vendor summary).
+        due += advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
       }
     }
     paid = cashPaid + applied;
@@ -558,18 +561,18 @@ export function LedgerPage({ module: mod }: Props) {
       paid,
       discount,
       advance: Math.max(advance - applied, 0),
-      due: Math.max(bill - cashPaid - discount - applied, 0),
+      due,
     };
-  }, [filtered, billCol, paidCol, countsForVendorDue]);
+  }, [filtered, billCol, paidCol, countsForVendorDue, advanceAdjustedRows]);
 
 
 
 
   const groupSummary = useMemo(() => {
-    const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number }>();
+    const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number; due: number }>();
     for (const r of filtered) {
       const k = String(r[groupField] ?? "—") || "—";
-      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, discount: 0, applied: 0, advance: 0 };
+      const cur = map.get(k) ?? { bill: 0, cashPaid: 0, discount: 0, applied: 0, advance: 0, due: 0 };
       if (isAdvanceRow(r)) {
         cur.advance += Number(r[paidCol] ?? 0);
       } else if (countsForVendorDue(r)) {
@@ -577,6 +580,8 @@ export function LedgerPage({ module: mod }: Props) {
         cur.cashPaid += Number(r[paidCol] ?? 0);
         cur.discount += discountOf(r);
         cur.applied += Number(r.advance_applied ?? 0);
+        // Single source of truth: per-row clamped due (same as FIFO + Total Due card).
+        cur.due += advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
       }
       map.set(k, cur);
     }
@@ -586,12 +591,12 @@ export function LedgerPage({ module: mod }: Props) {
           key,
           bill: v.bill,
           paid: v.cashPaid + v.applied,
-          due: Math.max(v.bill - v.cashPaid - v.discount - v.applied, 0),
+          due: v.due,
           advance: Math.max(v.advance - v.applied, 0),
         };
       })
       .sort((a, b) => b.due - a.due);
-  }, [filtered, groupField, billCol, paidCol, countsForVendorDue]);
+  }, [filtered, groupField, billCol, paidCol, countsForVendorDue, advanceAdjustedRows]);
 
 
   const groupOptions = useMemo(() => {
