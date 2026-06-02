@@ -540,7 +540,8 @@ export function LedgerPage({ module: mod }: Props) {
       cashPaid = 0,
       discount = 0,
       applied = 0,
-      advance = 0;
+      advance = 0,
+      due = 0;
     for (const r of filtered) {
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
@@ -550,6 +551,8 @@ export function LedgerPage({ module: mod }: Props) {
         cashPaid += Number(r[paidCol] ?? 0);
         discount += discountOf(r);
         applied += Number(r.advance_applied ?? 0);
+        // Single source of truth: per-row clamped due (same as FIFO + per-vendor summary).
+        due += advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
       }
     }
     paid = cashPaid + applied;
@@ -558,9 +561,9 @@ export function LedgerPage({ module: mod }: Props) {
       paid,
       discount,
       advance: Math.max(advance - applied, 0),
-      due: Math.max(bill - cashPaid - discount - applied, 0),
+      due,
     };
-  }, [filtered, billCol, paidCol, countsForVendorDue]);
+  }, [filtered, billCol, paidCol, countsForVendorDue, advanceAdjustedRows]);
 
 
 
