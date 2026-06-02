@@ -37,7 +37,7 @@ export function StaffHandoverHistoryDialog({
   useEffect(() => {
     if (!open || !user?.id) return;
     let cancelled = false;
-    (async () => {
+    const loadRows = async () => {
       setLoading(true);
       const { data } = await supabase
         .from("cash_handovers")
@@ -46,21 +46,28 @@ export function StaffHandoverHistoryDialog({
         .order("created_at", { ascending: false })
         .limit(200);
       if (cancelled) return;
-      setRows(((data ?? []) as unknown as Hand[]).filter((row) => !["cancelled", "canceled"].includes((row.status ?? "").toLowerCase())));
+      const allRows = ((data ?? []) as unknown as Hand[]).filter((row) => !["cancelled", "canceled"].includes((row.status ?? "").toLowerCase()));
+      const pendingIds = allRows.filter((row) => (row.status ?? "approved") === "pending").map((row) => row.id);
+      if (pendingIds.length === 0) {
+        setRows(allRows);
+        setLoading(false);
+        return;
+      }
+      const [receipts, expenses] = await Promise.all([
+        supabase.from("payment_receipts").select("handover_id").in("handover_id", pendingIds),
+        supabase.from("cash_expenses").select("handover_id").in("handover_id", pendingIds),
+      ]);
+      const linkedIds = new Set<string>();
+      for (const row of ((receipts.data ?? []) as Array<{ handover_id: string | null }>)) if (row.handover_id) linkedIds.add(row.handover_id);
+      for (const row of ((expenses.data ?? []) as Array<{ handover_id: string | null }>)) if (row.handover_id) linkedIds.add(row.handover_id);
+      setRows(allRows.filter((row) => (row.status ?? "approved") !== "pending" || linkedIds.has(row.id)));
       setLoading(false);
-    })();
+    };
+    void loadRows();
 
     const ch = supabase
       .channel(`staff-handover-history-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers", filter: `from_user=eq.${user.id}` }, async () => {
-        const { data } = await supabase
-          .from("cash_handovers")
-          .select("id,handover_id,entry_date,closing_date,submitted_amount,confirmed_amount,amount,status,remarks,to_name,created_at")
-          .eq("from_user", user.id)
-          .order("created_at", { ascending: false })
-          .limit(200);
-        if (!cancelled) setRows(((data ?? []) as unknown as Hand[]).filter((row) => !["cancelled", "canceled"].includes((row.status ?? "").toLowerCase())));
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers", filter: `from_user=eq.${user.id}` }, () => { void loadRows(); })
       .subscribe();
 
     return () => { cancelled = true; void supabase.removeChannel(ch); };
