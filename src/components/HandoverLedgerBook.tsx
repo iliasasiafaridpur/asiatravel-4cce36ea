@@ -53,6 +53,18 @@ type Receipt = {
   created_at: string;
 };
 
+type Expense = {
+  id: string;
+  expense_id: string;
+  entry_date: string;
+  amount: number;
+  category: string;
+  purpose: string | null;
+  spent_by_name: string | null;
+  handover_id: string | null;
+  created_at: string;
+};
+
 type ServiceInfo = {
   country: string | null;
   vendor: string | null;
@@ -96,6 +108,7 @@ export function HandoverLedgerInline({
   const instanceId = useId();
   const [handovers, setHandovers] = useState<Handover[]>([]);
   const [receiptsByH, setReceiptsByH] = useState<Record<string, Receipt[]>>({});
+  const [expensesByH, setExpensesByH] = useState<Record<string, Expense[]>>({});
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [loading, setLoading] = useState(false);
@@ -132,6 +145,23 @@ export function HandoverLedgerInline({
         if (!r.handover_id) continue;
         (byH[r.handover_id] ??= []).push(r);
       }
+
+      // Load expenses linked to these handovers
+      let exps: Expense[] = [];
+      if (ids.length > 0) {
+        const { data: expData } = await supabase
+          .from("cash_expenses")
+          .select("id,expense_id,entry_date,amount,category,purpose,spent_by_name,handover_id,created_at")
+          .in("handover_id", ids)
+          .order("created_at", { ascending: true });
+        exps = (expData ?? []) as Expense[];
+      }
+      const expByH: Record<string, Expense[]> = {};
+      for (const e of exps) {
+        if (!e.handover_id) continue;
+        (expByH[e.handover_id] ??= []).push(e);
+      }
+
 
       const svcKeys = new Set<string>();
       const byTable: Record<string, Set<string>> = {};
@@ -203,6 +233,7 @@ export function HandoverLedgerInline({
       if (cancelled) return;
       setHandovers(hvs);
       setReceiptsByH(byH);
+      setExpensesByH(expByH);
       setReceiptsByService(byService);
       setServiceMap(svcMap);
       setLoading(false);
@@ -287,6 +318,7 @@ export function HandoverLedgerInline({
               key={h.id}
               handover={h}
               receipts={receiptsByH[h.id] ?? []}
+              expenses={expensesByH[h.id] ?? []}
               receiptsByService={receiptsByService}
               serviceMap={serviceMap}
               mode={mode}
@@ -333,10 +365,11 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
+  expenses?: Expense[];
   receiptsByService: Record<string, Receipt[]>;
   serviceMap: Record<string, ServiceInfo>;
   mode: "mine" | "to-me";
@@ -348,6 +381,7 @@ function HandoverCard({
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
   const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
   const isPending = status === "pending";
   const [cancelling, setCancelling] = useState(false);
 
@@ -662,6 +696,55 @@ function HandoverCard({
           </tbody>
         </table>
       </div>
+
+      {/* খরচের বিবরণ (Expenses in this handover) */}
+      {expenses.length > 0 && (
+        <div className="border-t">
+          <div className="px-4 py-2 bg-rose-500/10 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center justify-between">
+            <span>💸 খরচের বিবরণ — {expenses.length} টি</span>
+            <span className="tabular-nums">মোট খরচ: {fmt(totalExpenses)}</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30">
+                <tr className="text-left">
+                  <th className="px-3 py-1.5 font-semibold">তারিখ</th>
+                  <th className="px-3 py-1.5 font-semibold">খাত</th>
+                  <th className="px-3 py-1.5 font-semibold">বিবরণ</th>
+                  <th className="px-3 py-1.5 font-semibold">খরচকারী</th>
+                  <th className="px-3 py-1.5 font-semibold text-right">টাকা</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((e, idx) => (
+                  <tr key={e.id} className={`border-t align-top row-tint-${idx % 4}`}>
+                    <td className="px-3 py-2 align-top">
+                      <div className="text-sm font-medium">{formatDate(e.entry_date)}</div>
+                      {e.expense_id && (
+                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{e.expense_id}</div>
+                      )}
+                      {e.created_at && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5">{formatDateTime(e.created_at)}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top text-sm font-medium">{e.category || "—"}</td>
+                    <td className="px-3 py-2 align-top text-sm text-muted-foreground">{e.purpose || "—"}</td>
+                    <td className="px-3 py-2 align-top text-xs text-muted-foreground">{e.spent_by_name || "—"}</td>
+                    <td className="px-3 py-2 text-right align-top tabular-nums font-bold text-rose-600 dark:text-rose-400">
+                      −{fmt(e.amount)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="border-t bg-muted/30 font-semibold">
+                  <td className="px-3 py-1.5 text-right" colSpan={4}>মোট খরচ ({expenses.length} টি)</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums text-rose-600 dark:text-rose-400">−{fmt(totalExpenses)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
 
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
         <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
