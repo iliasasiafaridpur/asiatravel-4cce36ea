@@ -236,7 +236,7 @@ export function StaffHandoverDialog({
           {/* Expense detail */}
           <div className="rounded-lg border">
             <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-              ব্যয় বিবরণ (আজকের) — {expenses.length}
+              ব্যয় বিবরণ (Pending — এই তারিখ পর্যন্ত) — {expenses.length}
             </div>
             <div className="max-h-32 overflow-y-auto divide-y text-xs">
               {loading ? (
