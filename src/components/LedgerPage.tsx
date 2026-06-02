@@ -985,7 +985,8 @@ export function LedgerPage({ module: mod }: Props) {
       }
       if (user?.id && !isEdit) (payload as Record<string, unknown>).created_by = user.id;
 
-      const finalId = !isEdit ? await generateNextId(mod) : undefined;
+      const entryDateForId = typeof payload.entry_date === "string" ? (payload.entry_date as string) : undefined;
+      const finalId = !isEdit ? await generateNextId(mod, entryDateForId) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
 
       if (isEdit && editId) {
