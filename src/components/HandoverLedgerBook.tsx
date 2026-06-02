@@ -401,7 +401,7 @@ function HandoverCard({
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
-  onChanged?: () => void;
+  onChanged?: (cancelledId?: string) => void;
 }) {
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
@@ -421,7 +421,7 @@ function HandoverCard({
         ? "Handover বাতিল করা হয়েছে — স্টাফের কাছে ফেরত গেছে।"
         : "Submit বাতিল করা হয়েছে।"
     );
-    onChanged?.();
+    onChanged?.(handover.id);
   };
 
 
