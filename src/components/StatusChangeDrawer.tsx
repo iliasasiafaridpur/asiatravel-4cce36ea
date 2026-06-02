@@ -186,8 +186,8 @@ export function StatusChangeDrawer({
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
           if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
         }
+        if (needsCostPrice) patch.cost_price = effectiveCostPrice;
         if (crossesIntoLedger) {
-          if (needsCostPrice) patch.cost_price = effectiveCostPrice;
           if (needsVendorForPD) {
             patch.vendor_bought = effectiveVendor;
             if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = todayIso();
