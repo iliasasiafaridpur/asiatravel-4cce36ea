@@ -1211,10 +1211,20 @@ export type Database = {
         Returns: boolean
       }
       is_md: { Args: { _uid: string }; Returns: boolean }
-      next_module_id: {
-        Args: { _column: string; _prefix: string; _table: string }
-        Returns: string
-      }
+      next_module_id:
+        | {
+            Args: { _column: string; _prefix: string; _table: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _column: string
+              _entry_date?: string
+              _prefix: string
+              _table: string
+            }
+            Returns: string
+          }
       next_passenger_id: { Args: never; Returns: string }
       next_simple_id: {
         Args: { _column: string; _prefix: string; _table: string }
