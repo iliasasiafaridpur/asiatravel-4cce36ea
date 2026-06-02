@@ -305,7 +305,7 @@ function MyHandoverPage() {
             <BookOpen className="h-4 w-4" />
             আমার হিসাব বই (Handover History)
           </div>
-          <HandoverLedgerInline mode="mine" enabled={!!user?.id} />
+          <HandoverLedgerInline mode="mine" enabled={!!user?.id} allowCancel onChanged={() => setReloadTick((t) => t + 1)} />
         </CardContent>
       </Card>
     </div>
