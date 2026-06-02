@@ -1684,7 +1684,15 @@ export function LedgerPage({ module: mod }: Props) {
                           </div>
                         )}
                         <div className="text-xs">
-                          {displayDue > 0 ? (
+                          {!isAgency && !countsForVendorDue(r) && Number(r[billCol] ?? 0) > 0 ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/50 text-amber-600 dark:text-amber-400 text-[10px]"
+                              title="Vendor থেকে এখনো রিসিভ হয়নি (status: Pending Delivery হলে Due হবে)"
+                            >
+                              এখনো Due নয়
+                            </Badge>
+                          ) : displayDue > 0 ? (
                             <button
                               type="button"
                               onClick={(e) => {
