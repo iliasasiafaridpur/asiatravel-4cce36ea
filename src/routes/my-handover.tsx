@@ -244,7 +244,7 @@ function MyHandoverPage() {
             {/* Expense detail */}
             <div className="rounded-lg border">
               <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-                ব্যয় বিবরণ (আজকের) — {expenses.length}
+                ব্যয় বিবরণ (এই তারিখ পর্যন্ত) — {expenses.length}
               </div>
               <div className="max-h-48 overflow-y-auto text-sm">
                 {loading ? (
