@@ -325,7 +325,8 @@ export function ModulePage({ module: mod }: Props) {
       }
 
       // Only generate a fresh ID for NEW rows. Never overwrite the id of an existing row.
-      const finalId = !isEdit ? await generateNextId(mod) : undefined;
+      const entryDateForId = typeof payload.entry_date === "string" ? (payload.entry_date as string) : undefined;
+      const finalId = !isEdit ? await generateNextId(mod, entryDateForId) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
 
       if (isEdit && editId) {
