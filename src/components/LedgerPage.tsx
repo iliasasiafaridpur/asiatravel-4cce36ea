@@ -259,7 +259,7 @@ export function LedgerPage({ module: mod }: Props) {
         .select(columns)
         .order("entry_date", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(5000);
       if (error) throw error;
       const list = (data as unknown as Row[]) ?? [];
       setRows(list);
