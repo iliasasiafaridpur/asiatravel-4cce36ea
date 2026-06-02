@@ -65,8 +65,9 @@ export function StaffHandoverDialog({
           .from("cash_expenses")
           .select("id,expense_id,amount,category,purpose,entry_date,created_at")
           .eq("spent_by", user.id)
-          .eq("entry_date", closingDate)
+          .lte("entry_date", closingDate)
           .is("handover_id", null)
+          .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false }),
       ]);
       if (cancelled) return;
