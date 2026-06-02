@@ -290,11 +290,11 @@ export function LedgerPage({ module: mod }: Props) {
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
           .limit(2000),
       ]);
       const fm = new Map<string, string>();
@@ -374,8 +374,9 @@ export function LedgerPage({ module: mod }: Props) {
           cost: b.cost_price ?? undefined,
           discount: b.discount_amount ?? undefined,
           status: b.status ?? undefined,
-          received_from_vendor:
-            (b.status ?? "") === "Pending Delivery" && !!b.received_date,
+          // Received from vendor = "Received Date From Vendor" is set. Stays a
+          // vendor payable through Pending Delivery → Delivery But Due → Delivered.
+          received_from_vendor: !!b.received_date,
         });
       }
       const vm = new Map<string, string>();
@@ -389,6 +390,7 @@ export function LedgerPage({ module: mod }: Props) {
         cost_price: number | null;
         discount_amount: number | null;
         status: string | null;
+        received_date: string | null;
       };
       for (const v of (kv.data as unknown as V[]) ?? []) {
         vm.set(v.id, "Kuwait");
@@ -401,7 +403,7 @@ export function LedgerPage({ module: mod }: Props) {
           cost: v.cost_price ?? undefined,
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
-          received_from_vendor: (v.status ?? "") === "Pending Delivery",
+          received_from_vendor: !!v.received_date,
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -415,7 +417,7 @@ export function LedgerPage({ module: mod }: Props) {
           cost: v.cost_price ?? undefined,
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
-          received_from_vendor: (v.status ?? "") === "Pending Delivery",
+          received_from_vendor: !!v.received_date,
         });
       }
 
@@ -448,6 +450,21 @@ export function LedgerPage({ module: mod }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
+  // For vendor-ledger: a bill row sourced from BMET/Saudi/Kuwait modules only
+  // becomes a payable to the Vendor once the source customer's status is
+  // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
+  // Until then it must NOT count toward vendor due anywhere (card, rows, dialog).
+  const countsForVendorDue = useCallback(
+    (r: Row) => {
+      if (isAgency) return true;
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+      const info = sourceInfoMap.get(String(r.source_id ?? ""));
+      return !!info?.received_from_vendor;
+    },
+    [isAgency, sourceInfoMap],
+  );
+
   const advanceAdjustedRows = useMemo(() => {
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
     for (const r of rows) {
@@ -455,27 +472,30 @@ export function LedgerPage({ module: mod }: Props) {
       const applied = Number(r.advance_applied ?? 0);
       const cashPaid = Number(r[paidCol] ?? 0);
       const discount = discountOf(r);
+      // Not-yet-payable vendor bills carry NO due (and so never appear in FIFO/payment).
+      const eligible = countsForVendorDue(r);
       adjusted.set(r.id, {
         applied,
         displayPaid: cashPaid + applied,
-        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - discount - applied, 0),
+        displayDue: eligible ? Math.max(Number(r[billCol] ?? 0) - cashPaid - discount - applied, 0) : 0,
       });
     }
     return adjusted;
-  }, [rows, billCol, paidCol]);
+  }, [rows, billCol, paidCol, countsForVendorDue]);
 
   // Net due per group: bill rows minus cash payment and persisted advance adjustment.
   const dueByGroup = useMemo(() => {
     const due = new Map<string, number>();
     for (const r of rows) {
       if (isAdvanceRow(r)) continue;
+      if (!countsForVendorDue(r)) continue;
       const k = String(r[groupField] ?? "");
       due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r) - Number(r.advance_applied ?? 0), 0));
     }
     const m = new Map<string, number>();
     due.forEach((v, k) => m.set(k, Math.max(v, 0)));
     return m;
-  }, [rows, groupField, billCol, paidCol]);
+  }, [rows, groupField, billCol, paidCol, countsForVendorDue]);
 
 
 
@@ -524,7 +544,8 @@ export function LedgerPage({ module: mod }: Props) {
     for (const r of filtered) {
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
-      } else {
+      } else if (countsForVendorDue(r)) {
+        // Skip not-yet-payable vendor bills so the card matches the per-vendor summary.
         bill += Number(r[billCol] ?? 0);
         cashPaid += Number(r[paidCol] ?? 0);
         discount += discountOf(r);
@@ -539,21 +560,10 @@ export function LedgerPage({ module: mod }: Props) {
       advance: Math.max(advance - applied, 0),
       due: Math.max(bill - cashPaid - discount - applied, 0),
     };
-  }, [filtered, billCol, paidCol]);
+  }, [filtered, billCol, paidCol, countsForVendorDue]);
 
-  // For vendor-ledger: a bill row from BMET/Saudi/Kuwait modules only contributes
-  // to Total Payable / Due of Vendor once the source customer's status is
-  // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
-  const countsForVendorDue = useCallback(
-    (r: Row) => {
-      if (isAgency) return true;
-      const src = String(r.source_table ?? "");
-      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
-      const info = sourceInfoMap.get(String(r.source_id ?? ""));
-      return !!info?.received_from_vendor;
-    },
-    [isAgency, sourceInfoMap],
-  );
+
+
 
   const groupSummary = useMemo(() => {
     const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number }>();
@@ -1676,7 +1686,15 @@ export function LedgerPage({ module: mod }: Props) {
                           </div>
                         )}
                         <div className="text-xs">
-                          {displayDue > 0 ? (
+                          {!isAgency && !countsForVendorDue(r) && Number(r[billCol] ?? 0) > 0 ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/50 text-amber-600 dark:text-amber-400 text-[10px]"
+                              title="Vendor থেকে এখনো রিসিভ হয়নি (status: Pending Delivery হলে Due হবে)"
+                            >
+                              এখনো Due নয়
+                            </Badge>
+                          ) : displayDue > 0 ? (
                             <button
                               type="button"
                               onClick={(e) => {
