@@ -26,8 +26,25 @@ export function HandoverHeaderButton() {
     if (isStaff && !isMd && !isAdmin) q = q.eq("from_user", user.id);
     const { data } = await q;
     const ids = ((data ?? []) as Array<{ id: string }>).map((r) => r.id).filter(Boolean);
-    setPendingIds(ids);
-    setPendingCount(ids.length);
+    if (ids.length === 0) {
+      setPendingIds([]);
+      setPendingCount(0);
+      return;
+    }
+    const [receipts, expenses] = await Promise.all([
+      supabase.from("payment_receipts").select("handover_id").in("handover_id", ids),
+      supabase.from("cash_expenses").select("handover_id").in("handover_id", ids),
+    ]);
+    const linkedIds = new Set<string>();
+    for (const row of ((receipts.data ?? []) as Array<{ handover_id: string | null }>)) {
+      if (row.handover_id) linkedIds.add(row.handover_id);
+    }
+    for (const row of ((expenses.data ?? []) as Array<{ handover_id: string | null }>)) {
+      if (row.handover_id) linkedIds.add(row.handover_id);
+    }
+    const activeIds = ids.filter((id) => linkedIds.has(id));
+    setPendingIds(activeIds);
+    setPendingCount(activeIds.length);
   }, [user?.id, isMd, isStaff, isAdmin]);
 
   useEffect(() => {

@@ -102,7 +102,7 @@ export function HandoverLedgerInline({
   onlyPending?: boolean;
   excludePending?: boolean;
   allowCancel?: boolean;
-  onChanged?: () => void;
+  onChanged?: (cancelledId?: string) => void;
 }) {
   const { user } = useCurrentUser();
   const instanceId = useId();
@@ -252,11 +252,21 @@ export function HandoverLedgerInline({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return handovers;
-    return handovers.filter((h) => {
+    const activeHandovers = handovers.filter((h) => {
+      const st = (h.status ?? "pending").toLowerCase();
+      if (st === "cancelled" || st === "canceled") return false;
+      if (st === "pending") {
+        return (receiptsByH[h.id]?.length ?? 0) > 0 || (expensesByH[h.id]?.length ?? 0) > 0;
+      }
+      return true;
+    });
+    if (!q) return activeHandovers;
+    return activeHandovers.filter((h) => {
       if (h.handover_id?.toLowerCase().includes(q)) return true;
       if ((h.from_name ?? "").toLowerCase().includes(q)) return true;
       const recs = receiptsByH[h.id] ?? [];
+      const exps = expensesByH[h.id] ?? [];
+      if (exps.some((e) => e.category?.toLowerCase().includes(q) || (e.purpose ?? "").toLowerCase().includes(q))) return true;
       return recs.some((r) => {
         if (r.passenger_name?.toLowerCase().includes(q)) return true;
         if ((r.ref_id ?? "").toLowerCase().includes(q)) return true;
@@ -268,7 +278,7 @@ export function HandoverLedgerInline({
         return false;
       });
     });
-  }, [handovers, search, receiptsByH, serviceMap]);
+  }, [handovers, search, receiptsByH, expensesByH, serviceMap]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -324,7 +334,23 @@ export function HandoverLedgerInline({
               mode={mode}
               approveAction={approveAction}
               allowCancel={allowCancel}
-              onChanged={() => { setReloadTick((t) => t + 1); onChanged?.(); }}
+              onChanged={(cancelledId) => {
+                if (cancelledId) {
+                  setHandovers((prev) => prev.filter((row) => row.id !== cancelledId));
+                  setReceiptsByH((prev) => {
+                    const next = { ...prev };
+                    delete next[cancelledId];
+                    return next;
+                  });
+                  setExpensesByH((prev) => {
+                    const next = { ...prev };
+                    delete next[cancelledId];
+                    return next;
+                  });
+                }
+                setReloadTick((t) => t + 1);
+                onChanged?.(cancelledId);
+              }}
             />
           ));
         })()}
@@ -375,7 +401,7 @@ function HandoverCard({
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
-  onChanged?: () => void;
+  onChanged?: (cancelledId?: string) => void;
 }) {
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
@@ -395,7 +421,7 @@ function HandoverCard({
         ? "Handover বাতিল করা হয়েছে — স্টাফের কাছে ফেরত গেছে।"
         : "Submit বাতিল করা হয়েছে।"
     );
-    onChanged?.();
+    onChanged?.(handover.id);
   };
 
 
