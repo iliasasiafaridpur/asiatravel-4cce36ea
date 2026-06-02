@@ -2,13 +2,19 @@ import { useEffect, useId, useMemo, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate, formatDateTime } from "@/lib/modules";
-import { BookOpen, CheckCircle2, Clock, Search, User2, Users } from "lucide-react";
+import { toast } from "sonner";
+import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
@@ -74,6 +80,8 @@ export function HandoverLedgerInline({
   approveAction,
   onlyPending = false,
   excludePending = false,
+  allowCancel = false,
+  onChanged,
 }: {
   mode: "mine" | "to-me";
   title?: string;
@@ -81,6 +89,8 @@ export function HandoverLedgerInline({
   approveAction?: { busyId: string | null; onApprove: (receipt: { id: string; handover_id: string | null; approval_status: string }) => void };
   onlyPending?: boolean;
   excludePending?: boolean;
+  allowCancel?: boolean;
+  onChanged?: () => void;
 }) {
   const { user } = useCurrentUser();
   const instanceId = useId();
@@ -281,6 +291,8 @@ export function HandoverLedgerInline({
               serviceMap={serviceMap}
               mode={mode}
               approveAction={approveAction}
+              allowCancel={allowCancel}
+              onChanged={() => { setReloadTick((t) => t + 1); onChanged?.(); }}
             />
           ));
         })()}
@@ -321,7 +333,7 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, receiptsByService, serviceMap, mode, approveAction,
+  handover, receipts, receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
@@ -329,12 +341,29 @@ function HandoverCard({
   serviceMap: Record<string, ServiceInfo>;
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
+  allowCancel?: boolean;
+  onChanged?: () => void;
 }) {
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
   const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
   const isPending = status === "pending";
+  const [cancelling, setCancelling] = useState(false);
+
+  const cancelHandover = async () => {
+    setCancelling(true);
+    const { error } = await supabase.rpc("cancel_handover" as never, { _handover_id: handover.id } as never);
+    setCancelling(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(
+      mode === "to-me"
+        ? "Handover বাতিল করা হয়েছে — স্টাফের কাছে ফেরত গেছে।"
+        : "Submit বাতিল করা হয়েছে।"
+    );
+    onChanged?.();
+  };
+
 
   // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -391,7 +420,42 @@ function HandoverCard({
           )}
         </div>
         <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
+        {allowCancel && isPending && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={cancelling}
+                className="h-8 gap-1.5 border-rose-500/40 text-rose-600 hover:bg-rose-500/10 hover:text-rose-600"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                {mode === "to-me" ? "রিকোয়েস্ট বাতিল" : "Submit বাতিল"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Handover বাতিল করবেন?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {mode === "to-me"
+                    ? "এই ক্যাশ রিকোয়েস্ট বাতিল হয়ে স্টাফের কাছে ফেরত যাবে। সব আয় ও খরচ আবার স্টাফের pending লিস্টে চলে যাবে।"
+                    : "এই Submit বাতিল হবে এবং সব আয় ও খরচ আবার আপনার pending লিস্টে ফেরত আসবে। আপনি পুনরায় Submit করতে পারবেন।"}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>না, থাক</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={cancelHandover}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  হ্যাঁ, বাতিল করুন
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
+
 
       {status === "approved" && handover.approved_at && (
         <div className="px-4 py-1.5 bg-emerald-500/5 text-[11px] text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/20">

@@ -1129,6 +1129,7 @@ export type Database = {
         Args: { _confirmed_amount: number; _handover_id: string }
         Returns: undefined
       }
+      cancel_handover: { Args: { _handover_id: string }; Returns: undefined }
       get_accounts_overview: {
         Args: never
         Returns: {
