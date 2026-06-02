@@ -559,19 +559,8 @@ export function LedgerPage({ module: mod }: Props) {
     };
   }, [filtered, billCol, paidCol]);
 
-  // For vendor-ledger: a bill row from BMET/Saudi/Kuwait modules only contributes
-  // to Total Payable / Due of Vendor once the source customer's status is
-  // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
-  const countsForVendorDue = useCallback(
-    (r: Row) => {
-      if (isAgency) return true;
-      const src = String(r.source_table ?? "");
-      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
-      const info = sourceInfoMap.get(String(r.source_id ?? ""));
-      return !!info?.received_from_vendor;
-    },
-    [isAgency, sourceInfoMap],
-  );
+
+
 
   const groupSummary = useMemo(() => {
     const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number }>();
