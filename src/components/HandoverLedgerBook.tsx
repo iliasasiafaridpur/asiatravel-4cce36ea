@@ -318,6 +318,7 @@ export function HandoverLedgerInline({
               key={h.id}
               handover={h}
               receipts={receiptsByH[h.id] ?? []}
+              expenses={expensesByH[h.id] ?? []}
               receiptsByService={receiptsByService}
               serviceMap={serviceMap}
               mode={mode}
