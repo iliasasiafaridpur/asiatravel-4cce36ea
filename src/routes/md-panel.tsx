@@ -296,6 +296,8 @@ function MdPanelPage() {
         <HandoverLedgerInline
           mode="to-me"
           onlyPending
+          allowCancel
+          onChanged={() => { void reload(); }}
           approveAction={{ busyId: busy, onApprove: (r) => { void approveReceipt(r as Receipt); } }}
         />
       </div>
