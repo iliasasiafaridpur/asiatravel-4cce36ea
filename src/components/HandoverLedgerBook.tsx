@@ -420,7 +420,42 @@ function HandoverCard({
           )}
         </div>
         <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
+        {allowCancel && isPending && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={cancelling}
+                className="h-8 gap-1.5 border-rose-500/40 text-rose-600 hover:bg-rose-500/10 hover:text-rose-600"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                {mode === "to-me" ? "রিকোয়েস্ট বাতিল" : "Submit বাতিল"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Handover বাতিল করবেন?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {mode === "to-me"
+                    ? "এই ক্যাশ রিকোয়েস্ট বাতিল হয়ে স্টাফের কাছে ফেরত যাবে। সব আয় ও খরচ আবার স্টাফের pending লিস্টে চলে যাবে।"
+                    : "এই Submit বাতিল হবে এবং সব আয় ও খরচ আবার আপনার pending লিস্টে ফেরত আসবে। আপনি পুনরায় Submit করতে পারবেন।"}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>না, থাক</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={cancelHandover}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  হ্যাঁ, বাতিল করুন
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
+
 
       {status === "approved" && handover.approved_at && (
         <div className="px-4 py-1.5 bg-emerald-500/5 text-[11px] text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/20">
