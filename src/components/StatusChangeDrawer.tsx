@@ -138,9 +138,12 @@ export function StatusChangeDrawer({
   const ledgerIdx = pdIdx >= 0 ? pdIdx : issueIdx >= 0 ? issueIdx : dlIdx;
   const costPrice = Number(request.row.cost_price ?? 0);
   const vendorName = String(request.row.vendor_bought ?? "").trim();
+  const fileProcessIdx = idxOf("File Process");
   const crossesIntoLedger = ledgerIdx >= 0 && direction === "forward" && currentIdx < ledgerIdx && _targetIdx >= ledgerIdx;
   const crossesOutOfLedger = ledgerIdx >= 0 && direction === "backward" && currentIdx >= ledgerIdx && _targetIdx < ledgerIdx;
-  const needsCostPrice = crossesIntoLedger && costPrice <= 0;
+  // Cost price is mandatory once the card moves forward to ANY status after "File Process".
+  const requiresCostPrice = fileProcessIdx >= 0 && direction === "forward" && _targetIdx > fileProcessIdx;
+  const needsCostPrice = requiresCostPrice && costPrice <= 0;
   const needsVendorForPD = crossesIntoLedger && !vendorName && request.hasVendorField;
   const effectiveCostPrice = needsCostPrice ? (Number(costPriceInput) || 0) : costPrice;
   const effectiveVendor = (needsVendorForPD ? vendor : vendorName).trim();
@@ -183,8 +186,8 @@ export function StatusChangeDrawer({
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
           if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
         }
+        if (needsCostPrice) patch.cost_price = effectiveCostPrice;
         if (crossesIntoLedger) {
-          if (needsCostPrice) patch.cost_price = effectiveCostPrice;
           if (needsVendorForPD) {
             patch.vendor_bought = effectiveVendor;
             if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = todayIso();
@@ -444,7 +447,7 @@ export function StatusChangeDrawer({
                 Vendor Cost Entry আবশ্যক
               </div>
               <div className="text-[10px] text-muted-foreground -mt-1">
-                {next} করতে হলে আগে Vendor ও Cost Price দিন।
+                {next} করতে হলে আগে {needsVendorForPD ? "Vendor ও " : ""}Cost Price দিন।
               </div>
               {needsVendorForPD && (
                 <div className="space-y-1">
