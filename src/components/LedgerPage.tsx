@@ -403,7 +403,7 @@ export function LedgerPage({ module: mod }: Props) {
           cost: v.cost_price ?? undefined,
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
-          received_from_vendor: (v.status ?? "") === "Pending Delivery",
+          received_from_vendor: !!v.received_date,
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -417,7 +417,7 @@ export function LedgerPage({ module: mod }: Props) {
           cost: v.cost_price ?? undefined,
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
-          received_from_vendor: (v.status ?? "") === "Pending Delivery",
+          received_from_vendor: !!v.received_date,
         });
       }
 
