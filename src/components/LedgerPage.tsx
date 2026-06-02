@@ -483,19 +483,19 @@ export function LedgerPage({ module: mod }: Props) {
     return adjusted;
   }, [rows, billCol, paidCol, countsForVendorDue]);
 
-  // Net due per group: bill rows minus cash payment and persisted advance adjustment.
+  // Net due per group — SINGLE SOURCE OF TRUTH.
+  // Built from advanceAdjustedRows.displayDue, the exact same per-row value the
+  // FIFO dialog, the FIFO preview, the per-vendor "Vendor-Due" column and the
+  // "Total Due" card all use. This guarantees those four surfaces can never diverge.
   const dueByGroup = useMemo(() => {
     const due = new Map<string, number>();
     for (const r of rows) {
       if (isAdvanceRow(r)) continue;
-      if (!countsForVendorDue(r)) continue;
       const k = String(r[groupField] ?? "");
-      due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r) - Number(r.advance_applied ?? 0), 0));
+      due.set(k, (due.get(k) ?? 0) + (advanceAdjustedRows.get(r.id)?.displayDue ?? 0));
     }
-    const m = new Map<string, number>();
-    due.forEach((v, k) => m.set(k, Math.max(v, 0)));
-    return m;
-  }, [rows, groupField, billCol, paidCol, countsForVendorDue]);
+    return due;
+  }, [rows, groupField, advanceAdjustedRows]);
 
 
 
