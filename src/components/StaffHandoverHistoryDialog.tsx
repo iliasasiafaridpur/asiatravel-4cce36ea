@@ -46,7 +46,7 @@ export function StaffHandoverHistoryDialog({
         .order("created_at", { ascending: false })
         .limit(200);
       if (cancelled) return;
-      setRows((data ?? []) as unknown as Hand[]);
+      setRows(((data ?? []) as unknown as Hand[]).filter((row) => !["cancelled", "canceled"].includes((row.status ?? "").toLowerCase())));
       setLoading(false);
     })();
 
@@ -59,7 +59,7 @@ export function StaffHandoverHistoryDialog({
           .eq("from_user", user.id)
           .order("created_at", { ascending: false })
           .limit(200);
-        if (!cancelled) setRows((data ?? []) as unknown as Hand[]);
+        if (!cancelled) setRows(((data ?? []) as unknown as Hand[]).filter((row) => !["cancelled", "canceled"].includes((row.status ?? "").toLowerCase())));
       })
       .subscribe();
 
