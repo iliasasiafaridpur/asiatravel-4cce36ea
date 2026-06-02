@@ -65,8 +65,9 @@ export function StaffHandoverDialog({
           .from("cash_expenses")
           .select("id,expense_id,amount,category,purpose,entry_date,created_at")
           .eq("spent_by", user.id)
-          .eq("entry_date", closingDate)
+          .lte("entry_date", closingDate)
           .is("handover_id", null)
+          .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false }),
       ]);
       if (cancelled) return;
@@ -235,7 +236,7 @@ export function StaffHandoverDialog({
           {/* Expense detail */}
           <div className="rounded-lg border">
             <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-              ব্যয় বিবরণ (আজকের) — {expenses.length}
+              ব্যয় বিবরণ (Pending — এই তারিখ পর্যন্ত) — {expenses.length}
             </div>
             <div className="max-h-32 overflow-y-auto divide-y text-xs">
               {loading ? (
