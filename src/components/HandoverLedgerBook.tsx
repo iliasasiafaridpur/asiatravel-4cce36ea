@@ -697,6 +697,55 @@ function HandoverCard({
         </table>
       </div>
 
+      {/* খরচের বিবরণ (Expenses in this handover) */}
+      {expenses.length > 0 && (
+        <div className="border-t">
+          <div className="px-4 py-2 bg-rose-500/10 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center justify-between">
+            <span>💸 খরচের বিবরণ — {expenses.length} টি</span>
+            <span className="tabular-nums">মোট খরচ: {fmt(totalExpenses)}</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30">
+                <tr className="text-left">
+                  <th className="px-3 py-1.5 font-semibold">তারিখ</th>
+                  <th className="px-3 py-1.5 font-semibold">খাত</th>
+                  <th className="px-3 py-1.5 font-semibold">বিবরণ</th>
+                  <th className="px-3 py-1.5 font-semibold">খরচকারী</th>
+                  <th className="px-3 py-1.5 font-semibold text-right">টাকা</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((e, idx) => (
+                  <tr key={e.id} className={`border-t align-top row-tint-${idx % 4}`}>
+                    <td className="px-3 py-2 align-top">
+                      <div className="text-sm font-medium">{formatDate(e.entry_date)}</div>
+                      {e.expense_id && (
+                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{e.expense_id}</div>
+                      )}
+                      {e.created_at && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5">{formatDateTime(e.created_at)}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top text-sm font-medium">{e.category || "—"}</td>
+                    <td className="px-3 py-2 align-top text-sm text-muted-foreground">{e.purpose || "—"}</td>
+                    <td className="px-3 py-2 align-top text-xs text-muted-foreground">{e.spent_by_name || "—"}</td>
+                    <td className="px-3 py-2 text-right align-top tabular-nums font-bold text-rose-600 dark:text-rose-400">
+                      −{fmt(e.amount)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="border-t bg-muted/30 font-semibold">
+                  <td className="px-3 py-1.5 text-right" colSpan={4}>মোট খরচ ({expenses.length} টি)</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums text-rose-600 dark:text-rose-400">−{fmt(totalExpenses)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
         <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
           {confirmed > 0 && confirmed !== submitted && (
