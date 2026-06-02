@@ -448,6 +448,21 @@ export function LedgerPage({ module: mod }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
+  // For vendor-ledger: a bill row sourced from BMET/Saudi/Kuwait modules only
+  // becomes a payable to the Vendor once the source customer's status is
+  // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
+  // Until then it must NOT count toward vendor due anywhere (card, rows, dialog).
+  const countsForVendorDue = useCallback(
+    (r: Row) => {
+      if (isAgency) return true;
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+      const info = sourceInfoMap.get(String(r.source_id ?? ""));
+      return !!info?.received_from_vendor;
+    },
+    [isAgency, sourceInfoMap],
+  );
+
   const advanceAdjustedRows = useMemo(() => {
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
     for (const r of rows) {
@@ -455,27 +470,30 @@ export function LedgerPage({ module: mod }: Props) {
       const applied = Number(r.advance_applied ?? 0);
       const cashPaid = Number(r[paidCol] ?? 0);
       const discount = discountOf(r);
+      // Not-yet-payable vendor bills carry NO due (and so never appear in FIFO/payment).
+      const eligible = countsForVendorDue(r);
       adjusted.set(r.id, {
         applied,
         displayPaid: cashPaid + applied,
-        displayDue: Math.max(Number(r[billCol] ?? 0) - cashPaid - discount - applied, 0),
+        displayDue: eligible ? Math.max(Number(r[billCol] ?? 0) - cashPaid - discount - applied, 0) : 0,
       });
     }
     return adjusted;
-  }, [rows, billCol, paidCol]);
+  }, [rows, billCol, paidCol, countsForVendorDue]);
 
   // Net due per group: bill rows minus cash payment and persisted advance adjustment.
   const dueByGroup = useMemo(() => {
     const due = new Map<string, number>();
     for (const r of rows) {
       if (isAdvanceRow(r)) continue;
+      if (!countsForVendorDue(r)) continue;
       const k = String(r[groupField] ?? "");
       due.set(k, (due.get(k) ?? 0) + Math.max(Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r) - Number(r.advance_applied ?? 0), 0));
     }
     const m = new Map<string, number>();
     due.forEach((v, k) => m.set(k, Math.max(v, 0)));
     return m;
-  }, [rows, groupField, billCol, paidCol]);
+  }, [rows, groupField, billCol, paidCol, countsForVendorDue]);
 
 
 
