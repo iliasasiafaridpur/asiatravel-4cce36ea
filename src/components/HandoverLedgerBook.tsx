@@ -146,6 +146,23 @@ export function HandoverLedgerInline({
         (byH[r.handover_id] ??= []).push(r);
       }
 
+      // Load expenses linked to these handovers
+      let exps: Expense[] = [];
+      if (ids.length > 0) {
+        const { data: expData } = await supabase
+          .from("cash_expenses")
+          .select("id,expense_id,entry_date,amount,category,purpose,spent_by_name,handover_id,created_at")
+          .in("handover_id", ids)
+          .order("created_at", { ascending: true });
+        exps = (expData ?? []) as Expense[];
+      }
+      const expByH: Record<string, Expense[]> = {};
+      for (const e of exps) {
+        if (!e.handover_id) continue;
+        (expByH[e.handover_id] ??= []).push(e);
+      }
+
+
       const svcKeys = new Set<string>();
       const byTable: Record<string, Set<string>> = {};
       for (const r of recs) {
