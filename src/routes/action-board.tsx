@@ -119,7 +119,8 @@ function ActionBoardPage() {
         if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
       }
 
-      const newId = await generateNextId(mod);
+      const entryDateForId = typeof payload.entry_date === "string" ? (payload.entry_date as string) : undefined;
+      const newId = await generateNextId(mod, entryDateForId);
       payload[mod.idColumn] = newId;
       const { offline } = await resilientInsert(mod.table, payload);
       window.clearTimeout(timeout);
