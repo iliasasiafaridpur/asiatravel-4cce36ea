@@ -374,8 +374,9 @@ export function LedgerPage({ module: mod }: Props) {
           cost: b.cost_price ?? undefined,
           discount: b.discount_amount ?? undefined,
           status: b.status ?? undefined,
-          received_from_vendor:
-            (b.status ?? "") === "Pending Delivery" && !!b.received_date,
+          // Received from vendor = "Received Date From Vendor" is set. Stays a
+          // vendor payable through Pending Delivery → Delivery But Due → Delivered.
+          received_from_vendor: !!b.received_date,
         });
       }
       const vm = new Map<string, string>();
