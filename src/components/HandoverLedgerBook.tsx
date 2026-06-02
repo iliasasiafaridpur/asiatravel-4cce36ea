@@ -80,6 +80,8 @@ export function HandoverLedgerInline({
   approveAction,
   onlyPending = false,
   excludePending = false,
+  allowCancel = false,
+  onChanged,
 }: {
   mode: "mine" | "to-me";
   title?: string;
@@ -87,6 +89,8 @@ export function HandoverLedgerInline({
   approveAction?: { busyId: string | null; onApprove: (receipt: { id: string; handover_id: string | null; approval_status: string }) => void };
   onlyPending?: boolean;
   excludePending?: boolean;
+  allowCancel?: boolean;
+  onChanged?: () => void;
 }) {
   const { user } = useCurrentUser();
   const instanceId = useId();
