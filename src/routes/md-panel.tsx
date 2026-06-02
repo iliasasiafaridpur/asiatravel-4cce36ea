@@ -132,11 +132,21 @@ function MdPanelPage() {
     const receipts = (recData ?? []) as Receipt[];
     const handovers = (hvData ?? []) as Handover[];
 
+    const pendingLinkedHandoverIds = new Set(
+      receipts
+        .filter((r) => r.approval_status === "pending_md" && r.handover_id)
+        .map((r) => r.handover_id as string)
+    );
     const hvMap: Record<string, Handover> = {};
-    for (const h of handovers) hvMap[h.id] = h;
+    for (const h of handovers) {
+      const st = (h.status ?? "pending").toLowerCase();
+      if (st === "cancelled" || st === "canceled") continue;
+      if (st === "pending" && !pendingLinkedHandoverIds.has(h.id)) continue;
+      hvMap[h.id] = h;
+    }
 
     // Pending = approval_status pending_md (this is what MD must approve)
-    const pending = receipts.filter((r) => r.approval_status === "pending_md");
+    const pending = receipts.filter((r) => r.approval_status === "pending_md" && r.handover_id && hvMap[r.handover_id]);
 
     // Aggregate paid (all approved + pending) per service row for due calc
     const paid: Record<string, number> = {};
