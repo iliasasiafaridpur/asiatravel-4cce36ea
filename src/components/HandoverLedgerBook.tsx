@@ -291,6 +291,8 @@ export function HandoverLedgerInline({
               serviceMap={serviceMap}
               mode={mode}
               approveAction={approveAction}
+              allowCancel={allowCancel}
+              onChanged={() => { setReloadTick((t) => t + 1); onChanged?.(); }}
             />
           ));
         })()}
