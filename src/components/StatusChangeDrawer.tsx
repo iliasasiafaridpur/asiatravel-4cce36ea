@@ -138,9 +138,12 @@ export function StatusChangeDrawer({
   const ledgerIdx = pdIdx >= 0 ? pdIdx : issueIdx >= 0 ? issueIdx : dlIdx;
   const costPrice = Number(request.row.cost_price ?? 0);
   const vendorName = String(request.row.vendor_bought ?? "").trim();
+  const fileProcessIdx = idxOf("File Process");
   const crossesIntoLedger = ledgerIdx >= 0 && direction === "forward" && currentIdx < ledgerIdx && _targetIdx >= ledgerIdx;
   const crossesOutOfLedger = ledgerIdx >= 0 && direction === "backward" && currentIdx >= ledgerIdx && _targetIdx < ledgerIdx;
-  const needsCostPrice = crossesIntoLedger && costPrice <= 0;
+  // Cost price is mandatory once the card moves forward to ANY status after "File Process".
+  const requiresCostPrice = fileProcessIdx >= 0 && direction === "forward" && _targetIdx > fileProcessIdx;
+  const needsCostPrice = requiresCostPrice && costPrice <= 0;
   const needsVendorForPD = crossesIntoLedger && !vendorName && request.hasVendorField;
   const effectiveCostPrice = needsCostPrice ? (Number(costPriceInput) || 0) : costPrice;
   const effectiveVendor = (needsVendorForPD ? vendor : vendorName).trim();
