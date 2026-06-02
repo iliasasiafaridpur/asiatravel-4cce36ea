@@ -53,6 +53,18 @@ type Receipt = {
   created_at: string;
 };
 
+type Expense = {
+  id: string;
+  expense_id: string;
+  entry_date: string;
+  amount: number;
+  category: string;
+  purpose: string | null;
+  spent_by_name: string | null;
+  handover_id: string | null;
+  created_at: string;
+};
+
 type ServiceInfo = {
   country: string | null;
   vendor: string | null;
