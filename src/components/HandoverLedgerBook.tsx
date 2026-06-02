@@ -365,10 +365,11 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
+  expenses?: Expense[];
   receiptsByService: Record<string, Receipt[]>;
   serviceMap: Record<string, ServiceInfo>;
   mode: "mine" | "to-me";
@@ -380,6 +381,7 @@ function HandoverCard({
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
   const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
   const isPending = status === "pending";
   const [cancelling, setCancelling] = useState(false);
 
