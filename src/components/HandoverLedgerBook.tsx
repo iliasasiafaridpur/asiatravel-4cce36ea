@@ -333,7 +333,7 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, receiptsByService, serviceMap, mode, approveAction,
+  handover, receipts, receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
@@ -341,12 +341,29 @@ function HandoverCard({
   serviceMap: Record<string, ServiceInfo>;
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
+  allowCancel?: boolean;
+  onChanged?: () => void;
 }) {
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
   const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
   const isPending = status === "pending";
+  const [cancelling, setCancelling] = useState(false);
+
+  const cancelHandover = async () => {
+    setCancelling(true);
+    const { error } = await supabase.rpc("cancel_handover" as never, { _handover_id: handover.id } as never);
+    setCancelling(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(
+      mode === "to-me"
+        ? "Handover বাতিল করা হয়েছে — স্টাফের কাছে ফেরত গেছে।"
+        : "Submit বাতিল করা হয়েছে।"
+    );
+    onChanged?.();
+  };
+
 
   // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
   const [highlightId, setHighlightId] = useState<string | null>(null);
