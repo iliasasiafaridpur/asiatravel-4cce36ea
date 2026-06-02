@@ -233,6 +233,7 @@ export function HandoverLedgerInline({
       if (cancelled) return;
       setHandovers(hvs);
       setReceiptsByH(byH);
+      setExpensesByH(expByH);
       setReceiptsByService(byService);
       setServiceMap(svcMap);
       setLoading(false);
