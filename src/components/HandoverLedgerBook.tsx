@@ -108,6 +108,7 @@ export function HandoverLedgerInline({
   const instanceId = useId();
   const [handovers, setHandovers] = useState<Handover[]>([]);
   const [receiptsByH, setReceiptsByH] = useState<Record<string, Receipt[]>>({});
+  const [expensesByH, setExpensesByH] = useState<Record<string, Expense[]>>({});
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [loading, setLoading] = useState(false);
