@@ -91,7 +91,7 @@ function AccountsPage() {
   const [manualOpen, setManualOpen] = useState(false);
   const [manualTab, setManualTab] = useState<"income" | "expense">("income");
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
-  const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
+  const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Cash", remarks: "" });
   const [savingIncome, setSavingIncome] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
 
@@ -318,7 +318,7 @@ function AccountsPage() {
       } as never);
       if (error) return toast.error(error.message);
       toast.success("✓ আয় সংরক্ষিত");
-      setIForm({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
+      setIForm({ entry_date: today(), passenger_name: "", amount: "", method: "Cash", remarks: "" });
       setManualOpen(false);
       void reload(true);
     } catch (e) {
