@@ -222,7 +222,6 @@ export function LedgerPage({ module: mod }: Props) {
     "Card",
     "Other",
   ];
-  const visiblePaymentMethods = isAgency ? [...DUE_RECEIVE_METHODS] : PAYMENT_METHODS;
   const loadingRef = useRef(false);
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
@@ -240,6 +239,7 @@ export function LedgerPage({ module: mod }: Props) {
   const payTitle = isAgency ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি";
   const payAmountLabel = isAgency ? "Received Amount" : "Paid Amount";
   const groupFieldLabel = isAgency ? "Agent Name" : "Vendor Name";
+  const visiblePaymentMethods = isAgency ? [...DUE_RECEIVE_METHODS] : PAYMENT_METHODS;
 
   // Form schema with country_route lookup switching based on selected service_type.
   const formMod = useMemo<ModuleSchema>(() => {
