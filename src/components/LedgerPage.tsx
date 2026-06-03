@@ -220,7 +220,7 @@ export function LedgerPage({ module: mod }: Props) {
     "Bank Transfer",
     "Cheque",
     "Card",
-    "Other",
+    "Md cash",
   ];
   const loadingRef = useRef(false);
   const columns = useMemo(() => selectColumns(mod), [mod]);
