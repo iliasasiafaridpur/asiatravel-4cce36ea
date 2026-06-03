@@ -43,6 +43,7 @@ type Receipt = {
   entry_date: string;
   passenger_name: string;
   amount: number;
+  method: string | null;
   service_type: string;
   service_table: string | null;
   service_row_id: string | null;
