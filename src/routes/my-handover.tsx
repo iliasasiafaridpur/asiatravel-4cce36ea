@@ -225,17 +225,22 @@ function MyHandoverPage() {
                 ) : receipts.length === 0 ? (
                   <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
                 ) : (
-                  receipts.map((r, idx) => (
+                  receipts.map((r, idx) => {
+                    const mdRecv = isMdReceivedMethod(r.method);
+                    return (
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
                         <div className="text-sm truncate">{r.passenger_name || "—"}</div>
                         <div className="text-xs text-muted-foreground font-mono">
                           {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                         </div>
+                        {mdRecv && (
+                          <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
+                        )}
                       </div>
                       <div className="text-right">
-                        <div className="text-sm tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-                          +{fmt(Number(r.amount))}
+                        <div className={`text-sm tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
                         </div>
                         {Number(r.discount || 0) > 0 && (
                           <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
@@ -244,7 +249,8 @@ function MyHandoverPage() {
                         )}
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
