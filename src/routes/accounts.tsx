@@ -926,19 +926,23 @@ ${node.innerHTML.replace(
                       bits.push(svc.country);
                     }
                   }
+                  const mdRecv = isMdReceivedMethod(r.method);
                   return (
                     <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
-                      <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
                         <ArrowDownLeft className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${mdRecv ? "text-sky-600" : "text-emerald-600"}`}>+ {fmt(Number(r.amount))}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
-                           {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                           {r.service_type}{r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
+                         {mdRecv && (
+                           <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
+                         )}
                        </div>
                        <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>
