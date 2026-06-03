@@ -112,7 +112,9 @@ function MyHandoverPage() {
     return () => { cancelled = true; };
   }, [user?.id, closingDate, reloadTick]);
 
-  const totalReceived = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  // Only Cash counts as the staff's physical cash. Non-cash goes to MD directly.
+  const totalReceived = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
