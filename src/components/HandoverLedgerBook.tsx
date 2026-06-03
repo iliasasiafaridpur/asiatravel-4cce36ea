@@ -408,7 +408,7 @@ function HandoverCard({
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
-  const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  
   const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
