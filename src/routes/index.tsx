@@ -18,6 +18,7 @@ import {
   PieChart, Pie, Legend, AreaChart, Area,
 } from "recharts";
 import { DigitalClock } from "@/components/DigitalClock";
+import { isCashMethod } from "@/lib/payment-methods";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
@@ -238,8 +239,9 @@ function DashboardPage() {
       const expenses = (exp.data ?? []) as Array<{ amount: number; entry_date: string }>;
       const handovers = (hand.data ?? []) as Array<{ amount: number; status: string | null }>;
       const nonDiscount = receipts.filter((r) => r.source !== "discount" && (r.method ?? "").toLowerCase() !== "discount");
-      const totalReceived = nonDiscount.reduce((s, r) => s + Number(r.amount || 0), 0);
-      const totalReceivedToday = nonDiscount.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const cashReceipts = nonDiscount.filter((r) => isCashMethod(r.method));
+      const totalReceived = cashReceipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+      const totalReceivedToday = cashReceipts.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
@@ -280,7 +282,7 @@ function DashboardPage() {
       if (err) throw err;
       const totalReceived = ((receipts.data ?? []) as Array<{ amount: number; approval_status: string; source: string | null; method: string | null }>).reduce((sum, row) => {
         const isDiscount = row.source === "discount" || (row.method ?? "").toLowerCase() === "discount";
-        return !isDiscount ? sum + Number(row.amount || 0) : sum;
+        return !isDiscount && isCashMethod(row.method) ? sum + Number(row.amount || 0) : sum;
       }, 0);
       const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>)
         .filter((row) => (row.status ?? "approved") === "approved")
