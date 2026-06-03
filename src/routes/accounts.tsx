@@ -240,7 +240,8 @@ function AccountsPage() {
     items.sort((a, b) => (a.date === b.date ? a.created.localeCompare(b.created) : a.date.localeCompare(b.date)));
     let bal = 0;
     return items.map((it) => {
-      if (it.kind === "received") bal += Number(it.row.amount);
+      // Non-cash (MD-received) income does NOT change the running balance.
+      if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number(it.row.amount) : 0;
       else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
