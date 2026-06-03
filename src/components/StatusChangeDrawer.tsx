@@ -19,6 +19,7 @@ import { generateNextId } from "@/lib/idgen";
 import { speakDelivery } from "@/lib/voice";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
 
 const DEFAULT_STATUS_ORDER = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 const todayIso = () => new Date().toISOString().slice(0, 10);
