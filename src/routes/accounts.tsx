@@ -849,6 +849,7 @@ ${node.innerHTML.replace(
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const mdRecv = isIn && isMdReceivedMethod(r.method);
                   const name = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const service = isIn ? r.service_type : isHand ? "জমা" : "খরচ";
