@@ -812,6 +812,9 @@ ${node.innerHTML.replace(
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
+                        {isIn && isMdReceivedMethod(r.method) && (
+                          <p className="text-[10px] text-sky-600 dark:text-sky-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}<br />ব্যালেন্সে যোগ হয়নি</p>
+                        )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
