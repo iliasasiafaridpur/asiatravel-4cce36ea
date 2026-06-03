@@ -28,6 +28,7 @@ type Receipt = {
   passenger_name?: string | null; entry_date: string; created_at?: string | null;
   service_table?: string | null; service_row_id?: string | null;
   service_type?: string | null;
+  method?: string | null;
   discount?: number;
 };
 type Expense = {
