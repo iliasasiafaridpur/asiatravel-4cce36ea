@@ -359,7 +359,10 @@ function AccountsPage() {
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
-        if (it.kind === "received") acc.inAmt += amt;
+        if (it.kind === "received") {
+          if (isCashMethod((it.row as Recv).method)) acc.inAmt += amt;
+          else acc.mdAmt += amt;
+        }
         else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
         else acc.outAmt += amt;
         return acc;
