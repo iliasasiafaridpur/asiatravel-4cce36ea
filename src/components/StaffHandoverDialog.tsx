@@ -174,10 +174,13 @@ export function StaffHandoverDialog({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg border bg-emerald-500/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
-                <TrendingUp className="h-3 w-3" /> আয়
+                <TrendingUp className="h-3 w-3" /> নগদ আয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
               <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
+              {totalMdReceived > 0 && (
+                <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD: {fmt(totalMdReceived)}</div>
+              )}
             </div>
             <div className="rounded-lg border bg-rose-500/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
