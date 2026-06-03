@@ -33,7 +33,7 @@ export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
 });
 
-const METHODS = ["Hand Cash", "Cash", "Bank", "bKash", "Nagad", "Other"];
+const METHODS = [...DUE_RECEIVE_METHODS];
 const EXPENSE_CATEGORIES = ["Office", "Transport", "Food", "Stationery", "Bill", "Other"];
 const RECEIVERS = ["MD Sir", "Office", "Bank Deposit", "Other"];
 
