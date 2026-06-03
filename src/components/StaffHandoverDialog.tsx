@@ -118,8 +118,9 @@ export function StaffHandoverDialog({
   const netCash = totalReceived - totalExpense;
 
   const submit = async () => {
-    const amt = Number(cash);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+    const cashText = cash.trim();
+    const amt = Number(cashText);
+    if (cashText === "" || !Number.isFinite(amt) || amt < 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
     if (receipts.length + expenses.length === 0) return toast.error("এই closing date পর্যন্ত handover করার মতো কোনো pending আয়/খরচ নেই");
     setSaving(true);
     const { error } = await supabase.rpc("submit_handover" as never, {
@@ -315,7 +316,7 @@ export function StaffHandoverDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={saving || !cash || receipts.length + expenses.length === 0}>
+          <Button onClick={submit} disabled={saving || cash.trim() === "" || receipts.length + expenses.length === 0}>
             {saving ? "Submitting…" : "Submit to MD"}
           </Button>
         </DialogFooter>
