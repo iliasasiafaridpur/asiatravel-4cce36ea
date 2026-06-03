@@ -29,6 +29,9 @@ export const LEDGER_SERVICE_TYPES = [
   "OTHERS",
 ];
 
+const RECEIPT_METHODS = ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Md cash"];
+const PAYMENT_METHODS = ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Md cash"];
+
 export interface ModuleSchema {
   key: string;
   label: string;
@@ -686,7 +689,7 @@ export const MODULES: ModuleSchema[] = [
         name: "payment_method",
         label: "Payment Method (Cash/Bank)",
         type: "select",
-        options: ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Other"],
+        options: RECEIPT_METHODS,
         required: true,
       },
       { name: "profit", label: "Profit", type: "number", showInList: true },
@@ -762,7 +765,7 @@ export const MODULES: ModuleSchema[] = [
         name: "payment_method",
         label: "Payment Method (Cash/Bank)",
         type: "select",
-        options: ["Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Card", "Other"],
+        options: PAYMENT_METHODS,
         required: true,
       },
       { name: "profit", label: "Profit", type: "number", showInList: true },

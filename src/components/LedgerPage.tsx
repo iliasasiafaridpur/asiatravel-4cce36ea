@@ -65,6 +65,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -219,7 +220,7 @@ export function LedgerPage({ module: mod }: Props) {
     "Bank Transfer",
     "Cheque",
     "Card",
-    "Other",
+    "Md cash",
   ];
   const loadingRef = useRef(false);
   const columns = useMemo(() => selectColumns(mod), [mod]);
@@ -238,6 +239,7 @@ export function LedgerPage({ module: mod }: Props) {
   const payTitle = isAgency ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি";
   const payAmountLabel = isAgency ? "Received Amount" : "Paid Amount";
   const groupFieldLabel = isAgency ? "Agent Name" : "Vendor Name";
+  const visiblePaymentMethods = isAgency ? [...DUE_RECEIVE_METHODS] : PAYMENT_METHODS;
 
   // Form schema with country_route lookup switching based on selected service_type.
   const formMod = useMemo<ModuleSchema>(() => {
@@ -728,6 +730,9 @@ export function LedgerPage({ module: mod }: Props) {
       const cur = Number((srcRow as Record<string, unknown> | null)?.[recvCol] ?? 0);
       const upd: Record<string, unknown> = { [recvCol]: cur + amt };
       if (isAgency && user?.id) upd.received_by = user.id;
+      if (isAgency) {
+        upd.payment_date = payDate;
+      }
       const { error: uErr } = await supabase
         .from(srcTable as never)
         .update(upd as never)
@@ -745,7 +750,7 @@ export function LedgerPage({ module: mod }: Props) {
     // cash-sync trigger records the right Cash/Bank category.
     await supabase
       .from(mod.table as never)
-      .update({ payment_method: payMethod } as never)
+        .update({ payment_method: payMethod, payment_date: payDate } as never)
       .eq("id", row.id);
   };
 
@@ -2269,13 +2274,18 @@ export function LedgerPage({ module: mod }: Props) {
                     <SelectValue placeholder="-- Method --" />
                   </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_METHODS.map((m) => (
+                    {visiblePaymentMethods.map((m) => (
                       <SelectItem key={m} value={m}>
                         {m}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {isAgency && isMdReceivedMethod(payMethod) && (
+                  <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                    ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — user cash balance-এ যোগ হবে না, কিন্তু My Accounts ও Cash Handover-এ এন্ট্রি থাকবে ({payMethod})।
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Remarks</Label>
