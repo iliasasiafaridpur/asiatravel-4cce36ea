@@ -579,6 +579,11 @@ export function DueReceiveDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    {isMdReceivedMethod(method) && (
+                      <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                        ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="text-[11px] text-muted-foreground -mt-1">
