@@ -573,7 +573,7 @@ export function DueReceiveDialog({
                     <Select value={method} onValueChange={setMethod}>
                       <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {["Cash","bKash","Nagad","Rocket","Bank Transfer","Cheque","Other"].map((m) => (
+                        {DUE_RECEIVE_METHODS.map((m) => (
                           <SelectItem key={m} value={m}>{m}</SelectItem>
                         ))}
                       </SelectContent>
