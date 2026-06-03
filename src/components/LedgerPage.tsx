@@ -65,6 +65,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -221,6 +222,7 @@ export function LedgerPage({ module: mod }: Props) {
     "Card",
     "Other",
   ];
+  const visiblePaymentMethods = isAgency ? [...DUE_RECEIVE_METHODS] : PAYMENT_METHODS;
   const loadingRef = useRef(false);
   const columns = useMemo(() => selectColumns(mod), [mod]);
 
