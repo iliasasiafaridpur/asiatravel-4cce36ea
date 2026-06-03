@@ -136,7 +136,7 @@ export function HandoverLedgerInline({
       if (ids.length > 0) {
         const { data: recData } = await supabase
           .from("payment_receipts")
-          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+          .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
           .in("handover_id", ids)
           .not("source", "eq", "discount");
         recs = (recData ?? []) as Receipt[];
@@ -182,7 +182,7 @@ export function HandoverLedgerInline({
           if (rowIds.length === 0) continue;
           const { data: more } = await supabase
             .from("payment_receipts")
-            .select("id,receipt_id,entry_date,passenger_name,amount,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+            .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
             .eq("service_table", t)
             .in("service_row_id", rowIds)
             .not("source", "eq", "discount");
