@@ -663,7 +663,10 @@ function HandoverCard({
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-3 py-2 text-right tabular-nums">
-                    <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                    <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                    {isMdReceivedMethod(r.method) && (
+                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">MD রিসিভ · {r.method}<br />(ক্যাশে নয়)</div>
+                    )}
                     {r.received_by_name && (
                       <div className="text-xs text-muted-foreground font-normal mt-0.5">আদায়কারী: {r.received_by_name}</div>
                     )}
