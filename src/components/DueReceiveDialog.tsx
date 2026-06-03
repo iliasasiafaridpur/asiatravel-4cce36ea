@@ -15,6 +15,7 @@ import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate } from "@/lib/modules";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
