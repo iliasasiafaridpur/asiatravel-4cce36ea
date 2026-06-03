@@ -730,6 +730,9 @@ export function LedgerPage({ module: mod }: Props) {
       const cur = Number((srcRow as Record<string, unknown> | null)?.[recvCol] ?? 0);
       const upd: Record<string, unknown> = { [recvCol]: cur + amt };
       if (isAgency && user?.id) upd.received_by = user.id;
+      if (isAgency) {
+        upd.payment_date = payDate;
+      }
       const { error: uErr } = await supabase
         .from(srcTable as never)
         .update(upd as never)
@@ -747,7 +750,7 @@ export function LedgerPage({ module: mod }: Props) {
     // cash-sync trigger records the right Cash/Bank category.
     await supabase
       .from(mod.table as never)
-      .update({ payment_method: payMethod } as never)
+        .update({ payment_method: payMethod, payment_date: payDate } as never)
       .eq("id", row.id);
   };
 
