@@ -2274,13 +2274,18 @@ export function LedgerPage({ module: mod }: Props) {
                     <SelectValue placeholder="-- Method --" />
                   </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_METHODS.map((m) => (
+                    {visiblePaymentMethods.map((m) => (
                       <SelectItem key={m} value={m}>
                         {m}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {isAgency && isMdReceivedMethod(payMethod) && (
+                  <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                    ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — user cash balance-এ যোগ হবে না, কিন্তু My Accounts ও Cash Handover-এ এন্ট্রি থাকবে ({payMethod})।
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Remarks</Label>
