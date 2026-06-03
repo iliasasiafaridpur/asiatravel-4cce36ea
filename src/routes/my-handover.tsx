@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { formatDateTime } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
+import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
@@ -28,6 +29,7 @@ type Receipt = {
   passenger_name?: string | null; entry_date: string; created_at?: string | null;
   service_table?: string | null; service_row_id?: string | null;
   service_type?: string | null;
+  method?: string | null;
   discount?: number;
 };
 type Expense = {
@@ -57,7 +59,7 @@ function MyHandoverPage() {
       const [r, e] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type")
+          .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method")
           .eq("received_by", user.id)
           .eq("approval_status", "pending_md")
           .lte("entry_date", closingDate)
@@ -110,7 +112,9 @@ function MyHandoverPage() {
     return () => { cancelled = true; };
   }, [user?.id, closingDate, reloadTick]);
 
-  const totalReceived = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  // Only Cash counts as the staff's physical cash. Non-cash goes to MD directly.
+  const totalReceived = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
@@ -153,10 +157,13 @@ function MyHandoverPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="rounded-lg border bg-emerald-500/10 p-3">
           <div className="flex items-center gap-1 text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
-            <TrendingUp className="h-3 w-3" /> আয়
+            <TrendingUp className="h-3 w-3" /> নগদ আয়
           </div>
           <div className="text-base font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
           <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
+          {totalMdReceived > 0 && (
+            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} (ব্যালেন্সে নয়)</div>
+          )}
         </div>
         <div className="rounded-lg border bg-rose-500/10 p-3">
           <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
@@ -218,17 +225,22 @@ function MyHandoverPage() {
                 ) : receipts.length === 0 ? (
                   <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
                 ) : (
-                  receipts.map((r, idx) => (
+                  receipts.map((r, idx) => {
+                    const mdRecv = isMdReceivedMethod(r.method);
+                    return (
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
                         <div className="text-sm truncate">{r.passenger_name || "—"}</div>
                         <div className="text-xs text-muted-foreground font-mono">
                           {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                         </div>
+                        {mdRecv && (
+                          <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
+                        )}
                       </div>
                       <div className="text-right">
-                        <div className="text-sm tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-                          +{fmt(Number(r.amount))}
+                        <div className={`text-sm tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
                         </div>
                         {Number(r.discount || 0) > 0 && (
                           <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
@@ -237,7 +249,8 @@ function MyHandoverPage() {
                         )}
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

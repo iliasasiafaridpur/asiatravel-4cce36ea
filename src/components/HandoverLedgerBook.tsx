@@ -15,6 +15,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate, formatDateTime } from "@/lib/modules";
 import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
+import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
@@ -42,6 +43,7 @@ type Receipt = {
   entry_date: string;
   passenger_name: string;
   amount: number;
+  method: string | null;
   service_type: string;
   service_table: string | null;
   service_row_id: string | null;
@@ -134,7 +136,7 @@ export function HandoverLedgerInline({
       if (ids.length > 0) {
         const { data: recData } = await supabase
           .from("payment_receipts")
-          .select("id,receipt_id,entry_date,passenger_name,amount,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+          .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
           .in("handover_id", ids)
           .not("source", "eq", "discount");
         recs = (recData ?? []) as Receipt[];
@@ -180,7 +182,7 @@ export function HandoverLedgerInline({
           if (rowIds.length === 0) continue;
           const { data: more } = await supabase
             .from("payment_receipts")
-            .select("id,receipt_id,entry_date,passenger_name,amount,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+            .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
             .eq("service_table", t)
             .in("service_row_id", rowIds)
             .not("source", "eq", "discount");
@@ -406,7 +408,9 @@ function HandoverCard({
   const status = handover.status ?? "pending";
   const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
   const confirmed = Number(handover.confirmed_amount ?? 0);
-  const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  
+  const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
   const isPending = status === "pending";
   const [cancelling, setCancelling] = useState(false);
@@ -659,7 +663,10 @@ function HandoverCard({
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-3 py-2 text-right tabular-nums">
-                    <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                    <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                    {isMdReceivedMethod(r.method) && (
+                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">MD রিসিভ · {r.method}<br />(ক্যাশে নয়)</div>
+                    )}
                     {r.received_by_name && (
                       <div className="text-xs text-muted-foreground font-normal mt-0.5">আদায়কারী: {r.received_by_name}</div>
                     )}
@@ -703,7 +710,12 @@ function HandoverCard({
             })}
             <tr className="border-t bg-muted/30 font-semibold">
               <td className="px-3 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
-              <td className="px-3 py-1.5 text-right tabular-nums text-emerald-700 dark:text-emerald-400">{fmt(totalReceipts)}</td>
+              <td className="px-3 py-1.5 text-right tabular-nums">
+                <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
+                {mdReceipts > 0 && (
+                  <div className="text-[11px] text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
+                )}
+              </td>
               <td className="px-3 py-1.5" />
               {approveAction && <td className="px-3 py-1.5 text-right">
                 {approveAction && isPending && firstPendingReceipt && (

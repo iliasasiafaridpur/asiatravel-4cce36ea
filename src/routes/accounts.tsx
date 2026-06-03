@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
+import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
 
 export const Route = createFileRoute("/accounts")({
@@ -216,7 +217,10 @@ function AccountsPage() {
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
 
-  const periodIncome = fRecv.reduce((s, r) => s + Number(r.amount || 0), 0);
+  // Only Cash receipts add to the staff's balance. Non-cash (bKash, Nagad, Md cash…)
+  // go straight to MD — kept as entries but excluded from balance.
+  const periodIncome = fRecv.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const periodMdIncome = fRecv.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
   const balance = periodIncome - periodHand - periodExp;
@@ -236,7 +240,8 @@ function AccountsPage() {
     items.sort((a, b) => (a.date === b.date ? a.created.localeCompare(b.created) : a.date.localeCompare(b.date)));
     let bal = 0;
     return items.map((it) => {
-      if (it.kind === "received") bal += Number(it.row.amount);
+      // Non-cash (MD-received) income does NOT change the running balance.
+      if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number(it.row.amount) : 0;
       else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
@@ -354,12 +359,15 @@ function AccountsPage() {
     const totals = timeline.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
-        if (it.kind === "received") acc.inAmt += amt;
+        if (it.kind === "received") {
+          if (isCashMethod((it.row as Recv).method)) acc.inAmt += amt;
+          else acc.mdAmt += amt;
+        }
         else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
         else acc.outAmt += amt;
         return acc;
       },
-      { inAmt: 0, outAmt: 0 },
+      { inAmt: 0, outAmt: 0, mdAmt: 0 },
     );
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
@@ -384,7 +392,8 @@ function AccountsPage() {
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
 <div class="summary">
   <div>হাতে আছে: <b>${fmt(balance)}</b></div>
-  <div class="in">আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
+  <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
+  ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
 </div>
 ${node.innerHTML.replace(
@@ -427,7 +436,7 @@ ${node.innerHTML.replace(
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
-        <StatCard label="মোট আয়" value={periodIncome} icon={TrendingUp} tone="success" />
+        <StatCard label="নগদ আয় (ব্যালেন্সে)" value={periodIncome} icon={TrendingUp} tone="success" />
         <StatCard label="Submit Cash Handover" value={periodHand} icon={Send} tone="info" />
         <StatCard label="মোট খরচ" value={periodExp} icon={TrendingDown} tone="warning" />
       </div>
@@ -803,6 +812,9 @@ ${node.innerHTML.replace(
                           {isIn ? "+" : "−"} {fmt(amt)}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
+                        {isIn && isMdReceivedMethod(r.method) && (
+                          <p className="text-[10px] text-sky-600 dark:text-sky-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}<br />ব্যালেন্সে যোগ হয়নি</p>
+                        )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
@@ -837,6 +849,7 @@ ${node.innerHTML.replace(
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const mdRecv = isIn && isMdReceivedMethod(r.method);
                   const name = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const service = isIn ? r.service_type : isHand ? "জমা" : "খরচ";
@@ -878,10 +891,10 @@ ${node.innerHTML.replace(
                       <td>{i + 1}</td>
                       <td>{formatDate(it.date)}</td>
                       <td className="wrap">{name}</td>
-                      <td className="wrap">{service}</td>
-                      <td className="wrap">{region}</td>
+                      <td className="wrap">{service}{isIn && r.method ? ` · ${r.method}` : ""}</td>
+                      <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className="num in">{isIn ? `+ ${fmt(amt)}` : ""}</td>
+                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
                       <td className="wrap" style={{whiteSpace:"nowrap"}}>
                         {advLines.map((l, idx) => (
@@ -914,19 +927,23 @@ ${node.innerHTML.replace(
                       bits.push(svc.country);
                     }
                   }
+                  const mdRecv = isMdReceivedMethod(r.method);
                   return (
                     <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
-                      <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
                         <ArrowDownLeft className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className="font-bold text-emerald-600 tabular-nums text-sm whitespace-nowrap">+ {fmt(Number(r.amount))}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${mdRecv ? "text-sky-600" : "text-emerald-600"}`}>+ {fmt(Number(r.amount))}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
-                           {r.service_type}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                           {r.service_type}{r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
+                         {mdRecv && (
+                           <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
+                         )}
                        </div>
                        <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
                      </div>

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, BookOpen } from "lucide-react";
 import { HandoverLedgerBook } from "@/components/HandoverLedgerBook";
 import { formatDateTime } from "@/lib/modules";
+import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
@@ -20,6 +21,7 @@ type Receipt = {
   passenger_name?: string | null; entry_date: string; created_at?: string | null;
   service_table?: string | null; service_row_id?: string | null;
   service_type?: string | null;
+  method?: string | null;
   discount?: number;
 };
 type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null };
@@ -53,7 +55,7 @@ export function StaffHandoverDialog({
       const [r, e] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type")
+          .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method")
           .eq("received_by", user.id)
           .eq("approval_status", "pending_md")
           .lte("entry_date", closingDate)
@@ -109,7 +111,8 @@ export function StaffHandoverDialog({
     };
   }, [open, user?.id, closingDate]);
 
-  const totalReceived = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalReceived = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
@@ -171,10 +174,13 @@ export function StaffHandoverDialog({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg border bg-emerald-500/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-emerald-600 dark:text-emerald-400">
-                <TrendingUp className="h-3 w-3" /> আয়
+                <TrendingUp className="h-3 w-3" /> নগদ আয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
               <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
+              {totalMdReceived > 0 && (
+                <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD: {fmt(totalMdReceived)}</div>
+              )}
             </div>
             <div className="rounded-lg border bg-rose-500/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
@@ -210,17 +216,22 @@ export function StaffHandoverDialog({
               ) : receipts.length === 0 ? (
                 <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
               ) : (
-                receipts.map((r) => (
+                receipts.map((r) => {
+                  const mdRecv = isMdReceivedMethod(r.method);
+                  return (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
                       <div className="truncate">{r.passenger_name || "—"}</div>
                       <div className="text-[10px] text-muted-foreground font-mono">
                         {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
                       </div>
+                      {mdRecv && (
+                        <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
+                      )}
                     </div>
                     <div className="text-right">
-                      <div className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-                        +{fmt(Number(r.amount))}
+                      <div className={`tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                        {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
                       </div>
                       {Number(r.discount || 0) > 0 && (
                         <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
@@ -229,7 +240,8 @@ export function StaffHandoverDialog({
                       )}
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

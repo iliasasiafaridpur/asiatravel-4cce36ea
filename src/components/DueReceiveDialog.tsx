@@ -15,6 +15,7 @@ import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate } from "@/lib/modules";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
@@ -573,11 +574,16 @@ export function DueReceiveDialog({
                     <Select value={method} onValueChange={setMethod}>
                       <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {["Cash","bKash","Nagad","Rocket","Bank Transfer","Cheque","Other"].map((m) => (
+                        {DUE_RECEIVE_METHODS.map((m) => (
                           <SelectItem key={m} value={m}>{m}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {isMdReceivedMethod(method) && (
+                      <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                        ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="text-[11px] text-muted-foreground -mt-1">
