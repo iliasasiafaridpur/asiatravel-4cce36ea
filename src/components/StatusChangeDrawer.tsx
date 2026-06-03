@@ -513,14 +513,18 @@ export function StatusChangeDrawer({
                     <Select value={method} onValueChange={setMethod}>
                       <SelectTrigger className="h-8 text-sm px-2"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Bank">Bank</SelectItem>
-                        <SelectItem value="bKash">bKash</SelectItem>
-                        <SelectItem value="Nagad">Nagad</SelectItem>
+                        {DUE_RECEIVE_METHODS.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+                {isMdReceivedMethod(method) && (
+                  <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
+                    ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+                  </div>
+                )}
                 {(payN > 0 || discN > 0) && (
                   <div className="text-[10px] flex justify-between items-center px-1 tabular-nums">
                     <span className="text-muted-foreground">
