@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
-import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, DUE_RECEIVE_METHODS } from "@/lib/payment-methods";
 
 
 export const Route = createFileRoute("/accounts")({
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
 });
 
-const METHODS = ["Hand Cash", "Cash", "Bank", "bKash", "Nagad", "Other"];
+const METHODS = [...DUE_RECEIVE_METHODS];
 const EXPENSE_CATEGORIES = ["Office", "Transport", "Food", "Stationery", "Bill", "Other"];
 const RECEIVERS = ["MD Sir", "Office", "Bank Deposit", "Other"];
 
@@ -91,7 +91,7 @@ function AccountsPage() {
   const [manualOpen, setManualOpen] = useState(false);
   const [manualTab, setManualTab] = useState<"income" | "expense">("income");
   const [eForm, setEForm] = useState({ entry_date: today(), category: "Office", purpose: "", amount: "", remarks: "" });
-  const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
+  const [iForm, setIForm] = useState({ entry_date: today(), passenger_name: "", amount: "", method: "Cash", remarks: "" });
   const [savingIncome, setSavingIncome] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
 
@@ -318,7 +318,7 @@ function AccountsPage() {
       } as never);
       if (error) return toast.error(error.message);
       toast.success("✓ আয় সংরক্ষিত");
-      setIForm({ entry_date: today(), passenger_name: "", amount: "", method: "Hand Cash", remarks: "" });
+      setIForm({ entry_date: today(), passenger_name: "", amount: "", method: "Cash", remarks: "" });
       setManualOpen(false);
       void reload(true);
     } catch (e) {
@@ -571,6 +571,11 @@ ${node.innerHTML.replace(
                         <LookupSelect kind="payment_method" defaults={METHODS} value={iForm.method} onChange={(v) => setIForm({ ...iForm, method: v })} />
                       </div>
                     </div>
+                    {isMdReceivedMethod(iForm.method) && (
+                      <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-2 text-[11px] text-sky-700 dark:text-sky-300">
+                        ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({iForm.method})।
+                      </div>
+                    )}
                     <div>
                       <Label className="text-xs">উৎস / নাম</Label>
                       <Input placeholder="যেমন: কাস্টমার নাম বা উৎস" value={iForm.passenger_name} onChange={(e) => setIForm({ ...iForm, passenger_name: e.target.value })} />
