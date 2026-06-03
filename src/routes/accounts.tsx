@@ -367,7 +367,7 @@ function AccountsPage() {
         else acc.outAmt += amt;
         return acc;
       },
-      { inAmt: 0, outAmt: 0 },
+      { inAmt: 0, outAmt: 0, mdAmt: 0 },
     );
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
