@@ -928,7 +928,7 @@ ${node.innerHTML.replace(
                         ))}
                       </td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
-                      <td className="num">{fmt(it.running)}</td>
+                      <td className="num">{fmt(running)}</td>
                     </tr>
                   );
                 })}
