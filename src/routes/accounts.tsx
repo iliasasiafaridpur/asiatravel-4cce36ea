@@ -108,21 +108,19 @@ function AccountsPage() {
     let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date,approved_at,approved_by").order("created_at", { ascending: false });
     let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by,handover_id,linked_source_table,linked_source_id").order("created_at", { ascending: false });
 
-    if (dateFrom) {
-      recvQuery = recvQuery.gte("entry_date", dateFrom);
-      handQuery = handQuery.gte("entry_date", dateFrom);
-      expQuery = expQuery.gte("entry_date", dateFrom);
-    }
+    // Load the opening history too. The visible list is still filtered below,
+    // but "হাতে আছে" must be the real running cash balance as of dateTo — not
+    // only this period's net. Otherwise a previous handover inside today's
+    // filter incorrectly reduces today's newly received cash.
     if (dateTo) {
       recvQuery = recvQuery.lte("entry_date", dateTo);
       handQuery = handQuery.lte("entry_date", dateTo);
       expQuery = expQuery.lte("entry_date", dateTo);
     }
-    if (!hasDateFilter) {
-      recvQuery = recvQuery.limit(parsedLimit);
-      handQuery = handQuery.limit(parsedLimit);
-      expQuery = expQuery.limit(parsedLimit);
-    }
+    const historyLimit = Math.max(parsedLimit, 5000);
+    recvQuery = recvQuery.limit(historyLimit);
+    handQuery = handQuery.limit(historyLimit);
+    expQuery = expQuery.limit(historyLimit);
 
     const [r, h, e] = await Promise.all([
       seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
@@ -223,7 +221,14 @@ function AccountsPage() {
   const periodMdIncome = fRecv.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
-  const balance = periodIncome - periodHand - periodExp;
+  const balance = useMemo(() => {
+    const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+    const cashOut = handovers
+      .filter((h) => (h.status ?? "approved") === "approved")
+      .reduce((s, h) => s + Number(h.amount || 0), 0);
+    const spent = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    return cashIn - cashOut - spent;
+  }, [received, handovers, expenses]);
 
   // Build full chronological timeline (all data) with running balance from 0
   type TLItem =
