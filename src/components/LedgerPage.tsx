@@ -1823,7 +1823,7 @@ export function LedgerPage({ module: mod }: Props) {
                     {info?.mobile && (
                       <div>
                         <span className="opacity-60">Mobile:</span>{" "}
-                        <span className="text-foreground font-medium">{info.mobile}</span>
+                        <span className={`font-medium ${mobileColorTextClass(colorFor(String(info.mobile))) || "text-foreground"}`}>{info.mobile}</span>
                       </div>
                     )}
                     {svc && (
