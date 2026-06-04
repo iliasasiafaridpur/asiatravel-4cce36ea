@@ -94,6 +94,7 @@ function selectColumns(mod: ModuleSchema): string {
 
 export function ModulePage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
+  const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
