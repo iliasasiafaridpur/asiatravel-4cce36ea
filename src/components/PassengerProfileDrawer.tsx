@@ -72,16 +72,49 @@ export function PassengerProfileDrawer({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("payment_receipts")
-        .select("id, entry_date, amount, method, receipt_id, remarks, received_by_name, approval_status")
-        .eq("service_table", serviceTable)
-        .eq("service_row_id", row.id)
-        .not("source", "eq", "discount")
-        .not("method", "ilike", "discount")
-        .order("entry_date", { ascending: false });
+      const cols =
+        "id, entry_date, amount, method, receipt_id, remarks, received_by_name, approval_status";
+      // Some service payments are recorded only on the agency_ledger mirror of
+      // this service row (e.g. when received directly, not via Due Receive).
+      // Find those mirror rows so their receipts also show in the history.
+      const { data: mirrors } = await supabase
+        .from("agency_ledger")
+        .select("id")
+        .eq("source_table", serviceTable)
+        .eq("source_id", row.id);
+      const ledgerIds = ((mirrors ?? []) as { id: string }[]).map((m) => m.id);
+
+      const [directRes, ledgerRes] = await Promise.all([
+        supabase
+          .from("payment_receipts")
+          .select(cols)
+          .eq("service_table", serviceTable)
+          .eq("service_row_id", row.id)
+          .not("source", "eq", "discount")
+          .not("method", "ilike", "discount"),
+        ledgerIds.length
+          ? supabase
+              .from("payment_receipts")
+              .select(cols)
+              .eq("service_table", "agency_ledger")
+              .in("service_row_id", ledgerIds)
+              .not("source", "eq", "discount")
+              .not("method", "ilike", "discount")
+          : Promise.resolve({ data: [] as Receipt[] }),
+      ]);
+
+      const merged = new Map<string, Receipt>();
+      for (const r of [
+        ...((directRes.data ?? []) as Receipt[]),
+        ...((ledgerRes.data ?? []) as Receipt[]),
+      ]) {
+        merged.set(r.id, r);
+      }
+      const list = Array.from(merged.values()).sort((a, b) =>
+        String(b.entry_date ?? "").localeCompare(String(a.entry_date ?? "")),
+      );
       if (!cancelled) {
-        setReceipts((data ?? []) as Receipt[]);
+        setReceipts(list);
         setLoading(false);
       }
     })();
