@@ -25,8 +25,6 @@ export function mobileColorTextClass(color: MobileColor | undefined): string {
 
 const normalize = (mobile: string) => mobile.trim();
 
-const QUERY_KEY = ["mobile_colors"] as const;
-
 type Row = { mobile: string; color: string };
 
 /** Plain serialization-safe map of mobile -> color. */
@@ -92,51 +90,27 @@ function ensureRealtime() {
  * and crashes every data page. Keep this a plain Record.
  */
 export function useMobileColors() {
-  const qc = useQueryClient();
+  const [map, setMap] = useState<MobileColorMap>(colorCache);
 
-  const { data } = useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: async (): Promise<MobileColorMap> => {
-      const { data, error } = await supabase
-        .from("mobile_colors" as never)
-        .select("mobile,color");
-      if (error) throw error;
-      const map: MobileColorMap = {};
-      for (const r of (data as unknown as Row[]) ?? []) {
-        map[normalize(r.mobile)] = (r.color as MobileColor) ?? "default";
-      }
-      return map;
-    },
-    staleTime: 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-  // Realtime: refresh the map when any color tag changes.
   useEffect(() => {
-    const ch = supabase
-      .channel("rt_mobile_colors")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "mobile_colors" },
-        () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
-      )
-      .subscribe();
+    listeners.add(setMap);
+    ensureRealtime();
+    if (!loaded) void loadMobileColors();
     return () => {
-      supabase.removeChannel(ch);
+      listeners.delete(setMap);
     };
-  }, [qc]);
+  }, []);
 
   const colorFor = (mobile: string | null | undefined): MobileColor => {
-    if (!mobile || !data) return "default";
-    return data[normalize(mobile)] ?? "default";
+    if (!mobile) return "default";
+    return map[normalize(mobile)] ?? "default";
   };
 
-  return { map: data, colorFor };
+  return { map, colorFor };
 }
 
 /** Hook providing a setter that upserts/deletes a mobile color tag. */
 export function useSetMobileColor() {
-  const qc = useQueryClient();
   return async (mobile: string, color: MobileColor) => {
     const m = normalize(mobile);
     if (!m) return;
@@ -149,6 +123,10 @@ export function useSetMobileColor() {
           onConflict: "mobile",
         } as never);
     }
-    await qc.invalidateQueries({ queryKey: QUERY_KEY });
+    colorCache = { ...colorCache };
+    if (color === "default") delete colorCache[m];
+    else colorCache[m] = color;
+    loaded = true;
+    emit();
   };
 }
