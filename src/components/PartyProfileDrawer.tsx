@@ -37,6 +37,7 @@ export function PartyProfileDrawer({
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
+  const { colorFor } = useMobileColors();
 
   useEffect(() => {
     if (!open || !partyName) {
