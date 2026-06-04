@@ -4,7 +4,7 @@
 //   • Static assets (JS/CSS/fonts/images): StaleWhileRevalidate → instant + fresh.
 //   • Supabase / API: NetworkFirst with short timeout, fall back to cache when offline.
 
-const VERSION = "v5";
+const VERSION = "v6-mobile-color-cache-fix";
 const HTML_CACHE = `html-${VERSION}`;
 const ASSET_CACHE = `assets-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
@@ -65,6 +65,10 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || fetchPromise;
 }
 
+function isAppBuildAsset(url) {
+  return url.pathname.startsWith("/assets/") || url.pathname.includes("/@fs/") || url.pathname.includes("/src/");
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -102,9 +106,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) Static same-origin assets → StaleWhileRevalidate
+  // 2) Static same-origin assets → Network-first for app JS/CSS, SWR for media.
+  // App code must not be served stale after a hotfix, otherwise a fixed bug can
+  // keep crashing published data pages until the user manually clears storage.
   if (isSameOrigin) {
     const dest = req.destination;
+    if (isAppBuildAsset(url) || ["script", "style", "worker"].includes(dest) || /\.(?:js|mjs|css)$/i.test(url.pathname)) {
+      event.respondWith(networkFirst(req, ASSET_CACHE, 3000));
+      return;
+    }
     if (["script", "style", "font", "image", "worker"].includes(dest) ||
         /\.(?:js|mjs|css|woff2?|ttf|otf|png|jpe?g|webp|svg|gif|ico)$/i.test(url.pathname)) {
       event.respondWith(staleWhileRevalidate(req, ASSET_CACHE));

@@ -29,6 +29,17 @@ import {
 
 import appCss from "../styles.css?url";
 
+function clearBrokenClientCaches() {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.removeItem("rq_cache_v1"); } catch { /* ignore */ }
+  try { window.localStorage.removeItem("rq_cache_v2"); } catch { /* ignore */ }
+  try { window.localStorage.removeItem("rq_cache_v3"); } catch { /* ignore */ }
+  if (typeof caches !== "undefined") void caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));
+  if (navigator.serviceWorker?.getRegistrations) {
+    void navigator.serviceWorker.getRegistrations().then((regs) => Promise.all(regs.map((reg) => reg.unregister())));
+  }
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -55,6 +66,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
 
+  useEffect(() => {
+    try {
+      const key = "asia-travel:root-error-cache-recovered:v1";
+      if (window.sessionStorage.getItem(key)) return;
+      window.sessionStorage.setItem(key, "1");
+      clearBrokenClientCaches();
+      window.setTimeout(() => window.location.reload(), 250);
+    } catch { /* ignore */ }
+  }, []);
+
   if (isRecoverableAssetError(error) && tryRecoverFromStaleAssets()) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4 text-sm text-muted-foreground">
@@ -75,6 +96,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
+              clearBrokenClientCaches();
               router.invalidate();
               reset();
             }}
