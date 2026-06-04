@@ -30,23 +30,31 @@ const QUERY_KEY = ["mobile_colors"] as const;
 
 type Row = { mobile: string; color: string };
 
+/** Plain serialization-safe map of mobile -> color. */
+export type MobileColorMap = Record<string, MobileColor>;
+
 /**
- * Returns a Map of mobile -> color plus realtime updates. Cached via React
- * Query so multiple consumers share a single fetch.
+ * Returns a plain object of mobile -> color plus realtime updates. Cached via
+ * React Query so multiple consumers share a single fetch.
+ *
+ * IMPORTANT: the data MUST stay JSON-serializable (a plain object, NOT a Map).
+ * The React Query cache is persisted to localStorage; a Map serializes to "{}"
+ * and would deserialize to a plain object, which then breaks any `.get()` call
+ * and crashes every data page. Keep this a plain Record.
  */
 export function useMobileColors() {
   const qc = useQueryClient();
 
   const { data } = useQuery({
     queryKey: QUERY_KEY,
-    queryFn: async (): Promise<Map<string, MobileColor>> => {
+    queryFn: async (): Promise<MobileColorMap> => {
       const { data, error } = await supabase
         .from("mobile_colors" as never)
         .select("mobile,color");
       if (error) throw error;
-      const map = new Map<string, MobileColor>();
+      const map: MobileColorMap = {};
       for (const r of (data as unknown as Row[]) ?? []) {
-        map.set(normalize(r.mobile), (r.color as MobileColor) ?? "default");
+        map[normalize(r.mobile)] = (r.color as MobileColor) ?? "default";
       }
       return map;
     },
@@ -70,8 +78,8 @@ export function useMobileColors() {
   }, [qc]);
 
   const colorFor = (mobile: string | null | undefined): MobileColor => {
-    if (!mobile) return "default";
-    return data?.get(normalize(mobile)) ?? "default";
+    if (!mobile || !data) return "default";
+    return data[normalize(mobile)] ?? "default";
   };
 
   return { map: data, colorFor };
