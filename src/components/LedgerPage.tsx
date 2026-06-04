@@ -1613,7 +1613,7 @@ export function LedgerPage({ module: mod }: Props) {
                           </div>
                         )}
                         {mobile && (
-                          <div className="text-[11px] text-muted-foreground leading-tight">
+                          <div className={`text-[11px] leading-tight ${mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}`}>
                             📱 {mobile}
                           </div>
                         )}
