@@ -8,6 +8,8 @@ import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass } from "@/lib/modules";
 import { CheckCircle2, Clock, Circle, ReceiptText } from "lucide-react";
+import { MobileColorPicker } from "@/components/MobileColorPicker";
+import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
 type Row = Record<string, unknown> & { id: string };
 
