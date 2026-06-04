@@ -171,7 +171,10 @@ export function PassengerProfileDrawer({
                   </div>
                   <div>
                     <span className="text-muted-foreground text-xs block">Mobile</span>
-                    {val(row.mobile)}
+                    <span className="inline-flex items-center gap-2 flex-wrap">
+                      <span className={mobileColorTextClass(mobileColor)}>{val(row.mobile)}</span>
+                      {row.mobile ? <MobileColorPicker mobile={String(row.mobile)} /> : null}
+                    </span>
                   </div>
                   <div className="col-span-2">
                     <span className="text-muted-foreground text-xs block">Country / Route</span>
