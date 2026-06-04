@@ -424,7 +424,7 @@ ${node.innerHTML.replace(
   `<td></td>` +
   `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
-  `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
+  `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
 )}
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
