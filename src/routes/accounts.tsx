@@ -85,6 +85,7 @@ function AccountsPage() {
 
   const printRef = useRef<HTMLDivElement>(null);
   const reloadSeqRef = useRef(0);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Dialog forms
   
@@ -142,13 +143,24 @@ function AccountsPage() {
 
   useEffect(() => {
     void reload(true);
+    // Debounce realtime refreshes: any change across the 3 tables (from ANY
+    // user) used to trigger an immediate full reload (5000 rows × 3 tables).
+    // Bursts of changes caused the UI to freeze. Coalesce them into one reload.
+    const scheduleReload = () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      reloadTimerRef.current = setTimeout(() => { void reload(true); }, 1200);
+    };
     const ch = supabase.channel("my_acct_v1")
-      .on("postgres_changes", { event: "*", schema: "public", table: "payment_receipts" }, () => void reload(true))
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, () => void reload(true))
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => void reload(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_receipts" }, scheduleReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, scheduleReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, scheduleReload)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      supabase.removeChannel(ch);
+    };
   }, [user?.id, reload]);
+
 
   // Filter mode: date range takes priority over latest-N
   const parsedN = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
@@ -258,6 +270,20 @@ function AccountsPage() {
     if (latestN === 0) return [];
     return desc.slice(0, latestN);
   }, [fullAsc, latestN, useDateFilter, inDateRange]);
+
+  // Print rows — running balance is SCOPED to the filtered entries only
+  // (starts from 0), so a "সর্বশেষ ৩" print shows exactly those 3 lines and
+  // does NOT carry the historical/actual balance (e.g. 38,000) into the table.
+  const printAscRows = useMemo<{ it: TLItem & { running: number }; running: number }[]>(() => {
+    const asc = [...timeline].reverse();
+    let bal = 0;
+    return asc.map((it) => {
+      if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
+      else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? Number((it.row as Hand).amount) : 0;
+      else bal -= Number((it.row as Exp).amount);
+      return { it, running: bal };
+    });
+  }, [timeline]);
 
 
   // Save expense
@@ -373,6 +399,9 @@ function AccountsPage() {
       },
       { inAmt: 0, outAmt: 0, mdAmt: 0 },
     );
+    // Balance shown on the print is SCOPED to the filtered entries (net of the
+    // printed lines only), so it never carries the historical 38,000 balance.
+    const scopedBalance = totals.inAmt - totals.outAmt;
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
   @page{size:A4 ${printOrientation};margin:5mm}
@@ -395,7 +424,7 @@ function AccountsPage() {
 <h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
 <div class="summary">
-  <div>হাতে আছে: <b>${fmt(balance)}</b></div>
+  <div>এই ${timeline.length} লেনদেনের নিট: <b>${fmt(scopedBalance)}</b></div>
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
   ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
@@ -407,7 +436,7 @@ ${node.innerHTML.replace(
   `<td></td>` +
   `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
-  `<td class="num" style="font-weight:700">${fmt(balance)}</td></tr></tbody>`
+  `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
 )}
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
@@ -853,7 +882,7 @@ ${node.innerHTML.replace(
                 </tr>
               </thead>
               <tbody>
-                {[...timeline].reverse().map((it, i) => {
+                {printAscRows.map(({ it, running }, i) => {
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
@@ -911,7 +940,7 @@ ${node.innerHTML.replace(
                         ))}
                       </td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
-                      <td className="num">{fmt(it.running)}</td>
+                      <td className="num">{fmt(running)}</td>
                     </tr>
                   );
                 })}
