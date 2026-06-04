@@ -138,7 +138,7 @@ function AccountsPage() {
 
     setSyncing(false);
     setLoading(false);
-  }, [user?.id, seeAll, dateFrom, dateTo, latestInput]);
+  }, [user?.id, seeAll, dateTo, latestInput]);
 
   useEffect(() => {
     void reload(true);
