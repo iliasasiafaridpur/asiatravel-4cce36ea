@@ -132,9 +132,10 @@ export function PartyProfileDrawer({
               <div className="text-lg font-semibold leading-tight">{partyName}</div>
               <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
                 {contact?.phone && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{contact.phone}</span>
+                    <span className={mobileColorTextClass(colorFor(contact.phone))}>{contact.phone}</span>
+                    <MobileColorPicker mobile={contact.phone} />
                   </div>
                 )}
                 {contact?.address && (
