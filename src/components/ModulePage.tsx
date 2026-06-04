@@ -525,6 +525,13 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
+    // Mobile sub-line with per-number color tag applied.
+    const mobileSub = (mobile: string) => (
+      <div className="text-xs leading-tight">
+        <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
+        <span className={mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}>{mobile}</span>
+      </div>
+    );
     // Single unified badge — click opens the right-side confirmation drawer.
     // The drawer owns the status dropdown + automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
