@@ -870,7 +870,7 @@ ${node.innerHTML.replace(
                 </tr>
               </thead>
               <tbody>
-                {[...timeline].reverse().map((it, i) => {
+                {printAscRows.map(({ it, running }, i) => {
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
