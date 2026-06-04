@@ -5,6 +5,7 @@ import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { LookupSelect } from "@/components/LookupSelect";
 import {
   Select,
@@ -109,6 +110,7 @@ function errMsg(e: unknown): string {
 
 export function LedgerPage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
+  const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
   const [ticketFlightMap, setTicketFlightMap] = useState<Map<string, string>>(new Map());
   const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
@@ -1611,7 +1613,7 @@ export function LedgerPage({ module: mod }: Props) {
                           </div>
                         )}
                         {mobile && (
-                          <div className="text-[11px] text-muted-foreground leading-tight">
+                          <div className={`text-[11px] leading-tight ${mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}`}>
                             📱 {mobile}
                           </div>
                         )}
@@ -1821,7 +1823,7 @@ export function LedgerPage({ module: mod }: Props) {
                     {info?.mobile && (
                       <div>
                         <span className="opacity-60">Mobile:</span>{" "}
-                        <span className="text-foreground font-medium">{info.mobile}</span>
+                        <span className={`font-medium ${mobileColorTextClass(colorFor(String(info.mobile))) || "text-foreground"}`}>{info.mobile}</span>
                       </div>
                     )}
                     {svc && (

@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
 import { Phone, MapPin, FileText, TrendingUp, TrendingDown } from "lucide-react";
+import { MobileColorPicker } from "@/components/MobileColorPicker";
+import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null; created_at?: string | null };
@@ -35,6 +37,7 @@ export function PartyProfileDrawer({
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
+  const { colorFor } = useMobileColors();
 
   useEffect(() => {
     if (!open || !partyName) {
@@ -129,9 +132,10 @@ export function PartyProfileDrawer({
               <div className="text-lg font-semibold leading-tight">{partyName}</div>
               <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
                 {contact?.phone && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{contact.phone}</span>
+                    <span className={mobileColorTextClass(colorFor(contact.phone))}>{contact.phone}</span>
+                    <MobileColorPicker mobile={contact.phone} />
                   </div>
                 )}
                 {contact?.address && (

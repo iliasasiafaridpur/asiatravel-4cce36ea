@@ -641,6 +641,24 @@ export type Database = {
         }
         Relationships: []
       }
+      mobile_colors: {
+        Row: {
+          color: string
+          mobile: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          mobile: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          mobile?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       passengers: {
         Row: {
           created_at: string

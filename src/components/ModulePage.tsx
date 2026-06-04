@@ -37,6 +37,7 @@ import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueRece
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
+import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
 const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
@@ -93,6 +94,7 @@ function selectColumns(mod: ModuleSchema): string {
 
 export function ModulePage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
+  const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -523,6 +525,13 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
+    // Mobile sub-line with per-number color tag applied.
+    const mobileSub = (mobile: string) => (
+      <div className="text-xs leading-tight">
+        <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
+        <span className={mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}>{mobile}</span>
+      </div>
+    );
     // Single unified badge — click opens the right-side confirmation drawer.
     // The drawer owns the status dropdown + automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
@@ -610,7 +619,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[140px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
-              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
           { key: "trip", header: "Trip", render: (r) => (
@@ -663,7 +672,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
-              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
           )},
@@ -717,7 +726,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
-              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
           { key: "visa", header: "Visa Info", render: (r) => (
@@ -767,7 +776,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className="text-sm">📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.phone ? <div className={`text-sm ${mobileColorTextClass(colorFor(String(r.phone)))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
               {r.address ? subLine("📍", String(r.address)) : null}
             </div>
           )},
@@ -778,7 +787,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect]);
+  }, [mod, computeValue, handleStatusSelect, colorFor]);
 
   return (
     <div className="space-y-4">

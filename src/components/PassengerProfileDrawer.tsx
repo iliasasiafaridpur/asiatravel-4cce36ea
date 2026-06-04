@@ -8,6 +8,8 @@ import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass } from "@/lib/modules";
 import { CheckCircle2, Clock, Circle, ReceiptText } from "lucide-react";
+import { MobileColorPicker } from "@/components/MobileColorPicker";
+import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -60,6 +62,7 @@ export function PassengerProfileDrawer({
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const { colorFor } = useMobileColors();
 
   useEffect(() => {
     if (!open || !row?.id) {
@@ -88,6 +91,8 @@ export function PassengerProfileDrawer({
   }, [open, row?.id, serviceTable]);
 
   if (!row) return null;
+
+  const mobileColor = colorFor(row.mobile ? String(row.mobile) : null);
 
   const sold = Number(row.sold_price ?? 0);
   const status = String(row.status ?? "");
@@ -171,7 +176,10 @@ export function PassengerProfileDrawer({
                   </div>
                   <div>
                     <span className="text-muted-foreground text-xs block">Mobile</span>
-                    {val(row.mobile)}
+                    <span className="inline-flex items-center gap-2 flex-wrap">
+                      <span className={mobileColorTextClass(mobileColor)}>{val(row.mobile)}</span>
+                      {row.mobile ? <MobileColorPicker mobile={String(row.mobile)} /> : null}
+                    </span>
                   </div>
                   <div className="col-span-2">
                     <span className="text-muted-foreground text-xs block">Country / Route</span>
