@@ -62,6 +62,7 @@ export function PassengerProfileDrawer({
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const { colorFor } = useMobileColors();
 
   useEffect(() => {
     if (!open || !row?.id) {
