@@ -412,7 +412,7 @@ function AccountsPage() {
 <h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
 <div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
 <div class="summary">
-  <div>হাতে আছে: <b>${fmt(balance)}</b></div>
+  <div>এই ${timeline.length} লেনদেনের নিট: <b>${fmt(scopedBalance)}</b></div>
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
   ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
