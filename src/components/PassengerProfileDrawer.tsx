@@ -92,6 +92,8 @@ export function PassengerProfileDrawer({
 
   if (!row) return null;
 
+  const mobileColor = colorFor(row.mobile ? String(row.mobile) : null);
+
   const sold = Number(row.sold_price ?? 0);
   const status = String(row.status ?? "");
   const isTicket = moduleKey === "tickets";
