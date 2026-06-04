@@ -787,7 +787,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect]);
+  }, [mod, computeValue, handleStatusSelect, colorFor]);
 
   return (
     <div className="space-y-4">
