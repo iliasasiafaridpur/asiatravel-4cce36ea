@@ -619,7 +619,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[140px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
-              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
           { key: "trip", header: "Trip", render: (r) => (
@@ -672,7 +672,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
-              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
           )},
@@ -726,7 +726,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
-              {r.mobile ? subLine("📱", String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
           { key: "visa", header: "Visa Info", render: (r) => (
