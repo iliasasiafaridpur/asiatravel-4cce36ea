@@ -110,6 +110,7 @@ function errMsg(e: unknown): string {
 
 export function LedgerPage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
+  const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
   const [ticketFlightMap, setTicketFlightMap] = useState<Map<string, string>>(new Map());
   const [ticketRouteMap, setTicketRouteMap] = useState<Map<string, string>>(new Map());
