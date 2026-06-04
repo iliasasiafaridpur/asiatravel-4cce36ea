@@ -143,13 +143,24 @@ function AccountsPage() {
 
   useEffect(() => {
     void reload(true);
+    // Debounce realtime refreshes: any change across the 3 tables (from ANY
+    // user) used to trigger an immediate full reload (5000 rows × 3 tables).
+    // Bursts of changes caused the UI to freeze. Coalesce them into one reload.
+    const scheduleReload = () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      reloadTimerRef.current = setTimeout(() => { void reload(true); }, 1200);
+    };
     const ch = supabase.channel("my_acct_v1")
-      .on("postgres_changes", { event: "*", schema: "public", table: "payment_receipts" }, () => void reload(true))
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, () => void reload(true))
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => void reload(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_receipts" }, scheduleReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_handovers" }, scheduleReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, scheduleReload)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      supabase.removeChannel(ch);
+    };
   }, [user?.id, reload]);
+
 
   // Filter mode: date range takes priority over latest-N
   const parsedN = /^\d+$/.test(latestInput.trim()) ? parseInt(latestInput.trim(), 10) : NaN;
