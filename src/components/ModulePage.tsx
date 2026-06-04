@@ -776,7 +776,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className="text-sm">📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.phone ? <div className={`text-sm ${mobileColorTextClass(colorFor(String(r.phone)))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
               {r.address ? subLine("📍", String(r.address)) : null}
             </div>
           )},
