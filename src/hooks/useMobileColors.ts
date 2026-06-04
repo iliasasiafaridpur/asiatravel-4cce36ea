@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -32,6 +31,56 @@ type Row = { mobile: string; color: string };
 
 /** Plain serialization-safe map of mobile -> color. */
 export type MobileColorMap = Record<string, MobileColor>;
+
+let colorCache: MobileColorMap = {};
+let loaded = false;
+let loading: Promise<void> | null = null;
+let realtimeStarted = false;
+const listeners = new Set<(next: MobileColorMap) => void>();
+
+const emit = () => listeners.forEach((listener) => listener(colorCache));
+
+function coerceColor(color: string | null | undefined): MobileColor {
+  return color === "blue" || color === "green" ? color : "default";
+}
+
+async function loadMobileColors() {
+  if (loading) return loading;
+  loading = (async () => {
+    const { data, error } = await supabase
+      .from("mobile_colors" as never)
+      .select("mobile,color");
+    if (error) {
+      console.warn("mobile color load failed", error);
+      return;
+    }
+    const next: MobileColorMap = {};
+    for (const r of (data as unknown as Row[]) ?? []) {
+      const mobile = normalize(r.mobile);
+      const color = coerceColor(r.color);
+      if (mobile && color !== "default") next[mobile] = color;
+    }
+    colorCache = next;
+    loaded = true;
+    emit();
+  })().finally(() => {
+    loading = null;
+  });
+  return loading;
+}
+
+function ensureRealtime() {
+  if (realtimeStarted) return;
+  realtimeStarted = true;
+  supabase
+    .channel("rt_mobile_colors_singleton")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "mobile_colors" },
+      () => void loadMobileColors(),
+    )
+    .subscribe();
+}
 
 /**
  * Returns a plain object of mobile -> color plus realtime updates. Cached via
