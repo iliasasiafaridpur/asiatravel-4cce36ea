@@ -85,6 +85,7 @@ function AccountsPage() {
 
   const printRef = useRef<HTMLDivElement>(null);
   const reloadSeqRef = useRef(0);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Dialog forms
   
