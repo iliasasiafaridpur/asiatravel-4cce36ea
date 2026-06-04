@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
 import { Phone, MapPin, FileText, TrendingUp, TrendingDown } from "lucide-react";
+import { MobileColorPicker } from "@/components/MobileColorPicker";
+import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null; created_at?: string | null };
