@@ -716,20 +716,7 @@ function HandoverCard({
                   <div className="text-[11px] text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
                 )}
               </td>
-              <td className="px-3 py-1.5" />
-              {approveAction && <td className="px-3 py-1.5 text-right">
-                {approveAction && isPending && firstPendingReceipt && (
-                  <Button
-                    size="sm"
-                    onClick={() => approveAction.onApprove(firstPendingReceipt)}
-                    disabled={approveAction.busyId === firstPendingReceipt.id || !firstPendingReceipt.handover_id}
-                    className="w-full max-w-full h-auto min-h-9 py-2 px-3 whitespace-normal break-words bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold shadow-md text-xs sm:text-sm leading-tight"
-                  >
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    <span className="break-words">🟢 টাকা পেলাম ({fmt(submitted)})</span>
-                  </Button>
-                )}
-              </td>}
+              <td className="px-3 py-1.5" colSpan={approveAction ? 2 : 1} />
             </tr>
           </tbody>
         </table>
