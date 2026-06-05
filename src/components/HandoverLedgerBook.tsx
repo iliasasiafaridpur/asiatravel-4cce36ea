@@ -527,11 +527,7 @@ function HandoverCard({
       </div>
 
 
-      {status === "approved" && handover.approved_at && (
-        <div className="px-4 py-1.5 bg-emerald-500/5 text-[11px] text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/20">
-          ✅ তারিখ: {formatDate(handover.approved_at)} | সময়: {new Date(handover.approved_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} | 👤 গ্রহীতা: {handover.to_name ?? "MD Sir"}
-        </div>
-      )}
+
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
