@@ -783,25 +783,25 @@ function HandoverCard({
       )}
 
       {/* Footer summary bar — mirrors the top header */}
-      <div className="bg-muted/40 px-4 py-2.5 border-t flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0 flex-1 text-xs">
-          <span className="font-semibold whitespace-nowrap">মোট {receipts.length} যাত্রী</span>
-          <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ: {fmt(cashReceipts)}</span>
+      <div className="bg-muted/40 px-4 py-3 border-t flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0 flex-1 text-sm sm:text-base font-semibold">
+          <span className="whitespace-nowrap">মোট {receipts.length} যাত্রী থেকে আয়</span>
+          <span className="tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ {fmt(cashReceipts)}</span>
           {mdReceipts > 0 && (
-            <span className="font-medium tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</span>
+            <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)} (ক্যাশে নয়)</span>
           )}
           {totalExpenses > 0 && (
-            <span className="font-medium tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">মোট খরচ: {fmt(totalExpenses)}</span>
+            <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>
           )}
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            {mode === "to-me" ? (
+              <><User2 className="h-4 w-4" /> স্টাফ: <b className="text-foreground">{handover.from_name ?? "—"}</b></>
+            ) : (
+              <><Users className="h-4 w-4" /> cash handover গ্রহীতা <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></>
+            )}
+            <b className="text-primary tabular-nums">{fmt(submitted)}</b>
+          </span>
         </div>
-        <div className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-          {mode === "to-me" ? (
-            <><User2 className="h-3 w-3" /> স্টাফ: <b className="text-foreground">{handover.from_name ?? "—"}</b></>
-          ) : (
-            <><Users className="h-3 w-3" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></>
-          )}
-        </div>
-        <div className="text-base font-bold tabular-nums text-primary whitespace-nowrap">{fmt(submitted)}</div>
         {approveAction && isPending && firstPendingReceipt && (
           <Button
             size="sm"
