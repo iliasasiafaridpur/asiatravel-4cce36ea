@@ -1077,8 +1077,8 @@ ${node.innerHTML.replace(
                       {isApproved && (
                         <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
                           {approvedTime
-                            ? <>তারিখ ও সময়: <b>{approvedTime}</b> · 👤 গ্রহীতা: <b>MD (Elias)</b></>
-                            : <>👤 গ্রহীতা: <b>MD (Elias)</b></>}
+                            ? <>তারিখ ও সময়: <b>{approvedTime}</b> · 👤 cash handover গ্রহীতা: <b>MD (Elias)</b></>
+                            : <>👤 cash handover গ্রহীতা: <b>MD (Elias)</b></>}
                         </p>
                       )}
                       {h.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
