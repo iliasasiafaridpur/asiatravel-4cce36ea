@@ -313,7 +313,7 @@ export function HandoverLedgerInline({
           );
         })()}
       </div>
-      <div className="space-y-3">
+      <div className="space-y-7">
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
         ) : (() => {
