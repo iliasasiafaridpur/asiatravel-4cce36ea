@@ -476,11 +476,17 @@ function HandoverCard({
           <span className="font-mono text-[11px] text-muted-foreground">{handover.handover_id}</span>
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
-          <span>📅 {formatDateTime(handover.created_at)}</span>
+          {status === "approved" && handover.approved_at ? (
+            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+              ✅ তারিখ: {formatDate(handover.approved_at)} | সময়: {new Date(handover.approved_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          ) : (
+            <span>📅 {formatDateTime(handover.created_at)}</span>
+          )}
           {mode === "to-me" ? (
             <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> স্টাফ: <b className="text-foreground">{handover.from_name ?? "—"}</b></span>
           ) : (
-            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></span>
+            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> cash handover গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></span>
           )}
         </div>
         <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
