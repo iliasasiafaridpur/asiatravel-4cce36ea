@@ -76,6 +76,8 @@ type ServiceInfo = {
   sold_price: number;
   discount: number;
   vendor_price: number;
+  /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
+  tracks_cost: boolean;
   flight_date: string | null;
 };
 
