@@ -76,6 +76,8 @@ type ServiceInfo = {
   sold_price: number;
   discount: number;
   vendor_price: number;
+  /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
+  tracks_cost: boolean;
   flight_date: string | null;
 };
 
@@ -226,6 +228,7 @@ export function HandoverLedgerInline({
               sold_price: Number(row[cfg.soldField] ?? 0),
               discount: Number(row[cfg.discountField] ?? 0),
               vendor_price: isTicketBook ? 0 : (cfg.costField ? Number(row[cfg.costField] ?? 0) : 0),
+              tracks_cost: !isTicketBook && Boolean(cfg.costField),
               flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
             };
           }
@@ -631,9 +634,9 @@ function HandoverCard({
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
-                            ) : (
+                            ) : info.tracks_cost ? (
                               <span title="Vendor cost এন্ট্রি হয়নি" className="ml-1 text-amber-500">⚠️</span>
-                            )}
+                            ) : null}
                           </div>
                         )}
                       </>
@@ -645,9 +648,9 @@ function HandoverCard({
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
-                            ) : (
+                            ) : info.tracks_cost ? (
                               <span title="Vendor cost এন্ট্রি হয়নি" className="ml-1 text-amber-500">⚠️</span>
-                            )}
+                            ) : null}
                           </div>
                         )}
                       </>
