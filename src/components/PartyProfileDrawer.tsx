@@ -107,8 +107,16 @@ export function PartyProfileDrawer({
     [rows],
   );
   const paymentRows = useMemo(
-    () => rows.filter((r) => isPayment(r) || isAdvance(r)).slice(0, 20),
-    [rows],
+    () =>
+      rows
+        .filter(
+          (r) =>
+            isPayment(r) ||
+            isAdvance(r) ||
+            Number(r[paidCol] ?? 0) > 0,
+        )
+        .slice(0, 20),
+    [rows, paidCol],
   );
 
   if (!partyName) return null;
