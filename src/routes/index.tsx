@@ -13,10 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  PieChart, Pie, Legend, AreaChart, Area,
-} from "recharts";
+import { lazy, Suspense } from "react";
 import { DigitalClock } from "@/components/DigitalClock";
 import { isCashMethod } from "@/lib/payment-methods";
 import {
