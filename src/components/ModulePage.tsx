@@ -1310,9 +1310,12 @@ function FormField({ field, value, onChange, disabled }: {
   } else if (field.type === "number") {
     widthStyle = { width: 140, flex: "0 0 auto" };
   }
+  // Never let a field exceed the dialog width on small screens (prevents cut-off).
+  widthStyle = { ...widthStyle, maxWidth: "100%" };
   const isEntryBy = field.name === "entry_by";
   return (
     <div className="space-y-1" style={widthStyle}>
+
       <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
