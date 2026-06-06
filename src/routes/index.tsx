@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { lazy, Suspense } from "react";
 import { DigitalClock } from "@/components/DigitalClock";
+
+const DashboardCharts = lazy(() => import("@/components/DashboardCharts"));
 import { isCashMethod } from "@/lib/payment-methods";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
