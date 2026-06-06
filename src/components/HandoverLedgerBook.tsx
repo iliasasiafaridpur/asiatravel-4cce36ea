@@ -648,9 +648,9 @@ function HandoverCard({
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
-                            ) : (
+                            ) : info.tracks_cost ? (
                               <span title="Vendor cost এন্ট্রি হয়নি" className="ml-1 text-amber-500">⚠️</span>
-                            )}
+                            ) : null}
                           </div>
                         )}
                       </>
