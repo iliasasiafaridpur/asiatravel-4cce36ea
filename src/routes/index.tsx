@@ -760,20 +760,3 @@ function GradientStat({ label, sublabel, value, icon: Icon, from, money, large }
     </div>
   );
 }
-
-function ChartCard({ title, children, className, tint }: { title: string; children: React.ReactNode; className?: string; tint?: string }) {
-  return (
-    <div className={cn("rounded-xl border shadow-sm", tint ?? "bg-card border-border/60", className)}>
-      <div className="p-4 pb-2"><h3 className="text-sm font-semibold">{title}</h3></div>
-      <div className="px-4 pb-4 h-64">{children}</div>
-    </div>
-  );
-}
-
-function Empty({ loading, text }: { loading: boolean; text?: string }) {
-  return (
-    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-      {loading ? "লোড হচ্ছে..." : (text ?? "কোনো ডাটা নেই")}
-    </div>
-  );
-}
