@@ -952,7 +952,7 @@ export function ModulePage({ module: mod }: Props) {
       {summary && (
         <Card>
           <CardContent className="p-3 sm:p-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {summary.map((s) => (
                 <div key={s.name} className="rounded-md border bg-muted/30 p-3">
                   <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
