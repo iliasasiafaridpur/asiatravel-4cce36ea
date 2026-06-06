@@ -804,7 +804,7 @@ export function ModulePage({ module: mod }: Props) {
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
             <DialogHeader className="sticky top-0 z-20 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b px-4 sm:px-6 py-3">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 pr-12">
                 <DialogTitle className="text-base sm:text-lg truncate">
                   {editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}
                 </DialogTitle>
@@ -952,7 +952,7 @@ export function ModulePage({ module: mod }: Props) {
       {summary && (
         <Card>
           <CardContent className="p-3 sm:p-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {summary.map((s) => (
                 <div key={s.name} className="rounded-md border bg-muted/30 p-3">
                   <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
@@ -1310,9 +1310,12 @@ function FormField({ field, value, onChange, disabled }: {
   } else if (field.type === "number") {
     widthStyle = { width: 140, flex: "0 0 auto" };
   }
+  // Never let a field exceed the dialog width on small screens (prevents cut-off).
+  widthStyle = { ...widthStyle, maxWidth: "100%" };
   const isEntryBy = field.name === "entry_by";
   return (
     <div className="space-y-1" style={widthStyle}>
+
       <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
