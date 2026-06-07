@@ -661,6 +661,21 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
+    // "+N" badge shown next to passenger name when extra services exist for the row.
+    const extraBadge = (r: Row) => {
+      const n = extraCounts[r.id] ?? 0;
+      if (!n) return null;
+      return (
+        <Badge
+          variant="outline"
+          className="ml-1 align-middle bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/30 px-1.5 py-0 text-[10px]"
+          title={`${n} Extra Service`}
+        >
+          +{n}
+        </Badge>
+      );
+    };
+
     // Mobile sub-line with per-number color tag applied.
     const mobileSub = (mobile: string) => (
       <div className="text-xs leading-tight">
