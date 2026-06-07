@@ -169,6 +169,10 @@ export function LedgerPage({ module: mod }: Props) {
   const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
   // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
   const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
+  // Manual advance adjustment (vendor only): refund = add to advance balance, expense = deduct from it.
+  // No cash/bank impact — pure wallet adjustment.
+  const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
+  const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
   const [profileParty, setProfileParty] = useState<string | null>(null);
   const [passengerProfile, setPassengerProfile] = useState<{
     row: Row;
@@ -666,6 +670,21 @@ export function LedgerPage({ module: mod }: Props) {
     [rows, groupField, billCol, paidCol, advanceAdjustedRows],
   );
 
+  // Current advance (wallet) balance for a group, after applying it to bills.
+  const advanceForGroup = useCallback(
+    (key: string) => {
+      if (!key) return 0;
+      let advance = 0, applied = 0;
+      for (const r of rows) {
+        if (String(r[groupField] ?? "") !== key) continue;
+        if (isAdvanceRow(r)) advance += Number(r[paidCol] ?? 0);
+        else applied += Number(r.advance_applied ?? 0);
+      }
+      return Math.max(advance - applied, 0);
+    },
+    [rows, groupField, paidCol],
+  );
+
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayRow(null);
@@ -673,6 +692,8 @@ export function LedgerPage({ module: mod }: Props) {
     setSelectedLines({});
     setPayAsAdvance(false);
     setPayAsMdDeposit(false);
+    setPayAsAdjust(false);
+    setAdjustKind("refund");
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -689,6 +710,8 @@ export function LedgerPage({ module: mod }: Props) {
     setSelectedLines({});
     setPayAsAdvance(false);
     setPayAsMdDeposit(false);
+    setPayAsAdjust(false);
+    setAdjustKind("refund");
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
@@ -795,6 +818,49 @@ export function LedgerPage({ module: mod }: Props) {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
     try {
+      // ---------- Manual Advance Adjustment (vendor only, no cash/bank impact) ----------
+      if (payAsAdjust && !payRow && !isAgency) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        const isExpense = adjustKind === "expense";
+        if (isExpense) {
+          const bal = advanceForGroup(payTarget);
+          if (amt > bal + 0.001)
+            return toast.error(`Advance balance-এর চেয়ে বেশি কাটা যাবে না (Balance: ৳${bal.toLocaleString()})`);
+        }
+        const ledgerId = await generateNextId({
+          key: mod.key, label: "", short: "", table: mod.table,
+          idColumn: mod.idColumn, idPrefix: "VDL",
+          monthlyId: true, fields: [],
+        });
+        const signedAmt = isExpense ? -amt : amt;
+        const label = isExpense ? "অতিরিক্ত সার্ভিস বিল (Advance থেকে)" : "Vendor Refund (Advance-এ যুক্ত)";
+        const payload: Record<string, unknown> = {
+          [mod.idColumn]: ledgerId,
+          entry_date: payDate,
+          [groupField]: payTarget,
+          service_type: "ADVANCE",
+          [billCol]: 0,
+          [paidCol]: signedAmt,
+          payment_method: payMethod,
+          // Non-null source_table => sync_vendor_payment_to_cash skips the cash mirror,
+          // so this is a pure advance-balance adjustment with no Cash/Bank impact.
+          source_table: "manual_adjust",
+          remarks: `${label}${payRemarks ? " · " + payRemarks : ""}`,
+          created_by: user?.id ?? null,
+        };
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) notify.success(
+          isExpense
+            ? `✓ অতিরিক্ত বিল সংরক্ষিত (Advance −৳${amt.toLocaleString()})`
+            : `✓ Refund সংরক্ষিত (Advance +৳${amt.toLocaleString()})`,
+          { meta: { vendor: String(payTarget), service: label, refId: ledgerId, amount: amt } },
+        );
+        setPayOpen(false);
+        void load();
+        return;
+      }
+
       // ---------- MD Sir External Deposit (vendor advance, no cash/bank impact) ----------
       if (payAsMdDeposit && !payRow && !isAgency) {
         const amt = Number(payAmount);
@@ -2054,7 +2120,7 @@ export function LedgerPage({ module: mod }: Props) {
                   checked={payAsAdvance}
                   onCheckedChange={(c) => {
                     setPayAsAdvance(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); }
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); setPayAsAdjust(false); }
                   }}
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
@@ -2074,7 +2140,7 @@ export function LedgerPage({ module: mod }: Props) {
                   checked={payAsMdDeposit}
                   onCheckedChange={(c) => {
                     setPayAsMdDeposit(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); }
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); setPayAsAdjust(false); }
                   }}
                 />
                 <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
@@ -2083,6 +2149,63 @@ export function LedgerPage({ module: mod }: Props) {
                     টিকেটিং পোর্টাল এ Deposit করুন। যা লেজারের বাহিরের টাকা। User এর ব্যালেঞ্জ অপরিবর্তিত থাকবে।
                   </span>
                 </Label>
+              </div>
+            )}
+
+            {/* Manual Advance Adjustment (আয়/ব্যয়) — vendor ledger only, bulk mode */}
+            {!payRow && payTarget && !isAgency && (
+              <div className="rounded-md border border-sky-500/40 bg-sky-500/5 p-2.5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="payAsAdjust"
+                    checked={payAsAdjust}
+                    onCheckedChange={(c) => {
+                      setPayAsAdjust(!!c);
+                      if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); setPayAsMdDeposit(false); }
+                    }}
+                  />
+                  <Label htmlFor="payAsAdjust" className="text-sm font-medium cursor-pointer flex-1">
+                    Manual Advance Adjustment (আয়/ব্যয়)
+                    <span className="block text-[11px] text-muted-foreground font-normal">
+                      Advance balance-এ ম্যানুয়ালি যোগ/বিয়োগ করুন। Cash/Bank ব্যালেঞ্জ অপরিবর্তিত থাকবে।
+                    </span>
+                  </Label>
+                </div>
+                {payAsAdjust && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">ধরন (Type)</Label>
+                      <Select value={adjustKind} onValueChange={(v) => setAdjustKind(v as "refund" | "expense")}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="refund">আয় / Refund (Advance +)</SelectItem>
+                          <SelectItem value="expense">ব্যয় / অতিরিক্ত বিল (Advance −)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        Amount <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        className="h-10 text-lg font-semibold tabular-nums"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="col-span-2 text-[11px] text-muted-foreground">
+                      বর্তমান Advance Balance:{" "}
+                      <span className="font-semibold text-emerald-600">
+                        ৳ {advanceForGroup(payTarget).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2104,7 +2227,7 @@ export function LedgerPage({ module: mod }: Props) {
             )}
 
             {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance/MD deposit */}
-            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && (
+            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && !payAsAdjust && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
