@@ -64,6 +64,7 @@ export type ExtraServiceRow = {
   service_name: string;
   service_price: number;
   vendor_cost: number;
+  notes: string;
 };
 
 type Row = Record<string, unknown> & { id: string };
