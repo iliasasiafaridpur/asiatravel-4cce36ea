@@ -610,16 +610,16 @@ function HandoverCard({
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{formatDate(r.entry_date)}</div>
                     {r.ref_id && (
-                      <div className="text-[10px] text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
+                      <div className="text-xs text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-[10px] text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
                     )}
                   </td>
                   {/* কাস্টমার */}
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-semibold leading-tight">{r.passenger_name || "—"}</div>
-                    <div className="text-[11px] text-muted-foreground leading-tight">
+                    <div className="text-xs text-muted-foreground leading-tight">
                       A: {info?.agent || "Self"}{info?.passport ? ` · ${info.passport}` : ""}
                     </div>
                   </td>
@@ -627,13 +627,13 @@ function HandoverCard({
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{r.service_type}</div>
                     {info?.service_name && (
-                      <div className="text-[11px] text-muted-foreground leading-tight">{info.service_name}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
                     {info?.country && (
-                      <div className="text-[11px] text-muted-foreground leading-tight">{info.country}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">{info.country}</div>
                     )}
                     {info?.airline && (
-                      <div className="text-[11px] text-muted-foreground leading-tight">
+                      <div className="text-xs text-muted-foreground leading-tight">
                         {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
                       </div>
                     )}
