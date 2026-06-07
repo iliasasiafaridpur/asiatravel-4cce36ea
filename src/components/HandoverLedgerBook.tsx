@@ -211,6 +211,7 @@ export function HandoverLedgerInline({
           if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
           if (cfg.costField) cols.push(cfg.costField);
           if (cfg.flightDateField) cols.push(cfg.flightDateField);
+          if (cfg.deliveryField) cols.push(cfg.deliveryField);
           // Need status for tickets to hide vendor/cost while in BOOK.
           if (cfg.table === "tickets") cols.push("status");
           const uniqueCols = Array.from(new Set(cols));
