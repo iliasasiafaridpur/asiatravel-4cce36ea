@@ -487,6 +487,7 @@ export type Database = {
           entry_date: string
           id: string
           mobile: string | null
+          notes: string | null
           passenger_name: string | null
           passport: string | null
           service_name: string
@@ -504,6 +505,7 @@ export type Database = {
           entry_date?: string
           id?: string
           mobile?: string | null
+          notes?: string | null
           passenger_name?: string | null
           passport?: string | null
           service_name: string
@@ -521,6 +523,7 @@ export type Database = {
           entry_date?: string
           id?: string
           mobile?: string | null
+          notes?: string | null
           passenger_name?: string | null
           passport?: string | null
           service_name?: string
