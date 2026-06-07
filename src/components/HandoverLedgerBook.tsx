@@ -555,14 +555,14 @@ function HandoverCard({
         <table className="w-full text-sm">
           <thead className="bg-muted/30">
             <tr className="text-left">
-              <th className="px-3 py-1.5 font-semibold">তারিখ</th>
-              <th className="px-3 py-1.5 font-semibold">কাস্টমার</th>
-              <th className="px-3 py-1.5 font-semibold">সার্ভিস</th>
-              <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
-              <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
-              <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
-              <th className="px-3 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-3 py-1.5 font-semibold text-center w-[300px]">অনুমোদন</th>}
+              <th className="px-1.5 py-1.5 font-semibold">তারিখ</th>
+              <th className="px-1.5 py-1.5 font-semibold">কাস্টমার</th>
+              <th className="px-1.5 py-1.5 font-semibold">সার্ভিস</th>
+              <th className="px-1.5 py-1.5 font-semibold text-right">মোট বিল</th>
+              <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
+              <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
+              <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
+              {approveAction && <th className="px-1 py-1.5 font-semibold text-center w-12">✓</th>}
             </tr>
           </thead>
           <tbody>
@@ -597,54 +597,53 @@ function HandoverCard({
                   className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : `row-tint-${idx % 4}`}`}
                 >
                   {/* তারিখ */}
-                  <td className="px-3 py-2 align-top">
-                    <div className="text-sm font-medium">{formatDate(r.entry_date)}</div>
+                  <td className="px-1.5 py-1 align-top">
+                    <div className="text-sm font-medium leading-tight">{formatDate(r.entry_date)}</div>
                     {r.ref_id && (
-                      <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{r.ref_id}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">Rec:By {r.received_by_name}</div>
+                      <div className="text-[10px] text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
                     )}
                   </td>
                   {/* কাস্টমার */}
-                  <td className="px-3 py-2 align-top">
-                    <div className="text-sm font-semibold">{r.passenger_name || "—"}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">A: {info?.agent || "Self"}</div>
-                    {info?.passport && (
-                      <div className="text-xs text-muted-foreground font-mono mt-0.5">{info.passport}</div>
-                    )}
+                  <td className="px-1.5 py-1 align-top">
+                    <div className="text-sm font-semibold leading-tight">{r.passenger_name || "—"}</div>
+                    <div className="text-[11px] text-muted-foreground leading-tight">
+                      A: {info?.agent || "Self"}{info?.passport ? ` · ${info.passport}` : ""}
+                    </div>
                   </td>
                   {/* সার্ভিস */}
-                  <td className="px-3 py-2 align-top">
-                    <div className="text-sm font-medium">{r.service_type}</div>
+                  <td className="px-1.5 py-1 align-top">
+                    <div className="text-sm font-medium leading-tight">{r.service_type}</div>
                     {info?.service_name && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{info.service_name}</div>
+                      <div className="text-[11px] text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
                     {info?.country && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{info.country}</div>
+                      <div className="text-[11px] text-muted-foreground leading-tight">{info.country}</div>
                     )}
                     {info?.airline && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[11px] text-muted-foreground leading-tight">
                         {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
                       </div>
                     )}
                   </td>
                   {/* মোট বিল */}
-                  <td className="px-3 py-2 text-right align-top">
+                  <td className="px-1.5 py-1 text-right align-top">
                     {bill > 0 ? (
                       <>
-                        <div className="text-sm font-bold tabular-nums">{fmt(bill)}</div>
+                        <div className="text-sm font-bold tabular-nums leading-tight">{fmt(bill)}</div>
                         {discount > 0 && (
-                          <div className="text-xs tabular-nums text-emerald-600">{fmt(discount)} (ডিসকাউন্ট)</div>
+                          <div className="text-[11px] tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
                         )}
                         {due > 0.005 && (
-                          <div className="text-xs tabular-nums text-rose-600">বাকি: {fmt(due)}</div>
+                          <div className="text-[11px] tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
                         )}
                         {due <= 0.005 && (
-                          <div className="text-xs text-emerald-600">✓ সম্পূর্ণ পরিশোধিত</div>
+                          <div className="text-[11px] text-emerald-600 leading-tight">✓ পরিশোধিত</div>
                         )}
                         {info?.vendor && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
+                          <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -658,7 +657,7 @@ function HandoverCard({
                       <>
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
+                          <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -671,7 +670,7 @@ function HandoverCard({
                     )}
                   </td>
                   {/* পূর্বের জমা */}
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-1.5 py-1 text-right align-top">
                     {previousPaid > 0 ? (
                       <button
                         type="button"
@@ -679,42 +678,37 @@ function HandoverCard({
                         className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
                         title="পূর্বের জমা দেখাও"
                       >
-                        <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400">{fmt(previousPaid)}</div>
+                        <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(previousPaid)}</div>
                         {lastPast && (
-                          <div className="text-xs text-sky-600">{formatDate(lastPast.entry_date)}</div>
-                        )}
-                        {past.length > 1 && (
-                          <div className="text-xs text-muted-foreground">+{past.length - 1} আরও</div>
+                          <div className="text-[11px] text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
                         )}
                       </button>
-                    ) : <span className="text-xs text-muted-foreground">— নতুন বিক্রি —</span>}
+                    ) : <span className="text-[11px] text-muted-foreground">— নতুন —</span>}
                   </td>
                   {/* এই বারের জমা */}
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  <td className="px-1.5 py-1 text-right tabular-nums align-top">
                     <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
-                    {isAdvance && <div className="mt-0.5"><AdvanceBadge advance /></div>}
+                    {isAdvance && <AdvanceBadge advance className="ml-1" />}
                     {isMdReceivedMethod(r.method) && (
-                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">MD রিসিভ · {r.method}<br />(ক্যাশে নয়)</div>
+                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
                     )}
-                    {r.received_by_name && (
-                      <div className="text-xs text-muted-foreground font-normal mt-0.5">আদায়কারী: {r.received_by_name}</div>
-                    )}
-                    {r.created_at && (
-                      <div className="text-xs text-muted-foreground font-normal">{formatDateTime(r.created_at)}</div>
+                    {(r.received_by_name || r.created_at) && (
+                      <div className="text-[10px] text-muted-foreground font-normal leading-tight">
+                        {r.received_by_name ? r.received_by_name : ""}{r.received_by_name && r.created_at ? " · " : ""}{r.created_at ? formatDateTime(r.created_at) : ""}
+                      </div>
                     )}
                   </td>
                   {/* বাকি (after this handover) — bolder + larger */}
-                  <td className="px-3 py-2 text-right tabular-nums text-sm font-bold">
+                  <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
                     {bill > 0 ? (
                       dueAfterThis <= 0.005 ? (
                         <span className="text-emerald-600 text-base">✓</span>
                       ) : (
                         <>
-                          <div className="text-rose-600 text-sm font-extrabold">{fmt(dueAfterThis)}</div>
+                          <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(dueAfterThis)}</div>
                           {futurePaid > 0 && lastFuture && (
-                            <div className="text-xs text-emerald-600 font-semibold mt-0.5">
-                              জমা: {fmt(futurePaid)}
-                              <div className="text-xs">{formatDate(lastFuture.entry_date)}</div>
+                            <div className="text-[11px] text-emerald-600 font-semibold leading-tight">
+                              জমা: {fmt(futurePaid)} {formatDate(lastFuture.entry_date)}
                             </div>
                           )}
                         </>
@@ -722,15 +716,11 @@ function HandoverCard({
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   {approveAction && (
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-1 py-1 text-center align-top">
                       {r.approval_status === "approved" ? (
-                        <div className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Approved
-                        </div>
+                        <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600" aria-label="Approved" />
                       ) : (
-                        <div className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                          <Clock className="h-3.5 w-3.5" /> অপেক্ষমাণ
-                        </div>
+                        <Clock className="h-5 w-5 mx-auto text-amber-500" aria-label="অপেক্ষমাণ" />
                       )}
                     </td>
                   )}
@@ -738,14 +728,14 @@ function HandoverCard({
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-3 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
-              <td className="px-3 py-1.5 text-right tabular-nums">
+              <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
                   <div className="text-[11px] text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
                 )}
               </td>
-              <td className="px-3 py-1.5" colSpan={approveAction ? 2 : 1} />
+              <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
             </tr>
           </tbody>
         </table>
