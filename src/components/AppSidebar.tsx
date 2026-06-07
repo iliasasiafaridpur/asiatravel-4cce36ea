@@ -53,6 +53,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { to: "/bmet", title: "BMET Card", icon: IdCard, color: "text-emerald-400", bg: "bg-emerald-500/15" },
       { to: "/saudi-visa", title: "Saudi Visa", icon: Globe2, color: "text-green-400", bg: "bg-green-500/15" },
       { to: "/kuwait-visa", title: "Kuwait Visa", icon: Globe2, color: "text-red-400", bg: "bg-red-500/15" },
+      { to: "/other", title: "Other", icon: Package, color: "text-fuchsia-400", bg: "bg-fuchsia-500/15" },
+
     ],
   },
   {
