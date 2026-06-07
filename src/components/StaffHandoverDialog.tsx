@@ -302,9 +302,9 @@ export function StaffHandoverDialog({
                   return (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
-                      <div className="truncate">{r.passenger_name || "—"}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono">
-                        {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
+                      <div className="truncate font-medium">{r.passenger_name || "—"}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        {svcLine(r) || (r.receipt_id || r.id.slice(0, 8))}
                       </div>
                       {mdRecv && (
                         <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
