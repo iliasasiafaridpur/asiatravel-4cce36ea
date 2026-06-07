@@ -948,7 +948,7 @@ ${node.innerHTML.replace(
                       <td className="wrap">{service}{isIn && r.method ? ` · ${r.method}` : ""}</td>
                       <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}</td>
+                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
                       <td className="wrap" style={{whiteSpace:"nowrap"}}>
                         {advLines.map((l, idx) => (
