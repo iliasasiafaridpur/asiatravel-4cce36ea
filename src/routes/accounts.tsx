@@ -973,6 +973,11 @@ ${node.innerHTML.replace(
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
                       if (svc.airline) bits.push(svc.airline);
+                    } else if (r.service_table === "others") {
+                      if (svc.service_name) bits.push(svc.service_name);
+                      if (svc.airline) bits.push(svc.airline);
+                      if (svc.route) bits.push(svc.route);
+                      if (svc.flight_date) bits.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
                       bits.push(svc.country);
                     }
