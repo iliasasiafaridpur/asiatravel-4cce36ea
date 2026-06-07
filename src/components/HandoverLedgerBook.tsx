@@ -206,6 +206,7 @@ export function HandoverLedgerInline({
           if (typeof cfg.country === "string") cols.push(cfg.country);
           cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.discountField);
           if (cfg.airlineField) cols.push(cfg.airlineField);
+          if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
           if (cfg.costField) cols.push(cfg.costField);
           if (cfg.flightDateField) cols.push(cfg.flightDateField);
           // Need status for tickets to hide vendor/cost while in BOOK.
