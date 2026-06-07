@@ -218,7 +218,7 @@ export function PassengerProfileDrawer({
                     <span className="text-muted-foreground text-xs block">Country / Route</span>
                     {country || DASH}
                   </div>
-                  {isTicket && (
+                  {(isTicket || moduleKey === "other") && (airline || flightDate) && (
                     <>
                       <div>
                         <span className="text-muted-foreground text-xs block">Airline</span>
