@@ -1395,7 +1395,15 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
   isEdit?: boolean;
 }) {
-  const visibleFields = mod.fields.filter((f) => !f.hideInForm);
+  const isFieldVisible = (f: Field) => {
+    if (f.hideInForm) return false;
+    if (f.showWhen) {
+      const cur = String(form[f.showWhen.field] ?? "");
+      if (!f.showWhen.equals.includes(cur)) return false;
+    }
+    return true;
+  };
+  const visibleFields = mod.fields.filter(isFieldVisible);
   const shownFields = visibleFields;
   const sections: Section[] = ["passenger", "agency", "vendor"];
   const grouped = sections
