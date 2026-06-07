@@ -676,14 +676,29 @@ export function ModulePage({ module: mod }: Props) {
     const extraBadge = (r: Row) => {
       const n = extraCounts[r.id] ?? 0;
       if (!n) return null;
+      const details = extraDetails[r.id] ?? [];
+      const tip = details.length
+        ? details.map((d) => `${d.service_name || "Service"} — ৳${(d.service_price || 0).toLocaleString()}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
+        : `${n} Extra Service`;
       return (
         <Badge
           variant="outline"
           className="ml-1 align-middle bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/30 px-1.5 py-0 text-[10px]"
-          title={`${n} Extra Service`}
+          title={tip}
         >
           +{n}
         </Badge>
+      );
+    };
+
+    // Notes from extra services for a row — shown as a small line in the data list.
+    const extraNotesLine = (r: Row) => {
+      const notes = (extraDetails[r.id] ?? []).map((d) => d.notes.trim()).filter(Boolean);
+      if (!notes.length) return null;
+      return (
+        <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 leading-tight mt-0.5 break-words">
+          📝 {notes.join(" · ")}
+        </div>
       );
     };
 
