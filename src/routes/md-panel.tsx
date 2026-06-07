@@ -117,6 +117,8 @@ function MdPanelPage() {
             service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
             airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
             flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
+            delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
+            has_delivery: Boolean(cfg.deliveryField),
           };
         }
       })
