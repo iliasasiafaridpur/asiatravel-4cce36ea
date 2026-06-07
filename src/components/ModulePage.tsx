@@ -45,6 +45,7 @@ const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
   bmet_cards: { recvCol: "received_amount", serviceType: "BMET Card" },
   saudi_visas: { recvCol: "received_amount", serviceType: "Saudi Visa" },
   kuwait_visas: { recvCol: "received", serviceType: "Kuwait Visa" },
+  others: { recvCol: "received_amount", serviceType: "Other" },
 };
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
@@ -53,6 +54,16 @@ const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
   bmet: "bmet",
   "saudi-visa": "saudi-visa",
   "kuwait-visa": "kuwait-visa",
+};
+
+// মডিউল যেগুলোতে Extra Service যুক্ত করা যাবে (passenger + vendor সহ সার্ভিস মডিউল)
+const EXTRA_SERVICE_MODULES = ["tickets", "bmet", "saudi-visa", "kuwait-visa", "other"];
+
+export type ExtraServiceRow = {
+  id?: string;
+  service_name: string;
+  service_price: number;
+  vendor_cost: number;
 };
 
 type Row = Record<string, unknown> & { id: string };
@@ -108,6 +119,10 @@ export function ModulePage({ module: mod }: Props) {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
+  const supportsExtra = EXTRA_SERVICE_MODULES.includes(mod.key);
+  const [extraServices, setExtraServices] = useState<ExtraServiceRow[]>([]);
+  const [showExtra, setShowExtra] = useState(false);
+  const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
@@ -186,7 +201,24 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod.table, cacheKey, columns]);
 
-  useEffect(() => { void load(true); }, [load, mod.key]);
+  // Count of extra services per parent row (for the "+N" badge on the data list)
+  const loadExtraCounts = useCallback(async () => {
+    if (!supportsExtra) return;
+    try {
+      const { data } = await supabase
+        .from("extra_services" as never)
+        .select("source_id")
+        .eq("source_table", mod.table);
+      const m: Record<string, number> = {};
+      ((data as { source_id: string }[] | null) ?? []).forEach((r) => {
+        const k = String(r.source_id);
+        m[k] = (m[k] ?? 0) + 1;
+      });
+      setExtraCounts(m);
+    } catch { /* ignore */ }
+  }, [mod.table, supportsExtra]);
+
+  useEffect(() => { void load(true); void loadExtraCounts(); }, [load, loadExtraCounts, mod.key]);
 
   // Realtime: auto-refresh on any change to this table
   useEffect(() => {
@@ -196,9 +228,19 @@ export function ModulePage({ module: mod }: Props) {
         void load(false);
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let chx: ReturnType<typeof supabase.channel> | null = null;
+    if (supportsExtra) {
+      chx = supabase
+        .channel(`rt_extra_${mod.table}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "extra_services" }, () => {
+          void loadExtraCounts();
+        })
+        .subscribe();
+    }
+    return () => { supabase.removeChannel(ch); if (chx) supabase.removeChannel(chx); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mod.table]);
+
 
   const computeValue = useCallback((r: Row, name: string): number => {
     const c = mod.computed?.find((x) => x.name === name);
@@ -255,6 +297,8 @@ export function ModulePage({ module: mod }: Props) {
   const startCreate = () => {
     saveScroll();
     setEditing(null);
+    setExtraServices([]);
+    setShowExtra(false);
     const f = emptyForm(mod);
     // Auto-fill "Entry By" with current user's name
     if (mod.fields.some((fld) => fld.name === "entry_by")) {
@@ -267,6 +311,8 @@ export function ModulePage({ module: mod }: Props) {
   const startEdit = (r: Row) => {
     saveScroll();
     setEditing(r);
+    setExtraServices([]);
+    setShowExtra(false);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
     if (mod.fields.some((fld) => fld.name === "entry_by") && (!f.entry_by || f.entry_by === "User")) {
@@ -274,9 +320,74 @@ export function ModulePage({ module: mod }: Props) {
     }
     setForm(f);
     setOpenForm(true);
+    if (supportsExtra) {
+      void supabase
+        .from("extra_services" as never)
+        .select("id,service_name,service_price,vendor_cost")
+        .eq("source_table", mod.table)
+        .eq("source_id", r.id)
+        .order("created_at", { ascending: true })
+        .then(({ data }) => {
+          const rows = ((data as ExtraServiceRow[] | null) ?? []).map((x) => ({
+            id: x.id,
+            service_name: String(x.service_name ?? ""),
+            service_price: Number(x.service_price ?? 0),
+            vendor_cost: Number(x.vendor_cost ?? 0),
+          }));
+          setExtraServices(rows);
+          setShowExtra(rows.length > 0);
+        });
+    }
   };
 
+
+  // Persist the form's extra services against a saved parent row. Inserts new
+  // rows, updates kept ones, deletes removed ones. Denormalizes the parent's
+  // vendor/agency/passenger so the DB trigger can mirror into the ledgers.
+  const syncExtraServices = useCallback(async (parentId: string, parent: Record<string, unknown>) => {
+    if (!supportsExtra) return;
+    const base = {
+      source_table: mod.table,
+      source_id: parentId,
+      entry_date: (parent.entry_date as string) || todayIso(),
+      vendor_name: (parent.vendor_bought as string) || null,
+      agency_sold: (parent.agency_sold as string) || null,
+      passenger_name: (parent.passenger_name as string) || null,
+      passport: (parent.passport as string) || null,
+      mobile: (parent.mobile as string) || null,
+      created_by: user?.id ?? null,
+    };
+    const { data: existing } = await supabase
+      .from("extra_services" as never)
+      .select("id")
+      .eq("source_table", mod.table)
+      .eq("source_id", parentId);
+    const existingIds = new Set(((existing as { id: string }[] | null) ?? []).map((x) => x.id));
+    const keepIds = new Set<string>();
+    for (const ex of extraServices) {
+      const name = (ex.service_name || "").trim();
+      if (!name) continue;
+      const row = {
+        ...base,
+        service_name: name,
+        service_price: Number(ex.service_price) || 0,
+        vendor_cost: Number(ex.vendor_cost) || 0,
+      };
+      if (ex.id && existingIds.has(ex.id)) {
+        keepIds.add(ex.id);
+        await supabase.from("extra_services" as never).update(row as never).eq("id", ex.id);
+      } else {
+        await supabase.from("extra_services" as never).insert(row as never);
+      }
+    }
+    const toDelete = [...existingIds].filter((id) => !keepIds.has(id));
+    if (toDelete.length) {
+      await supabase.from("extra_services" as never).delete().in("id", toDelete);
+    }
+  }, [supportsExtra, mod.table, extraServices, user?.id]);
+
   const submit = async () => {
+
     if (saving) return; // Prevent double-submit
     // Required-field validation (works even if the user bypasses HTML required)
     for (const f of mod.fields) {
@@ -340,6 +451,9 @@ export function ModulePage({ module: mod }: Props) {
           .update(payload as never)
           .eq("id", editId);
         if (error) throw error;
+        if (supportsExtra) {
+          try { await syncExtraServices(editId, payload); } catch { /* extra services best-effort */ }
+        }
         setOpenForm(false);
         setEditing(null);
         toast.success("আপডেট হয়েছে");
@@ -353,16 +467,38 @@ export function ModulePage({ module: mod }: Props) {
         }
       } else {
         // INSERT PATH: only when no editing id was captured.
-        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        setOpenForm(false);
-        if (!offline) {
+        const hasExtra = supportsExtra && extraServices.some((x) => (x.service_name || "").trim());
+        if (hasExtra) {
+          // Direct insert so we can capture the new row id and attach extra services.
+          const { data: inserted, error } = await supabase
+            .from(mod.table as never)
+            .insert(payload as never)
+            .select("id")
+            .single();
+          if (error) throw error;
+          const newId = (inserted as { id: string } | null)?.id;
+          if (newId) {
+            try { await syncExtraServices(newId, payload); } catch { /* best-effort */ }
+          }
+          setOpenForm(false);
           toast.success(`✓ যোগ হয়েছে: ${finalId}`);
           speakModuleEntry(mod.key);
           if (recvAmount > 0) speakReceived(recvAmount);
+          clearDraft();
+        } else {
+          const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+          setOpenForm(false);
+          if (!offline) {
+            toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+            speakModuleEntry(mod.key);
+            if (recvAmount > 0) speakReceived(recvAmount);
+          }
+          clearDraft();
         }
-        clearDraft();
       }
       void load();
+      void loadExtraCounts();
+
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
       if (err?.code === "23505" && /passport.*entry_date|entry_date.*passport|uniq_.*_passport_date/i.test(String(err?.message ?? ""))) {
@@ -525,6 +661,21 @@ export function ModulePage({ module: mod }: Props) {
         <span className="opacity-60">{label}:</span> {val}
       </div>
     );
+    // "+N" badge shown next to passenger name when extra services exist for the row.
+    const extraBadge = (r: Row) => {
+      const n = extraCounts[r.id] ?? 0;
+      if (!n) return null;
+      return (
+        <Badge
+          variant="outline"
+          className="ml-1 align-middle bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/30 px-1.5 py-0 text-[10px]"
+          title={`${n} Extra Service`}
+        >
+          +{n}
+        </Badge>
+      );
+    };
+
     // Mobile sub-line with per-number color tag applied.
     const mobileSub = (mobile: string) => (
       <div className="text-xs leading-tight">
@@ -617,7 +768,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[140px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
@@ -670,7 +821,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
@@ -724,7 +875,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
@@ -765,7 +916,57 @@ export function ModulePage({ module: mod }: Props) {
           }},
         ];
       }
+      case "other":
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {statusOrDeliveryBadge(r)}
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[150px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
+            </div>
+          )},
+          { key: "service", header: "Service", render: (r) => (
+            <div>
+              <div className="font-medium">{String(r.service_name ?? "—")}</div>
+              {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
+            const showProfit = recv > 0 && cost > 0;
+            const profitClass = profit < 0
+              ? "text-rose-500"
+              : due <= 0
+                ? "text-emerald-500"
+                : "text-yellow-500";
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
+                <div className="text-xs"><span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span></div>
+                {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
+              </div>
+            );
+          }},
+        ];
       case "agents":
+
       case "vendors":
         return [
           { key: "name", header: "Name", render: (r) => (
@@ -787,7 +988,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts]);
 
   return (
     <div className="space-y-4">
@@ -855,7 +1056,17 @@ export function ModulePage({ module: mod }: Props) {
             </DialogHeader>
             <div className="px-4 sm:px-6 pb-4 pt-3">
               <FormSections mod={mod} form={form} setForm={setForm} isEdit={!!editing} />
+              {supportsExtra && (
+                <ExtraServiceSection
+                  rows={extraServices}
+                  setRows={setExtraServices}
+                  show={showExtra}
+                  setShow={setShowExtra}
+                  vendorName={String(form.vendor_bought ?? "")}
+                />
+              )}
             </div>
+
           </DialogContent>
         </Dialog>
       </div>
@@ -1248,8 +1459,96 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   );
 }
 
+function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
+  rows: ExtraServiceRow[];
+  setRows: React.Dispatch<React.SetStateAction<ExtraServiceRow[]>>;
+  show: boolean;
+  setShow: React.Dispatch<React.SetStateAction<boolean>>;
+  vendorName: string;
+}) {
+  const addRow = () => {
+    setShow(true);
+    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0 }]);
+  };
+  const update = (i: number, patch: Partial<ExtraServiceRow>) =>
+    setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const remove = (i: number) => setRows((p) => p.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="mt-4 border-t pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Extra Service
+        </h3>
+        <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
+          <Plus className="h-3.5 w-3.5" /> Extra Service
+        </Button>
+      </div>
+
+      {show && rows.length > 0 && (
+        <div className="space-y-2 mt-2">
+          {vendorName ? (
+            <p className="text-xs text-muted-foreground">
+              Vendor cost যোগ হবে: <b className="text-foreground">{vendorName}</b> এর হিসাবে।
+            </p>
+          ) : (
+            <p className="text-xs text-amber-500">
+              ⚠️ Vendor cost যোগ করতে আগে উপরে Vendor সিলেক্ট করুন।
+            </p>
+          )}
+          {rows.map((ex, i) => (
+            <div key={i} className="flex flex-wrap gap-2 items-end border rounded-md p-2">
+              <div className="space-y-1" style={{ width: 240, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Service Name</Label>
+                <LookupSelect
+                  kind="extra_service"
+                  value={ex.service_name}
+                  onChange={(v) => update(i, { service_name: v })}
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Service Price</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.service_price || ""}
+                  onChange={(e) => update(i, { service_price: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Vendor Cost</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.vendor_cost || ""}
+                  onChange={(e) => update(i, { vendor_cost: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => remove(i)}
+                title="মুছুন"
+                className="h-9 w-9"
+              >
+                <Trash2 className="h-4 w-4 text-rose-500" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AutoGrowTextInput({
   value, onChange, onBlur, onFocus, className, readOnly, required, placeholder, inputMode,
+
 }: {
   value: string;
   onChange: (e: { target: { value: string } }) => void;

@@ -479,6 +479,60 @@ export type Database = {
         }
         Relationships: []
       }
+      extra_services: {
+        Row: {
+          agency_sold: string | null
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          id: string
+          mobile: string | null
+          passenger_name: string | null
+          passport: string | null
+          service_name: string
+          service_price: number
+          source_id: string
+          source_table: string
+          updated_at: string
+          vendor_cost: number
+          vendor_name: string | null
+        }
+        Insert: {
+          agency_sold?: string | null
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          mobile?: string | null
+          passenger_name?: string | null
+          passport?: string | null
+          service_name: string
+          service_price?: number
+          source_id: string
+          source_table: string
+          updated_at?: string
+          vendor_cost?: number
+          vendor_name?: string | null
+        }
+        Update: {
+          agency_sold?: string | null
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          mobile?: string | null
+          passenger_name?: string | null
+          passport?: string | null
+          service_name?: string
+          service_price?: number
+          source_id?: string
+          source_table?: string
+          updated_at?: string
+          vendor_cost?: number
+          vendor_name?: string | null
+        }
+        Relationships: []
+      }
       fund_transfers: {
         Row: {
           amount: number
@@ -656,6 +710,84 @@ export type Database = {
           color?: string
           mobile?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      others: {
+        Row: {
+          agency_sold: string | null
+          cost_price: number | null
+          country_route: string | null
+          created_at: string
+          created_by: string | null
+          delivery_date: string | null
+          discount_amount: number
+          entry_by: string | null
+          entry_date: string
+          id: string
+          mobile: string | null
+          notes: string | null
+          other_id: string
+          passenger_name: string
+          passport: string | null
+          payment_date: string | null
+          received_amount: number | null
+          received_by: string | null
+          service_name: string | null
+          sold_price: number | null
+          status: string
+          updated_at: string
+          vendor_bought: string | null
+        }
+        Insert: {
+          agency_sold?: string | null
+          cost_price?: number | null
+          country_route?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          discount_amount?: number
+          entry_by?: string | null
+          entry_date?: string
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          other_id: string
+          passenger_name: string
+          passport?: string | null
+          payment_date?: string | null
+          received_amount?: number | null
+          received_by?: string | null
+          service_name?: string | null
+          sold_price?: number | null
+          status?: string
+          updated_at?: string
+          vendor_bought?: string | null
+        }
+        Update: {
+          agency_sold?: string | null
+          cost_price?: number | null
+          country_route?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          discount_amount?: number
+          entry_by?: string | null
+          entry_date?: string
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          other_id?: string
+          passenger_name?: string
+          passport?: string | null
+          payment_date?: string | null
+          received_amount?: number | null
+          received_by?: string | null
+          service_name?: string | null
+          sold_price?: number | null
+          status?: string
+          updated_at?: string
+          vendor_bought?: string | null
         }
         Relationships: []
       }

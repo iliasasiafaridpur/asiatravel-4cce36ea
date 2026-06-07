@@ -17,6 +17,8 @@ const LABELS: Record<string, string> = {
   vendor: "Vendor",
   route: "Route / Airport",
   service_item: "Service Item",
+  extra_service: "Extra Service",
+  other_service: "Service Name",
   visa_type: "Visa Type",
   medical_status: "Medical Status",
   rl_no: "RL No",

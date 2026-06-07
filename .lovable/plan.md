@@ -1,81 +1,41 @@
-# Multi-Role Cash Handover & MD Verification Workflow
+## লক্ষ্য
 
-Build a 3-tier role system (Admin / Staff / MD) with cash handover, MD approval, day-locking, and approval-aware passenger payment timeline.
+1. প্রতিটি সার্ভিস মডিউলের (Air Ticket, BMET, Saudi Visa, Kuwait Visa) এডিট/এন্ট্রি ফর্মে একটি **Extra Service** বাটন যোগ করা। ক্লিক করলে ঐ passenger-এর জন্য বাড়তি সার্ভিস যোগ করার ঘর খুলবে — প্রতিটিতে: service name (ড্রপডাউন, `+` দিয়ে নতুন যোগ ও Manage দিয়ে rename/delete), service price, ও service vendor cost। vendor cost ঐ row-এ আগে থেকে সিলেক্ট করা vendor-এর হিসাবেই যুক্ত হবে। data পেইজে `+` চিহ্ন দিয়ে দেখানো হবে।
+2. নতুন **Other** মডিউল তৈরি করা — service name ড্রপডাউন (`+`/Manage সহ), service price, service vendor cost, এবং বাকি সব অন্য মডিউলের মতই (passenger, agency, received, vendor ইত্যাদি)।
 
-## 1. Roles & Permission Model
+## যা তৈরি হবে / বদলাবে
 
-Extend the existing `app_role` enum and `user_roles` table to support **three roles**:
-- `admin` — software officer, no participation in cash flow. Hidden from cash drawer / handover lists. Keeps existing schema-edit / RLS-bypass privileges.
-- `staff` — creates entries, receives payments. Receipts default to **Pending MD Approval**. Must submit daily handover.
-- `md` — owner. Self-transactions auto-approved. Sees the MD Cash Control Panel.
+### ১. ডাটাবেস — `extra_services` টেবিল (Extra Service-এর জন্য)
+নতুন টেবিল যা প্রতিটি extra সার্ভিসকে তার মূল entry-র সাথে যুক্ত রাখে:
+- `source_table` + `source_id` (মূল row), `entry_date`
+- `service_name`, `service_price` (কাস্টমার বিল), `vendor_cost`
+- `vendor_name`, `agency_sold`, `passenger_name`, `passport`, `mobile` (ledger sync-এর জন্য denormalized — সেভ করার সময় মূল row থেকে কপি হবে)
 
-Update `handle_new_user()` / role helpers so the first user becomes `md` (instead of `admin`) — actual admin role is assigned manually. Add a `has_any_role` helper and a small `useRole()` hook on the client.
+এই টেবিলে trigger বসবে যা প্রতিটি extra সার্ভিসকে স্বয়ংক্রিয়ভাবে mirror করবে:
+- **Vendor Data**-তে → `vendor_cost` ঐ সিলেক্ট করা vendor-এর payable হিসেবে যুক্ত হবে (বিদ্যমান নিয়ম অনুযায়ী)।
+- **Customers Data**-তে → agency/reference থাকলে `service_price` কাস্টমারের বিল হিসেবে আলাদা লাইনে যুক্ত হবে (যাতে customer profile-এ দেখা যায়)।
+মূল row delete হলে তার extra সার্ভিস ও তাদের mirror লাইনও মুছে যাবে।
 
-## 2. Database changes (single migration)
+### ২. শেয়ারড ফর্ম (`ModulePage.tsx`) — Extra Service UI
+- হেডারে **Extra Service** বাটন যোগ হবে (বর্তমান close বাটনের সাথে সংঘর্ষ এড়িয়ে)।
+- ক্লিক করলে একটি সেকশন খুলবে: প্রতিটি সারিতে `service name` (LookupSelect — `+`/Manage সহ), `service price`, `vendor cost`, ও remove বাটন; নিচে "আরও যোগ করুন" বাটন।
+- vendor cost-এর জন্য আলাদা vendor নির্বাচন নেই — এটি ঐ row-এ ইতিমধ্যে সিলেক্ট করা vendor-এর হিসাবেই যাবে (আপনার নির্দেশ অনুযায়ী)।
+- এডিট খুললে ঐ row-এর বিদ্যমান extra সার্ভিস লোড হবে; সেভ করলে নতুন/পরিবর্তিত/মুছে ফেলা extra সার্ভিস upsert/delete হবে (মূল row সেভ হওয়ার পরে, তার vendor/agency/passenger তথ্য কপি করে)।
 
-- **`payment_receipts`** — add:
-  - `approval_status text` — `'auto_approved' | 'pending_md' | 'approved' | 'rejected'`, default `'pending_md'`
-  - `approved_by uuid`, `approved_at timestamptz`
-  - `handover_id uuid` (FK to `cash_handovers.id`, nullable)
-- **`cash_handovers`** — add:
-  - `status text` — `'pending' | 'approved' | 'rejected'`, default `'pending'`
-  - `submitted_amount numeric` (what staff declared)
-  - `confirmed_amount numeric` (what MD counted)
-  - `approved_by uuid`, `approved_at timestamptz`
-  - `closing_date date` — locks all that staff's receipts on/before this date
-- **`day_locks`** table (new): `(user_id, locked_date, handover_id)` — used by RLS / triggers to block edits/deletes on locked-day receipts and service rows for that staff.
-- **Trigger** `set_receipt_approval`: on insert into `payment_receipts`, if `received_by` has role `md` → `auto_approved`; else → `pending_md`.
-- **Trigger** `guard_locked_receipt`: block UPDATE/DELETE on a receipt whose owning staff has a `day_locks` row covering its `entry_date`, unless caller is `md` or `admin`.
-- **`get_accounts_overview` / `get_cash_drawer` / dashboard totals**: only count receipts with `approval_status IN ('auto_approved','approved')` toward **Global Cash in Hand**. Pending amounts surface separately as "Awaiting MD Approval".
+### ৩. ডাটা পেইজে `+` চিহ্ন
+- প্রতিটি মডিউল লিস্টে কোন row-এর extra সার্ভিস আছে তা গুনে passenger নামের পাশে ছোট `+N` ব্যাজ দেখানো হবে।
 
-## 3. Staff: Submit Daily Cash Handover
+### ৪. নতুন **Other** মডিউল
+- নতুন টেবিল `others` (অন্য সার্ভিস টেবিলের মতই কলাম: passenger, passport, mobile, `service_name` (lookup), sold_price, agency_sold, received_amount, discount, vendor_bought, cost_price, status, entry_by, notes ইত্যাদি) — GRANT + RLS (শুধু authenticated, পূর্ণ CRUD) সহ।
+- বিদ্যমান sync trigger (vendor ledger, customer ledger, receipt) `others` টেবিলের জন্যও কাজ করবে।
+- `modules.ts`-এ নতুন স্কিমা (key `other`, prefix `OTH`), route `src/routes/other.tsx`, এবং সাইডবারে "Other" আইটেম যোগ হবে।
+- Other মডিউলেও উপরের Extra Service সুবিধা থাকবে।
 
-- New button **"Submit Daily Cash Handover"** in the staff cash drawer / Accounts page header (visible only when role = `staff`).
-- Opens modal showing:
-  - Auto-computed total of today's `pending_md` receipts (system count).
-  - Input: **Physical cash counted** by staff.
-  - Optional remarks.
-- On submit: insert a `cash_handovers` row with `status='pending'`, `submitted_amount`, `closing_date = today`, links all today's pending receipts via `handover_id`, and inserts a `day_locks` row. Staff loses edit/delete on those receipts and same-day service rows.
+## টেকনিক্যাল বিবরণ
+- **Migration**: `extra_services` ও `others` টেবিল (GRANT → RLS → policy ক্রমে); `extra_services`-এর জন্য নতুন sync trigger function; বিদ্যমান `sync_vendor_ledger` / `sync_agency_ledger` / `sync_service_receipt` ও cleanup function-এ `others` ব্রাঞ্চ যোগ; `others`-এ একই trigger সংযুক্তি।
+- **নতুন entry-তে extra সার্ভিস**: parent insert-এর পরে generated id দিয়ে extra rows যুক্ত হবে (insert-এর পর id রিড করে)।
+- **Lookup kinds**: `extra_service` ও `other_service` (LookupSelect বিদ্যমান `+`/Manage সাপোর্ট ব্যবহার করবে); `LABELS`-এ যুক্ত হবে।
+- **প্রভাবিত ফাইল**: `src/lib/modules.ts`, `src/components/ModulePage.tsx`, `src/components/LookupSelect.tsx` (শুধু label), `src/components/AppSidebar.tsx`, নতুন `src/routes/other.tsx`, এবং DB migration।
+- বিদ্যমান কোনো accounting/সিঙ্ক ভাঙবে না — সব নতুন লাইন আলাদা `source_table='extra_services'`/`'others'` দিয়ে আইসোলেটেড থাকবে।
 
-## 4. MD Cash Control Panel
-
-New route `/_authenticated/md-panel` (guarded — redirect non-MD).
-
-**Tab A — Pending Staff Handovers**
-- Table: date, staff name, system total, declared cash, variance, remarks.
-- Expand row → see itemized receipts in that handover.
-- Actions: **Confirm & Approve** (sets `confirmed_amount`, flips handover + linked receipts to `approved`, moves money into Global Cash) or **Reject** (unlocks day, receipts revert to `pending_md` for resubmission).
-
-**Tab B — All Activity / Logs**
-- Read-only feed of receipts with their `approval_status` badge, filterable by staff/date.
-
-MD's own receipts never appear in Tab A (already `auto_approved`).
-
-## 5. Passenger Profile Timeline (approval-aware)
-
-In `PassengerProfileDrawer` Payment History rows, render:
-
-```
-22-MAY-2026  ৳15,000  Cash  Staff: Sabbir   [Pending MD Approval]
-23-MAY-2026  ৳10,000  Cash  MD: Owner       [Self-Approved]
-10-MAY-2026  ৳20,000  Cash  Staff: Rakib    [Approved by MD]
-```
-
-Status badge color: amber (pending), emerald (approved/self-approved), rose (rejected). Outstanding Due math already uses `received` on the service row — keep as-is; pending receipts still count toward the customer's paid balance (they owe nothing more), but **Global Cash in Hand** excludes them until MD approves.
-
-## 6. UI changes summary
-
-- `src/hooks/useRole.ts` — new helper exposing `isMd / isStaff / isAdmin`.
-- `src/components/StaffHandoverDialog.tsx` — new modal (step 3).
-- `src/routes/_authenticated/md-panel.tsx` — new MD control panel route + sidebar link gated by role.
-- `src/components/AppSidebar.tsx` — show "MD Panel" link only for `md`; hide "Submit Handover" button for non-staff.
-- `src/components/PassengerProfileDrawer.tsx` — payment history shows receiver + approval badge.
-- `src/routes/accounts.tsx`, `src/routes/index.tsx`, `src/lib/alert-scanner.ts` — split totals into **Confirmed Cash** vs **Pending Approval**.
-- `src/components/StatusChangeDrawer.tsx`, `src/components/DueReceiveDialog.tsx` — no behavior change needed; trigger sets `approval_status` server-side based on payer's role.
-
-## Technical notes
-
-- All approval-state transitions happen via SECURITY DEFINER RPCs (`approve_handover`, `reject_handover`, `submit_handover`) so RLS stays simple and locked-day enforcement lives in one trigger.
-- "Confirmed Cash" = sum where `approval_status IN ('auto_approved','approved')`. "Pending" surfaces separately — never inflates owner's reported cash.
-- Existing `Md Al Amin` / `Arshad Mollah` records are unaffected: legacy receipts get `approval_status='auto_approved'` in the migration backfill (treat historical data as already settled).
-- Admin role retains technical access (SQL, settings) but is excluded from cash dashboards and handover queues.
+অনুমোদন দিলে আমি ধাপে ধাপে সাবধানে বাস্তবায়ন করব।
