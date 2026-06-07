@@ -55,6 +55,8 @@ export interface ModuleSchema {
 }
 
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
+// Other Service uses a simplified 4-stage flow (first entry = NEW).
+const STATUS_OTHER = ["NEW", "Process", "Pending Delivery", "Delivery"];
 const STATUS_TICKET = ["BOOK", "ISSUE", "DELIVERED"];
 // Visa modules now share BMET's exact hierarchy per product requirement.
 const STATUS_VISA = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
