@@ -916,7 +916,57 @@ export function ModulePage({ module: mod }: Props) {
           }},
         ];
       }
+      case "other":
+        return [
+          { key: "ref", header: "Date / ID", render: (r) => (
+            <div>
+              <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+              <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
+              {statusOrDeliveryBadge(r)}
+              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+            </div>
+          )},
+          { key: "passenger", header: "Passenger", render: (r) => (
+            <div className="min-w-[150px]">
+              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.mobile ? mobileSub(String(r.mobile)) : null}
+            </div>
+          )},
+          { key: "service", header: "Service", render: (r) => (
+            <div>
+              <div className="font-medium">{String(r.service_name ?? "—")}</div>
+              {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
+            </div>
+          )},
+          { key: "parties", header: "Agency / Vendor", render: (r) => (
+            <div>
+              {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
+              {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
+            </div>
+          )},
+          { key: "amount", header: "Amount", align: "right", render: (r) => {
+            const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
+            const showProfit = recv > 0 && cost > 0;
+            const profitClass = profit < 0
+              ? "text-rose-500"
+              : due <= 0
+                ? "text-emerald-500"
+                : "text-yellow-500";
+            return (
+              <div className="text-right tabular-nums whitespace-nowrap">
+                <div className="font-semibold">৳ {fmt(sold)}</div>
+                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
+                <div className="text-xs"><span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span></div>
+                {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
+              </div>
+            );
+          }},
+        ];
       case "agents":
+
       case "vendors":
         return [
           { key: "name", header: "Name", render: (r) => (
