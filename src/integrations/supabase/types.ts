@@ -716,6 +716,7 @@ export type Database = {
       others: {
         Row: {
           agency_sold: string | null
+          airline: string | null
           cost_price: number | null
           country_route: string | null
           created_at: string
@@ -724,6 +725,7 @@ export type Database = {
           discount_amount: number
           entry_by: string | null
           entry_date: string
+          flight_date: string | null
           id: string
           mobile: string | null
           notes: string | null
@@ -736,11 +738,13 @@ export type Database = {
           service_name: string | null
           sold_price: number | null
           status: string
+          trip_road: string | null
           updated_at: string
           vendor_bought: string | null
         }
         Insert: {
           agency_sold?: string | null
+          airline?: string | null
           cost_price?: number | null
           country_route?: string | null
           created_at?: string
@@ -749,6 +753,7 @@ export type Database = {
           discount_amount?: number
           entry_by?: string | null
           entry_date?: string
+          flight_date?: string | null
           id?: string
           mobile?: string | null
           notes?: string | null
@@ -761,11 +766,13 @@ export type Database = {
           service_name?: string | null
           sold_price?: number | null
           status?: string
+          trip_road?: string | null
           updated_at?: string
           vendor_bought?: string | null
         }
         Update: {
           agency_sold?: string | null
+          airline?: string | null
           cost_price?: number | null
           country_route?: string | null
           created_at?: string
@@ -774,6 +781,7 @@ export type Database = {
           discount_amount?: number
           entry_by?: string | null
           entry_date?: string
+          flight_date?: string | null
           id?: string
           mobile?: string | null
           notes?: string | null
@@ -786,6 +794,7 @@ export type Database = {
           service_name?: string | null
           sold_price?: number | null
           status?: string
+          trip_road?: string | null
           updated_at?: string
           vendor_bought?: string | null
         }
