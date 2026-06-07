@@ -555,13 +555,13 @@ function HandoverCard({
         <table className="w-full table-fixed text-sm">
           <colgroup>
             <col className="w-[12%]" />
-            <col className="w-[29%]" />
+            <col className="w-[27%]" />
             <col className="w-[15%]" />
             <col className="w-[13%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />
-            <col className="w-[6%]" />
-            {approveAction && <col className="w-[2%]" />}
+            <col className="w-[5%]" />
+            {approveAction && <col className="w-[5%]" />}
           </colgroup>
           <thead className="bg-muted/30">
             <tr className="text-left">
@@ -572,7 +572,7 @@ function HandoverCard({
               <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-1 py-1.5 font-semibold text-center">✓</th>}
+              {approveAction && <th className="px-1 py-1.5 pr-2 font-semibold text-center">✓</th>}
             </tr>
           </thead>
           <tbody>
@@ -726,7 +726,7 @@ function HandoverCard({
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   {approveAction && (
-                  <td className="px-0.5 py-1 text-center align-top">
+                  <td className="px-0.5 py-1 pr-2 text-center align-top">
                       {r.approval_status === "approved" ? (
                         <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600" aria-label="Approved" />
                       ) : (
