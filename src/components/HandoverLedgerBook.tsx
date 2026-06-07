@@ -555,13 +555,13 @@ function HandoverCard({
         <table className="w-full table-fixed text-sm">
           <colgroup>
             <col className="w-[12%]" />
-            <col className="w-[29%]" />
+            <col className="w-[27%]" />
             <col className="w-[15%]" />
             <col className="w-[13%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />
-            <col className="w-[6%]" />
-            {approveAction && <col className="w-[2%]" />}
+            <col className="w-[5%]" />
+            {approveAction && <col className="w-[5%]" />}
           </colgroup>
           <thead className="bg-muted/30">
             <tr className="text-left">
