@@ -45,6 +45,7 @@ const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
   bmet_cards: { recvCol: "received_amount", serviceType: "BMET Card" },
   saudi_visas: { recvCol: "received_amount", serviceType: "Saudi Visa" },
   kuwait_visas: { recvCol: "received", serviceType: "Kuwait Visa" },
+  others: { recvCol: "received_amount", serviceType: "Other" },
 };
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
@@ -53,6 +54,16 @@ const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
   bmet: "bmet",
   "saudi-visa": "saudi-visa",
   "kuwait-visa": "kuwait-visa",
+};
+
+// মডিউল যেগুলোতে Extra Service যুক্ত করা যাবে (passenger + vendor সহ সার্ভিস মডিউল)
+const EXTRA_SERVICE_MODULES = ["tickets", "bmet", "saudi-visa", "kuwait-visa", "other"];
+
+export type ExtraServiceRow = {
+  id?: string;
+  service_name: string;
+  service_price: number;
+  vendor_cost: number;
 };
 
 type Row = Record<string, unknown> & { id: string };
