@@ -19,6 +19,8 @@ export interface Field {
   defaultEmpty?: boolean; // for selects: start empty instead of first option
   filterable?: boolean; // show as filter dropdown above table
   hideInForm?: boolean; // hide from entry/edit form (still shown in list)
+  /** Only show this field in the form when another field equals one of these values. */
+  showWhen?: { field: string; equals: string[] };
 }
 
 export const LEDGER_SERVICE_TYPES = [
@@ -53,6 +55,8 @@ export interface ModuleSchema {
 }
 
 const STATUS_DELIVERY = ["Pending", "Processing", "Ready", "Delivered", "Cancelled"];
+// Other Service uses a simplified 4-stage flow (first entry = NEW).
+const STATUS_OTHER = ["NEW", "Process", "Pending Delivery", "Delivery"];
 const STATUS_TICKET = ["BOOK", "ISSUE", "DELIVERED"];
 // Visa modules now share BMET's exact hierarchy per product requirement.
 const STATUS_VISA = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
@@ -646,7 +650,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "other_id",
     idPrefix: "OTH",
     monthlyId: true,
-    statuses: STATUS_DELIVERY,
+    statuses: STATUS_OTHER,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
@@ -685,6 +689,30 @@ export const MODULES: ModuleSchema[] = [
         section: "passenger",
         required: true,
       },
+      // Air Ticket details — only shown when Service Name = "Date Change"
+      {
+        name: "airline",
+        label: "Airline",
+        type: "text",
+        lookup: "airline",
+        section: "passenger",
+        showWhen: { field: "service_name", equals: ["Date Change"] },
+      },
+      {
+        name: "trip_road",
+        label: "Trip Road",
+        type: "text",
+        lookup: "route",
+        section: "passenger",
+        showWhen: { field: "service_name", equals: ["Date Change"] },
+      },
+      {
+        name: "flight_date",
+        label: "Flight Date",
+        type: "date",
+        section: "passenger",
+        showWhen: { field: "service_name", equals: ["Date Change"] },
+      },
       {
         name: "sold_price",
         label: "Service Price",
@@ -699,9 +727,8 @@ export const MODULES: ModuleSchema[] = [
         type: "text",
         showInList: true,
         section: "passenger",
-        lookup: "status_delivery",
-        lookupDefaults: STATUS_DELIVERY,
-        defaultEmpty: true,
+        lookup: "status_other",
+        lookupDefaults: STATUS_OTHER,
       },
       {
         name: "delivery_date",
@@ -1020,9 +1047,11 @@ export function statusBadgeClass(status?: string | null): string {
   switch (s) {
     case "done":
     case "delivered":
+    case "delivery":
     case "visa issued":
       return "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
     case "processing":
+    case "process":
     case "applied":
     case "medical":
     case "finger":

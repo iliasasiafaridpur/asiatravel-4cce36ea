@@ -96,11 +96,11 @@ export function StatusChangeDrawer({
   const received = Number(request?.row[request?.recvCol ?? ""] ?? 0);
   const existingDiscount = Number(request?.row.discount_amount ?? 0);
   const due = Math.max(0, sold - received - existingDiscount);
-  const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") ? due > 0 : false;
+  const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") || eq(next, "Delivery") ? due > 0 : false;
   const isFileProcess = eq(next, "File Process");
   const isPendingDelivery = eq(next, "Pending Delivery");
   const isDeliveryButDue = eq(next, "Delivery But Due");
-  const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED");
+  const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED") || eq(next, "Delivery");
   const isSame = direction === "same";
 
   useEffect(() => {
@@ -132,7 +132,7 @@ export function StatusChangeDrawer({
   const currentIdx = idxOf(current);
   const _targetIdx = idxOf(next);
   const pdIdx = idxOf("Pending Delivery");
-  const dlIdx = order.findIndex((x) => eq(x, "Delivered") || eq(x, "DELIVERED"));
+  const dlIdx = order.findIndex((x) => eq(x, "Delivered") || eq(x, "DELIVERED") || eq(x, "Delivery"));
   const issueIdx = order.findIndex((x) => eq(x, "ISSUE") || eq(x, "Issue"));
   // Vendor ledger checkpoint priority: Pending Delivery → ISSUE → Delivered
   // (tickets: BOOK → ISSUE [ledger] → DELIVERED; visas: ... → Pending Delivery [ledger] → ...)

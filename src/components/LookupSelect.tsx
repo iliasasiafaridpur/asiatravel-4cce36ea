@@ -26,6 +26,7 @@ const LABELS: Record<string, string> = {
   status_visa: "Status",
   status_bmet: "Status",
   status_delivery: "Status",
+  status_other: "Status",
   status: "Status",
   ledger_service_type: "Service Type",
   payment_method: "মাধ্যম",
