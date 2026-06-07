@@ -644,16 +644,16 @@ function HandoverCard({
                       <>
                         <div className="text-sm font-bold tabular-nums leading-tight">{fmt(bill)}</div>
                         {discount > 0 && (
-                          <div className="text-[11px] tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
+                          <div className="text-xs tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
                         )}
                         {due > 0.005 && (
-                          <div className="text-[11px] tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
+                          <div className="text-xs tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
                         )}
                         {due <= 0.005 && (
-                          <div className="text-[11px] text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                          <div className="text-xs text-emerald-600 leading-tight">✓ পরিশোধিত</div>
                         )}
                         {info?.vendor && (
-                          <div className="text-[11px] text-muted-foreground leading-tight">
+                          <div className="text-xs text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -667,7 +667,7 @@ function HandoverCard({
                       <>
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
-                          <div className="text-[11px] text-muted-foreground leading-tight">
+                          <div className="text-xs text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -693,7 +693,7 @@ function HandoverCard({
                           <div className="text-[11px] text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
                         )}
                       </button>
-                    ) : <span className="text-[11px] text-muted-foreground">— নতুন —</span>}
+                    ) : <span className="text-xs text-muted-foreground">— নতুন —</span>}
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-1.5 py-1 text-right tabular-nums align-top">
