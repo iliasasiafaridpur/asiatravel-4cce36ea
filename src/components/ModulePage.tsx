@@ -341,7 +341,53 @@ export function ModulePage({ module: mod }: Props) {
   };
 
 
+  // Persist the form's extra services against a saved parent row. Inserts new
+  // rows, updates kept ones, deletes removed ones. Denormalizes the parent's
+  // vendor/agency/passenger so the DB trigger can mirror into the ledgers.
+  const syncExtraServices = useCallback(async (parentId: string, parent: Record<string, unknown>) => {
+    if (!supportsExtra) return;
+    const base = {
+      source_table: mod.table,
+      source_id: parentId,
+      entry_date: (parent.entry_date as string) || todayIso(),
+      vendor_name: (parent.vendor_bought as string) || null,
+      agency_sold: (parent.agency_sold as string) || null,
+      passenger_name: (parent.passenger_name as string) || null,
+      passport: (parent.passport as string) || null,
+      mobile: (parent.mobile as string) || null,
+      created_by: user?.id ?? null,
+    };
+    const { data: existing } = await supabase
+      .from("extra_services" as never)
+      .select("id")
+      .eq("source_table", mod.table)
+      .eq("source_id", parentId);
+    const existingIds = new Set(((existing as { id: string }[] | null) ?? []).map((x) => x.id));
+    const keepIds = new Set<string>();
+    for (const ex of extraServices) {
+      const name = (ex.service_name || "").trim();
+      if (!name) continue;
+      const row = {
+        ...base,
+        service_name: name,
+        service_price: Number(ex.service_price) || 0,
+        vendor_cost: Number(ex.vendor_cost) || 0,
+      };
+      if (ex.id && existingIds.has(ex.id)) {
+        keepIds.add(ex.id);
+        await supabase.from("extra_services" as never).update(row as never).eq("id", ex.id);
+      } else {
+        await supabase.from("extra_services" as never).insert(row as never);
+      }
+    }
+    const toDelete = [...existingIds].filter((id) => !keepIds.has(id));
+    if (toDelete.length) {
+      await supabase.from("extra_services" as never).delete().in("id", toDelete);
+    }
+  }, [supportsExtra, mod.table, extraServices, user?.id]);
+
   const submit = async () => {
+
     if (saving) return; // Prevent double-submit
     // Required-field validation (works even if the user bypasses HTML required)
     for (const f of mod.fields) {
