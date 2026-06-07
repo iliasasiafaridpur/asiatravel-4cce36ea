@@ -237,6 +237,8 @@ export function HandoverLedgerInline({
               vendor_price: isTicketBook ? 0 : (cfg.costField ? Number(row[cfg.costField] ?? 0) : 0),
               tracks_cost: !isTicketBook && Boolean(cfg.costField),
               flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
+              delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
+              has_delivery: Boolean(cfg.deliveryField),
             };
           }
         })
