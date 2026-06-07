@@ -650,7 +650,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "other_id",
     idPrefix: "OTH",
     monthlyId: true,
-    statuses: STATUS_DELIVERY,
+    statuses: STATUS_OTHER,
     fields: [
       // 1) Passenger Details & price
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
