@@ -917,6 +917,7 @@ ${node.innerHTML.replace(
                   const discAmt = isIn && svc ? Number(svc.discount ?? 0) : 0;
                   const grossBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalBill = grossBill !== null ? grossBill : null;
+                  const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
                   // পূর্ববর্তী জমা/Discount: NOTE column only — calculation happens below explicitly.
                   const advLines: { text: string }[] = [];
                   let sumPrev = 0;
