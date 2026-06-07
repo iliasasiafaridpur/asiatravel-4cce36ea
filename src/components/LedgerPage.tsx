@@ -670,6 +670,21 @@ export function LedgerPage({ module: mod }: Props) {
     [rows, groupField, billCol, paidCol, advanceAdjustedRows],
   );
 
+  // Current advance (wallet) balance for a group, after applying it to bills.
+  const advanceForGroup = useCallback(
+    (key: string) => {
+      if (!key) return 0;
+      let advance = 0, applied = 0;
+      for (const r of rows) {
+        if (String(r[groupField] ?? "") !== key) continue;
+        if (isAdvanceRow(r)) advance += Number(r[paidCol] ?? 0);
+        else applied += Number(r.advance_applied ?? 0);
+      }
+      return Math.max(advance - applied, 0);
+    },
+    [rows, groupField, paidCol],
+  );
+
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayRow(null);
@@ -677,6 +692,8 @@ export function LedgerPage({ module: mod }: Props) {
     setSelectedLines({});
     setPayAsAdvance(false);
     setPayAsMdDeposit(false);
+    setPayAsAdjust(false);
+    setAdjustKind("refund");
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -693,6 +710,8 @@ export function LedgerPage({ module: mod }: Props) {
     setSelectedLines({});
     setPayAsAdvance(false);
     setPayAsMdDeposit(false);
+    setPayAsAdjust(false);
+    setAdjustKind("refund");
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
