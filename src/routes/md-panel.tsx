@@ -453,7 +453,9 @@ function PastEodPanel({
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="text-sm">{r.service_type}</div>
+                    {info?.service_name && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
                     {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
+                    {info?.airline && <div className="text-xs text-muted-foreground">{info.airline}{info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}</div>}
                     {info && info.discount > 0 && (
                       <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
                         ডিসকাউন্ট: {fmt(info.discount)}
