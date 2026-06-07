@@ -169,6 +169,10 @@ export function LedgerPage({ module: mod }: Props) {
   const [payAsAdvance, setPayAsAdvance] = useState<boolean>(false);
   // MD Sir external deposit: credits vendor advance without touching cash/bank accounts
   const [payAsMdDeposit, setPayAsMdDeposit] = useState<boolean>(false);
+  // Manual advance adjustment (vendor only): refund = add to advance balance, expense = deduct from it.
+  // No cash/bank impact — pure wallet adjustment.
+  const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
+  const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
   const [profileParty, setProfileParty] = useState<string | null>(null);
   const [passengerProfile, setPassengerProfile] = useState<{
     row: Row;
