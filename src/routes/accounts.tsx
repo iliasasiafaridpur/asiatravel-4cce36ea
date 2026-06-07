@@ -177,6 +177,7 @@ function AccountsPage() {
   // Service detail map (for timeline secondary text & due display)
    type SvcDetail = {
      country?: string | null; route?: string | null; airline?: string | null;
+     service_name?: string | null;
      flight_date?: string | null; vendor?: string | null; cost?: number;
       sold?: number; received_total?: number; discount?: number; agent?: string | null;
    };
