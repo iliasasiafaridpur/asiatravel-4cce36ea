@@ -728,14 +728,14 @@ function HandoverCard({
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-3 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
-              <td className="px-3 py-1.5 text-right tabular-nums">
+              <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
                   <div className="text-[11px] text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
                 )}
               </td>
-              <td className="px-3 py-1.5" colSpan={approveAction ? 2 : 1} />
+              <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
             </tr>
           </tbody>
         </table>
