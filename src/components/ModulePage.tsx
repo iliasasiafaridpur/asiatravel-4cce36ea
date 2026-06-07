@@ -594,7 +594,7 @@ export function ModulePage({ module: mod }: Props) {
       recvCol: meta.recvCol,
       serviceType: meta.serviceType,
       refId: String(row[mod.idColumn] ?? ""),
-      hasVendorField: hasField("vendor_bought"),
+      hasVendorField: hasField("vendor_bought") && mod.key !== "other",
       hasVendorSentDate: hasField("vendor_sent_date"),
       hasReceivedDate: hasField("received_date"),
       hasDeliveryDate: hasField("delivery_date"),
