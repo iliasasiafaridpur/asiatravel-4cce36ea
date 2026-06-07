@@ -16,7 +16,8 @@ import {
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { LookupSelect } from "@/components/LookupSelect";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/modules";
+import { formatDate, isAdvancePayment } from "@/lib/modules";
+import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { generateNextId } from "@/lib/idgen";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
