@@ -69,6 +69,7 @@ type Expense = {
 
 type ServiceInfo = {
   country: string | null;
+  service_name: string | null;
   vendor: string | null;
   agent: string | null;
   airline: string | null;
