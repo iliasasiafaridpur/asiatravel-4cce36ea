@@ -156,6 +156,32 @@ export function StaffHandoverDialog({
         rec.discount = k ? (discMap[k] ?? 0) : 0;
       }
 
+      // Enrich each receipt with service/route info from its underlying service row.
+      const svcByTable: Record<string, Set<string>> = {};
+      for (const rec of recs) {
+        if (!rec.service_table || !rec.service_row_id) continue;
+        if (!SVC_CONFIGS[rec.service_table]) continue;
+        svcByTable[rec.service_table] ??= new Set();
+        svcByTable[rec.service_table].add(rec.service_row_id);
+      }
+      const svcMap: Record<string, SvcDetail> = {};
+      await Promise.all(
+        Object.entries(svcByTable).map(async ([tbl, ids]) => {
+          const cfg = SVC_CONFIGS[tbl];
+          const { data } = await supabase
+            .from(tbl as never)
+            .select(cfg.cols)
+            .in("id", Array.from(ids));
+          for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+            svcMap[`${tbl}:${String(row.id)}`] = cfg.map(row);
+          }
+        })
+      );
+      for (const rec of recs) {
+        const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
+        rec.svc = k ? svcMap[k] : undefined;
+      }
+
       setReceipts(recs);
       setExpenses(((e.data ?? []) as unknown) as Expense[]);
       setLoading(false);
