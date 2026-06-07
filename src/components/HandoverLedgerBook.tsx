@@ -224,6 +224,7 @@ export function HandoverLedgerInline({
               country: typeof cfg.country === "function"
                 ? cfg.country()
                 : (row[cfg.country] as string | null) ?? null,
+              service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
               vendor: isTicketBook ? null : ((row[cfg.vendorField] as string | null) ?? null),
               agent: (row[cfg.agentField] as string | null) ?? null,
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
