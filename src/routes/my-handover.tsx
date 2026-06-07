@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen,
 } from "lucide-react";
-import { formatDateTime } from "@/lib/modules";
+import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
