@@ -587,6 +587,7 @@ function HandoverCard({
               const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
               const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
               const isHighlighted = highlightId === r.id;
+              const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
 
               return (
                 <tr
