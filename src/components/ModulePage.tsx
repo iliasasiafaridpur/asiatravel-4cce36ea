@@ -324,7 +324,7 @@ export function ModulePage({ module: mod }: Props) {
     if (supportsExtra) {
       void supabase
         .from("extra_services" as never)
-        .select("id,service_name,service_price,vendor_cost")
+        .select("id,service_name,service_price,vendor_cost,notes")
         .eq("source_table", mod.table)
         .eq("source_id", r.id)
         .order("created_at", { ascending: true })
@@ -334,6 +334,7 @@ export function ModulePage({ module: mod }: Props) {
             service_name: String(x.service_name ?? ""),
             service_price: Number(x.service_price ?? 0),
             vendor_cost: Number(x.vendor_cost ?? 0),
+            notes: String(x.notes ?? ""),
           }));
           setExtraServices(rows);
           setShowExtra(rows.length > 0);
