@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen,
 } from "lucide-react";
-import { formatDateTime } from "@/lib/modules";
+import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
@@ -24,6 +24,10 @@ export const Route = createFileRoute("/my-handover")({
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
+type SvcDetail = {
+  country?: string | null; route?: string | null; airline?: string | null;
+  service_name?: string | null; flight_date?: string | null;
+};
 type Receipt = {
   id: string; receipt_id?: string | null; amount: number;
   passenger_name?: string | null; entry_date: string; created_at?: string | null;
@@ -31,6 +35,7 @@ type Receipt = {
   service_type?: string | null;
   method?: string | null;
   discount?: number;
+  svc?: SvcDetail;
 };
 type Expense = {
   id: string; expense_id?: string | null; amount: number;
@@ -39,6 +44,54 @@ type Expense = {
 };
 
 const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
+
+// Module label per service table (matches MODULES schema).
+const TABLE_LABELS: Record<string, string> = {
+  tickets: "AIR TICKET",
+  bmet_cards: "BMET কার্ড",
+  saudi_visas: "সৌদি ভিসা",
+  kuwait_visas: "কুয়েত ভিসা",
+  others: "Other Service",
+  agency_ledger: "Agency Ledger",
+};
+
+// Columns + mapper to pull service/route info per table.
+const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
+  tickets: {
+    cols: "id,airline,trip_road,flight_date",
+    map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string }),
+  },
+  bmet_cards: {
+    cols: "id,country_name",
+    map: (r) => ({ country: r.country_name as string }),
+  },
+  saudi_visas: {
+    cols: "id",
+    map: () => ({ country: "Saudi Arabia" }),
+  },
+  kuwait_visas: {
+    cols: "id",
+    map: () => ({ country: "Kuwait" }),
+  },
+  others: {
+    cols: "id,service_name,airline,trip_road,flight_date,country_name",
+    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_name as string }),
+  },
+};
+
+// Build the secondary line: module/service name, country, then ticket details.
+function svcLine(rec: Receipt): string {
+  const tbl = rec.service_table ?? "";
+  const svc = rec.svc ?? {};
+  const bits: string[] = [];
+  const label = svc.service_name || TABLE_LABELS[tbl] || rec.service_type || "Service";
+  if (label) bits.push(label);
+  if (svc.country) bits.push(String(svc.country));
+  if (svc.airline) bits.push(String(svc.airline));
+  if (svc.route) bits.push(String(svc.route));
+  if (svc.flight_date) bits.push(`✈ ${formatDate(svc.flight_date)}`);
+  return bits.join(" · ");
+}
 
 function MyHandoverPage() {
   const { user } = useCurrentUser();
@@ -103,6 +156,32 @@ function MyHandoverPage() {
       for (const rec of recs) {
         const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
         rec.discount = k ? (discMap[k] ?? 0) : 0;
+      }
+
+      // Enrich each receipt with service/route info from its underlying service row.
+      const svcByTable: Record<string, Set<string>> = {};
+      for (const rec of recs) {
+        if (!rec.service_table || !rec.service_row_id) continue;
+        if (!SVC_CONFIGS[rec.service_table]) continue;
+        svcByTable[rec.service_table] ??= new Set();
+        svcByTable[rec.service_table].add(rec.service_row_id);
+      }
+      const svcMap: Record<string, SvcDetail> = {};
+      await Promise.all(
+        Object.entries(svcByTable).map(async ([tbl, ids]) => {
+          const cfg = SVC_CONFIGS[tbl];
+          const { data } = await supabase
+            .from(tbl as never)
+            .select(cfg.cols)
+            .in("id", Array.from(ids));
+          for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+            svcMap[`${tbl}:${String(row.id)}`] = cfg.map(row);
+          }
+        })
+      );
+      for (const rec of recs) {
+        const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
+        rec.svc = k ? svcMap[k] : undefined;
       }
 
       setReceipts(recs);
@@ -232,8 +311,8 @@ function MyHandoverPage() {
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
                         <div className="text-sm truncate">{r.passenger_name || "—"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">
-                          {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
+                        <div className="text-xs text-muted-foreground truncate">
+                          {svcLine(r) || (r.receipt_id || r.id.slice(0, 8))}
                         </div>
                         {mdRecv && (
                           <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
