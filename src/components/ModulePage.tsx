@@ -967,6 +967,9 @@ export function ModulePage({ module: mod }: Props) {
           { key: "service", header: "Service", render: (r) => (
             <div>
               <div className="font-medium">{String(r.service_name ?? "—")}</div>
+              {r.airline ? <div className="text-xs text-muted-foreground leading-tight">{String(r.airline)}</div> : null}
+              {r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{String(r.trip_road)}</div> : null}
+              {r.flight_date ? <div className="text-xs text-muted-foreground leading-tight">✈ {formatDate(r.flight_date as string)}</div> : null}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
             </div>
           )},
