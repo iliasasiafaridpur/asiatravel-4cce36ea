@@ -132,7 +132,7 @@ export function StatusChangeDrawer({
   const currentIdx = idxOf(current);
   const _targetIdx = idxOf(next);
   const pdIdx = idxOf("Pending Delivery");
-  const dlIdx = order.findIndex((x) => eq(x, "Delivered") || eq(x, "DELIVERED"));
+  const dlIdx = order.findIndex((x) => eq(x, "Delivered") || eq(x, "DELIVERED") || eq(x, "Delivery"));
   const issueIdx = order.findIndex((x) => eq(x, "ISSUE") || eq(x, "Issue"));
   // Vendor ledger checkpoint priority: Pending Delivery → ISSUE → Delivered
   // (tickets: BOOK → ISSUE [ledger] → DELIVERED; visas: ... → Pending Delivery [ledger] → ...)
