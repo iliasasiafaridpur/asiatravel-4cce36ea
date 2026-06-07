@@ -45,6 +45,7 @@ type ServiceInfo = {
   table: string; id: string; country: string | null; vendor: string | null;
   passport: string | null; sold_price: number; discount: number;
   service_name: string | null; airline: string | null; flight_date: string | null;
+  delivery_date: string | null; has_delivery: boolean;
 };
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
