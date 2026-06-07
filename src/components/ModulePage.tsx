@@ -1481,8 +1481,9 @@ function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
   );
 }
 
-
+function AutoGrowTextInput({
   value, onChange, onBlur, onFocus, className, readOnly, required, placeholder, inputMode,
+
 }: {
   value: string;
   onChange: (e: { target: { value: string } }) => void;
