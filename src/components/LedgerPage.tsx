@@ -411,6 +411,7 @@ export function LedgerPage({ module: mod }: Props) {
         discount_amount: number | null;
         status: string | null;
         received_date: string | null;
+        delivery_date: string | null;
       };
       for (const v of (kv.data as unknown as V[]) ?? []) {
         vm.set(v.id, "Kuwait");
