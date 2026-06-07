@@ -495,7 +495,7 @@ function HandoverCard({
       <div className="bg-muted/40 px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {statusBadge}
-          <span className="font-mono text-[11px] text-muted-foreground">{handover.handover_id}</span>
+          <span className="font-mono text-xs text-muted-foreground">{handover.handover_id}</span>
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
           {status === "approved" && handover.approved_at ? (
@@ -552,7 +552,17 @@ function HandoverCard({
 
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
+          <colgroup>
+            <col className="w-[12%]" />
+            <col className="w-[29%]" />
+            <col className="w-[15%]" />
+            <col className="w-[13%]" />
+            <col className="w-[11%]" />
+            <col className="w-[12%]" />
+            <col className="w-[6%]" />
+            {approveAction && <col className="w-[2%]" />}
+          </colgroup>
           <thead className="bg-muted/30">
             <tr className="text-left">
               <th className="px-1.5 py-1.5 font-semibold">তারিখ</th>
@@ -562,7 +572,7 @@ function HandoverCard({
               <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-1 py-1.5 font-semibold text-center w-12">✓</th>}
+              {approveAction && <th className="px-1 py-1.5 font-semibold text-center">✓</th>}
             </tr>
           </thead>
           <tbody>
@@ -600,16 +610,16 @@ function HandoverCard({
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{formatDate(r.entry_date)}</div>
                     {r.ref_id && (
-                      <div className="text-[10px] text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
+                      <div className="text-xs text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-[10px] text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
                     )}
                   </td>
                   {/* কাস্টমার */}
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-semibold leading-tight">{r.passenger_name || "—"}</div>
-                    <div className="text-[11px] text-muted-foreground leading-tight">
+                    <div className="text-xs text-muted-foreground leading-tight">
                       A: {info?.agent || "Self"}{info?.passport ? ` · ${info.passport}` : ""}
                     </div>
                   </td>
@@ -617,13 +627,13 @@ function HandoverCard({
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{r.service_type}</div>
                     {info?.service_name && (
-                      <div className="text-[11px] text-muted-foreground leading-tight">{info.service_name}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
                     {info?.country && (
-                      <div className="text-[11px] text-muted-foreground leading-tight">{info.country}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">{info.country}</div>
                     )}
                     {info?.airline && (
-                      <div className="text-[11px] text-muted-foreground leading-tight">
+                      <div className="text-xs text-muted-foreground leading-tight">
                         {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
                       </div>
                     )}
@@ -634,16 +644,16 @@ function HandoverCard({
                       <>
                         <div className="text-sm font-bold tabular-nums leading-tight">{fmt(bill)}</div>
                         {discount > 0 && (
-                          <div className="text-[11px] tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
+                          <div className="text-xs tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
                         )}
                         {due > 0.005 && (
-                          <div className="text-[11px] tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
+                          <div className="text-xs tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
                         )}
                         {due <= 0.005 && (
-                          <div className="text-[11px] text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                          <div className="text-xs text-emerald-600 leading-tight">✓ পরিশোধিত</div>
                         )}
                         {info?.vendor && (
-                          <div className="text-[11px] text-muted-foreground leading-tight">
+                          <div className="text-xs text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -657,7 +667,7 @@ function HandoverCard({
                       <>
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
-                          <div className="text-[11px] text-muted-foreground leading-tight">
+                          <div className="text-xs text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -680,20 +690,20 @@ function HandoverCard({
                       >
                         <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(previousPaid)}</div>
                         {lastPast && (
-                          <div className="text-[11px] text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
+                          <div className="text-xs text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
                         )}
                       </button>
-                    ) : <span className="text-[11px] text-muted-foreground">— নতুন —</span>}
+                    ) : <span className="text-xs text-muted-foreground">— নতুন —</span>}
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-1.5 py-1 text-right tabular-nums align-top">
                     <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                     {isAdvance && <AdvanceBadge advance className="ml-1" />}
                     {isMdReceivedMethod(r.method) && (
-                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                      <div className="text-xs text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
                     )}
                     {(r.received_by_name || r.created_at) && (
-                      <div className="text-[10px] text-muted-foreground font-normal leading-tight">
+                      <div className="text-xs text-muted-foreground font-normal leading-tight">
                         {r.received_by_name ? r.received_by_name : ""}{r.received_by_name && r.created_at ? " · " : ""}{r.created_at ? formatDateTime(r.created_at) : ""}
                       </div>
                     )}
@@ -707,7 +717,7 @@ function HandoverCard({
                         <>
                           <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(dueAfterThis)}</div>
                           {futurePaid > 0 && lastFuture && (
-                            <div className="text-[11px] text-emerald-600 font-semibold leading-tight">
+                            <div className="text-xs text-emerald-600 font-semibold leading-tight">
                               জমা: {fmt(futurePaid)} {formatDate(lastFuture.entry_date)}
                             </div>
                           )}
@@ -716,7 +726,7 @@ function HandoverCard({
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   {approveAction && (
-                    <td className="px-1 py-1 text-center align-top">
+                  <td className="px-0.5 py-1 text-center align-top">
                       {r.approval_status === "approved" ? (
                         <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600" aria-label="Approved" />
                       ) : (
@@ -732,7 +742,7 @@ function HandoverCard({
               <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
-                  <div className="text-[11px] text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
+                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
                 )}
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
@@ -765,10 +775,10 @@ function HandoverCard({
                     <td className="px-3 py-2 align-top">
                       <div className="text-sm font-medium">{formatDate(e.entry_date)}</div>
                       {e.expense_id && (
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{e.expense_id}</div>
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5">{e.expense_id}</div>
                       )}
                       {e.created_at && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{formatDateTime(e.created_at)}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{formatDateTime(e.created_at)}</div>
                       )}
                     </td>
                     <td className="px-3 py-2 align-top text-sm font-medium">{e.category || "—"}</td>
@@ -791,7 +801,7 @@ function HandoverCard({
 
 
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
-        <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
+        <div className="px-4 py-2 border-t bg-muted/20 text-xs text-muted-foreground space-y-0.5">
           {confirmed > 0 && confirmed !== submitted && (
             <div>Confirmed: <b className="text-foreground">{fmt(confirmed)}</b> · Variance: <b className={confirmed - submitted > 0 ? "text-emerald-600" : "text-rose-600"}>{confirmed - submitted > 0 ? "+" : ""}{fmt(confirmed - submitted)}</b></div>
           )}
