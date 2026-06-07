@@ -131,6 +131,8 @@ export function LedgerPage({ module: mod }: Props) {
         airline?: string;
         pnr?: string;
         received_from_vendor?: boolean;
+        delivery_date?: string | null;
+        has_delivery?: boolean;
       }
     >
   >(new Map());
