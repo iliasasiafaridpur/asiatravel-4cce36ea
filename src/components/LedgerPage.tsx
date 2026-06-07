@@ -842,7 +842,8 @@ export function LedgerPage({ module: mod }: Props) {
           service_type: "ADVANCE",
           [billCol]: 0,
           [paidCol]: signedAmt,
-          payment_method: payMethod,
+          // Virtual adjustment — no real cash/bank movement, so no payment method.
+          payment_method: "Adjustment",
           // Non-null source_table => sync_vendor_payment_to_cash skips the cash mirror,
           // so this is a pure advance-balance adjustment with no Cash/Bank impact.
           source_table: "manual_adjust",
@@ -2389,29 +2390,31 @@ export function LedgerPage({ module: mod }: Props) {
               </Tabs>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  Payment Method <span className="text-rose-500">*</span>
-                </Label>
-                <Select value={payMethod} onValueChange={setPayMethod}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="-- Method --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {visiblePaymentMethods.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isAgency && isMdReceivedMethod(payMethod) && (
-                  <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
-                    ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — user cash balance-এ যোগ হবে না, কিন্তু My Accounts ও Cash Handover-এ এন্ট্রি থাকবে ({payMethod})।
-                  </p>
-                )}
-              </div>
+            <div className={payAsAdjust ? "grid grid-cols-1 gap-3" : "grid grid-cols-2 gap-3"}>
+              {!payAsAdjust && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Payment Method <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={payMethod} onValueChange={setPayMethod}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="-- Method --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {visiblePaymentMethods.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isAgency && isMdReceivedMethod(payMethod) && (
+                    <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                      ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — user cash balance-এ যোগ হবে না, কিন্তু My Accounts ও Cash Handover-এ এন্ট্রি থাকবে ({payMethod})।
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label className="text-xs">Remarks</Label>
                 <Input
