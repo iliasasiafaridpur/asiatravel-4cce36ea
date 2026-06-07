@@ -23,10 +23,64 @@ type Receipt = {
   service_type?: string | null;
   method?: string | null;
   discount?: number;
+  svc?: SvcDetail;
 };
 type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null };
 
+type SvcDetail = {
+  country?: string | null; route?: string | null; airline?: string | null;
+  service_name?: string | null; flight_date?: string | null;
+};
+
 const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
+
+// Module label per service table (matches MODULES schema).
+const TABLE_LABELS: Record<string, string> = {
+  tickets: "AIR TICKET",
+  bmet_cards: "BMET কার্ড",
+  saudi_visas: "সৌদি ভিসা",
+  kuwait_visas: "কুয়েত ভিসা",
+  others: "Other Service",
+  agency_ledger: "Agency Ledger",
+};
+
+// Columns + mapper to pull service/route info per table.
+const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
+  tickets: {
+    cols: "id,airline,trip_road,flight_date",
+    map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string }),
+  },
+  bmet_cards: {
+    cols: "id,country_name",
+    map: (r) => ({ country: r.country_name as string }),
+  },
+  saudi_visas: {
+    cols: "id",
+    map: () => ({ country: "Saudi Arabia" }),
+  },
+  kuwait_visas: {
+    cols: "id",
+    map: () => ({ country: "Kuwait" }),
+  },
+  others: {
+    cols: "id,service_name,airline,trip_road,flight_date,country_name",
+    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_name as string }),
+  },
+};
+
+// Build the secondary line: module/service name, country, then ticket details.
+function svcLine(rec: Receipt): string {
+  const tbl = rec.service_table ?? "";
+  const svc = rec.svc ?? {};
+  const bits: string[] = [];
+  const label = svc.service_name || TABLE_LABELS[tbl] || rec.service_type || "Service";
+  if (label) bits.push(label);
+  if (svc.country) bits.push(String(svc.country));
+  if (svc.airline) bits.push(String(svc.airline));
+  if (svc.route) bits.push(String(svc.route));
+  if (svc.flight_date) bits.push(`✈ ${formatDate(svc.flight_date)}`);
+  return bits.join(" · ");
+}
 
 export function StaffHandoverDialog({
   open,
