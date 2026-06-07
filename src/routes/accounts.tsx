@@ -987,6 +987,7 @@ ${node.innerHTML.replace(
                     }
                   }
                   const mdRecv = isMdReceivedMethod(r.method);
+                  const isAdvance = !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
                   return (
                     <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
                       <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
@@ -995,7 +996,7 @@ ${node.innerHTML.replace(
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${mdRecv ? "text-sky-600" : "text-emerald-600"}`}>+ {fmt(Number(r.amount))}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${mdRecv ? "text-sky-600" : "text-emerald-600"}`}>+ {fmt(Number(r.amount))} {isAdvance ? <AdvanceBadge advance /> : null}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
                            {r.service_type}{r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
