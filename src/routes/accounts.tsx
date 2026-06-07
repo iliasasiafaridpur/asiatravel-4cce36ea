@@ -177,6 +177,7 @@ function AccountsPage() {
   // Service detail map (for timeline secondary text & due display)
    type SvcDetail = {
      country?: string | null; route?: string | null; airline?: string | null;
+     service_name?: string | null;
      flight_date?: string | null; vendor?: string | null; cost?: number;
       sold?: number; received_total?: number; discount?: number; agent?: string | null;
    };
@@ -204,6 +205,10 @@ function AccountsPage() {
       kuwait_visas: {
         cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount",
         map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0) }),
+      },
+      others: {
+        cols: "id,service_name,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount",
+        map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0) }),
       },
     };
     let cancelled = false;
@@ -757,6 +762,11 @@ ${node.innerHTML.replace(
                       if (svc.route) svcLines.push(svc.route);
                       if (svc.airline) svcLines.push(svc.airline);
                       if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
+                    } else if (r.service_table === "others") {
+                      if (svc.service_name) svcLines.push(svc.service_name);
+                      if (svc.airline) svcLines.push(svc.airline);
+                      if (svc.route) svcLines.push(svc.route);
+                      if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
                       svcLines.push(svc.country);
                     }
@@ -895,6 +905,8 @@ ${node.innerHTML.replace(
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
                       region = [svc.route, svc.airline].filter(Boolean).join(" · ");
+                    } else if (r.service_table === "others") {
+                      region = [svc.service_name, svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
                     } else if (svc.country) {
                       region = svc.country;
                     }
@@ -961,6 +973,11 @@ ${node.innerHTML.replace(
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
                       if (svc.airline) bits.push(svc.airline);
+                    } else if (r.service_table === "others") {
+                      if (svc.service_name) bits.push(svc.service_name);
+                      if (svc.airline) bits.push(svc.airline);
+                      if (svc.route) bits.push(svc.route);
+                      if (svc.flight_date) bits.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (svc.country) {
                       bits.push(svc.country);
                     }

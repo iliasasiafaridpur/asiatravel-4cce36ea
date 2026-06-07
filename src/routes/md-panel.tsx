@@ -44,16 +44,18 @@ type Receipt = {
 type ServiceInfo = {
   table: string; id: string; country: string | null; vendor: string | null;
   passport: string | null; sold_price: number; discount: number;
+  service_name: string | null; airline: string | null; flight_date: string | null;
 };
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount" },
+  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "bmet_cards", country: "country_name", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "tickets", country: "trip_road", serviceNameField: null, airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "others", country: "trip_road", serviceNameField: "service_name", airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
+  { table: "agency_ledger", country: "country_route", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount" },
 ] as const;
 
 function MdPanelPage() {
@@ -91,9 +93,13 @@ function MdPanelPage() {
         const cols = ["id", "passport"];
         if (typeof cfg.country === "string") cols.push(cfg.country);
         cols.push(cfg.vendorField, cfg.soldField, cfg.discountField);
+        if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
+        if (cfg.airlineField) cols.push(cfg.airlineField);
+        if (cfg.flightDateField) cols.push(cfg.flightDateField);
+        const uniqueCols = Array.from(new Set(cols));
         const { data } = await supabase
           .from(cfg.table as never)
-          .select(cols.join(","))
+          .select(uniqueCols.join(","))
           .in("id", Array.from(ids));
         for (const row of (data ?? []) as Array<Record<string, unknown>>) {
           map[`${cfg.table}:${row.id as string}`] = {
@@ -106,6 +112,9 @@ function MdPanelPage() {
             passport: (row.passport as string | null) ?? null,
             sold_price: Number(row[cfg.soldField] ?? 0),
             discount: Number(row[cfg.discountField] ?? 0),
+            service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
+            airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
+            flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
           };
         }
       })
@@ -444,7 +453,9 @@ function PastEodPanel({
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="text-sm">{r.service_type}</div>
+                    {info?.service_name && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
                     {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
+                    {info?.airline && <div className="text-xs text-muted-foreground">{info.airline}{info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}</div>}
                     {info && info.discount > 0 && (
                       <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
                         ডিসকাউন্ট: {fmt(info.discount)}

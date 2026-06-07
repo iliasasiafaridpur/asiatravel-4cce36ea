@@ -64,6 +64,7 @@ export type ExtraServiceRow = {
   service_name: string;
   service_price: number;
   vendor_cost: number;
+  notes: string;
 };
 
 type Row = Record<string, unknown> & { id: string };
@@ -123,6 +124,7 @@ export function ModulePage({ module: mod }: Props) {
   const [extraServices, setExtraServices] = useState<ExtraServiceRow[]>([]);
   const [showExtra, setShowExtra] = useState(false);
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
+  const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; notes: string }[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
@@ -207,14 +209,21 @@ export function ModulePage({ module: mod }: Props) {
     try {
       const { data } = await supabase
         .from("extra_services" as never)
-        .select("source_id")
+        .select("source_id,service_name,service_price,notes")
         .eq("source_table", mod.table);
       const m: Record<string, number> = {};
-      ((data as { source_id: string }[] | null) ?? []).forEach((r) => {
+      const d: Record<string, { service_name: string; service_price: number; notes: string }[]> = {};
+      ((data as { source_id: string; service_name: string; service_price: number; notes: string | null }[] | null) ?? []).forEach((r) => {
         const k = String(r.source_id);
         m[k] = (m[k] ?? 0) + 1;
+        (d[k] ||= []).push({
+          service_name: String(r.service_name ?? ""),
+          service_price: Number(r.service_price ?? 0),
+          notes: String(r.notes ?? ""),
+        });
       });
       setExtraCounts(m);
+      setExtraDetails(d);
     } catch { /* ignore */ }
   }, [mod.table, supportsExtra]);
 
@@ -323,7 +332,7 @@ export function ModulePage({ module: mod }: Props) {
     if (supportsExtra) {
       void supabase
         .from("extra_services" as never)
-        .select("id,service_name,service_price,vendor_cost")
+        .select("id,service_name,service_price,vendor_cost,notes")
         .eq("source_table", mod.table)
         .eq("source_id", r.id)
         .order("created_at", { ascending: true })
@@ -333,6 +342,7 @@ export function ModulePage({ module: mod }: Props) {
             service_name: String(x.service_name ?? ""),
             service_price: Number(x.service_price ?? 0),
             vendor_cost: Number(x.vendor_cost ?? 0),
+            notes: String(x.notes ?? ""),
           }));
           setExtraServices(rows);
           setShowExtra(rows.length > 0);
@@ -372,6 +382,7 @@ export function ModulePage({ module: mod }: Props) {
         service_name: name,
         service_price: Number(ex.service_price) || 0,
         vendor_cost: Number(ex.vendor_cost) || 0,
+        notes: (ex.notes || "").trim() || null,
       };
       if (ex.id && existingIds.has(ex.id)) {
         keepIds.add(ex.id);
@@ -665,14 +676,29 @@ export function ModulePage({ module: mod }: Props) {
     const extraBadge = (r: Row) => {
       const n = extraCounts[r.id] ?? 0;
       if (!n) return null;
+      const details = extraDetails[r.id] ?? [];
+      const tip = details.length
+        ? details.map((d) => `${d.service_name || "Service"} — ৳${(d.service_price || 0).toLocaleString()}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
+        : `${n} Extra Service`;
       return (
         <Badge
           variant="outline"
           className="ml-1 align-middle bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/30 px-1.5 py-0 text-[10px]"
-          title={`${n} Extra Service`}
+          title={tip}
         >
           +{n}
         </Badge>
+      );
+    };
+
+    // Notes from extra services for a row — shown as a small line in the data list.
+    const extraNotesLine = (r: Row) => {
+      const notes = (extraDetails[r.id] ?? []).map((d) => d.notes.trim()).filter(Boolean);
+      if (!notes.length) return null;
+      return (
+        <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 leading-tight mt-0.5 break-words">
+          📝 {notes.join(" · ")}
+        </div>
       );
     };
 
@@ -769,6 +795,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[140px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
@@ -822,6 +849,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
@@ -876,6 +904,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
@@ -929,6 +958,7 @@ export function ModulePage({ module: mod }: Props) {
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
@@ -988,7 +1018,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails]);
 
   return (
     <div className="space-y-4">
@@ -1476,7 +1506,7 @@ function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
 }) {
   const addRow = () => {
     setShow(true);
-    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0 }]);
+    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0, notes: "" }]);
   };
   const update = (i: number, patch: Partial<ExtraServiceRow>) =>
     setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -1546,6 +1576,14 @@ function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
               >
                 <Trash2 className="h-4 w-4 text-rose-500" />
               </Button>
+              <div className="space-y-1 w-full">
+                <Label className="text-sm font-medium">Note</Label>
+                <Input
+                  value={ex.notes || ""}
+                  onChange={(e) => update(i, { notes: e.target.value })}
+                  placeholder="এই সার্ভিস সম্পর্কে নোট (সব হিসাবে দেখা যাবে)"
+                />
+              </div>
             </div>
           ))}
         </div>

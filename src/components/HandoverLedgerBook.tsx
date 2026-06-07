@@ -69,6 +69,7 @@ type Expense = {
 
 type ServiceInfo = {
   country: string | null;
+  service_name: string | null;
   vendor: string | null;
   agent: string | null;
   airline: string | null;
@@ -82,11 +83,12 @@ type ServiceInfo = {
 };
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
-  { table: "kuwait_visas", country: () => "Kuwait", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
-  { table: "bmet_cards", country: "country_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
-  { table: "tickets", country: "trip_road", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date" },
-  { table: "agency_ledger", country: "country_route", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null },
+  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
+  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
+  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
+  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date" },
+  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date" },
+  { table: "agency_ledger", country: "country_route", serviceNameField: null, vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null },
 ] as const;
 
 export function HandoverLedgerInline({
@@ -204,6 +206,7 @@ export function HandoverLedgerInline({
           if (typeof cfg.country === "string") cols.push(cfg.country);
           cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.discountField);
           if (cfg.airlineField) cols.push(cfg.airlineField);
+          if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
           if (cfg.costField) cols.push(cfg.costField);
           if (cfg.flightDateField) cols.push(cfg.flightDateField);
           // Need status for tickets to hide vendor/cost while in BOOK.
@@ -221,6 +224,7 @@ export function HandoverLedgerInline({
               country: typeof cfg.country === "function"
                 ? cfg.country()
                 : (row[cfg.country] as string | null) ?? null,
+              service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
               vendor: isTicketBook ? null : ((row[cfg.vendorField] as string | null) ?? null),
               agent: (row[cfg.agentField] as string | null) ?? null,
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
@@ -606,6 +610,9 @@ function HandoverCard({
                   {/* সার্ভিস */}
                   <td className="px-3 py-2 align-top">
                     <div className="text-sm font-medium">{r.service_type}</div>
+                    {info?.service_name && (
+                      <div className="text-xs text-muted-foreground mt-0.5">{info.service_name}</div>
+                    )}
                     {info?.country && (
                       <div className="text-xs text-muted-foreground mt-0.5">{info.country}</div>
                     )}
