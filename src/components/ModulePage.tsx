@@ -374,6 +374,7 @@ export function ModulePage({ module: mod }: Props) {
         service_name: name,
         service_price: Number(ex.service_price) || 0,
         vendor_cost: Number(ex.vendor_cost) || 0,
+        notes: (ex.notes || "").trim() || null,
       };
       if (ex.id && existingIds.has(ex.id)) {
         keepIds.add(ex.id);
