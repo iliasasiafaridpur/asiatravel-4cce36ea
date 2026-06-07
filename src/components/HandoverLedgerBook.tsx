@@ -726,7 +726,7 @@ function HandoverCard({
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   {approveAction && (
-                  <td className="px-0.5 py-1 text-center align-top">
+                  <td className="px-0.5 py-1 pr-2 text-center align-top">
                       {r.approval_status === "approved" ? (
                         <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600" aria-label="Approved" />
                       ) : (
