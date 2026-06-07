@@ -768,7 +768,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[140px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}</div>
+              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {r.passport ? subLine("PP", String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
