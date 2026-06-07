@@ -287,7 +287,7 @@ export function LedgerPage({ module: mod }: Props) {
   // Load source-table enrichment maps: tickets (route + flight_date), bmet (country), saudi/kuwait visas (sponsor/country)
   useEffect(() => {
     (async () => {
-      const [tk, bm, kv, sv] = await Promise.all([
+      const [tk, bm, kv, sv, ot] = await Promise.all([
         supabase
           .from("tickets")
           .select(
@@ -296,15 +296,19 @@ export function LedgerPage({ module: mod }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .limit(2000),
+        supabase
+          .from("others")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,service_name,delivery_date")
           .limit(2000),
       ]);
       const fm = new Map<string, string>();
