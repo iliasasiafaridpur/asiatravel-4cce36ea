@@ -610,16 +610,16 @@ function HandoverCard({
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{formatDate(r.entry_date)}</div>
                     {r.ref_id && (
-                      <div className="text-xs text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
+                      <div className="text-sm text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-xs text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
+                      <div className="text-sm text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
                     )}
                   </td>
                   {/* কাস্টমার */}
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-semibold leading-tight">{r.passenger_name || "—"}</div>
-                    <div className="text-xs text-muted-foreground leading-tight">
+                    <div className="text-sm text-muted-foreground leading-tight">
                       A: {info?.agent || "Self"}{info?.passport ? ` · ${info.passport}` : ""}
                     </div>
                   </td>
@@ -627,13 +627,13 @@ function HandoverCard({
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{r.service_type}</div>
                     {info?.service_name && (
-                      <div className="text-xs text-muted-foreground leading-tight">{info.service_name}</div>
+                      <div className="text-sm text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
                     {info?.country && (
-                      <div className="text-xs text-muted-foreground leading-tight">{info.country}</div>
+                      <div className="text-sm text-muted-foreground leading-tight">{info.country}</div>
                     )}
                     {info?.airline && (
-                      <div className="text-xs text-muted-foreground leading-tight">
+                      <div className="text-sm text-muted-foreground leading-tight">
                         {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
                       </div>
                     )}
@@ -644,16 +644,16 @@ function HandoverCard({
                       <>
                         <div className="text-sm font-bold tabular-nums leading-tight">{fmt(bill)}</div>
                         {discount > 0 && (
-                          <div className="text-xs tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
+                          <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
                         )}
                         {due > 0.005 && (
-                          <div className="text-xs tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
+                          <div className="text-sm tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
                         )}
                         {due <= 0.005 && (
-                          <div className="text-xs text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                          <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
                         )}
                         {info?.vendor && (
-                          <div className="text-xs text-muted-foreground leading-tight">
+                          <div className="text-sm text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -667,7 +667,7 @@ function HandoverCard({
                       <>
                         <span className="text-muted-foreground">—</span>
                         {info?.vendor && (
-                          <div className="text-xs text-muted-foreground leading-tight">
+                          <div className="text-sm text-muted-foreground leading-tight">
                             V: {info.vendor}
                             {info.vendor_price > 0 ? (
                               `-${Math.round(info.vendor_price).toLocaleString()}/`
@@ -690,20 +690,20 @@ function HandoverCard({
                       >
                         <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(previousPaid)}</div>
                         {lastPast && (
-                          <div className="text-xs text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
+                          <div className="text-sm text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
                         )}
                       </button>
-                    ) : <span className="text-xs text-muted-foreground">— নতুন —</span>}
+                    ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-1.5 py-1 text-right tabular-nums align-top">
                     <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                     {isAdvance && <AdvanceBadge advance className="ml-1" />}
                     {isMdReceivedMethod(r.method) && (
-                      <div className="text-xs text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                      <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
                     )}
                     {(r.received_by_name || r.created_at) && (
-                      <div className="text-xs text-muted-foreground font-normal leading-tight">
+                      <div className="text-sm text-muted-foreground font-normal leading-tight">
                         {r.received_by_name ? r.received_by_name : ""}{r.received_by_name && r.created_at ? " · " : ""}{r.created_at ? formatDateTime(r.created_at) : ""}
                       </div>
                     )}
@@ -717,7 +717,7 @@ function HandoverCard({
                         <>
                           <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(dueAfterThis)}</div>
                           {futurePaid > 0 && lastFuture && (
-                            <div className="text-xs text-emerald-600 font-semibold leading-tight">
+                            <div className="text-sm text-emerald-600 font-semibold leading-tight">
                               জমা: {fmt(futurePaid)} {formatDate(lastFuture.entry_date)}
                             </div>
                           )}
