@@ -690,7 +690,7 @@ function HandoverCard({
                       >
                         <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(previousPaid)}</div>
                         {lastPast && (
-                          <div className="text-[11px] text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
+                          <div className="text-xs text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
                         )}
                       </button>
                     ) : <span className="text-xs text-muted-foreground">— নতুন —</span>}
@@ -700,10 +700,10 @@ function HandoverCard({
                     <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                     {isAdvance && <AdvanceBadge advance className="ml-1" />}
                     {isMdReceivedMethod(r.method) && (
-                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                      <div className="text-xs text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
                     )}
                     {(r.received_by_name || r.created_at) && (
-                      <div className="text-[10px] text-muted-foreground font-normal leading-tight">
+                      <div className="text-xs text-muted-foreground font-normal leading-tight">
                         {r.received_by_name ? r.received_by_name : ""}{r.received_by_name && r.created_at ? " · " : ""}{r.created_at ? formatDateTime(r.created_at) : ""}
                       </div>
                     )}
@@ -717,7 +717,7 @@ function HandoverCard({
                         <>
                           <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(dueAfterThis)}</div>
                           {futurePaid > 0 && lastFuture && (
-                            <div className="text-[11px] text-emerald-600 font-semibold leading-tight">
+                            <div className="text-xs text-emerald-600 font-semibold leading-tight">
                               জমা: {fmt(futurePaid)} {formatDate(lastFuture.entry_date)}
                             </div>
                           )}
@@ -726,7 +726,7 @@ function HandoverCard({
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   {approveAction && (
-                    <td className="px-1 py-1 text-center align-top">
+                  <td className="px-0.5 py-1 text-center align-top">
                       {r.approval_status === "approved" ? (
                         <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600" aria-label="Approved" />
                       ) : (
