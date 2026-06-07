@@ -97,6 +97,7 @@ function MdPanelPage() {
         if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
         if (cfg.airlineField) cols.push(cfg.airlineField);
         if (cfg.flightDateField) cols.push(cfg.flightDateField);
+        if (cfg.deliveryField) cols.push(cfg.deliveryField);
         const uniqueCols = Array.from(new Set(cols));
         const { data } = await supabase
           .from(cfg.table as never)
