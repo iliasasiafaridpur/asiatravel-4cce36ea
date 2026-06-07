@@ -16,7 +16,8 @@ import {
   ShieldCheck, CheckCircle2, Search, Hourglass, Wallet, Repeat, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatDateTime } from "@/lib/modules";
+import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
+import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 
 export const Route = createFileRoute("/md-panel")({
