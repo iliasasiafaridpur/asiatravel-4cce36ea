@@ -1549,6 +1549,14 @@ function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
               >
                 <Trash2 className="h-4 w-4 text-rose-500" />
               </Button>
+              <div className="space-y-1 w-full">
+                <Label className="text-sm font-medium">Note</Label>
+                <Input
+                  value={ex.notes || ""}
+                  onChange={(e) => update(i, { notes: e.target.value })}
+                  placeholder="এই সার্ভিস সম্পর্কে নোট (সব হিসাবে দেখা যাবে)"
+                />
+              </div>
             </div>
           ))}
         </div>
