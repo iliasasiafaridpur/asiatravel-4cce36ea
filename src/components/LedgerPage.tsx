@@ -2227,7 +2227,7 @@ export function LedgerPage({ module: mod }: Props) {
             )}
 
             {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance/MD deposit */}
-            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && (
+            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && !payAsAdjust && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
