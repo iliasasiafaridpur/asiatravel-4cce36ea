@@ -425,6 +425,8 @@ export function LedgerPage({ module: mod }: Props) {
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
           received_from_vendor: !!v.received_date,
+          delivery_date: v.delivery_date ?? undefined,
+          has_delivery: true,
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -439,6 +441,35 @@ export function LedgerPage({ module: mod }: Props) {
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
           received_from_vendor: !!v.received_date,
+          delivery_date: v.delivery_date ?? undefined,
+          has_delivery: true,
+        });
+      }
+      type O = {
+        id: string;
+        passport: string | null;
+        mobile: string | null;
+        vendor_bought: string | null;
+        agency_sold: string | null;
+        sold_price: number | null;
+        cost_price: number | null;
+        discount_amount: number | null;
+        status: string | null;
+        service_name: string | null;
+        delivery_date: string | null;
+      };
+      for (const o of (ot.data as unknown as O[]) ?? []) {
+        info.set(o.id, {
+          passport: o.passport ?? undefined,
+          mobile: o.mobile ?? undefined,
+          vendor: o.vendor_bought ?? undefined,
+          agency_sold: o.agency_sold ?? undefined,
+          sold: o.sold_price ?? undefined,
+          cost: o.cost_price ?? undefined,
+          discount: o.discount_amount ?? undefined,
+          status: o.status ?? undefined,
+          delivery_date: o.delivery_date ?? undefined,
+          has_delivery: true,
         });
       }
 
