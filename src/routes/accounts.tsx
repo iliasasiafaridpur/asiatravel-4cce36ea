@@ -905,6 +905,8 @@ ${node.innerHTML.replace(
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
                       region = [svc.route, svc.airline].filter(Boolean).join(" · ");
+                    } else if (r.service_table === "others") {
+                      region = [svc.service_name, svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
                     } else if (svc.country) {
                       region = svc.country;
                     }
