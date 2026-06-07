@@ -1210,6 +1210,8 @@ export function LedgerPage({ module: mod }: Props) {
         const adjusted = advanceAdjustedRows.get(r.id);
         const paid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
         const due = adjusted?.displayDue ?? Math.max(bill - Number(r[paidCol] ?? 0) - discountOf(r), 0);
+        const pInfo = srcId ? sourceInfoMap.get(srcId) : undefined;
+        const pIsAdvance = svcU !== "PAYMENT" && svcU !== "ADVANCE" && svcU !== "OPENING" && paid > 0 && !!pInfo?.has_delivery && isAdvancePayment(r.payment_date as string | null, pInfo?.delivery_date);
         const srcId = String(r.source_id ?? "");
         const service = String(r.service_type ?? "");
         const svcU = service.toUpperCase();
