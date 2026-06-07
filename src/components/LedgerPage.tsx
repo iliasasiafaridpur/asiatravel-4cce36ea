@@ -378,6 +378,7 @@ export function LedgerPage({ module: mod }: Props) {
         cost_price: number | null;
         status: string | null;
         received_date: string | null;
+        delivery_date: string | null;
         discount_amount: number | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
