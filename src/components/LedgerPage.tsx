@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, statusBadgeClass, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
+import { formatDate, statusBadgeClass, isAdvancePayment, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
+import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { LookupSelect } from "@/components/LookupSelect";
@@ -131,6 +132,8 @@ export function LedgerPage({ module: mod }: Props) {
         airline?: string;
         pnr?: string;
         received_from_vendor?: boolean;
+        delivery_date?: string | null;
+        has_delivery?: boolean;
       }
     >
   >(new Map());
@@ -285,7 +288,7 @@ export function LedgerPage({ module: mod }: Props) {
   // Load source-table enrichment maps: tickets (route + flight_date), bmet (country), saudi/kuwait visas (sponsor/country)
   useEffect(() => {
     (async () => {
-      const [tk, bm, kv, sv] = await Promise.all([
+      const [tk, bm, kv, sv, ot] = await Promise.all([
         supabase
           .from("tickets")
           .select(
@@ -294,15 +297,19 @@ export function LedgerPage({ module: mod }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .limit(2000),
+        supabase
+          .from("others")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,service_name,delivery_date")
           .limit(2000),
       ]);
       const fm = new Map<string, string>();
@@ -321,6 +328,8 @@ export function LedgerPage({ module: mod }: Props) {
           airline?: string;
           pnr?: string;
           received_from_vendor?: boolean;
+          delivery_date?: string | null;
+          has_delivery?: boolean;
         }
       >();
 
@@ -355,6 +364,7 @@ export function LedgerPage({ module: mod }: Props) {
           status: t.status ?? undefined,
           airline: t.airline ?? undefined,
           pnr: t.pnr ?? undefined,
+          has_delivery: false,
         });
       }
       const cm = new Map<string, string>();
@@ -369,6 +379,7 @@ export function LedgerPage({ module: mod }: Props) {
         cost_price: number | null;
         status: string | null;
         received_date: string | null;
+        delivery_date: string | null;
         discount_amount: number | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
@@ -385,6 +396,8 @@ export function LedgerPage({ module: mod }: Props) {
           // Received from vendor = "Received Date From Vendor" is set. Stays a
           // vendor payable through Pending Delivery → Delivery But Due → Delivered.
           received_from_vendor: !!b.received_date,
+          delivery_date: b.delivery_date ?? undefined,
+          has_delivery: true,
         });
       }
       const vm = new Map<string, string>();
@@ -399,6 +412,7 @@ export function LedgerPage({ module: mod }: Props) {
         discount_amount: number | null;
         status: string | null;
         received_date: string | null;
+        delivery_date: string | null;
       };
       for (const v of (kv.data as unknown as V[]) ?? []) {
         vm.set(v.id, "Kuwait");
@@ -412,6 +426,8 @@ export function LedgerPage({ module: mod }: Props) {
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
           received_from_vendor: !!v.received_date,
+          delivery_date: v.delivery_date ?? undefined,
+          has_delivery: true,
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -426,6 +442,35 @@ export function LedgerPage({ module: mod }: Props) {
           discount: v.discount_amount ?? undefined,
           status: v.status ?? undefined,
           received_from_vendor: !!v.received_date,
+          delivery_date: v.delivery_date ?? undefined,
+          has_delivery: true,
+        });
+      }
+      type O = {
+        id: string;
+        passport: string | null;
+        mobile: string | null;
+        vendor_bought: string | null;
+        agency_sold: string | null;
+        sold_price: number | null;
+        cost_price: number | null;
+        discount_amount: number | null;
+        status: string | null;
+        service_name: string | null;
+        delivery_date: string | null;
+      };
+      for (const o of (ot.data as unknown as O[]) ?? []) {
+        info.set(o.id, {
+          passport: o.passport ?? undefined,
+          mobile: o.mobile ?? undefined,
+          vendor: o.vendor_bought ?? undefined,
+          agency_sold: o.agency_sold ?? undefined,
+          sold: o.sold_price ?? undefined,
+          cost: o.cost_price ?? undefined,
+          discount: o.discount_amount ?? undefined,
+          status: o.status ?? undefined,
+          delivery_date: o.delivery_date ?? undefined,
+          has_delivery: true,
         });
       }
 
@@ -1179,6 +1224,8 @@ export function LedgerPage({ module: mod }: Props) {
         }
         const passenger = String(r.passenger_name ?? "—");
         const agent = String(r[groupField] ?? "—");
+        const pInfo = srcId ? sourceInfoMap.get(srcId) : undefined;
+        const pIsAdvance = svcU !== "PAYMENT" && svcU !== "ADVANCE" && svcU !== "OPENING" && paid > 0 && !!pInfo?.has_delivery && isAdvancePayment(r.payment_date as string | null, pInfo?.delivery_date);
         const dueCell =
           due > 0
             ? `<span style="color:#dc2626;font-weight:700">${fmt(due)}</span>`
@@ -1190,7 +1237,7 @@ export function LedgerPage({ module: mod }: Props) {
 <td>${service || "—"}${cr ? `<div style="font-size:10px;color:#666">${cr}</div>` : ""}</td>
 <td>${agent}</td>
 <td class="num">${fmt(bill)}</td>
-<td class="num">${fmt(paid)}</td>
+<td class="num">${fmt(paid)}${pIsAdvance ? ' <span style="font-size:9px;color:#d97706;font-weight:700">(Adv)</span>' : ""}</td>
 <td class="num">${dueCell}</td>
 </tr>`;
       })
@@ -1616,6 +1663,9 @@ export function LedgerPage({ module: mod }: Props) {
                   const displayPaid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
                   const displayDue = adjusted?.displayDue ?? Math.max(bal, 0);
                   const appliedAdvance = adjusted?.applied ?? 0;
+                  const isAdvanceBeforeDelivery =
+                    !isPayment && !isAdvanceRow(r) && displayPaid > 0 && !!info?.has_delivery &&
+                    isAdvancePayment(r.payment_date as string | null, info?.delivery_date);
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
@@ -1758,7 +1808,7 @@ export function LedgerPage({ module: mod }: Props) {
                           ৳ {Number(r[billCol] ?? 0).toLocaleString()}
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()}
+                          {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()} {isAdvanceBeforeDelivery ? <AdvanceBadge advance /> : null}
                         </div>
                         {appliedAdvance > 0 && (
                           <div className="text-[11px] text-muted-foreground">

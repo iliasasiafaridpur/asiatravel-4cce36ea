@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { formatDate, formatDateTime } from "@/lib/modules";
+import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
+import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
 import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
@@ -80,15 +81,17 @@ type ServiceInfo = {
   /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
   tracks_cost: boolean;
   flight_date: string | null;
+  delivery_date: string | null;
+  has_delivery: boolean;
 };
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
-  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
-  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null },
-  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date" },
-  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: null, vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null },
+  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: null },
+  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: "delivery_date" },
+  { table: "agency_ledger", country: "country_route", serviceNameField: null, vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
 ] as const;
 
 export function HandoverLedgerInline({
@@ -209,6 +212,7 @@ export function HandoverLedgerInline({
           if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
           if (cfg.costField) cols.push(cfg.costField);
           if (cfg.flightDateField) cols.push(cfg.flightDateField);
+          if (cfg.deliveryField) cols.push(cfg.deliveryField);
           // Need status for tickets to hide vendor/cost while in BOOK.
           if (cfg.table === "tickets") cols.push("status");
           const uniqueCols = Array.from(new Set(cols));
@@ -234,6 +238,8 @@ export function HandoverLedgerInline({
               vendor_price: isTicketBook ? 0 : (cfg.costField ? Number(row[cfg.costField] ?? 0) : 0),
               tracks_cost: !isTicketBook && Boolean(cfg.costField),
               flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
+              delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
+              has_delivery: Boolean(cfg.deliveryField),
             };
           }
         })
@@ -582,6 +588,7 @@ function HandoverCard({
               const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
               const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
               const isHighlighted = highlightId === r.id;
+              const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
 
               return (
                 <tr
@@ -685,6 +692,7 @@ function HandoverCard({
                   {/* এই বারের জমা */}
                   <td className="px-3 py-2 text-right tabular-nums">
                     <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                    {isAdvance && <div className="mt-0.5"><AdvanceBadge advance /></div>}
                     {isMdReceivedMethod(r.method) && (
                       <div className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">MD রিসিভ · {r.method}<br />(ক্যাশে নয়)</div>
                     )}

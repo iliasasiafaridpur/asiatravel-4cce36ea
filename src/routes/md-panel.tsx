@@ -16,7 +16,8 @@ import {
   ShieldCheck, CheckCircle2, Search, Hourglass, Wallet, Repeat, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatDateTime } from "@/lib/modules";
+import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
+import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 
 export const Route = createFileRoute("/md-panel")({
@@ -45,17 +46,18 @@ type ServiceInfo = {
   table: string; id: string; country: string | null; vendor: string | null;
   passport: string | null; sold_price: number; discount: number;
   service_name: string | null; airline: string | null; flight_date: string | null;
+  delivery_date: string | null; has_delivery: boolean;
 };
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "bmet_cards", country: "country_name", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "tickets", country: "trip_road", serviceNameField: null, airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "others", country: "trip_road", serviceNameField: "service_name", airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount" },
+  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
+  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
+  { table: "bmet_cards", country: "country_name", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
+  { table: "tickets", country: "trip_road", serviceNameField: null, airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: null },
+  { table: "others", country: "trip_road", serviceNameField: "service_name", airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
+  { table: "agency_ledger", country: "country_route", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount", deliveryField: null },
 ] as const;
 
 function MdPanelPage() {
@@ -96,6 +98,7 @@ function MdPanelPage() {
         if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
         if (cfg.airlineField) cols.push(cfg.airlineField);
         if (cfg.flightDateField) cols.push(cfg.flightDateField);
+        if (cfg.deliveryField) cols.push(cfg.deliveryField);
         const uniqueCols = Array.from(new Set(cols));
         const { data } = await supabase
           .from(cfg.table as never)
@@ -115,6 +118,8 @@ function MdPanelPage() {
             service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
             airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
             flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
+            delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
+            has_delivery: Boolean(cfg.deliveryField),
           };
         }
       })
@@ -462,7 +467,7 @@ function PastEodPanel({
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">{fmt(r.amount)}</td>
+                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">{fmt(r.amount)} {info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date) ? <AdvanceBadge advance /> : null}</td>
                   <td className="px-2 py-1.5 text-xs text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</td>
                 </tr>
               );
