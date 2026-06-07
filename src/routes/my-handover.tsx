@@ -311,8 +311,8 @@ function MyHandoverPage() {
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
                         <div className="text-sm truncate">{r.passenger_name || "—"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">
-                          {r.receipt_id || r.id.slice(0, 8)} • {formatDateTime(r.created_at || r.entry_date)}
+                        <div className="text-xs text-muted-foreground truncate">
+                          {svcLine(r) || (r.receipt_id || r.id.slice(0, 8))}
                         </div>
                         {mdRecv && (
                           <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
