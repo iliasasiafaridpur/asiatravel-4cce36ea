@@ -201,7 +201,24 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod.table, cacheKey, columns]);
 
-  useEffect(() => { void load(true); }, [load, mod.key]);
+  // Count of extra services per parent row (for the "+N" badge on the data list)
+  const loadExtraCounts = useCallback(async () => {
+    if (!supportsExtra) return;
+    try {
+      const { data } = await supabase
+        .from("extra_services" as never)
+        .select("source_id")
+        .eq("source_table", mod.table);
+      const m: Record<string, number> = {};
+      ((data as { source_id: string }[] | null) ?? []).forEach((r) => {
+        const k = String(r.source_id);
+        m[k] = (m[k] ?? 0) + 1;
+      });
+      setExtraCounts(m);
+    } catch { /* ignore */ }
+  }, [mod.table, supportsExtra]);
+
+  useEffect(() => { void load(true); void loadExtraCounts(); }, [load, loadExtraCounts, mod.key]);
 
   // Realtime: auto-refresh on any change to this table
   useEffect(() => {
@@ -211,9 +228,19 @@ export function ModulePage({ module: mod }: Props) {
         void load(false);
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let chx: ReturnType<typeof supabase.channel> | null = null;
+    if (supportsExtra) {
+      chx = supabase
+        .channel(`rt_extra_${mod.table}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "extra_services" }, () => {
+          void loadExtraCounts();
+        })
+        .subscribe();
+    }
+    return () => { supabase.removeChannel(ch); if (chx) supabase.removeChannel(chx); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mod.table]);
+
 
   const computeValue = useCallback((r: Row, name: string): number => {
     const c = mod.computed?.find((x) => x.name === name);
