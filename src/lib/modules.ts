@@ -19,6 +19,8 @@ export interface Field {
   defaultEmpty?: boolean; // for selects: start empty instead of first option
   filterable?: boolean; // show as filter dropdown above table
   hideInForm?: boolean; // hide from entry/edit form (still shown in list)
+  /** Only show this field in the form when another field equals one of these values. */
+  showWhen?: { field: string; equals: string[] };
 }
 
 export const LEDGER_SERVICE_TYPES = [
