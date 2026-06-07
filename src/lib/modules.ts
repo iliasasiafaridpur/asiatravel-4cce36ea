@@ -1047,9 +1047,11 @@ export function statusBadgeClass(status?: string | null): string {
   switch (s) {
     case "done":
     case "delivered":
+    case "delivery":
     case "visa issued":
       return "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
     case "processing":
+    case "process":
     case "applied":
     case "medical":
     case "finger":
