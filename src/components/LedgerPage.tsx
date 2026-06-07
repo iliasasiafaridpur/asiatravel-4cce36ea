@@ -1660,6 +1660,9 @@ export function LedgerPage({ module: mod }: Props) {
                   const displayPaid = adjusted?.displayPaid ?? Number(r[paidCol] ?? 0);
                   const displayDue = adjusted?.displayDue ?? Math.max(bal, 0);
                   const appliedAdvance = adjusted?.applied ?? 0;
+                  const isAdvanceBeforeDelivery =
+                    !isPayment && !isAdvanceRow(r) && displayPaid > 0 && !!info?.has_delivery &&
+                    isAdvancePayment(r.payment_date as string | null, info?.delivery_date);
                   const flightDateRaw = isTicket && srcId ? ticketFlightMap.get(srcId) : undefined;
                   const flightDate = flightDateRaw ? formatDate(flightDateRaw) : "";
                   const cb = String(r.created_by ?? "");
