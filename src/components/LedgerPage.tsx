@@ -818,6 +818,49 @@ export function LedgerPage({ module: mod }: Props) {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
     try {
+      // ---------- Manual Advance Adjustment (vendor only, no cash/bank impact) ----------
+      if (payAsAdjust && !payRow && !isAgency) {
+        const amt = Number(payAmount);
+        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
+        const isExpense = adjustKind === "expense";
+        if (isExpense) {
+          const bal = advanceForGroup(payTarget);
+          if (amt > bal + 0.001)
+            return toast.error(`Advance balance-এর চেয়ে বেশি কাটা যাবে না (Balance: ৳${bal.toLocaleString()})`);
+        }
+        const ledgerId = await generateNextId({
+          key: mod.key, label: "", short: "", table: mod.table,
+          idColumn: mod.idColumn, idPrefix: "VDL",
+          monthlyId: true, fields: [],
+        });
+        const signedAmt = isExpense ? -amt : amt;
+        const label = isExpense ? "অতিরিক্ত সার্ভিস বিল (Advance থেকে)" : "Vendor Refund (Advance-এ যুক্ত)";
+        const payload: Record<string, unknown> = {
+          [mod.idColumn]: ledgerId,
+          entry_date: payDate,
+          [groupField]: payTarget,
+          service_type: "ADVANCE",
+          [billCol]: 0,
+          [paidCol]: signedAmt,
+          payment_method: payMethod,
+          // Non-null source_table => sync_vendor_payment_to_cash skips the cash mirror,
+          // so this is a pure advance-balance adjustment with no Cash/Bank impact.
+          source_table: "manual_adjust",
+          remarks: `${label}${payRemarks ? " · " + payRemarks : ""}`,
+          created_by: user?.id ?? null,
+        };
+        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+        if (!offline) notify.success(
+          isExpense
+            ? `✓ অতিরিক্ত বিল সংরক্ষিত (Advance −৳${amt.toLocaleString()})`
+            : `✓ Refund সংরক্ষিত (Advance +৳${amt.toLocaleString()})`,
+          { meta: { vendor: String(payTarget), service: label, refId: ledgerId, amount: amt } },
+        );
+        setPayOpen(false);
+        void load();
+        return;
+      }
+
       // ---------- MD Sir External Deposit (vendor advance, no cash/bank impact) ----------
       if (payAsMdDeposit && !payRow && !isAgency) {
         const amt = Number(payAmount);
