@@ -610,6 +610,9 @@ function HandoverCard({
                   {/* সার্ভিস */}
                   <td className="px-3 py-2 align-top">
                     <div className="text-sm font-medium">{r.service_type}</div>
+                    {info?.service_name && (
+                      <div className="text-xs text-muted-foreground mt-0.5">{info.service_name}</div>
+                    )}
                     {info?.country && (
                       <div className="text-xs text-muted-foreground mt-0.5">{info.country}</div>
                     )}
