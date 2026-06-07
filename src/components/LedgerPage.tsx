@@ -1237,7 +1237,7 @@ export function LedgerPage({ module: mod }: Props) {
 <td>${service || "—"}${cr ? `<div style="font-size:10px;color:#666">${cr}</div>` : ""}</td>
 <td>${agent}</td>
 <td class="num">${fmt(bill)}</td>
-<td class="num">${fmt(paid)}</td>
+<td class="num">${fmt(paid)}${pIsAdvance ? ' <span style="font-size:9px;color:#d97706;font-weight:700">(Adv)</span>' : ""}</td>
 <td class="num">${dueCell}</td>
 </tr>`;
       })
