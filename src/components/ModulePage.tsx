@@ -119,6 +119,10 @@ export function ModulePage({ module: mod }: Props) {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
+  const supportsExtra = EXTRA_SERVICE_MODULES.includes(mod.key);
+  const [extraServices, setExtraServices] = useState<ExtraServiceRow[]>([]);
+  const [showExtra, setShowExtra] = useState(false);
+  const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
