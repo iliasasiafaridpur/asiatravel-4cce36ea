@@ -451,6 +451,9 @@ export function ModulePage({ module: mod }: Props) {
           .update(payload as never)
           .eq("id", editId);
         if (error) throw error;
+        if (supportsExtra) {
+          try { await syncExtraServices(editId, payload); } catch { /* extra services best-effort */ }
+        }
         setOpenForm(false);
         setEditing(null);
         toast.success("আপডেট হয়েছে");
@@ -464,16 +467,38 @@ export function ModulePage({ module: mod }: Props) {
         }
       } else {
         // INSERT PATH: only when no editing id was captured.
-        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        setOpenForm(false);
-        if (!offline) {
+        const hasExtra = supportsExtra && extraServices.some((x) => (x.service_name || "").trim());
+        if (hasExtra) {
+          // Direct insert so we can capture the new row id and attach extra services.
+          const { data: inserted, error } = await supabase
+            .from(mod.table as never)
+            .insert(payload as never)
+            .select("id")
+            .single();
+          if (error) throw error;
+          const newId = (inserted as { id: string } | null)?.id;
+          if (newId) {
+            try { await syncExtraServices(newId, payload); } catch { /* best-effort */ }
+          }
+          setOpenForm(false);
           toast.success(`✓ যোগ হয়েছে: ${finalId}`);
           speakModuleEntry(mod.key);
           if (recvAmount > 0) speakReceived(recvAmount);
+          clearDraft();
+        } else {
+          const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
+          setOpenForm(false);
+          if (!offline) {
+            toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+            speakModuleEntry(mod.key);
+            if (recvAmount > 0) speakReceived(recvAmount);
+          }
+          clearDraft();
         }
-        clearDraft();
       }
       void load();
+      void loadExtraCounts();
+
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
       if (err?.code === "23505" && /passport.*entry_date|entry_date.*passport|uniq_.*_passport_date/i.test(String(err?.message ?? ""))) {
