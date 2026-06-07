@@ -96,11 +96,11 @@ export function StatusChangeDrawer({
   const received = Number(request?.row[request?.recvCol ?? ""] ?? 0);
   const existingDiscount = Number(request?.row.discount_amount ?? 0);
   const due = Math.max(0, sold - received - existingDiscount);
-  const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") ? due > 0 : false;
+  const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") || eq(next, "Delivery") ? due > 0 : false;
   const isFileProcess = eq(next, "File Process");
   const isPendingDelivery = eq(next, "Pending Delivery");
   const isDeliveryButDue = eq(next, "Delivery But Due");
-  const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED");
+  const isDeliveredAny = eq(next, "Delivered") || eq(next, "DELIVERED") || eq(next, "Delivery");
   const isSame = direction === "same";
 
   useEffect(() => {
