@@ -495,7 +495,7 @@ function HandoverCard({
       <div className="bg-muted/40 px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {statusBadge}
-          <span className="font-mono text-[11px] text-muted-foreground">{handover.handover_id}</span>
+          <span className="font-mono text-xs text-muted-foreground">{handover.handover_id}</span>
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
           {status === "approved" && handover.approved_at ? (
@@ -552,7 +552,17 @@ function HandoverCard({
 
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
+          <colgroup>
+            <col className="w-[12%]" />
+            <col className="w-[29%]" />
+            <col className="w-[15%]" />
+            <col className="w-[13%]" />
+            <col className="w-[11%]" />
+            <col className="w-[12%]" />
+            <col className="w-[6%]" />
+            {approveAction && <col className="w-[2%]" />}
+          </colgroup>
           <thead className="bg-muted/30">
             <tr className="text-left">
               <th className="px-1.5 py-1.5 font-semibold">তারিখ</th>
@@ -562,7 +572,7 @@ function HandoverCard({
               <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-1 py-1.5 font-semibold text-center w-12">✓</th>}
+              {approveAction && <th className="px-1 py-1.5 font-semibold text-center">✓</th>}
             </tr>
           </thead>
           <tbody>
