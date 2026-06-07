@@ -297,6 +297,8 @@ export function ModulePage({ module: mod }: Props) {
   const startCreate = () => {
     saveScroll();
     setEditing(null);
+    setExtraServices([]);
+    setShowExtra(false);
     const f = emptyForm(mod);
     // Auto-fill "Entry By" with current user's name
     if (mod.fields.some((fld) => fld.name === "entry_by")) {
@@ -309,6 +311,8 @@ export function ModulePage({ module: mod }: Props) {
   const startEdit = (r: Row) => {
     saveScroll();
     setEditing(r);
+    setExtraServices([]);
+    setShowExtra(false);
     const f: Record<string, unknown> = {};
     for (const field of mod.fields) f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
     if (mod.fields.some((fld) => fld.name === "entry_by") && (!f.entry_by || f.entry_by === "User")) {
@@ -316,7 +320,26 @@ export function ModulePage({ module: mod }: Props) {
     }
     setForm(f);
     setOpenForm(true);
+    if (supportsExtra) {
+      void supabase
+        .from("extra_services" as never)
+        .select("id,service_name,service_price,vendor_cost")
+        .eq("source_table", mod.table)
+        .eq("source_id", r.id)
+        .order("created_at", { ascending: true })
+        .then(({ data }) => {
+          const rows = ((data as ExtraServiceRow[] | null) ?? []).map((x) => ({
+            id: x.id,
+            service_name: String(x.service_name ?? ""),
+            service_price: Number(x.service_price ?? 0),
+            vendor_cost: Number(x.vendor_cost ?? 0),
+          }));
+          setExtraServices(rows);
+          setShowExtra(rows.length > 0);
+        });
+    }
   };
+
 
   const submit = async () => {
     if (saving) return; // Prevent double-submit
