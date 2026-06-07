@@ -742,7 +742,7 @@ function HandoverCard({
               <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
-                  <div className="text-[11px] text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
+                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
                 )}
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
@@ -775,10 +775,10 @@ function HandoverCard({
                     <td className="px-3 py-2 align-top">
                       <div className="text-sm font-medium">{formatDate(e.entry_date)}</div>
                       {e.expense_id && (
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{e.expense_id}</div>
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5">{e.expense_id}</div>
                       )}
                       {e.created_at && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{formatDateTime(e.created_at)}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{formatDateTime(e.created_at)}</div>
                       )}
                     </td>
                     <td className="px-3 py-2 align-top text-sm font-medium">{e.category || "—"}</td>
@@ -801,7 +801,7 @@ function HandoverCard({
 
 
       {(handover.remarks || (status === "approved" && confirmed > 0 && confirmed !== submitted)) && (
-        <div className="px-4 py-2 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
+        <div className="px-4 py-2 border-t bg-muted/20 text-xs text-muted-foreground space-y-0.5">
           {confirmed > 0 && confirmed !== submitted && (
             <div>Confirmed: <b className="text-foreground">{fmt(confirmed)}</b> · Variance: <b className={confirmed - submitted > 0 ? "text-emerald-600" : "text-rose-600"}>{confirmed - submitted > 0 ? "+" : ""}{fmt(confirmed - submitted)}</b></div>
           )}
