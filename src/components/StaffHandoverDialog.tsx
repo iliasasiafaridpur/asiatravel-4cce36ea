@@ -63,8 +63,8 @@ const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknow
     map: () => ({ country: "Kuwait" }),
   },
   others: {
-    cols: "id,service_name,airline,trip_road,flight_date,country_name",
-    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_name as string }),
+    cols: "id,service_name,airline,trip_road,flight_date,country_route",
+    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_route as string }),
   },
 };
 
