@@ -555,14 +555,14 @@ function HandoverCard({
         <table className="w-full text-sm">
           <thead className="bg-muted/30">
             <tr className="text-left">
-              <th className="px-3 py-1.5 font-semibold">তারিখ</th>
-              <th className="px-3 py-1.5 font-semibold">কাস্টমার</th>
-              <th className="px-3 py-1.5 font-semibold">সার্ভিস</th>
-              <th className="px-3 py-1.5 font-semibold text-right">মোট বিল</th>
-              <th className="px-3 py-1.5 font-semibold text-right">পূর্বের জমা</th>
-              <th className="px-3 py-1.5 font-semibold text-right">এই বারের জমা</th>
-              <th className="px-3 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-3 py-1.5 font-semibold text-center w-[300px]">অনুমোদন</th>}
+              <th className="px-1.5 py-1.5 font-semibold">তারিখ</th>
+              <th className="px-1.5 py-1.5 font-semibold">কাস্টমার</th>
+              <th className="px-1.5 py-1.5 font-semibold">সার্ভিস</th>
+              <th className="px-1.5 py-1.5 font-semibold text-right">মোট বিল</th>
+              <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
+              <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
+              <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
+              {approveAction && <th className="px-1 py-1.5 font-semibold text-center w-12">✓</th>}
             </tr>
           </thead>
           <tbody>
