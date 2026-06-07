@@ -363,6 +363,7 @@ export function LedgerPage({ module: mod }: Props) {
           status: t.status ?? undefined,
           airline: t.airline ?? undefined,
           pnr: t.pnr ?? undefined,
+          has_delivery: false,
         });
       }
       const cm = new Map<string, string>();
