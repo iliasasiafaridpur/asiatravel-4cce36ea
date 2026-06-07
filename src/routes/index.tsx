@@ -664,7 +664,7 @@ function DashboardPage() {
                   <li key={c.id} className="py-2.5 flex items-center justify-between gap-2 text-sm">
                     <div className="min-w-0">
                       <p className="font-medium truncate">{c.from_name ?? "—"} → {c.to_name ?? "—"}</p>
-                      <p className="text-xs text-muted-foreground"><Badge variant="secondary" className="mr-1">{c.method}</Badge>{formatDate(c.entry_date)}</p>
+                      <div className="text-xs text-muted-foreground flex items-center"><Badge variant="secondary" className="mr-1">{c.method}</Badge>{formatDate(c.entry_date)}</div>
                     </div>
                     <span className="text-sm font-semibold text-emerald-600 tabular-nums whitespace-nowrap">৳ {Number(c.amount).toLocaleString()}</span>
                   </li>
