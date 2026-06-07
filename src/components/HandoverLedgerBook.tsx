@@ -80,6 +80,8 @@ type ServiceInfo = {
   /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
   tracks_cost: boolean;
   flight_date: string | null;
+  delivery_date: string | null;
+  has_delivery: boolean;
 };
 
 const SERVICE_TABLES = [
