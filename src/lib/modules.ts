@@ -689,6 +689,30 @@ export const MODULES: ModuleSchema[] = [
         section: "passenger",
         required: true,
       },
+      // Air Ticket details — only shown when Service Name = "Date Change"
+      {
+        name: "airline",
+        label: "Airline",
+        type: "text",
+        lookup: "airline",
+        section: "passenger",
+        showWhen: { field: "service_name", equals: ["Date Change"] },
+      },
+      {
+        name: "trip_road",
+        label: "Trip Road",
+        type: "text",
+        lookup: "route",
+        section: "passenger",
+        showWhen: { field: "service_name", equals: ["Date Change"] },
+      },
+      {
+        name: "flight_date",
+        label: "Flight Date",
+        type: "date",
+        section: "passenger",
+        showWhen: { field: "service_name", equals: ["Date Change"] },
+      },
       {
         name: "sold_price",
         label: "Service Price",
@@ -703,9 +727,8 @@ export const MODULES: ModuleSchema[] = [
         type: "text",
         showInList: true,
         section: "passenger",
-        lookup: "status_delivery",
-        lookupDefaults: STATUS_DELIVERY,
-        defaultEmpty: true,
+        lookup: "status_other",
+        lookupDefaults: STATUS_OTHER,
       },
       {
         name: "delivery_date",
