@@ -842,7 +842,8 @@ export function LedgerPage({ module: mod }: Props) {
           service_type: "ADVANCE",
           [billCol]: 0,
           [paidCol]: signedAmt,
-          payment_method: payMethod,
+          // Virtual adjustment — no real cash/bank movement, so no payment method.
+          payment_method: "Adjustment",
           // Non-null source_table => sync_vendor_payment_to_cash skips the cash mirror,
           // so this is a pure advance-balance adjustment with no Cash/Bank impact.
           source_table: "manual_adjust",
