@@ -14,6 +14,8 @@ import {
   Crown,
   HandCoins,
   BookOpen,
+  Package,
+
 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import {
