@@ -1346,7 +1346,7 @@ export function ModulePage({ module: mod }: Props) {
                                 ) : f.type === "date" ? (
                                   formatDate(r[f.name] as string | null)
                                 ) : f.type === "number" ? (
-                                  <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}</span>
+                                  <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}{(f.name === "received" || f.name === "received_amount") && Number(r[f.name] ?? 0) > 0 && mod.fields.some((x) => x.name === "delivery_date") && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <> <AdvanceBadge advance /></> : null}</span>
                                 ) : (
                                   String(r[f.name] ?? "")
                                 )}
