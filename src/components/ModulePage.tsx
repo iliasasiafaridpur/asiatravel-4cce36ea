@@ -991,7 +991,17 @@ export function ModulePage({ module: mod }: Props) {
             </DialogHeader>
             <div className="px-4 sm:px-6 pb-4 pt-3">
               <FormSections mod={mod} form={form} setForm={setForm} isEdit={!!editing} />
+              {supportsExtra && (
+                <ExtraServiceSection
+                  rows={extraServices}
+                  setRows={setExtraServices}
+                  show={showExtra}
+                  setShow={setShowExtra}
+                  vendorName={String(form.vendor_bought ?? "")}
+                />
+              )}
             </div>
+
           </DialogContent>
         </Dialog>
       </div>
