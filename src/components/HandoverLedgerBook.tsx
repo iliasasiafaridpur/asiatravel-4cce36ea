@@ -572,7 +572,7 @@ function HandoverCard({
               <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
               <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
               <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-1 py-1.5 font-semibold text-center">✓</th>}
+              {approveAction && <th className="px-1 py-1.5 pr-2 font-semibold text-center">✓</th>}
             </tr>
           </thead>
           <tbody>
