@@ -1806,7 +1806,7 @@ export function LedgerPage({ module: mod }: Props) {
                           ৳ {Number(r[billCol] ?? 0).toLocaleString()}
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()}
+                          {isAgency ? "Recv" : "Paid"}: {displayPaid.toLocaleString()} {isAdvanceBeforeDelivery ? <AdvanceBadge advance /> : null}
                         </div>
                         {appliedAdvance > 0 && (
                           <div className="text-[11px] text-muted-foreground">
