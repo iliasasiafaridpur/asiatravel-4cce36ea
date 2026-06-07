@@ -991,6 +991,22 @@ export const MODULES: ModuleSchema[] = [
 
 export const moduleByKey = (key: string) => MODULES.find((m) => m.key === key);
 
+/**
+ * A received payment counts as "Advance" when it was taken before the service
+ * was delivered. Rule: payment date < delivery date. If the service has no
+ * delivery date yet (not delivered), every received payment is an advance.
+ */
+export function isAdvancePayment(
+  paymentDate?: string | null,
+  deliveryDate?: string | null
+): boolean {
+  if (!deliveryDate) return true; // not delivered yet → received money is advance
+  if (!paymentDate) return false; // delivered & no specific payment date → settled
+  const p = String(paymentDate).slice(0, 10);
+  const d = String(deliveryDate).slice(0, 10);
+  return p < d;
+}
+
 export const SERVICE_CATEGORIES = [
   { key: "tickets", label: "Ticket" },
   { key: "bmet", label: "BMET Card" },
