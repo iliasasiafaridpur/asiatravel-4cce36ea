@@ -2120,7 +2120,7 @@ export function LedgerPage({ module: mod }: Props) {
                   checked={payAsAdvance}
                   onCheckedChange={(c) => {
                     setPayAsAdvance(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); }
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); setPayAsAdjust(false); }
                   }}
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
@@ -2140,7 +2140,7 @@ export function LedgerPage({ module: mod }: Props) {
                   checked={payAsMdDeposit}
                   onCheckedChange={(c) => {
                     setPayAsMdDeposit(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); }
+                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); setPayAsAdjust(false); }
                   }}
                 />
                 <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
@@ -2149,6 +2149,63 @@ export function LedgerPage({ module: mod }: Props) {
                     টিকেটিং পোর্টাল এ Deposit করুন। যা লেজারের বাহিরের টাকা। User এর ব্যালেঞ্জ অপরিবর্তিত থাকবে।
                   </span>
                 </Label>
+              </div>
+            )}
+
+            {/* Manual Advance Adjustment (আয়/ব্যয়) — vendor ledger only, bulk mode */}
+            {!payRow && payTarget && !isAgency && (
+              <div className="rounded-md border border-sky-500/40 bg-sky-500/5 p-2.5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="payAsAdjust"
+                    checked={payAsAdjust}
+                    onCheckedChange={(c) => {
+                      setPayAsAdjust(!!c);
+                      if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); setPayAsMdDeposit(false); }
+                    }}
+                  />
+                  <Label htmlFor="payAsAdjust" className="text-sm font-medium cursor-pointer flex-1">
+                    Manual Advance Adjustment (আয়/ব্যয়)
+                    <span className="block text-[11px] text-muted-foreground font-normal">
+                      Advance balance-এ ম্যানুয়ালি যোগ/বিয়োগ করুন। Cash/Bank ব্যালেঞ্জ অপরিবর্তিত থাকবে।
+                    </span>
+                  </Label>
+                </div>
+                {payAsAdjust && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">ধরন (Type)</Label>
+                      <Select value={adjustKind} onValueChange={(v) => setAdjustKind(v as "refund" | "expense")}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="refund">আয় / Refund (Advance +)</SelectItem>
+                          <SelectItem value="expense">ব্যয় / অতিরিক্ত বিল (Advance −)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        Amount <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        className="h-10 text-lg font-semibold tabular-nums"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="col-span-2 text-[11px] text-muted-foreground">
+                      বর্তমান Advance Balance:{" "}
+                      <span className="font-semibold text-emerald-600">
+                        ৳ {advanceForGroup(payTarget).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
