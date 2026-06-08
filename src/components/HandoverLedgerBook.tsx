@@ -464,35 +464,8 @@ function HandoverCard({
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
   };
 
-  const statusBadge =
-    status === "approved" ? (
-      <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 border gap-1">
-        <CheckCircle2 className="h-3 w-3" /> এমডি বুঝে নিয়েছেন
-      </Badge>
-    ) : status === "pending" ? (
-      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 border gap-1">
-        <Clock className="h-3 w-3" /> এমডিকে পাঠানো হয়েছে
-      </Badge>
-    ) : (
-      <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 border">{status}</Badge>
-    );
 
-  const cutoff = new Date(handover.created_at).getTime();
-  const firstPendingReceipt = receipts.find((r) => r.approval_status !== "approved") ?? receipts[0];
 
-  // Each handover gets a distinct, status-colored accent so one card is clearly
-  // separated from the next at a glance.
-  const accent =
-    status === "approved"
-      ? "border-emerald-500/60 border-l-emerald-500 ring-emerald-500/10"
-      : status === "pending"
-        ? "border-amber-500/60 border-l-amber-500 ring-amber-500/10"
-        : "border-rose-500/60 border-l-rose-500 ring-rose-500/10";
-
-  return (
-    <div className={`rounded-xl border-2 border-l-[6px] ${accent} bg-card shadow-lg ring-1 overflow-hidden`}>
-      {/* Header */}
-      <div className="bg-muted/40 px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {statusBadge}
           <span className="font-mono text-xs text-muted-foreground">{handover.handover_id}</span>
