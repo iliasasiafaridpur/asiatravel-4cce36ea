@@ -470,8 +470,8 @@ function HandoverCard({
         <CheckCircle2 className="h-3 w-3" /> এমডি বুঝে নিয়েছেন
       </Badge>
     ) : status === "pending" ? (
-      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 border gap-1">
-        <Clock className="h-3 w-3" /> এমডিকে পাঠানো হয়েছে
+      <Badge className="bg-amber-500 text-amber-950 border-amber-600 border gap-1 font-bold shadow-md animate-pulse">
+        <Clock className="h-3 w-3" /> অপেক্ষমান — এমডিকে পাঠানো হয়েছে
       </Badge>
     ) : (
       <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 border">{status}</Badge>
@@ -481,18 +481,20 @@ function HandoverCard({
   const firstPendingReceipt = receipts.find((r) => r.approval_status !== "approved") ?? receipts[0];
 
   // Each handover gets a distinct, status-colored accent so one card is clearly
-  // separated from the next at a glance.
+  // separated from the next at a glance. Pending cards get a much stronger,
+  // eye-catching amber treatment so they never look like settled history.
   const accent =
     status === "approved"
-      ? "border-emerald-500/60 border-l-emerald-500 ring-emerald-500/10"
+      ? "border-emerald-500/60 border-l-emerald-500 ring-emerald-500/10 bg-card"
       : status === "pending"
-        ? "border-amber-500/60 border-l-amber-500 ring-amber-500/10"
-        : "border-rose-500/60 border-l-rose-500 ring-rose-500/10";
+        ? "border-amber-500 border-l-amber-500 ring-2 ring-amber-500/40 bg-amber-500/[0.07] shadow-[0_0_22px_-4px_rgba(245,158,11,0.55)]"
+        : "border-rose-500/60 border-l-rose-500 ring-rose-500/10 bg-card";
 
   return (
-    <div className={`rounded-xl border-2 border-l-[6px] ${accent} bg-card shadow-lg ring-1 overflow-hidden`}>
+    <div className={`rounded-xl border-2 border-l-[6px] ${accent} shadow-lg ring-1 overflow-hidden`}>
       {/* Header */}
-      <div className="bg-muted/40 px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2">
+      <div className={`${isPending ? "bg-amber-500/20 border-amber-500/40" : "bg-muted/40"} px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2`}>
+
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {statusBadge}
           <span className="font-mono text-xs text-muted-foreground">{handover.handover_id}</span>
