@@ -93,15 +93,15 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
           </Button>
         </div>
 
-        <div className="border-b p-3">
+        <div className="border-b p-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-1.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               ref={inputRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="নাম / আইডি / দেশ / এজেন্সি..."
-              className="pl-8"
+              className="h-7 pl-7 text-xs"
             />
           </div>
         </div>
@@ -116,11 +116,11 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
                   <button
                     type="button"
                     onClick={() => onPick(it.row)}
-                    className="flex w-full flex-col items-start gap-0.5 px-4 py-2.5 text-left transition-colors hover:bg-accent"
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-accent"
                   >
-                    <span className="font-mono text-[11px] text-muted-foreground">{shortId(it.id)}</span>
-                    <span className="text-sm font-semibold leading-tight">{it.passenger || "—"}</span>
-                    <span className="text-xs text-muted-foreground leading-tight">
+                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{shortId(it.id)}</span>
+                    <span className="shrink-0 truncate text-xs font-semibold leading-tight">{it.passenger || "—"}</span>
+                    <span className="ml-auto truncate text-[11px] text-muted-foreground leading-tight">
                       {it.country || "—"}
                       {it.agency ? ` · ${it.agency}` : ""}
                     </span>
