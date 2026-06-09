@@ -3,9 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
-import { Phone, MapPin, FileText, TrendingUp, TrendingDown } from "lucide-react";
+import { Phone, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
