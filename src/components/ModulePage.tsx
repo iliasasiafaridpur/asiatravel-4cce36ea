@@ -101,6 +101,8 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 
 function selectColumns(mod: ModuleSchema): string {
   const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
+  // status_by only exists on the service tables that have a status workflow
+  if (RECV_META[mod.table]) columns.add("status_by");
   mod.fields.forEach((field) => columns.add(field.name));
   return Array.from(columns).join(",");
 }
