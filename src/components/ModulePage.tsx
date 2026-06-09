@@ -958,7 +958,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+              {(r.status_by || r.entry_by) ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.status_by ?? r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
