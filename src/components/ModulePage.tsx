@@ -1494,6 +1494,15 @@ export function ModulePage({ module: mod }: Props) {
         moduleKey={mod.key}
         statusOrder={mod.statuses}
       />
+
+      <SmartSearchPanel
+        open={smartOpen}
+        onClose={() => setSmartOpen(false)}
+        rows={filtered}
+        idColumn={mod.idColumn}
+        moduleLabel={mod.label}
+        onPick={scrollToRow}
+      />
     </div>
   );
 }
