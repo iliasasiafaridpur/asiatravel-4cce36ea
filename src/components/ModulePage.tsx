@@ -1085,6 +1085,18 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user]);
 
+  // Smart Search → scroll the main list to the chosen row (panel stays open)
+  const scrollToRow = useCallback((row: Row) => {
+    const el = document.getElementById(`row-${row.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightId(row.id);
+      window.setTimeout(() => setHighlightId((h) => (h === row.id ? null : h)), 2500);
+    }
+  }, []);
+
+
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
