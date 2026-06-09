@@ -707,9 +707,10 @@ export function ModulePage({ module: mod }: Props) {
       const profit = sold - discount - cost;
       return { sold, recv, discount, cost, due, profit };
     };
-    const subLine = (label: string, val: React.ReactNode) => (
+    const subLine = (label: string, val: React.ReactNode, copyValue?: string) => (
       <div className="text-xs text-muted-foreground leading-tight">
         <span className="opacity-60">{label}:</span> {val}
+        {copyValue ? <CopyInlineButton value={copyValue} /> : null}
       </div>
     );
     // "+N" badge shown next to passenger name when extra services exist for the row.
