@@ -46,17 +46,26 @@ export function PartyProfileDrawer({
   const [displayName, setDisplayName] = useState<string | null>(partyName);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({ name: "", phones: [""], address: "" });
 
   useEffect(() => {
     setDisplayName(partyName);
     setEditing(false);
   }, [partyName]);
 
+  const phoneList = (contact?.phone ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   const beginEdit = () => {
+    const list = (contact?.phone ?? "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
     setForm({
       name: displayName ?? "",
-      phone: contact?.phone ?? "",
+      phones: list.length ? list : [""],
       address: contact?.address ?? "",
     });
     setEditing(true);
