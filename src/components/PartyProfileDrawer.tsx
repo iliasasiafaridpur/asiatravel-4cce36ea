@@ -132,7 +132,8 @@ export function PartyProfileDrawer({
   };
 
   useEffect(() => {
-    if (!open || !partyName) {
+    const activeName = displayName ?? partyName;
+    if (!open || !activeName) {
       setRows([]);
       setContact(null);
       return;
@@ -144,13 +145,13 @@ export function PartyProfileDrawer({
         supabase
           .from(table as never)
           .select("*")
-          .eq(groupField, partyName)
+          .eq(groupField, activeName)
           .order("entry_date", { ascending: false })
           .limit(500),
         supabase
           .from(contactsTable as never)
           .select("phone,address,created_at")
-          .eq("name", partyName)
+          .eq("name", activeName)
           .maybeSingle(),
       ]);
       if (!cancelled) {
@@ -162,7 +163,7 @@ export function PartyProfileDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, partyName, table, groupField, contactsTable]);
+  }, [open, partyName, displayName, table, groupField, contactsTable]);
 
   const stats = useMemo(() => {
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
