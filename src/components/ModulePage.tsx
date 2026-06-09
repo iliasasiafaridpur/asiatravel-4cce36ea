@@ -234,7 +234,33 @@ export function ModulePage({ module: mod }: Props) {
     } catch { /* ignore */ }
   }, [mod.table, supportsExtra]);
 
-  useEffect(() => { void load(true); void loadExtraCounts(); }, [load, loadExtraCounts, mod.key]);
+  // Load latest receive method/receiver per row + a user_id→name map for the Recv badge
+  const loadRecvInfo = useCallback(async () => {
+    if (!RECV_META[mod.table]) return;
+    try {
+      const [{ data: receipts }, { data: profs }] = await Promise.all([
+        supabase
+          .from("payment_receipts")
+          .select("service_row_id,method,received_by,received_by_name,created_at")
+          .eq("service_table", mod.table)
+          .order("created_at", { ascending: true }),
+        supabase.from("profiles").select("user_id,full_name"),
+      ]);
+      const map: Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }> = {};
+      ((receipts as { service_row_id: string; method: string | null; received_by: string | null; received_by_name: string | null }[] | null) ?? []).forEach((rc) => {
+        // ascending order → last write wins = most recent receipt
+        if (rc.service_row_id) map[String(rc.service_row_id)] = { method: rc.method, received_by: rc.received_by, received_by_name: rc.received_by_name };
+      });
+      setRecvInfo(map);
+      const names: Record<string, string> = {};
+      ((profs as { user_id: string; full_name: string | null }[] | null) ?? []).forEach((p) => {
+        if (p.user_id) names[p.user_id] = String(p.full_name ?? "");
+      });
+      setProfileNames(names);
+    } catch { /* ignore */ }
+  }, [mod.table]);
+
+  useEffect(() => { void load(true); void loadExtraCounts(); void loadRecvInfo(); }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
 
   // Realtime: auto-refresh on any change to this table
   useEffect(() => {
