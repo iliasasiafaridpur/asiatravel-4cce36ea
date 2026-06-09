@@ -268,6 +268,7 @@ export function ModulePage({ module: mod }: Props) {
       .channel(`rt_${mod.table}`)
       .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
         void load(false);
+        void loadRecvInfo();
       })
       .subscribe();
     let chx: ReturnType<typeof supabase.channel> | null = null;
