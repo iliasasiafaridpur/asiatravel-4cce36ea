@@ -590,7 +590,7 @@ export function ModulePage({ module: mod }: Props) {
     } catch (e) {
       toast.error("Status আপডেট করা যায়নি: " + errMsg(e));
     }
-  }, [mod, computeValue, load]);
+  }, [mod, computeValue, load, profile, user]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
     const hasField = (n: string) => mod.fields.some((f) => f.name === n);
