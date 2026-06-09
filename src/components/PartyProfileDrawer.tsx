@@ -88,6 +88,7 @@ export function PartyProfileDrawer({
       .from(contactsTable as never)
       .select("id")
       .eq("name", oldName)
+      .limit(1)
       .maybeSingle();
     const existingId = (existingBeforeRename as ContactId | null)?.id;
 
@@ -120,6 +121,7 @@ export function PartyProfileDrawer({
         .from(contactsTable as never)
         .select("id")
         .eq("name", newName)
+        .limit(1)
         .maybeSingle();
       const newExistingId = (existingAfterRename as ContactId | null)?.id;
       if (newExistingId) {
