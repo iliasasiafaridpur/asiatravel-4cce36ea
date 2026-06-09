@@ -79,6 +79,7 @@ export function PartyProfileDrawer({
     }
     setSaving(true);
     const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    const phoneStr = form.phones.map((p) => p.trim()).filter(Boolean).join(", ") || null;
     // Find existing contact row by current name
     const { data: existing } = await supabase
       .from(contactsTable as never)
@@ -90,14 +91,14 @@ export function PartyProfileDrawer({
     if (existing && (existing as { id: string }).id) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never)
+        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
         .eq("id", (existing as { id: string }).id);
       err = error;
     } else {
       const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
       const { error } = await supabase
         .from(contactsTable as never)
-        .insert({ [codeCol]: code, name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never);
+        .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null } as never);
       err = error;
     }
 
@@ -106,7 +107,7 @@ export function PartyProfileDrawer({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), phone: form.phone.trim() || null, address: form.address.trim() || null }));
+    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
