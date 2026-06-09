@@ -298,26 +298,24 @@ export function PartyProfileDrawer({
                     </Button>
                   </div>
                   <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                      {contact?.phone ? (
-                        <>
-                          <span className={mobileColorTextClass(colorFor(contact.phone))}>{contact.phone}</span>
-                          <MobileColorPicker mobile={contact.phone} />
-                        </>
-                      ) : (
+                    {phoneList.length ? (
+                      phoneList.map((ph, i) => (
+                        <div key={i} className="flex items-center gap-2 flex-wrap">
+                          <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className={mobileColorTextClass(colorFor(ph))}>{ph}</span>
+                          <MobileColorPicker mobile={ph} />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-muted-foreground italic">মোবাইল নেই</span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="flex items-start gap-2">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
                       <span className="text-muted-foreground">{contact?.address || "ঠিকানা নেই"}</span>
                     </div>
-                    {contact?.created_at && (
-                      <div className="text-xs text-muted-foreground">
-                        যোগ হয়েছে: {formatDate(contact.created_at)}
-                      </div>
-                    )}
                   </div>
                 </>
               )}
