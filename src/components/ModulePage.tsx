@@ -41,6 +41,7 @@ import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/Statu
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { isMdReceivedMethod } from "@/lib/payment-methods";
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
+import { CopyInlineButton } from "@/components/CopyInlineButton";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
 const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
