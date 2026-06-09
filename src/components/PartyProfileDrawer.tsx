@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
-import { Phone, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X } from "lucide-react";
+import { Phone, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
@@ -46,17 +46,26 @@ export function PartyProfileDrawer({
   const [displayName, setDisplayName] = useState<string | null>(partyName);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({ name: "", phones: [""], address: "" });
 
   useEffect(() => {
     setDisplayName(partyName);
     setEditing(false);
   }, [partyName]);
 
+  const phoneList = (contact?.phone ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   const beginEdit = () => {
+    const list = (contact?.phone ?? "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
     setForm({
       name: displayName ?? "",
-      phone: contact?.phone ?? "",
+      phones: list.length ? list : [""],
       address: contact?.address ?? "",
     });
     setEditing(true);
@@ -70,6 +79,7 @@ export function PartyProfileDrawer({
     }
     setSaving(true);
     const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    const phoneStr = form.phones.map((p) => p.trim()).filter(Boolean).join(", ") || null;
     // Find existing contact row by current name
     const { data: existing } = await supabase
       .from(contactsTable as never)
@@ -81,14 +91,14 @@ export function PartyProfileDrawer({
     if (existing && (existing as { id: string }).id) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never)
+        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
         .eq("id", (existing as { id: string }).id);
       err = error;
     } else {
       const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
       const { error } = await supabase
         .from(contactsTable as never)
-        .insert({ [codeCol]: code, name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never);
+        .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null } as never);
       err = error;
     }
 
@@ -97,7 +107,7 @@ export function PartyProfileDrawer({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), phone: form.phone.trim() || null, address: form.address.trim() || null }));
+    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
@@ -214,13 +224,45 @@ export function PartyProfileDrawer({
                   </div>
                   <div>
                     <label className="text-[11px] text-muted-foreground">Mobile</label>
-                    <Input
-                      value={form.phone}
-                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                      placeholder="মোবাইল"
-                      inputMode="tel"
-                      className="h-8 mt-0.5"
-                    />
+                    <div className="space-y-1.5 mt-0.5">
+                      {form.phones.map((p, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <Input
+                            value={p}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                phones: f.phones.map((x, xi) => (xi === i ? e.target.value : x)),
+                              }))
+                            }
+                            placeholder={`মোবাইল ${i + 1}`}
+                            inputMode="tel"
+                            className="h-8"
+                          />
+                          {form.phones.length > 1 && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() =>
+                                setForm((f) => ({ ...f, phones: f.phones.filter((_, xi) => xi !== i) }))
+                              }
+                              aria-label="Remove"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setForm((f) => ({ ...f, phones: [...f.phones, ""] }))}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> আরেকটি নাম্বার
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <label className="text-[11px] text-muted-foreground">Address</label>
@@ -256,26 +298,24 @@ export function PartyProfileDrawer({
                     </Button>
                   </div>
                   <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                      {contact?.phone ? (
-                        <>
-                          <span className={mobileColorTextClass(colorFor(contact.phone))}>{contact.phone}</span>
-                          <MobileColorPicker mobile={contact.phone} />
-                        </>
-                      ) : (
+                    {phoneList.length ? (
+                      phoneList.map((ph, i) => (
+                        <div key={i} className="flex items-center gap-2 flex-wrap">
+                          <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className={mobileColorTextClass(colorFor(ph))}>{ph}</span>
+                          <MobileColorPicker mobile={ph} />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-muted-foreground italic">মোবাইল নেই</span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="flex items-start gap-2">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
                       <span className="text-muted-foreground">{contact?.address || "ঠিকানা নেই"}</span>
                     </div>
-                    {contact?.created_at && (
-                      <div className="text-xs text-muted-foreground">
-                        যোগ হয়েছে: {formatDate(contact.created_at)}
-                      </div>
-                    )}
                   </div>
                 </>
               )}
