@@ -1419,6 +1419,10 @@ export type Database = {
         Args: { _handover_id: string; _reason?: string }
         Returns: undefined
       }
+      rename_party: {
+        Args: { p_kind: string; p_new_name: string; p_old_name: string }
+        Returns: undefined
+      }
       submit_handover: {
         Args: {
           _closing_date?: string
