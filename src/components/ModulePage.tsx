@@ -41,6 +41,7 @@ import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/Statu
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { isMdReceivedMethod } from "@/lib/payment-methods";
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
+import { CopyInlineButton } from "@/components/CopyInlineButton";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
 const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
@@ -707,9 +708,10 @@ export function ModulePage({ module: mod }: Props) {
       const profit = sold - discount - cost;
       return { sold, recv, discount, cost, due, profit };
     };
-    const subLine = (label: string, val: React.ReactNode) => (
+    const subLine = (label: string, val: React.ReactNode, copyValue?: string) => (
       <div className="text-xs text-muted-foreground leading-tight">
         <span className="opacity-60">{label}:</span> {val}
+        {copyValue ? <CopyInlineButton value={copyValue} /> : null}
       </div>
     );
     // "+N" badge shown next to passenger name when extra services exist for the row.
@@ -747,6 +749,7 @@ export function ModulePage({ module: mod }: Props) {
       <div className="text-xs leading-tight">
         <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
         <span className={mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}>{mobile}</span>
+        <CopyInlineButton value={mobile} />
       </div>
     );
     // Single unified badge — click opens the right-side confirmation drawer.
@@ -859,7 +862,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[140px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
@@ -913,7 +916,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
@@ -968,7 +971,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
@@ -1022,7 +1025,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
