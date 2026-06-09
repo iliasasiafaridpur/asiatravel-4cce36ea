@@ -941,7 +941,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -996,7 +996,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -1050,7 +1050,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs"><span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span></div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -1408,7 +1408,7 @@ export function ModulePage({ module: mod }: Props) {
                                 ) : f.type === "date" ? (
                                   formatDate(r[f.name] as string | null)
                                 ) : f.type === "number" ? (
-                                  <span className="tabular-nums">{Number(r[f.name] ?? 0).toLocaleString()}{(f.name === "received" || f.name === "received_amount") && Number(r[f.name] ?? 0) > 0 && mod.fields.some((x) => x.name === "delivery_date") && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <> <AdvanceBadge advance /></> : null}</span>
+                                  <span className="tabular-nums">{(f.name === "received" || f.name === "received_amount") && Number(r[f.name] ?? 0) > 0 && mod.fields.some((x) => x.name === "delivery_date") && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{Number(r[f.name] ?? 0).toLocaleString()}</span>
                                 ) : (
                                   String(r[f.name] ?? "")
                                 )}

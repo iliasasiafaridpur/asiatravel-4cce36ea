@@ -467,7 +467,7 @@ function PastEodPanel({
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">{fmt(r.amount)} {info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date) ? <AdvanceBadge advance /> : null}</td>
+                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">{info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date) ? <><AdvanceBadge advance /> </> : null}{fmt(r.amount)}</td>
                   <td className="px-2 py-1.5 text-xs text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</td>
                 </tr>
               );
