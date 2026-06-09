@@ -1104,6 +1104,10 @@ export function ModulePage({ module: mod }: Props) {
           <h1 className="text-2xl font-bold">{mod.label}</h1>
           <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setSmartOpen(true)} className="gap-1.5">
+            <Search className="h-4 w-4" /> Smart Search
+          </Button>
         <Dialog open={openForm} onOpenChange={setOpenForm}>
           <DialogTrigger asChild>
             <Button onClick={startCreate} className="gap-1.5">
