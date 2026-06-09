@@ -553,6 +553,8 @@ export function ModulePage({ module: mod }: Props) {
     }
 
     const payload: Record<string, unknown> = { status: newStatus, ...extra };
+    // Track who last changed the status (service tables only)
+    if (RECV_META[mod.table]) payload.status_by = displayName(profile, user);
 
     // CASE A: File Process → vendor + vendor_sent_date
     if (newStatus === "File Process" && hasField("vendor_sent_date")) {
