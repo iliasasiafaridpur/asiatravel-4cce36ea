@@ -262,6 +262,7 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
 .row-selected td, .dark .row-selected td { color: inherit !important; }
 
 
+@media print {
   body { background: white !important; background-image: none !important; color: black !important; }
   aside, nav, [data-sidebar], header.app-header { display: none !important; }
   .print\:hidden { display: none !important; }
