@@ -26,11 +26,13 @@ export function PartyProfileDrawer({
   onOpenChange,
   kind,
   partyName,
+  onRenamed,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   kind: "customer" | "vendor";
   partyName: string | null;
+  onRenamed?: (oldName: string, newName: string) => void;
 }) {
   const isCustomer = kind === "customer";
   const table = isCustomer ? "agency_ledger" : "vendor_ledger";
@@ -142,6 +144,7 @@ export function PartyProfileDrawer({
     }
     setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null }));
     setDisplayName(newName);
+    if (newName !== oldName && oldName) onRenamed?.(oldName, newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
   };
