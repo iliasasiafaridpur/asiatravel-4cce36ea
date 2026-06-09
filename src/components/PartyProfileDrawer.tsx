@@ -95,11 +95,11 @@ export function PartyProfileDrawer({
     //    (service files, extra services, and ledgers) so the profile keeps
     //    all its history instead of becoming orphaned.
     if (newName !== oldName && oldName) {
-      const { error: renameErr } = await supabase.rpc("rename_party" as never, {
+      const { error: renameErr } = await supabase.rpc("rename_party", {
         p_kind: kind,
         p_old_name: oldName,
         p_new_name: newName,
-      } as never);
+      });
       if (renameErr) {
         setSaving(false);
         toast.error("নাম পরিবর্তন ব্যর্থ: " + renameErr.message);
