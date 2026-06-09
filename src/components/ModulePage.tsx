@@ -749,6 +749,7 @@ export function ModulePage({ module: mod }: Props) {
       <div className="text-xs leading-tight">
         <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
         <span className={mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}>{mobile}</span>
+        <CopyInlineButton value={mobile} />
       </div>
     );
     // Single unified badge — click opens the right-side confirmation drawer.
