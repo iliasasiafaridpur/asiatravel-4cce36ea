@@ -3,9 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
-import { Phone, MapPin, FileText, TrendingUp, TrendingDown } from "lucide-react";
+import { Phone, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
@@ -38,6 +42,66 @@ export function PartyProfileDrawer({
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
+
+  const [displayName, setDisplayName] = useState<string | null>(partyName);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+
+  useEffect(() => {
+    setDisplayName(partyName);
+    setEditing(false);
+  }, [partyName]);
+
+  const beginEdit = () => {
+    setForm({
+      name: displayName ?? "",
+      phone: contact?.phone ?? "",
+      address: contact?.address ?? "",
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    const newName = form.name.trim();
+    if (!newName) {
+      toast.error("নাম খালি রাখা যাবে না");
+      return;
+    }
+    setSaving(true);
+    const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    // Find existing contact row by current name
+    const { data: existing } = await supabase
+      .from(contactsTable as never)
+      .select("id")
+      .eq("name", displayName ?? "")
+      .maybeSingle();
+
+    let err = null;
+    if (existing && (existing as { id: string }).id) {
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .update({ name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never)
+        .eq("id", (existing as { id: string }).id);
+      err = error;
+    } else {
+      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .insert({ [codeCol]: code, name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never);
+      err = error;
+    }
+
+    setSaving(false);
+    if (err) {
+      toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
+      return;
+    }
+    setContact((c) => ({ ...(c ?? {}), phone: form.phone.trim() || null, address: form.address.trim() || null }));
+    setDisplayName(newName);
+    setEditing(false);
+    toast.success("তথ্য সংরক্ষণ হয়েছে");
+  };
 
   useEffect(() => {
     if (!open || !partyName) {
@@ -137,28 +201,86 @@ export function PartyProfileDrawer({
           <div className="p-5 space-y-5">
             {/* Header */}
             <section>
-              <div className="text-lg font-semibold leading-tight">{partyName}</div>
-              <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
-                {contact?.phone && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className={mobileColorTextClass(colorFor(contact.phone))}>{contact.phone}</span>
-                    <MobileColorPicker mobile={contact.phone} />
+              {editing ? (
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Name</label>
+                    <Input
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="নাম"
+                      className="h-8 mt-0.5"
+                    />
                   </div>
-                )}
-                {contact?.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
-                    <span className="text-muted-foreground">{contact.address}</span>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Mobile</label>
+                    <Input
+                      value={form.phone}
+                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                      placeholder="মোবাইল"
+                      inputMode="tel"
+                      className="h-8 mt-0.5"
+                    />
                   </div>
-                )}
-                {contact?.created_at && (
-                  <div className="text-xs text-muted-foreground">
-                    যোগ হয়েছে: {formatDate(contact.created_at)}
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Address</label>
+                    <Textarea
+                      value={form.address}
+                      onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                      placeholder="ঠিকানা"
+                      rows={2}
+                      className="mt-0.5 text-sm"
+                    />
                   </div>
-                )}
-              </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" className="h-8" onClick={saveEdit} disabled={saving}>
+                      <Check className="h-3.5 w-3.5 mr-1" /> {saving ? "Saving…" : "Save"}
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => setEditing(false)} disabled={saving}>
+                      <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-lg font-semibold leading-tight">{displayName}</div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
+                      onClick={beginEdit}
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                      {contact?.phone ? (
+                        <>
+                          <span className={mobileColorTextClass(colorFor(contact.phone))}>{contact.phone}</span>
+                          <MobileColorPicker mobile={contact.phone} />
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground italic">মোবাইল নেই</span>
+                      )}
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+                      <span className="text-muted-foreground">{contact?.address || "ঠিকানা নেই"}</span>
+                    </div>
+                    {contact?.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        যোগ হয়েছে: {formatDate(contact.created_at)}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </section>
+
 
             <Separator />
 
