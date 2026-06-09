@@ -43,6 +43,66 @@ export function PartyProfileDrawer({
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
 
+  const [displayName, setDisplayName] = useState<string | null>(partyName);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+
+  useEffect(() => {
+    setDisplayName(partyName);
+    setEditing(false);
+  }, [partyName]);
+
+  const beginEdit = () => {
+    setForm({
+      name: displayName ?? "",
+      phone: contact?.phone ?? "",
+      address: contact?.address ?? "",
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    const newName = form.name.trim();
+    if (!newName) {
+      toast.error("নাম খালি রাখা যাবে না");
+      return;
+    }
+    setSaving(true);
+    const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    // Find existing contact row by current name
+    const { data: existing } = await supabase
+      .from(contactsTable as never)
+      .select("id")
+      .eq("name", displayName ?? "")
+      .maybeSingle();
+
+    let err = null;
+    if (existing && (existing as { id: string }).id) {
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .update({ name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never)
+        .eq("id", (existing as { id: string }).id);
+      err = error;
+    } else {
+      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .insert({ [codeCol]: code, name: newName, phone: form.phone.trim() || null, address: form.address.trim() || null } as never);
+      err = error;
+    }
+
+    setSaving(false);
+    if (err) {
+      toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
+      return;
+    }
+    setContact((c) => ({ ...(c ?? {}), phone: form.phone.trim() || null, address: form.address.trim() || null }));
+    setDisplayName(newName);
+    setEditing(false);
+    toast.success("তথ্য সংরক্ষণ হয়েছে");
+  };
+
   useEffect(() => {
     if (!open || !partyName) {
       setRows([]);
