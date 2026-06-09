@@ -839,6 +839,8 @@ export function ModulePage({ module: mod }: Props) {
       // Unknown receiver — assume current user's cash
       return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-emerald-500/15 text-emerald-500">Cash</span>;
     };
+
+    switch (mod.key) {
       case "tickets":
         return [
           { key: "ref", header: "Date / ID", render: (r) => (
