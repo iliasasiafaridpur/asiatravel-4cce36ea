@@ -1383,7 +1383,8 @@ export function ModulePage({ module: mod }: Props) {
                   return filtered.map((r, idx) => (
                     <TableRow
                       key={r.id}
-                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 outline-transparent hover:outline-primary/60 hover:shadow-md transition-colors`}
+                      id={`row-${r.id}`}
+                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${highlightId === r.id ? "outline-primary ring-2 ring-primary/50 bg-primary/5" : "outline-transparent"}`}
                       onClick={(e) => {
                         const t = e.target as HTMLElement;
                         if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
