@@ -2500,6 +2500,10 @@ export function LedgerPage({ module: mod }: Props) {
         onOpenChange={(o) => !o && setProfileParty(null)}
         kind={isAgency ? "customer" : "vendor"}
         partyName={profileParty}
+        onRenamed={(_oldName, newName) => {
+          setProfileParty(newName);
+          void load();
+        }}
       />
 
       <PassengerProfileDrawer
