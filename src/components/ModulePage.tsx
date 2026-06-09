@@ -134,6 +134,8 @@ export function ModulePage({ module: mod }: Props) {
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
+  const [smartOpen, setSmartOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-row latest receive info (method + receiver) for the Recv method badge
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
