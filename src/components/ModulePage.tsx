@@ -1180,7 +1180,9 @@ export function ModulePage({ module: mod }: Props) {
 
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
 
       <Card>
         <CardContent className="p-3 sm:p-4">
