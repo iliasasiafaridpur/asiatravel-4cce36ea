@@ -224,13 +224,45 @@ export function PartyProfileDrawer({
                   </div>
                   <div>
                     <label className="text-[11px] text-muted-foreground">Mobile</label>
-                    <Input
-                      value={form.phone}
-                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                      placeholder="মোবাইল"
-                      inputMode="tel"
-                      className="h-8 mt-0.5"
-                    />
+                    <div className="space-y-1.5 mt-0.5">
+                      {form.phones.map((p, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <Input
+                            value={p}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                phones: f.phones.map((x, xi) => (xi === i ? e.target.value : x)),
+                              }))
+                            }
+                            placeholder={`মোবাইল ${i + 1}`}
+                            inputMode="tel"
+                            className="h-8"
+                          />
+                          {form.phones.length > 1 && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() =>
+                                setForm((f) => ({ ...f, phones: f.phones.filter((_, xi) => xi !== i) }))
+                              }
+                              aria-label="Remove"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setForm((f) => ({ ...f, phones: [...f.phones, ""] }))}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> আরেকটি নাম্বার
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <label className="text-[11px] text-muted-foreground">Address</label>
