@@ -15,6 +15,7 @@ import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null; created_at?: string | null };
+type ContactId = { id: string };
 
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
 const isAdvance = (r: LedgerRow) => String(r.service_type ?? "").toUpperCase() === "ADVANCE";
@@ -81,6 +82,12 @@ export function PartyProfileDrawer({
     const oldName = displayName ?? "";
     const codeCol = isCustomer ? "agent_code" : "vendor_code";
     const phoneStr = form.phones.map((p) => p.trim()).filter(Boolean).join(", ") || null;
+    const { data: existingBeforeRename } = await supabase
+      .from(contactsTable as never)
+      .select("id")
+      .eq("name", oldName)
+      .maybeSingle();
+    const existingId = (existingBeforeRename as ContactId | null)?.id;
 
     // 1) If the name changed, propagate the rename across ALL related data
     //    (service files, extra services, and ledgers) so the profile keeps
@@ -99,25 +106,33 @@ export function PartyProfileDrawer({
     }
 
     // 2) Update (or create) the contact record with the new name + details.
-    const { data: existing } = await supabase
-      .from(contactsTable as never)
-      .select("id")
-      .eq("name", oldName)
-      .maybeSingle();
-
     let err = null;
-    if (existing && (existing as { id: string }).id) {
+    if (existingId) {
       const { error } = await supabase
         .from(contactsTable as never)
         .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
-        .eq("id", (existing as { id: string }).id);
+        .eq("id", existingId);
       err = error;
     } else {
-      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
-      const { error } = await supabase
+      const { data: existingAfterRename } = await supabase
         .from(contactsTable as never)
-        .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null } as never);
-      err = error;
+        .select("id")
+        .eq("name", newName)
+        .maybeSingle();
+      const newExistingId = (existingAfterRename as ContactId | null)?.id;
+      if (newExistingId) {
+        const { error } = await supabase
+          .from(contactsTable as never)
+          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
+          .eq("id", newExistingId);
+        err = error;
+      } else {
+        const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
+        const { error } = await supabase
+          .from(contactsTable as never)
+          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null } as never);
+        err = error;
+      }
     }
 
     setSaving(false);
