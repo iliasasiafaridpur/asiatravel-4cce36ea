@@ -39,6 +39,7 @@ import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { isMdReceivedMethod } from "@/lib/payment-methods";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
 const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
@@ -101,6 +102,8 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 
 function selectColumns(mod: ModuleSchema): string {
   const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
+  // status_by only exists on the service tables that have a status workflow
+  if (RECV_META[mod.table]) columns.add("status_by");
   mod.fields.forEach((field) => columns.add(field.name));
   return Array.from(columns).join(",");
 }
@@ -132,6 +135,10 @@ export function ModulePage({ module: mod }: Props) {
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Per-row latest receive info (method + receiver) for the Recv method badge
+  const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
+  // user_id → display name (for rows whose receiver isn't on a receipt)
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -228,7 +235,33 @@ export function ModulePage({ module: mod }: Props) {
     } catch { /* ignore */ }
   }, [mod.table, supportsExtra]);
 
-  useEffect(() => { void load(true); void loadExtraCounts(); }, [load, loadExtraCounts, mod.key]);
+  // Load latest receive method/receiver per row + a user_id→name map for the Recv badge
+  const loadRecvInfo = useCallback(async () => {
+    if (!RECV_META[mod.table]) return;
+    try {
+      const [{ data: receipts }, { data: profs }] = await Promise.all([
+        supabase
+          .from("payment_receipts")
+          .select("service_row_id,method,received_by,received_by_name,created_at")
+          .eq("service_table", mod.table)
+          .order("created_at", { ascending: true }),
+        supabase.from("profiles").select("user_id,full_name"),
+      ]);
+      const map: Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }> = {};
+      ((receipts as { service_row_id: string; method: string | null; received_by: string | null; received_by_name: string | null }[] | null) ?? []).forEach((rc) => {
+        // ascending order → last write wins = most recent receipt
+        if (rc.service_row_id) map[String(rc.service_row_id)] = { method: rc.method, received_by: rc.received_by, received_by_name: rc.received_by_name };
+      });
+      setRecvInfo(map);
+      const names: Record<string, string> = {};
+      ((profs as { user_id: string; full_name: string | null }[] | null) ?? []).forEach((p) => {
+        if (p.user_id) names[p.user_id] = String(p.full_name ?? "");
+      });
+      setProfileNames(names);
+    } catch { /* ignore */ }
+  }, [mod.table]);
+
+  useEffect(() => { void load(true); void loadExtraCounts(); void loadRecvInfo(); }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
 
   // Realtime: auto-refresh on any change to this table
   useEffect(() => {
@@ -236,6 +269,7 @@ export function ModulePage({ module: mod }: Props) {
       .channel(`rt_${mod.table}`)
       .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
         void load(false);
+        void loadRecvInfo();
       })
       .subscribe();
     let chx: ReturnType<typeof supabase.channel> | null = null;
@@ -551,6 +585,8 @@ export function ModulePage({ module: mod }: Props) {
     }
 
     const payload: Record<string, unknown> = { status: newStatus, ...extra };
+    // Track who last changed the status (service tables only)
+    if (RECV_META[mod.table]) payload.status_by = displayName(profile, user);
 
     // CASE A: File Process → vendor + vendor_sent_date
     if (newStatus === "File Process" && hasField("vendor_sent_date")) {
@@ -586,7 +622,7 @@ export function ModulePage({ module: mod }: Props) {
     } catch (e) {
       toast.error("Status আপডেট করা যায়নি: " + errMsg(e));
     }
-  }, [mod, computeValue, load]);
+  }, [mod, computeValue, load, profile, user]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
     const hasField = (n: string) => mod.fields.some((f) => f.name === n);
@@ -781,6 +817,29 @@ export function ModulePage({ module: mod }: Props) {
       }
       return <span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span>;
     };
+    // Small badge next to Recv: who/where the received cash is.
+    //  - "Cash"  → received (cash) by the logged-in user
+    //  - "Abc"   → received (cash) by another user (first 3 letters of name)
+    //  - "MD"    → non-cash method (goes straight to MD)
+    const recvBadge = (r: Row, recv: number) => {
+      if (!(recv > 0)) return null;
+      const info = recvInfo[r.id];
+      const method = info?.method ?? null;
+      // Non-cash methods all flow to MD
+      if (method && isMdReceivedMethod(method)) {
+        return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-sky-500/15 text-sky-500">MD</span>;
+      }
+      const rbyId = info?.received_by ?? (r.received_by as string | null) ?? null;
+      const rbyName = info?.received_by_name ?? (rbyId ? profileNames[rbyId] : undefined);
+      if (rbyId && user && rbyId === user.id) {
+        return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-emerald-500/15 text-emerald-500">Cash</span>;
+      }
+      if (rbyName && rbyName.trim()) {
+        return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-amber-500/15 text-amber-500">{rbyName.trim().slice(0, 3)}</span>;
+      }
+      // Unknown receiver — assume current user's cash
+      return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-emerald-500/15 text-emerald-500">Cash</span>;
+    };
 
     switch (mod.key) {
       case "tickets":
@@ -790,7 +849,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.entry_by)}</div> : null}
+              {(r.status_by || r.entry_by) ? <div className="text-[10px] text-muted-foreground whitespace-nowrap">by {String(r.status_by ?? r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -828,7 +887,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">Recv: {fmt(recv)}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -844,7 +903,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+              {(r.status_by || r.entry_by) ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.status_by ?? r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -882,7 +941,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -899,7 +958,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+              {(r.status_by || r.entry_by) ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.status_by ?? r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -937,7 +996,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -953,7 +1012,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
               <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</div>
               {statusOrDeliveryBadge(r)}
-              {r.entry_by ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.entry_by)}</div> : null}
+              {(r.status_by || r.entry_by) ? <div className="text-[10px] text-muted-foreground whitespace-nowrap mt-1">by {String(r.status_by ?? r.entry_by)}</div> : null}
             </div>
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
@@ -991,7 +1050,7 @@ export function ModulePage({ module: mod }: Props) {
             return (
               <div className="text-right tabular-nums whitespace-nowrap">
                 <div className="font-semibold">৳ {fmt(sold)}</div>
-                <div className="text-xs text-emerald-600">Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
+                <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)} {recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <AdvanceBadge advance /> : null}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs"><span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span></div>
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
@@ -1022,7 +1081,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user]);
 
   return (
     <div className="space-y-4">

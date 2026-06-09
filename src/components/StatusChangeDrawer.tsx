@@ -181,7 +181,7 @@ export function StatusChangeDrawer({
     }
     setSaving(true);
     try {
-      const patch: Record<string, unknown> = { status: finalStatus };
+      const patch: Record<string, unknown> = { status: finalStatus, status_by: displayName(profile, user) };
       if (direction === "forward") {
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
