@@ -244,6 +244,23 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
   box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.45) !important;
 }
 
+/* Strong, clearly visible highlight for a row scrolled-to from Smart Search */
+.row-selected,
+.row-selected:hover {
+  background-color: #f5c16f !important;
+  color: #0f172a !important;
+  outline: 2px solid #b45309 !important;
+  box-shadow: inset 6px 0 0 0 #b45309, 0 4px 14px -4px rgba(0,0,0,0.35) !important;
+}
+.dark .row-selected,
+.dark .row-selected:hover {
+  background-color: #1d6b66 !important;
+  color: #ffffff !important;
+  outline: 2px solid #2dd4bf !important;
+  box-shadow: inset 6px 0 0 0 #2dd4bf, 0 4px 16px -4px rgba(0,0,0,0.6) !important;
+}
+.row-selected td, .dark .row-selected td { color: inherit !important; }
+
 
 @media print {
   body { background: white !important; background-image: none !important; color: black !important; }

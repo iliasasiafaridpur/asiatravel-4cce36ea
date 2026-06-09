@@ -116,7 +116,7 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
                   <button
                     type="button"
                     onClick={() => onPick(it.row)}
-                    className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-accent"
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-primary/15 dark:hover:bg-primary/25"
                   >
                     <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{shortId(it.id)}</span>
                     <span className="shrink-0 truncate text-xs font-semibold leading-tight">{it.passenger || "—"}</span>
