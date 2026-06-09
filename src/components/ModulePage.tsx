@@ -40,6 +40,7 @@ import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { isMdReceivedMethod } from "@/lib/payment-methods";
+import { SmartSearchPanel } from "@/components/SmartSearchPanel";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
 const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
@@ -134,6 +135,8 @@ export function ModulePage({ module: mod }: Props) {
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
+  const [smartOpen, setSmartOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-row latest receive info (method + receiver) for the Recv method badge
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
@@ -1083,6 +1086,18 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user]);
 
+  // Smart Search → scroll the main list to the chosen row (panel stays open)
+  const scrollToRow = useCallback((row: Row) => {
+    const el = document.getElementById(`row-${row.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightId(row.id);
+      window.setTimeout(() => setHighlightId((h) => (h === row.id ? null : h)), 2500);
+    }
+  }, []);
+
+
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -1090,6 +1105,10 @@ export function ModulePage({ module: mod }: Props) {
           <h1 className="text-2xl font-bold">{mod.label}</h1>
           <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setSmartOpen(true)} className="gap-1.5">
+            <Search className="h-4 w-4" /> Smart Search
+          </Button>
         <Dialog open={openForm} onOpenChange={setOpenForm}>
           <DialogTrigger asChild>
             <Button onClick={startCreate} className="gap-1.5">
@@ -1162,7 +1181,9 @@ export function ModulePage({ module: mod }: Props) {
 
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
 
       <Card>
         <CardContent className="p-3 sm:p-4">
@@ -1363,7 +1384,8 @@ export function ModulePage({ module: mod }: Props) {
                   return filtered.map((r, idx) => (
                     <TableRow
                       key={r.id}
-                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 outline-transparent hover:outline-primary/60 hover:shadow-md transition-colors`}
+                      id={`row-${r.id}`}
+                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${highlightId === r.id ? "outline-primary ring-2 ring-primary/50 bg-primary/5" : "outline-transparent"}`}
                       onClick={(e) => {
                         const t = e.target as HTMLElement;
                         if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
@@ -1471,6 +1493,15 @@ export function ModulePage({ module: mod }: Props) {
         serviceTable={mod.table}
         moduleKey={mod.key}
         statusOrder={mod.statuses}
+      />
+
+      <SmartSearchPanel
+        open={smartOpen}
+        onClose={() => setSmartOpen(false)}
+        rows={filtered}
+        idColumn={mod.idColumn}
+        moduleLabel={mod.label}
+        onPick={scrollToRow}
       />
     </div>
   );
