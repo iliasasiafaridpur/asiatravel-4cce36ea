@@ -10,6 +10,11 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export type LookupKind = string;
 
+const PARTY_LOOKUP_KIND: Record<string, "customer" | "vendor"> = {
+  sub_agency: "customer",
+  vendor: "vendor",
+};
+
 const LABELS: Record<string, string> = {
   country: "দেশ",
   airline: "এয়ারলাইন্স",
@@ -132,7 +137,20 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     const existing = [...(cache[kind] ?? []), ...(defaults ?? [])];
     if (existing.includes(nv)) { toast.error("এই নামটি ইতিমধ্যে আছে"); return; }
     const wasDefault = (defaults ?? []).includes(oldVal);
-    if (wasDefault) {
+    const partyKind = PARTY_LOOKUP_KIND[kind];
+    if (partyKind) {
+      const { error } = await supabase.rpc("rename_party", {
+        p_kind: partyKind,
+        p_old_name: oldVal,
+        p_new_name: nv,
+      });
+      if (error) { toast.error(error.message); return; }
+      const current = cache[kind] ?? [];
+      cache[kind] = (current.includes(oldVal)
+        ? current.map((x) => x === oldVal ? nv : x)
+        : [...current, nv]
+      ).sort((a, b) => a.localeCompare(b));
+    } else if (wasDefault) {
       const { error } = await supabase.from("lookups").insert({ kind, value: nv });
       if (error) { toast.error(error.message); return; }
       const key = `lookup_hidden_defaults:${kind}`;
