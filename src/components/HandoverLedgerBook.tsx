@@ -699,8 +699,8 @@ function HandoverCard({
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                    {isAdvance && <AdvanceBadge advance className="mr-1" />}
                     <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
-                    {isAdvance && <AdvanceBadge advance className="ml-1" />}
                     {isMdReceivedMethod(r.method) && (
                       <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
                     )}
