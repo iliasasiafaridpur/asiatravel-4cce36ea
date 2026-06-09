@@ -39,6 +39,7 @@ import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { isMdReceivedMethod } from "@/lib/payment-methods";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
 const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
