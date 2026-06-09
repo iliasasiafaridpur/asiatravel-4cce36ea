@@ -371,9 +371,39 @@ function AccountsPage() {
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
+  // Which column holds the "received" total on each service table
+  const RECV_COL: Record<string, string> = {
+    tickets: "received",
+    kuwait_visas: "received",
+    bmet_cards: "received_amount",
+    saudi_visas: "received_amount",
+    others: "received_amount",
+    extra_services: "received_amount",
+  };
   const deleteRecv = async (id: string): Promise<void> => {
+    // Find the receipt first so we can roll back the linked service's received total.
+    const rec = received.find((r) => r.id === id);
     const { error } = await supabase.from("payment_receipts").delete().eq("id", id);
     if (error) { toast.error("ডিলেট ব্যর্থ: " + error.message); return; }
+
+    // Roll back the service row's received amount so module pages stop showing it.
+    if (rec?.service_table && rec.service_row_id && RECV_COL[rec.service_table]) {
+      const col = RECV_COL[rec.service_table];
+      const { data: svcRow } = await supabase
+        .from(rec.service_table as never)
+        .select(`id,${col}`)
+        .eq("id", rec.service_row_id)
+        .maybeSingle();
+      if (svcRow) {
+        const current = Number((svcRow as Record<string, unknown>)[col] ?? 0);
+        const next = Math.max(0, current - Number(rec.amount || 0));
+        await supabase
+          .from(rec.service_table as never)
+          .update({ [col]: next } as never)
+          .eq("id", rec.service_row_id);
+      }
+    }
+
     toast.success("ডিলেট সম্পন্ন");
     await reload(true);
   };
