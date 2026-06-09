@@ -134,6 +134,10 @@ export function ModulePage({ module: mod }: Props) {
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Per-row latest receive info (method + receiver) for the Recv method badge
+  const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
+  // user_id → display name (for rows whose receiver isn't on a receipt)
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
