@@ -714,6 +714,16 @@ export function ModulePage({ module: mod }: Props) {
         {copyValue ? <CopyInlineButton value={copyValue} /> : null}
       </div>
     );
+    // Combined copy value for the passenger name: "name - passport - mobile".
+    const nameCopyValue = (r: Row) =>
+      [r.passenger_name, r.passport, r.mobile]
+        .map((v) => (v == null ? "" : String(v).trim()))
+        .filter(Boolean)
+        .join(" - ");
+    // Copy button shown to the LEFT of the passenger name.
+    const nameCopyBtn = (r: Row) => (
+      <CopyInlineButton value={nameCopyValue(r)} className="!ml-0 mr-1" />
+    );
     // "+N" badge shown next to passenger name when extra services exist for the row.
     const extraBadge = (r: Row) => {
       const n = extraCounts[r.id] ?? 0;
@@ -860,7 +870,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[140px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
@@ -914,7 +924,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
@@ -969,7 +979,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
@@ -1023,7 +1033,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "passenger", header: "Passenger", render: (r) => (
             <div className="min-w-[150px]">
-              <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
+              <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
