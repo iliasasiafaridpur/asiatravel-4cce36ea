@@ -862,7 +862,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[140px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
@@ -916,7 +916,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
@@ -971,7 +971,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
@@ -1025,7 +1025,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="min-w-[150px]">
               <div className="font-medium">{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
-              {r.passport ? subLine("PP", String(r.passport)) : null}
+              {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
               {r.mobile ? mobileSub(String(r.mobile)) : null}
             </div>
           )},
