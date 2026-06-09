@@ -145,9 +145,11 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
         p_new_name: nv,
       });
       if (error) { toast.error(error.message); return; }
-      cache[kind] = wasDefault
-        ? [...(cache[kind] ?? []), nv].sort((a, b) => a.localeCompare(b))
-        : (cache[kind] ?? []).map((x) => x === oldVal ? nv : x).sort((a, b) => a.localeCompare(b));
+      const current = cache[kind] ?? [];
+      cache[kind] = (current.includes(oldVal)
+        ? current.map((x) => x === oldVal ? nv : x)
+        : [...current, nv]
+      ).sort((a, b) => a.localeCompare(b));
     } else if (wasDefault) {
       const { error } = await supabase.from("lookups").insert({ kind, value: nv });
       if (error) { toast.error(error.message); return; }
