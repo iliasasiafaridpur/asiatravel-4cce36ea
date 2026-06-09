@@ -78,13 +78,31 @@ export function PartyProfileDrawer({
       return;
     }
     setSaving(true);
+    const oldName = displayName ?? "";
     const codeCol = isCustomer ? "agent_code" : "vendor_code";
     const phoneStr = form.phones.map((p) => p.trim()).filter(Boolean).join(", ") || null;
-    // Find existing contact row by current name
+
+    // 1) If the name changed, propagate the rename across ALL related data
+    //    (service files, extra services, and ledgers) so the profile keeps
+    //    all its history instead of becoming orphaned.
+    if (newName !== oldName && oldName) {
+      const { error: renameErr } = await supabase.rpc("rename_party" as never, {
+        p_kind: kind,
+        p_old_name: oldName,
+        p_new_name: newName,
+      } as never);
+      if (renameErr) {
+        setSaving(false);
+        toast.error("নাম পরিবর্তন ব্যর্থ: " + renameErr.message);
+        return;
+      }
+    }
+
+    // 2) Update (or create) the contact record with the new name + details.
     const { data: existing } = await supabase
       .from(contactsTable as never)
       .select("id")
-      .eq("name", displayName ?? "")
+      .eq("name", oldName)
       .maybeSingle();
 
     let err = null;
@@ -114,7 +132,8 @@ export function PartyProfileDrawer({
   };
 
   useEffect(() => {
-    if (!open || !partyName) {
+    const activeName = displayName ?? partyName;
+    if (!open || !activeName) {
       setRows([]);
       setContact(null);
       return;
@@ -126,13 +145,13 @@ export function PartyProfileDrawer({
         supabase
           .from(table as never)
           .select("*")
-          .eq(groupField, partyName)
+          .eq(groupField, activeName)
           .order("entry_date", { ascending: false })
           .limit(500),
         supabase
           .from(contactsTable as never)
           .select("phone,address,created_at")
-          .eq("name", partyName)
+          .eq("name", activeName)
           .maybeSingle(),
       ]);
       if (!cancelled) {
@@ -144,7 +163,7 @@ export function PartyProfileDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, partyName, table, groupField, contactsTable]);
+  }, [open, partyName, displayName, table, groupField, contactsTable]);
 
   const stats = useMemo(() => {
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
