@@ -194,6 +194,7 @@ export type Database = {
           received_date: string | null
           sold_price: number | null
           status: string
+          status_by: string | null
           updated_at: string
           vendor_bought: string | null
           vendor_sent_date: string | null
@@ -221,6 +222,7 @@ export type Database = {
           received_date?: string | null
           sold_price?: number | null
           status?: string
+          status_by?: string | null
           updated_at?: string
           vendor_bought?: string | null
           vendor_sent_date?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           received_date?: string | null
           sold_price?: number | null
           status?: string
+          status_by?: string | null
           updated_at?: string
           vendor_bought?: string | null
           vendor_sent_date?: string | null
@@ -617,6 +620,7 @@ export type Database = {
           sold_price: number | null
           sponsor_name: string | null
           status: string
+          status_by: string | null
           updated_at: string
           vendor_bought: string | null
           visa_no: string | null
@@ -644,6 +648,7 @@ export type Database = {
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
+          status_by?: string | null
           updated_at?: string
           vendor_bought?: string | null
           visa_no?: string | null
@@ -671,6 +676,7 @@ export type Database = {
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
+          status_by?: string | null
           updated_at?: string
           vendor_bought?: string | null
           visa_no?: string | null
@@ -741,6 +747,7 @@ export type Database = {
           service_name: string | null
           sold_price: number | null
           status: string
+          status_by: string | null
           trip_road: string | null
           updated_at: string
           vendor_bought: string | null
@@ -769,6 +776,7 @@ export type Database = {
           service_name?: string | null
           sold_price?: number | null
           status?: string
+          status_by?: string | null
           trip_road?: string | null
           updated_at?: string
           vendor_bought?: string | null
@@ -797,6 +805,7 @@ export type Database = {
           service_name?: string | null
           sold_price?: number | null
           status?: string
+          status_by?: string | null
           trip_road?: string | null
           updated_at?: string
           vendor_bought?: string | null
@@ -984,6 +993,7 @@ export type Database = {
           sold_price: number | null
           sponsor_name: string | null
           status: string
+          status_by: string | null
           tasheer_finger_date: string | null
           update_date: string | null
           updated_at: string
@@ -1023,6 +1033,7 @@ export type Database = {
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
+          status_by?: string | null
           tasheer_finger_date?: string | null
           update_date?: string | null
           updated_at?: string
@@ -1062,6 +1073,7 @@ export type Database = {
           sold_price?: number | null
           sponsor_name?: string | null
           status?: string
+          status_by?: string | null
           tasheer_finger_date?: string | null
           update_date?: string | null
           updated_at?: string
@@ -1094,6 +1106,7 @@ export type Database = {
           received_by: string | null
           sold_price: number | null
           status: string
+          status_by: string | null
           ticket_id: string
           trip_road: string | null
           updated_at: string
@@ -1120,6 +1133,7 @@ export type Database = {
           received_by?: string | null
           sold_price?: number | null
           status?: string
+          status_by?: string | null
           ticket_id: string
           trip_road?: string | null
           updated_at?: string
@@ -1146,6 +1160,7 @@ export type Database = {
           received_by?: string | null
           sold_price?: number | null
           status?: string
+          status_by?: string | null
           ticket_id?: string
           trip_road?: string | null
           updated_at?: string
