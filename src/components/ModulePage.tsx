@@ -914,6 +914,39 @@ export function ModulePage({ module: mod }: Props) {
       return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-emerald-500/15 text-emerald-500">Cash</span>;
     };
 
+    // Unified Amount cell — shows the passenger's FULL account at a glance:
+    // combined bill (ticket + extra), combined received, the actionable service
+    // due, plus a clearly-labelled extra-service due (received via customer ledger).
+    const amountCell = (r: Row, recvField: string, opts?: { advance?: boolean }) => {
+      const { sold, recv, discount, cost, due, profit, extraSold, extraDue, totalSold, totalRecv } = money(r, recvField);
+      const hasExtra = extraSold > 0;
+      const combinedDue = due + extraDue;
+      const showProfit = (recv > 0 && cost > 0) || extraSold > 0;
+      const profitClass = profit < 0 ? "text-rose-500" : combinedDue <= 0 ? "text-emerald-500" : "text-yellow-500";
+      const showAdvance = !!opts?.advance && recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string);
+      return (
+        <div className="text-right tabular-nums whitespace-nowrap">
+          <div className="font-semibold">৳ {fmt(totalSold)}</div>
+          {hasExtra ? (
+            <div className="text-[10px] text-muted-foreground" title="মূল সার্ভিস + Extra service bill">
+              মূল ৳{fmt(sold)} + ✨ ৳{fmt(extraSold)}
+            </div>
+          ) : null}
+          <div className="text-xs text-emerald-600">{showAdvance ? <><AdvanceBadge advance /> </> : null}{recvBadge(r, totalRecv)}Recv: {fmt(totalRecv)}</div>
+          {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
+          <div className="text-xs">{dueBtn(r, due)}</div>
+          {extraDue > 0 ? (
+            <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 font-semibold" title="Extra service-এর বকেয়া — Customer ledger থেকে receive করুন">
+              ✨ Extra Due: {fmt(extraDue)}
+            </div>
+          ) : null}
+          {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
+        </div>
+      );
+    };
+
+
+
     switch (mod.key) {
       case "tickets":
         return [
