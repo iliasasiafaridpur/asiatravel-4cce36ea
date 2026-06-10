@@ -358,19 +358,31 @@ export function PassengerProfileDrawer({
                   Financial Ledger
                 </h4>
 
-                {/* Sales summary */}
+                {/* Sales summary — combined customer account (service + extra services) */}
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                  <Line label="Total Sold" value={fmtMoney(sold)} bold />
+                  {extraSold > 0 ? (
+                    <>
+                      <Line label="Main Service Bill" value={fmtMoney(sold)} className="text-muted-foreground" />
+                      <Line label="✨ Extra Service Bill" value={fmtMoney(extraSold)} className="text-fuchsia-600 dark:text-fuchsia-400" />
+                      <div className="border-t pt-2">
+                        <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                      </div>
+                    </>
+                  ) : (
+                    <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                  )}
                   <Line
                     label="Total Received"
                     value={fmtMoney(totalReceived)}
                     className="text-emerald-600"
                   />
-                  <Line
-                    label="Discount Given"
-                    value={fmtMoney(totalDiscount)}
-                    className="text-amber-600"
-                  />
+                  {totalDiscount > 0 ? (
+                    <Line
+                      label="Discount Given"
+                      value={fmtMoney(totalDiscount)}
+                      className="text-amber-600"
+                    />
+                  ) : null}
                   <div className="border-t pt-2 flex items-baseline justify-between">
                     <span className="text-sm font-semibold">Outstanding Due</span>
                     <span
@@ -379,6 +391,11 @@ export function PassengerProfileDrawer({
                       {fmtMoney(due)}
                     </span>
                   </div>
+                  {extraDue > 0 ? (
+                    <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400 text-right">
+                      এর মধ্যে ✨ Extra service বকেয়া: {fmtMoney(extraDue)}
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Cost / Profit — separated */}
