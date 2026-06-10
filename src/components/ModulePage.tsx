@@ -135,6 +135,7 @@ export function ModulePage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
+  const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
