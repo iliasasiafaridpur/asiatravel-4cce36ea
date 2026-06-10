@@ -781,12 +781,15 @@ export function ModulePage({ module: mod }: Props) {
     // (Extra-service passenger bill is now folded into the unified amount cell.)
     // Extra-service vendor cost surfaced in the Agency / Vendor column (vendor side).
     const extraCostLine = (r: Row) => {
-      const ex = extraDetails[r.id] ?? [];
-      const c = ex.reduce((a, d) => a + (Number(d.vendor_cost) || 0), 0);
-      if (!c) return null;
+      const ex = (extraDetails[r.id] ?? []).filter((d) => Number(d.vendor_cost) > 0);
+      if (!ex.length) return null;
       return (
-        <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400" title="Extra service — vendor ledger-এ যুক্ত">
-          ✨ Extra cost: +৳{fmt(c)}
+        <div className="mt-0.5 space-y-0.5" title="Extra service — vendor ledger-এ যুক্ত">
+          {ex.map((d, idx) => (
+            <div key={`${r.id}-extra-cost-${idx}`} className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400">
+              ✨ {d.service_name || "Extra Service"}: +৳{fmt(Number(d.vendor_cost) || 0)}
+            </div>
+          ))}
         </div>
       );
     };
@@ -1636,7 +1639,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   );
 }
 
-function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
+export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
   rows: ExtraServiceRow[];
   setRows: React.Dispatch<React.SetStateAction<ExtraServiceRow[]>>;
   show: boolean;

@@ -1012,6 +1012,7 @@ export const SERVICE_CATEGORIES = [
   { key: "bmet", label: "BMET Card" },
   { key: "saudi-visa", label: "Saudi Visa" },
   { key: "kuwait-visa", label: "Kuwait Visa" },
+  { key: "other", label: "Other" },
 ];
 
 const APP_TZ = "Asia/Dhaka";
