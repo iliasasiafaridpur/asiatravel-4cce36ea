@@ -130,7 +130,7 @@ export function ModulePage({ module: mod }: Props) {
   const [extraServices, setExtraServices] = useState<ExtraServiceRow[]>([]);
   const [showExtra, setShowExtra] = useState(false);
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
-  const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; notes: string }[]>>({});
+  const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string }[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
