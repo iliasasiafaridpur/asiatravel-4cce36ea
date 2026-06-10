@@ -34,9 +34,15 @@ type Receipt = {
   service_table?: string | null; service_row_id?: string | null;
   service_type?: string | null;
   method?: string | null;
+  source?: string | null;
+  remarks?: string | null;
   discount?: number;
   svc?: SvcDetail;
 };
+
+const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
+const isStatusEvent = (r: Receipt) =>
+  STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 type Expense = {
   id: string; expense_id?: string | null; amount: number;
   category: string; purpose?: string | null;
