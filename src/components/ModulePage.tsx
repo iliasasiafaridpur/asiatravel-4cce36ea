@@ -1517,6 +1517,13 @@ export function ModulePage({ module: mod }: Props) {
         preselect={duePreselect}
       />
 
+      <ExtraDueReceiveDialog
+        open={!!extraDuePreselect}
+        onOpenChange={(v) => { if (!v) setExtraDuePreselect(null); }}
+        preselect={extraDuePreselect}
+        onDone={() => { void loadExtraCounts(); void load(false); }}
+      />
+
       <StatusChangeDrawer
         request={statusChange}
         onClose={() => setStatusChange(null)}
