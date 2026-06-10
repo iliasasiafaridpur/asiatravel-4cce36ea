@@ -166,13 +166,19 @@ export function PassengerProfileDrawer({
   const receivedField = Number(row.received ?? row.received_amount ?? 0);
   const totalDiscount = Number(row.discount_amount ?? 0);
   const moneyReceipts = receipts;
-  const totalReceived = Math.max(0, receivedField);
-  const due = Math.max(0, sold - totalReceived - totalDiscount);
-  // Extra services: service_price = extra passenger bill, vendor_cost = extra vendor cost.
+  const serviceReceived = Math.max(0, receivedField);
+  // Extra services: service_price = extra passenger bill, vendor_cost = extra vendor cost,
+  // received = how much of that extra bill the customer has already paid.
   const extraSold = extras.reduce((s, e) => s + (Number(e.service_price) || 0), 0);
   const extraCost = extras.reduce((s, e) => s + (Number(e.vendor_cost) || 0), 0);
-  const profit = sold + extraSold - totalDiscount - cost - extraCost;
-  const showProfit = (totalReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
+  const extraReceived = extras.reduce((s, e) => s + (Number(e.received) || 0), 0);
+  const extraDue = Math.max(0, extraSold - extraReceived);
+  // Combined customer-side totals so the FULL passenger account is clear at a glance.
+  const totalBill = sold + extraSold;
+  const totalReceived = serviceReceived + extraReceived;
+  const due = Math.max(0, totalBill - totalReceived - totalDiscount);
+  const profit = totalBill - totalDiscount - cost - extraCost;
+  const showProfit = (serviceReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
   const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
