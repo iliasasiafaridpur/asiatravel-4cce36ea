@@ -705,9 +705,18 @@ export function ModulePage({ module: mod }: Props) {
       const recv = Number(r[recvField] ?? 0);
       const discount = Number(r.discount_amount ?? 0);
       const cost = isTicketBook(r) ? 0 : Number(r.cost_price ?? 0);
-      const due = Math.max(0, sold - recv - discount);
-      const profit = sold - discount - cost;
-      return { sold, recv, discount, cost, due, profit };
+      // Extra services billed to the passenger (service_price) and payable to the
+      // vendor (vendor_cost). They mirror into the customer/vendor ledgers via a DB
+      // trigger; here we fold them into the row's totals so the passenger AND vendor
+      // accounting both reflect the extra service.
+      const ex = extraDetails[r.id] ?? [];
+      const extraSold = ex.reduce((s, d) => s + (Number(d.service_price) || 0), 0);
+      const extraCost = ex.reduce((s, d) => s + (Number(d.vendor_cost) || 0), 0);
+      const totalSold = sold + extraSold;
+      const totalCost = cost + extraCost;
+      const due = Math.max(0, totalSold - recv - discount);
+      const profit = totalSold - discount - totalCost;
+      return { sold, recv, discount, cost, due, profit, extraSold, extraCost, totalSold, totalCost };
     };
     const subLine = (label: string, val: React.ReactNode, copyValue?: string) => (
       <div className="text-xs text-muted-foreground leading-tight">
