@@ -1100,8 +1100,8 @@ export function ModulePage({ module: mod }: Props) {
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
-            const showProfit = recv > 0 && cost > 0;
+            const { sold, recv, discount, cost, due, profit, extraSold, extraCost } = money(r, "received_amount");
+            const showProfit = (recv > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
               : due <= 0
@@ -1113,6 +1113,7 @@ export function ModulePage({ module: mod }: Props) {
                 <div className="text-xs text-emerald-600">{recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{recvBadge(r, recv)}Recv: {fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs"><span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span></div>
+                {extraBillLine(r)}
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
