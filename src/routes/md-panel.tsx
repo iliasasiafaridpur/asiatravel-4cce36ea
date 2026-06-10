@@ -131,7 +131,7 @@ function MdPanelPage() {
     const [{ data: recData }, { data: hvData }] = await Promise.all([
       supabase
         .from("payment_receipts")
-        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,created_at")
+        .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,remarks,created_at")
         .not("source", "eq", "discount")
         .not("method", "ilike", "discount")
         .order("created_at", { ascending: false })
@@ -447,6 +447,7 @@ function PastEodPanel({
               const highlight = r.id === pastReceipt.id;
               const key = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = key ? serviceMap[key] : undefined;
+              const statusEvt = ["status_event", "status_change", "status-delivery"].includes(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
               return (
                 <tr
                   key={r.id}
@@ -461,13 +462,16 @@ function PastEodPanel({
                     {info?.service_name && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
                     {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
                     {info?.airline && <div className="text-xs text-muted-foreground">{info.airline}{info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}</div>}
+                    {statusEvt && <div className="text-xs text-violet-600 dark:text-violet-400">{(r as { remarks?: string | null }).remarks || "ডেলিভারি"} — অবগতি</div>}
                     {info && info.discount > 0 && (
                       <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
                         ডিসকাউন্ট: {fmt(info.discount)}
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">{info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date) ? <><AdvanceBadge advance /> </> : null}{fmt(r.amount)}</td>
+                  <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums">
+                    {statusEvt ? <span className="text-violet-600 dark:text-violet-400">📦 Delivery</span> : <>{info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date) ? <><AdvanceBadge advance /> </> : null}{fmt(r.amount)}</>}
+                  </td>
                   <td className="px-2 py-1.5 text-xs text-muted-foreground">{formatDateTime(r.created_at || r.entry_date)}</td>
                 </tr>
               );

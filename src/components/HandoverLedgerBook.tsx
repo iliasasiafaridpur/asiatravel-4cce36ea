@@ -53,8 +53,14 @@ type Receipt = {
   handover_id: string | null;
   received_by: string | null;
   received_by_name: string | null;
+  source?: string | null;
+  remarks?: string | null;
   created_at: string;
 };
+
+const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
+const isStatusEventReceipt = (r: { source?: string | null; method?: string | null }) =>
+  STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 
 type Expense = {
   id: string;
@@ -143,7 +149,7 @@ export function HandoverLedgerInline({
       if (ids.length > 0) {
         const { data: recData } = await supabase
           .from("payment_receipts")
-          .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
+          .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,source,remarks,created_at")
           .in("handover_id", ids)
           .not("source", "eq", "discount");
         recs = (recData ?? []) as Receipt[];
@@ -601,6 +607,7 @@ function HandoverCard({
               const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
               const isHighlighted = highlightId === r.id;
               const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
+              const statusEvt = isStatusEventReceipt(r);
 
               return (
                 <tr
@@ -699,10 +706,16 @@ function HandoverCard({
                   </td>
                   {/* এই বারের জমা */}
                   <td className="px-1.5 py-1 text-right tabular-nums align-top">
-                    {isAdvance && <AdvanceBadge advance className="mr-1" />}
-                    <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
-                    {isMdReceivedMethod(r.method) && (
-                      <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                    {statusEvt ? (
+                      <div className="text-sm font-semibold text-violet-600 dark:text-violet-400 leading-tight">📦 {r.remarks || "Delivery"}</div>
+                    ) : (
+                      <>
+                        {isAdvance && <AdvanceBadge advance className="mr-1" />}
+                        <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                        {isMdReceivedMethod(r.method) && (
+                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                        )}
+                      </>
                     )}
                     {(r.received_by_name || r.created_at) && (
                       <div className="text-sm text-muted-foreground font-normal leading-tight">
