@@ -53,8 +53,14 @@ type Receipt = {
   handover_id: string | null;
   received_by: string | null;
   received_by_name: string | null;
+  source?: string | null;
+  remarks?: string | null;
   created_at: string;
 };
+
+const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
+const isStatusEventReceipt = (r: { source?: string | null; method?: string | null }) =>
+  STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 
 type Expense = {
   id: string;
