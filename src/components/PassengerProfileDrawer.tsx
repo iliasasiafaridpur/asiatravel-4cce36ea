@@ -424,18 +424,29 @@ export function PassengerProfileDrawer({
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-600 dark:text-fuchsia-400">
                       ✨ Extra Services
                     </div>
-                    {extras.map((e) => (
-                      <div key={e.id} className="text-xs border-t border-fuchsia-500/20 pt-2 first:border-t-0 first:pt-0">
-                        <div className="font-medium">{e.service_name || "Extra Service"}</div>
-                        <div className="mt-0.5 flex items-center justify-between gap-2 tabular-nums">
-                          <span className="text-emerald-600">Bill: {fmtMoney(Number(e.service_price) || 0)}</span>
-                          <span className="text-rose-500">
-                            Vendor{e.vendor_name ? ` (${e.vendor_name})` : ""}: {fmtMoney(Number(e.vendor_cost) || 0)}
-                          </span>
+                    {extras.map((e) => {
+                      const bill = Number(e.service_price) || 0;
+                      const paid = Number(e.received) || 0;
+                      const exDue = Math.max(0, bill - paid);
+                      return (
+                        <div key={e.id} className="text-xs border-t border-fuchsia-500/20 pt-2 first:border-t-0 first:pt-0">
+                          <div className="font-medium">{e.service_name || "Extra Service"}</div>
+                          <div className="mt-0.5 flex items-center justify-between gap-2 tabular-nums">
+                            <span className="text-emerald-600">Bill: {fmtMoney(bill)}</span>
+                            <span className="text-rose-500">
+                              Vendor{e.vendor_name ? ` (${e.vendor_name})` : ""}: {fmtMoney(Number(e.vendor_cost) || 0)}
+                            </span>
+                          </div>
+                          {bill > 0 ? (
+                            <div className="mt-0.5 flex items-center justify-between gap-2 tabular-nums text-[11px]">
+                              <span className="text-emerald-600">Received: {fmtMoney(paid)}</span>
+                              <span className={exDue > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmtMoney(exDue)}</span>
+                            </div>
+                          ) : null}
+                          {e.notes ? <div className="mt-0.5 text-muted-foreground">📝 {e.notes}</div> : null}
                         </div>
-                        {e.notes ? <div className="mt-0.5 text-muted-foreground">📝 {e.notes}</div> : null}
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div className="border-t border-fuchsia-500/30 pt-2 flex items-center justify-between text-xs font-semibold tabular-nums">
                       <span className="text-emerald-600">Total Bill: {fmtMoney(extraSold)}</span>
                       <span className="text-rose-500">Total Cost: {fmtMoney(extraCost)}</span>
