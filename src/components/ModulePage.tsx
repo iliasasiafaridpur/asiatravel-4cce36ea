@@ -714,7 +714,10 @@ export function ModulePage({ module: mod }: Props) {
       const extraCost = ex.reduce((s, d) => s + (Number(d.vendor_cost) || 0), 0);
       const totalSold = sold + extraSold;
       const totalCost = cost + extraCost;
-      const due = Math.max(0, totalSold - recv - discount);
+      // Parent-row due drives the Due Receive button (it receives into the service
+      // row). The extra-service bill is received separately via the customer ledger,
+      // so it is surfaced as its own line, not merged into the receive button.
+      const due = Math.max(0, sold - recv - discount);
       const profit = totalSold - discount - totalCost;
       return { sold, recv, discount, cost, due, profit, extraSold, extraCost, totalSold, totalCost };
     };
