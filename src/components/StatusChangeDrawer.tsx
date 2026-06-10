@@ -221,21 +221,53 @@ export function StatusChangeDrawer({
 
       let firstReceiptId = "";
       const me = displayName(profile, user);
+      const mkReceiptId = async (): Promise<string> => {
+        try {
+          return await generateNextId({
+            key: "_rcpt", label: "", short: "", table: "payment_receipts",
+            idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
+          });
+        } catch (e) {
+          if (!isNetworkError(e)) throw e;
+          const d = new Date();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const yy = String(d.getFullYear()).slice(-2);
+          return `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+        }
+      };
+
+      if (markDelivered) {
+        const existingStatusEvent = await supabase
+          .from("payment_receipts")
+          .select("id")
+          .eq("service_table", request.table)
+          .eq("service_row_id", request.row.id)
+          .in("source", Array.from(STATUS_EVENT_SOURCES))
+          .limit(1)
+          .maybeSingle();
+
+        if (!existingStatusEvent.data) {
+          const statusReceiptId = await mkReceiptId();
+          await resilientInsert("payment_receipts", {
+            receipt_id: statusReceiptId,
+            entry_date: todayIso(),
+            service_type: request.serviceType,
+            service_table: request.table,
+            service_row_id: request.row.id,
+            ref_id: request.refId,
+            passenger_name: String(request.row.passenger_name ?? ""),
+            amount: 0,
+            method: "Status",
+            source: "status_event",
+            remarks: `Status: ${finalStatus}`,
+            received_by: user!.id,
+            received_by_name: me,
+            created_by: user!.id,
+          });
+        }
+      }
+
       if (receiveDue && (paid > 0 || discAmt > 0)) {
-        const mkReceiptId = async (): Promise<string> => {
-          try {
-            return await generateNextId({
-              key: "_rcpt", label: "", short: "", table: "payment_receipts",
-              idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
-            });
-          } catch (e) {
-            if (!isNetworkError(e)) throw e;
-            const d = new Date();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const yy = String(d.getFullYear()).slice(-2);
-            return `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
-          }
-        };
         // Discount is a non-cash price adjustment (already applied to sold_price)
         // and must NEVER create its own payment_receipts row — otherwise it
         // inflates daily cash income. We append it to the cash receipt's remarks.
