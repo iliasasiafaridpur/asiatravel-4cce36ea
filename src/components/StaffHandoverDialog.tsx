@@ -305,6 +305,7 @@ export function StaffHandoverDialog({
               ) : (
                 receipts.map((r) => {
                   const mdRecv = isMdReceivedMethod(r.method);
+                  const statusEvt = isStatusEvent(r);
                   return (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
@@ -312,14 +313,23 @@ export function StaffHandoverDialog({
                       <div className="text-[10px] text-muted-foreground truncate">
                         {svcLine(r) || (r.receipt_id || r.id.slice(0, 8))}
                       </div>
+                      {statusEvt && (
+                        <div className="text-[10px] text-violet-600 dark:text-violet-400">
+                          {r.remarks || "ডেলিভারি"} — অবগতি (ক্যাশ নয়)
+                        </div>
+                      )}
                       {mdRecv && (
                         <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
                       )}
                     </div>
                     <div className="text-right">
-                      <div className={`tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                        {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
-                      </div>
+                      {statusEvt ? (
+                        <div className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">📦 Delivery</div>
+                      ) : (
+                        <div className={`tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
+                        </div>
+                      )}
                       {Number(r.discount || 0) > 0 && (
                         <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
                           ডিসকাউন্ট: {fmt(Number(r.discount))}
