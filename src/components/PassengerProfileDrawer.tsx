@@ -444,7 +444,7 @@ export function PassengerProfileDrawer({
                     })}
                     <div className="border-t border-fuchsia-500/30 pt-2 flex items-center justify-between text-xs font-semibold tabular-nums">
                       <span className="text-emerald-600">Total Bill: {fmtMoney(extraSold)}</span>
-                      <span className="text-rose-500">Total Cost: {fmtMoney(extraCost)}</span>
+                      <span className="text-rose-500">Vendor Total: {fmtMoney(extraCost)}</span>
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       Customer ও Vendor ledger-এ আলাদা এন্ট্রি হিসেবে যুক্ত হয়েছে।
