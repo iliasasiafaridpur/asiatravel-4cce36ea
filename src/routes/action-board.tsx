@@ -6,9 +6,12 @@ import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Search, RotateCcw, Keyboard } from "lucide-react";
+import { Save, Search, RotateCcw, Keyboard, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { ExtraServiceSection, FormSections, type ExtraServiceRow } from "@/components/ModulePage";
+import { FormSections, type ExtraServiceRow } from "@/components/ModulePage";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LookupSelect } from "@/components/LookupSelect";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
@@ -410,7 +413,7 @@ export function ActionBoardPage() {
           <div ref={formRef}>
             <FormSections mod={mod} form={form} setForm={setForm} />
             {supportsExtra && (
-              <ExtraServiceSection
+              <ExtraServiceSectionLocal
                 rows={extraServices}
                 setRows={setExtraServices}
                 show={showExtra}
@@ -424,3 +427,99 @@ export function ActionBoardPage() {
     </div>
   );
 }
+
+function ExtraServiceSectionLocal({ rows, setRows, show, setShow, vendorName }: {
+  rows: ExtraServiceRow[];
+  setRows: React.Dispatch<React.SetStateAction<ExtraServiceRow[]>>;
+  show: boolean;
+  setShow: React.Dispatch<React.SetStateAction<boolean>>;
+  vendorName: string;
+}) {
+  const addRow = () => {
+    setShow(true);
+    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0, notes: "" }]);
+  };
+  const update = (i: number, patch: Partial<ExtraServiceRow>) =>
+    setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const remove = (i: number) => setRows((p) => p.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="mt-4 border-t pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Extra Service
+        </h3>
+        <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
+          <Plus className="h-3.5 w-3.5" /> Extra Service
+        </Button>
+      </div>
+
+      {show && rows.length > 0 && (
+        <div className="space-y-2 mt-2">
+          {vendorName ? (
+            <p className="text-xs text-muted-foreground">
+              Vendor cost যোগ হবে: <b className="text-foreground">{vendorName}</b> এর হিসাবে।
+            </p>
+          ) : (
+            <p className="text-xs text-amber-500">
+              ⚠️ Vendor cost যোগ করতে আগে উপরে Vendor সিলেক্ট করুন।
+            </p>
+          )}
+          {rows.map((ex, i) => (
+            <div key={i} className="flex flex-wrap gap-2 items-end border rounded-md p-2">
+              <div className="space-y-1" style={{ width: 240, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Service Name</Label>
+                <LookupSelect
+                  kind="extra_service"
+                  value={ex.service_name}
+                  onChange={(v) => update(i, { service_name: v })}
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Service Price</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.service_price || ""}
+                  onChange={(e) => update(i, { service_price: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Vendor Cost</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.vendor_cost || ""}
+                  onChange={(e) => update(i, { vendor_cost: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => remove(i)}
+                title="মুছুন"
+                className="h-9 w-9"
+              >
+                <Trash2 className="h-4 w-4 text-rose-500" />
+              </Button>
+              <div className="space-y-1 w-full">
+                <Label className="text-sm font-medium">Note</Label>
+                <Input
+                  value={ex.notes || ""}
+                  onChange={(e) => update(i, { notes: e.target.value })}
+                  placeholder="এই সার্ভিস সম্পর্কে নোট (সব হিসাবে দেখা যাবে)"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
