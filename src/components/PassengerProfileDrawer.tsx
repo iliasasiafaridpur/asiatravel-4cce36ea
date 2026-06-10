@@ -60,7 +60,7 @@ export function PassengerProfileDrawer({
   statusOrder?: string[];
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null }[]>([]);
+  const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null; received: number }[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
