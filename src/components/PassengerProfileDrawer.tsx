@@ -68,9 +68,23 @@ export function PassengerProfileDrawer({
   useEffect(() => {
     if (!open || !row?.id) {
       setReceipts([]);
+      setExtras([]);
       return;
     }
     let cancelled = false;
+    // Load extra services attached to this service row (passenger bill + vendor cost).
+    (async () => {
+      const { data } = await supabase
+        .from("extra_services" as never)
+        .select("id,service_name,service_price,vendor_cost,vendor_name,notes")
+        .eq("source_table", serviceTable)
+        .eq("source_id", row.id);
+      if (!cancelled) {
+        setExtras(
+          ((data as { id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null }[] | null) ?? []),
+        );
+      }
+    })();
     (async () => {
       setLoading(true);
       const cols =
