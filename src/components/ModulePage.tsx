@@ -219,27 +219,14 @@ export function ModulePage({ module: mod }: Props) {
   const loadExtraCounts = useCallback(async () => {
     if (!supportsExtra) return;
     try {
+      // Receipt/discount is tracked directly on the extra_services row (works for
+      // both agency-billed and "Self" passengers — no ledger mirror required).
       const { data } = await supabase
         .from("extra_services" as never)
-        .select("id,source_id,service_name,service_price,vendor_cost,notes")
+        .select("id,source_id,service_name,service_price,vendor_cost,notes,received_amount,discount_amount")
         .eq("source_table", mod.table);
       const list =
-        ((data as { id: string; source_id: string; service_name: string; service_price: number; vendor_cost: number; notes: string | null }[] | null) ?? []);
-      // How much of each extra service the customer has already paid lives on the
-      // customer-ledger mirror (source_table='extra_services', source_id=extra.id).
-      const exIds = list.map((r) => r.id);
-      const settled: Record<string, number> = {};
-      if (exIds.length) {
-        const { data: led } = await supabase
-          .from("agency_ledger")
-          .select("source_id,received_amount,discount_amount")
-          .eq("source_table", "extra_services")
-          .in("source_id", exIds);
-        ((led as { source_id: string; received_amount: number | null; discount_amount: number | null }[] | null) ?? []).forEach((l) => {
-          const k = String(l.source_id);
-          settled[k] = (settled[k] ?? 0) + Number(l.received_amount ?? 0) + Number(l.discount_amount ?? 0);
-        });
-      }
+        ((data as { id: string; source_id: string; service_name: string; service_price: number; vendor_cost: number; notes: string | null; received_amount: number | null; discount_amount: number | null }[] | null) ?? []);
       const m: Record<string, number> = {};
       const d: Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string; received: number }[]> = {};
       list.forEach((r) => {
@@ -250,7 +237,8 @@ export function ModulePage({ module: mod }: Props) {
           service_price: Number(r.service_price ?? 0),
           vendor_cost: Number(r.vendor_cost ?? 0),
           notes: String(r.notes ?? ""),
-          received: Number(settled[String(r.id)] ?? 0),
+          // received folds in discount so extraDue = bill - (cash + discount).
+          received: Number(r.received_amount ?? 0) + Number(r.discount_amount ?? 0),
         });
       });
       setExtraCounts(m);
