@@ -35,6 +35,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+import { ExtraDueReceiveDialog, type ExtraDuePreselect } from "@/components/ExtraDueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
@@ -134,6 +135,7 @@ export function ModulePage({ module: mod }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
+  const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
@@ -219,27 +221,14 @@ export function ModulePage({ module: mod }: Props) {
   const loadExtraCounts = useCallback(async () => {
     if (!supportsExtra) return;
     try {
+      // Receipt/discount is tracked directly on the extra_services row (works for
+      // both agency-billed and "Self" passengers — no ledger mirror required).
       const { data } = await supabase
         .from("extra_services" as never)
-        .select("id,source_id,service_name,service_price,vendor_cost,notes")
+        .select("id,source_id,service_name,service_price,vendor_cost,notes,received_amount,discount_amount")
         .eq("source_table", mod.table);
       const list =
-        ((data as { id: string; source_id: string; service_name: string; service_price: number; vendor_cost: number; notes: string | null }[] | null) ?? []);
-      // How much of each extra service the customer has already paid lives on the
-      // customer-ledger mirror (source_table='extra_services', source_id=extra.id).
-      const exIds = list.map((r) => r.id);
-      const settled: Record<string, number> = {};
-      if (exIds.length) {
-        const { data: led } = await supabase
-          .from("agency_ledger")
-          .select("source_id,received_amount,discount_amount")
-          .eq("source_table", "extra_services")
-          .in("source_id", exIds);
-        ((led as { source_id: string; received_amount: number | null; discount_amount: number | null }[] | null) ?? []).forEach((l) => {
-          const k = String(l.source_id);
-          settled[k] = (settled[k] ?? 0) + Number(l.received_amount ?? 0) + Number(l.discount_amount ?? 0);
-        });
-      }
+        ((data as { id: string; source_id: string; service_name: string; service_price: number; vendor_cost: number; notes: string | null; received_amount: number | null; discount_amount: number | null }[] | null) ?? []);
       const m: Record<string, number> = {};
       const d: Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string; received: number }[]> = {};
       list.forEach((r) => {
@@ -250,7 +239,8 @@ export function ModulePage({ module: mod }: Props) {
           service_price: Number(r.service_price ?? 0),
           vendor_cost: Number(r.vendor_cost ?? 0),
           notes: String(r.notes ?? ""),
-          received: Number(settled[String(r.id)] ?? 0),
+          // received folds in discount so extraDue = bill - (cash + discount).
+          received: Number(r.received_amount ?? 0) + Number(r.discount_amount ?? 0),
         });
       });
       setExtraCounts(m);
@@ -926,9 +916,23 @@ export function ModulePage({ module: mod }: Props) {
           {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
           <div className="text-xs">{dueBtn(r, due)}</div>
           {extraDue > 0 ? (
-            <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 font-semibold" title="Extra service-এর বকেয়া — Customer ledger থেকে receive করুন">
-              ✨ Extra Due: {fmt(extraDue)}
-            </div>
+            <button
+              type="button"
+              data-row-noopen
+              onClick={(e) => {
+                e.stopPropagation();
+                setExtraDuePreselect({
+                  sourceTable: mod.table,
+                  sourceId: r.id,
+                  refId: String(r[mod.idColumn] ?? ""),
+                  passenger: String(r.passenger_name ?? ""),
+                });
+              }}
+              className="inline-flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400 font-semibold text-xs rounded-md px-1 outline outline-1 outline-transparent hover:outline-fuchsia-500 hover:bg-fuchsia-500/10 hover:shadow-md transition-colors"
+              title="Extra service-এর বকেয়া receive করুন"
+            >
+              ✨ Extra Due: {fmt(extraDue)} <Wallet className="h-3 w-3" />
+            </button>
           ) : null}
           {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
         </div>
@@ -1511,6 +1515,13 @@ export function ModulePage({ module: mod }: Props) {
         open={!!duePreselect}
         onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
         preselect={duePreselect}
+      />
+
+      <ExtraDueReceiveDialog
+        open={!!extraDuePreselect}
+        onOpenChange={(v) => { if (!v) setExtraDuePreselect(null); }}
+        preselect={extraDuePreselect}
+        onDone={() => { void loadExtraCounts(); void load(false); }}
       />
 
       <StatusChangeDrawer

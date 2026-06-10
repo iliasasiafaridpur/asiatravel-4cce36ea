@@ -73,30 +73,25 @@ export function PassengerProfileDrawer({
     }
     let cancelled = false;
     // Load extra services attached to this service row (passenger bill + vendor cost),
-    // and how much of each the customer has already paid (from the customer-ledger mirror).
+    // and how much of each the customer has already paid (tracked on the extra_services row).
     (async () => {
       const { data } = await supabase
         .from("extra_services" as never)
-        .select("id,service_name,service_price,vendor_cost,vendor_name,notes")
+        .select("id,service_name,service_price,vendor_cost,vendor_name,notes,received_amount,discount_amount")
         .eq("source_table", serviceTable)
         .eq("source_id", row.id);
       const list =
-        ((data as { id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null }[] | null) ?? []);
-      const exIds = list.map((e) => e.id);
-      const settled: Record<string, number> = {};
-      if (exIds.length) {
-        const { data: led } = await supabase
-          .from("agency_ledger")
-          .select("source_id,received_amount,discount_amount")
-          .eq("source_table", "extra_services")
-          .in("source_id", exIds);
-        ((led as { source_id: string; received_amount: number | null; discount_amount: number | null }[] | null) ?? []).forEach((l) => {
-          const k = String(l.source_id);
-          settled[k] = (settled[k] ?? 0) + Number(l.received_amount ?? 0) + Number(l.discount_amount ?? 0);
-        });
-      }
+        ((data as { id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null; received_amount: number | null; discount_amount: number | null }[] | null) ?? []);
       if (!cancelled) {
-        setExtras(list.map((e) => ({ ...e, received: Number(settled[String(e.id)] ?? 0) })));
+        setExtras(list.map((e) => ({
+          id: e.id,
+          service_name: e.service_name,
+          service_price: e.service_price,
+          vendor_cost: e.vendor_cost,
+          vendor_name: e.vendor_name,
+          notes: e.notes,
+          received: Number(e.received_amount ?? 0) + Number(e.discount_amount ?? 0),
+        })));
       }
     })();
     (async () => {
