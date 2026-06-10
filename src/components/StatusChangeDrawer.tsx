@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
 
+const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
+
 const DEFAULT_STATUS_ORDER = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const eq = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
