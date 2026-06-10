@@ -154,8 +154,11 @@ export function PassengerProfileDrawer({
   const moneyReceipts = receipts;
   const totalReceived = Math.max(0, receivedField);
   const due = Math.max(0, sold - totalReceived - totalDiscount);
-  const profit = sold - totalDiscount - cost;
-  const showProfit = totalReceived > 0 && cost > 0;
+  // Extra services: service_price = extra passenger bill, vendor_cost = extra vendor cost.
+  const extraSold = extras.reduce((s, e) => s + (Number(e.service_price) || 0), 0);
+  const extraCost = extras.reduce((s, e) => s + (Number(e.vendor_cost) || 0), 0);
+  const profit = sold + extraSold - totalDiscount - cost - extraCost;
+  const showProfit = (totalReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
   const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
