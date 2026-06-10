@@ -130,7 +130,7 @@ export function ModulePage({ module: mod }: Props) {
   const [extraServices, setExtraServices] = useState<ExtraServiceRow[]>([]);
   const [showExtra, setShowExtra] = useState(false);
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
-  const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; notes: string }[]>>({});
+  const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string }[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
@@ -221,16 +221,17 @@ export function ModulePage({ module: mod }: Props) {
     try {
       const { data } = await supabase
         .from("extra_services" as never)
-        .select("source_id,service_name,service_price,notes")
+        .select("source_id,service_name,service_price,vendor_cost,notes")
         .eq("source_table", mod.table);
       const m: Record<string, number> = {};
-      const d: Record<string, { service_name: string; service_price: number; notes: string }[]> = {};
-      ((data as { source_id: string; service_name: string; service_price: number; notes: string | null }[] | null) ?? []).forEach((r) => {
+      const d: Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string }[]> = {};
+      ((data as { source_id: string; service_name: string; service_price: number; vendor_cost: number; notes: string | null }[] | null) ?? []).forEach((r) => {
         const k = String(r.source_id);
         m[k] = (m[k] ?? 0) + 1;
         (d[k] ||= []).push({
           service_name: String(r.service_name ?? ""),
           service_price: Number(r.service_price ?? 0),
+          vendor_cost: Number(r.vendor_cost ?? 0),
           notes: String(r.notes ?? ""),
         });
       });
@@ -704,9 +705,21 @@ export function ModulePage({ module: mod }: Props) {
       const recv = Number(r[recvField] ?? 0);
       const discount = Number(r.discount_amount ?? 0);
       const cost = isTicketBook(r) ? 0 : Number(r.cost_price ?? 0);
+      // Extra services billed to the passenger (service_price) and payable to the
+      // vendor (vendor_cost). They mirror into the customer/vendor ledgers via a DB
+      // trigger; here we fold them into the row's totals so the passenger AND vendor
+      // accounting both reflect the extra service.
+      const ex = extraDetails[r.id] ?? [];
+      const extraSold = ex.reduce((s, d) => s + (Number(d.service_price) || 0), 0);
+      const extraCost = ex.reduce((s, d) => s + (Number(d.vendor_cost) || 0), 0);
+      const totalSold = sold + extraSold;
+      const totalCost = cost + extraCost;
+      // Parent-row due drives the Due Receive button (it receives into the service
+      // row). The extra-service bill is received separately via the customer ledger,
+      // so it is surfaced as its own line, not merged into the receive button.
       const due = Math.max(0, sold - recv - discount);
-      const profit = sold - discount - cost;
-      return { sold, recv, discount, cost, due, profit };
+      const profit = totalSold - discount - totalCost;
+      return { sold, recv, discount, cost, due, profit, extraSold, extraCost, totalSold, totalCost };
     };
     const subLine = (label: string, val: React.ReactNode, copyValue?: string) => (
       <div className="text-xs text-muted-foreground leading-tight">
@@ -730,7 +743,7 @@ export function ModulePage({ module: mod }: Props) {
       if (!n) return null;
       const details = extraDetails[r.id] ?? [];
       const tip = details.length
-        ? details.map((d) => `${d.service_name || "Service"} — ৳${(d.service_price || 0).toLocaleString()}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
+        ? details.map((d) => `${d.service_name || "Service"} — Bill ৳${(d.service_price || 0).toLocaleString()}${d.vendor_cost ? ` / Vendor ৳${(d.vendor_cost || 0).toLocaleString()}` : ""}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
         : `${n} Extra Service`;
       return (
         <Badge
@@ -750,6 +763,29 @@ export function ModulePage({ module: mod }: Props) {
       return (
         <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 leading-tight mt-0.5 break-words">
           📝 {notes.join(" · ")}
+        </div>
+      );
+    };
+
+    // Extra-service amounts surfaced in the Amount column (passenger bill side).
+    const extraBillLine = (r: Row) => {
+      const ex = extraDetails[r.id] ?? [];
+      const s = ex.reduce((a, d) => a + (Number(d.service_price) || 0), 0);
+      if (!s) return null;
+      return (
+        <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400" title="Extra service — customer ledger-এ যুক্ত">
+          ✨ Extra bill: +৳{fmt(s)}
+        </div>
+      );
+    };
+    // Extra-service vendor cost surfaced in the Agency / Vendor column (vendor side).
+    const extraCostLine = (r: Row) => {
+      const ex = extraDetails[r.id] ?? [];
+      const c = ex.reduce((a, d) => a + (Number(d.vendor_cost) || 0), 0);
+      if (!c) return null;
+      return (
+        <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400" title="Extra service — vendor ledger-এ যুক্ত">
+          ✨ Extra cost: +৳{fmt(c)}
         </div>
       );
     };
@@ -888,13 +924,15 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">— no agency —</div>}
               {!isTicketBook(r) && r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : <span title="Vendor cost এন্ট্রি হয়নি" className="text-[10px] ml-1 text-amber-500">⚠️</span>}</div> : null}
+              {extraCostLine(r)}
+
               
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const { sold, recv, discount, cost, due, profit } = money(r, "received");
-            const showProfit = recv > 0 && cost > 0;
+            const { sold, recv, discount, cost, due, profit, extraSold, extraCost } = money(r, "received");
+            const showProfit = (recv > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
               : due <= 0
@@ -906,6 +944,7 @@ export function ModulePage({ module: mod }: Props) {
                 <div className="text-xs text-emerald-600">{recvBadge(r, recv)}Recv: {fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
+                {extraBillLine(r)}
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
@@ -943,12 +982,13 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : <span title="Vendor cost এন্ট্রি হয়নি" className="text-[10px] ml-1 text-amber-500">⚠️</span>}</div> : null}
+              {extraCostLine(r)}
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
-            const showProfit = recv > 0 && cost > 0;
+            const { sold, recv, discount, cost, due, profit, extraSold, extraCost } = money(r, "received_amount");
+            const showProfit = (recv > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
               : due <= 0
@@ -960,6 +1000,7 @@ export function ModulePage({ module: mod }: Props) {
                 <div className="text-xs text-emerald-600">{recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{recvBadge(r, recv)}Recv: {fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
+                {extraBillLine(r)}
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
@@ -997,13 +1038,14 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : <span title="Vendor cost এন্ট্রি হয়নি" className="text-[10px] ml-1 text-amber-500">⚠️</span>}</div> : null}
+              {extraCostLine(r)}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const { sold, recv, discount, cost, due, profit } = money(r, recvField);
-            const showProfit = recv > 0 && cost > 0;
+            const { sold, recv, discount, cost, due, profit, extraSold, extraCost } = money(r, recvField);
+            const showProfit = (recv > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
               : due <= 0
@@ -1015,6 +1057,7 @@ export function ModulePage({ module: mod }: Props) {
                 <div className="text-xs text-emerald-600">{recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{recvBadge(r, recv)}Recv: {fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs">{dueBtn(r, due)}</div>
+                {extraBillLine(r)}
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
@@ -1051,13 +1094,14 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               {r.agency_sold ? <div className="text-sm">{String(r.agency_sold)}</div> : <div className="text-xs text-muted-foreground">—</div>}
               {r.vendor_bought ? <div className="text-xs text-muted-foreground">V: {String(r.vendor_bought)}{r.cost_price ? <span className="text-[10px] ml-1">(৳{fmt(Number(r.cost_price))})</span> : null}</div> : null}
+              {extraCostLine(r)}
               {r.delivery_date ? subLine("Delivered", formatDate(r.delivery_date as string)) : null}
               {r.notes ? <div className="text-sm font-bold text-red-500 mt-1 max-w-[220px] whitespace-pre-wrap"><span>Note:</span> {String(r.notes)}</div> : null}
             </div>
           )},
           { key: "amount", header: "Amount", align: "right", render: (r) => {
-            const { sold, recv, discount, cost, due, profit } = money(r, "received_amount");
-            const showProfit = recv > 0 && cost > 0;
+            const { sold, recv, discount, cost, due, profit, extraSold, extraCost } = money(r, "received_amount");
+            const showProfit = (recv > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
             const profitClass = profit < 0
               ? "text-rose-500"
               : due <= 0
@@ -1069,6 +1113,7 @@ export function ModulePage({ module: mod }: Props) {
                 <div className="text-xs text-emerald-600">{recv > 0 && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{recvBadge(r, recv)}Recv: {fmt(recv)}</div>
                 {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
                 <div className="text-xs"><span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span></div>
+                {extraBillLine(r)}
                 {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
               </div>
             );
