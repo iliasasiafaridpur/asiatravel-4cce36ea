@@ -916,9 +916,23 @@ export function ModulePage({ module: mod }: Props) {
           {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
           <div className="text-xs">{dueBtn(r, due)}</div>
           {extraDue > 0 ? (
-            <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 font-semibold" title="Extra service-এর বকেয়া — Customer ledger থেকে receive করুন">
-              ✨ Extra Due: {fmt(extraDue)}
-            </div>
+            <button
+              type="button"
+              data-row-noopen
+              onClick={(e) => {
+                e.stopPropagation();
+                setExtraDuePreselect({
+                  sourceTable: mod.table,
+                  sourceId: r.id,
+                  refId: String(r[mod.idColumn] ?? ""),
+                  passenger: String(r.passenger_name ?? ""),
+                });
+              }}
+              className="inline-flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400 font-semibold text-xs rounded-md px-1 outline outline-1 outline-transparent hover:outline-fuchsia-500 hover:bg-fuchsia-500/10 hover:shadow-md transition-colors"
+              title="Extra service-এর বকেয়া receive করুন"
+            >
+              ✨ Extra Due: {fmt(extraDue)} <Wallet className="h-3 w-3" />
+            </button>
           ) : null}
           {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
         </div>
