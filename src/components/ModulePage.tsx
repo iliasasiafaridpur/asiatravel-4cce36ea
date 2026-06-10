@@ -724,20 +724,23 @@ export function ModulePage({ module: mod }: Props) {
       const discount = Number(r.discount_amount ?? 0);
       const cost = isTicketBook(r) ? 0 : Number(r.cost_price ?? 0);
       // Extra services billed to the passenger (service_price) and payable to the
-      // vendor (vendor_cost). They mirror into the customer/vendor ledgers via a DB
-      // trigger; here we fold them into the row's totals so the passenger AND vendor
-      // accounting both reflect the extra service.
+      // vendor (vendor_cost). Each extra is also a SEPARATE customer-ledger entry,
+      // so it has its own received amount and its own due. We fold the figures into
+      // the row's totals so the passenger's FULL account is clear at a glance.
       const ex = extraDetails[r.id] ?? [];
       const extraSold = ex.reduce((s, d) => s + (Number(d.service_price) || 0), 0);
       const extraCost = ex.reduce((s, d) => s + (Number(d.vendor_cost) || 0), 0);
+      const extraReceived = ex.reduce((s, d) => s + (Number(d.received) || 0), 0);
+      const extraDue = Math.max(0, extraSold - extraReceived);
       const totalSold = sold + extraSold;
       const totalCost = cost + extraCost;
-      // Parent-row due drives the Due Receive button (it receives into the service
-      // row). The extra-service bill is received separately via the customer ledger,
-      // so it is surfaced as its own line, not merged into the receive button.
+      const totalRecv = recv + extraReceived;
+      // Service-row due drives the Due Receive button (it receives into the service
+      // row). The extra-service due is received separately via the customer ledger,
+      // so it is surfaced as its own clearly-labelled line.
       const due = Math.max(0, sold - recv - discount);
       const profit = totalSold - discount - totalCost;
-      return { sold, recv, discount, cost, due, profit, extraSold, extraCost, totalSold, totalCost };
+      return { sold, recv, discount, cost, due, profit, extraSold, extraCost, extraReceived, extraDue, totalSold, totalCost, totalRecv };
     };
     const subLine = (label: string, val: React.ReactNode, copyValue?: string) => (
       <div className="text-xs text-muted-foreground leading-tight">
