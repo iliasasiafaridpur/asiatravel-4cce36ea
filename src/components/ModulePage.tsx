@@ -767,6 +767,29 @@ export function ModulePage({ module: mod }: Props) {
       );
     };
 
+    // Extra-service amounts surfaced in the Amount column (passenger bill side).
+    const extraBillLine = (r: Row) => {
+      const ex = extraDetails[r.id] ?? [];
+      const s = ex.reduce((a, d) => a + (Number(d.service_price) || 0), 0);
+      if (!s) return null;
+      return (
+        <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400" title="Extra service — customer ledger-এ যুক্ত">
+          ✨ Extra bill: +৳{fmt(s)}
+        </div>
+      );
+    };
+    // Extra-service vendor cost surfaced in the Agency / Vendor column (vendor side).
+    const extraCostLine = (r: Row) => {
+      const ex = extraDetails[r.id] ?? [];
+      const c = ex.reduce((a, d) => a + (Number(d.vendor_cost) || 0), 0);
+      if (!c) return null;
+      return (
+        <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400" title="Extra service — vendor ledger-এ যুক্ত">
+          ✨ Extra cost: +৳{fmt(c)}
+        </div>
+      );
+    };
+
     // Mobile sub-line with per-number color tag applied.
     const mobileSub = (mobile: string) => (
       <div className="text-xs leading-tight">
