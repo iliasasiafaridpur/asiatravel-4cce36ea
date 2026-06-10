@@ -35,6 +35,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+import { ExtraDueReceiveDialog, type ExtraDuePreselect } from "@/components/ExtraDueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
