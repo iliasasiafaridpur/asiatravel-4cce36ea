@@ -60,7 +60,7 @@ export function PassengerProfileDrawer({
   statusOrder?: string[];
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null }[]>([]);
+  const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null; received: number }[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
@@ -72,17 +72,31 @@ export function PassengerProfileDrawer({
       return;
     }
     let cancelled = false;
-    // Load extra services attached to this service row (passenger bill + vendor cost).
+    // Load extra services attached to this service row (passenger bill + vendor cost),
+    // and how much of each the customer has already paid (from the customer-ledger mirror).
     (async () => {
       const { data } = await supabase
         .from("extra_services" as never)
         .select("id,service_name,service_price,vendor_cost,vendor_name,notes")
         .eq("source_table", serviceTable)
         .eq("source_id", row.id);
+      const list =
+        ((data as { id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null }[] | null) ?? []);
+      const exIds = list.map((e) => e.id);
+      const settled: Record<string, number> = {};
+      if (exIds.length) {
+        const { data: led } = await supabase
+          .from("agency_ledger")
+          .select("source_id,received_amount,discount_amount")
+          .eq("source_table", "extra_services")
+          .in("source_id", exIds);
+        ((led as { source_id: string; received_amount: number | null; discount_amount: number | null }[] | null) ?? []).forEach((l) => {
+          const k = String(l.source_id);
+          settled[k] = (settled[k] ?? 0) + Number(l.received_amount ?? 0) + Number(l.discount_amount ?? 0);
+        });
+      }
       if (!cancelled) {
-        setExtras(
-          ((data as { id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null }[] | null) ?? []),
-        );
+        setExtras(list.map((e) => ({ ...e, received: Number(settled[String(e.id)] ?? 0) })));
       }
     })();
     (async () => {
@@ -152,13 +166,19 @@ export function PassengerProfileDrawer({
   const receivedField = Number(row.received ?? row.received_amount ?? 0);
   const totalDiscount = Number(row.discount_amount ?? 0);
   const moneyReceipts = receipts;
-  const totalReceived = Math.max(0, receivedField);
-  const due = Math.max(0, sold - totalReceived - totalDiscount);
-  // Extra services: service_price = extra passenger bill, vendor_cost = extra vendor cost.
+  const serviceReceived = Math.max(0, receivedField);
+  // Extra services: service_price = extra passenger bill, vendor_cost = extra vendor cost,
+  // received = how much of that extra bill the customer has already paid.
   const extraSold = extras.reduce((s, e) => s + (Number(e.service_price) || 0), 0);
   const extraCost = extras.reduce((s, e) => s + (Number(e.vendor_cost) || 0), 0);
-  const profit = sold + extraSold - totalDiscount - cost - extraCost;
-  const showProfit = (totalReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
+  const extraReceived = extras.reduce((s, e) => s + (Number(e.received) || 0), 0);
+  const extraDue = Math.max(0, extraSold - extraReceived);
+  // Combined customer-side totals so the FULL passenger account is clear at a glance.
+  const totalBill = sold + extraSold;
+  const totalReceived = serviceReceived + extraReceived;
+  const due = Math.max(0, totalBill - totalReceived - totalDiscount);
+  const profit = totalBill - totalDiscount - cost - extraCost;
+  const showProfit = (serviceReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
   const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
@@ -338,19 +358,31 @@ export function PassengerProfileDrawer({
                   Financial Ledger
                 </h4>
 
-                {/* Sales summary */}
+                {/* Sales summary — combined customer account (service + extra services) */}
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                  <Line label="Total Sold" value={fmtMoney(sold)} bold />
+                  {extraSold > 0 ? (
+                    <>
+                      <Line label="Main Service Bill" value={fmtMoney(sold)} className="text-muted-foreground" />
+                      <Line label="✨ Extra Service Bill" value={fmtMoney(extraSold)} className="text-fuchsia-600 dark:text-fuchsia-400" />
+                      <div className="border-t pt-2">
+                        <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                      </div>
+                    </>
+                  ) : (
+                    <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                  )}
                   <Line
                     label="Total Received"
                     value={fmtMoney(totalReceived)}
                     className="text-emerald-600"
                   />
-                  <Line
-                    label="Discount Given"
-                    value={fmtMoney(totalDiscount)}
-                    className="text-amber-600"
-                  />
+                  {totalDiscount > 0 ? (
+                    <Line
+                      label="Discount Given"
+                      value={fmtMoney(totalDiscount)}
+                      className="text-amber-600"
+                    />
+                  ) : null}
                   <div className="border-t pt-2 flex items-baseline justify-between">
                     <span className="text-sm font-semibold">Outstanding Due</span>
                     <span
@@ -359,6 +391,11 @@ export function PassengerProfileDrawer({
                       {fmtMoney(due)}
                     </span>
                   </div>
+                  {extraDue > 0 ? (
+                    <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400 text-right">
+                      এর মধ্যে ✨ Extra service বকেয়া: {fmtMoney(extraDue)}
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Cost / Profit — separated */}
@@ -387,18 +424,29 @@ export function PassengerProfileDrawer({
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-600 dark:text-fuchsia-400">
                       ✨ Extra Services
                     </div>
-                    {extras.map((e) => (
-                      <div key={e.id} className="text-xs border-t border-fuchsia-500/20 pt-2 first:border-t-0 first:pt-0">
-                        <div className="font-medium">{e.service_name || "Extra Service"}</div>
-                        <div className="mt-0.5 flex items-center justify-between gap-2 tabular-nums">
-                          <span className="text-emerald-600">Bill: {fmtMoney(Number(e.service_price) || 0)}</span>
-                          <span className="text-rose-500">
-                            Vendor{e.vendor_name ? ` (${e.vendor_name})` : ""}: {fmtMoney(Number(e.vendor_cost) || 0)}
-                          </span>
+                    {extras.map((e) => {
+                      const bill = Number(e.service_price) || 0;
+                      const paid = Number(e.received) || 0;
+                      const exDue = Math.max(0, bill - paid);
+                      return (
+                        <div key={e.id} className="text-xs border-t border-fuchsia-500/20 pt-2 first:border-t-0 first:pt-0">
+                          <div className="font-medium">{e.service_name || "Extra Service"}</div>
+                          <div className="mt-0.5 flex items-center justify-between gap-2 tabular-nums">
+                            <span className="text-emerald-600">Bill: {fmtMoney(bill)}</span>
+                            <span className="text-rose-500">
+                              Vendor{e.vendor_name ? ` (${e.vendor_name})` : ""}: {fmtMoney(Number(e.vendor_cost) || 0)}
+                            </span>
+                          </div>
+                          {bill > 0 ? (
+                            <div className="mt-0.5 flex items-center justify-between gap-2 tabular-nums text-[11px]">
+                              <span className="text-emerald-600">Received: {fmtMoney(paid)}</span>
+                              <span className={exDue > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmtMoney(exDue)}</span>
+                            </div>
+                          ) : null}
+                          {e.notes ? <div className="mt-0.5 text-muted-foreground">📝 {e.notes}</div> : null}
                         </div>
-                        {e.notes ? <div className="mt-0.5 text-muted-foreground">📝 {e.notes}</div> : null}
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div className="border-t border-fuchsia-500/30 pt-2 flex items-center justify-between text-xs font-semibold tabular-nums">
                       <span className="text-emerald-600">Total Bill: {fmtMoney(extraSold)}</span>
                       <span className="text-rose-500">Total Cost: {fmtMoney(extraCost)}</span>
