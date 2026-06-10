@@ -487,12 +487,15 @@ export type Database = {
           agency_sold: string | null
           created_at: string
           created_by: string | null
+          discount_amount: number
           entry_date: string
           id: string
           mobile: string | null
           notes: string | null
           passenger_name: string | null
           passport: string | null
+          received_amount: number
+          received_by: string | null
           service_name: string
           service_price: number
           source_id: string
@@ -505,12 +508,15 @@ export type Database = {
           agency_sold?: string | null
           created_at?: string
           created_by?: string | null
+          discount_amount?: number
           entry_date?: string
           id?: string
           mobile?: string | null
           notes?: string | null
           passenger_name?: string | null
           passport?: string | null
+          received_amount?: number
+          received_by?: string | null
           service_name: string
           service_price?: number
           source_id: string
@@ -523,12 +529,15 @@ export type Database = {
           agency_sold?: string | null
           created_at?: string
           created_by?: string | null
+          discount_amount?: number
           entry_date?: string
           id?: string
           mobile?: string | null
           notes?: string | null
           passenger_name?: string | null
           passport?: string | null
+          received_amount?: number
+          received_by?: string | null
           service_name?: string
           service_price?: number
           source_id?: string
