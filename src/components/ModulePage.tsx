@@ -740,7 +740,7 @@ export function ModulePage({ module: mod }: Props) {
       if (!n) return null;
       const details = extraDetails[r.id] ?? [];
       const tip = details.length
-        ? details.map((d) => `${d.service_name || "Service"} — ৳${(d.service_price || 0).toLocaleString()}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
+        ? details.map((d) => `${d.service_name || "Service"} — Bill ৳${(d.service_price || 0).toLocaleString()}${d.vendor_cost ? ` / Vendor ৳${(d.vendor_cost || 0).toLocaleString()}` : ""}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
         : `${n} Extra Service`;
       return (
         <Badge
