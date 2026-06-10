@@ -221,16 +221,17 @@ export function ModulePage({ module: mod }: Props) {
     try {
       const { data } = await supabase
         .from("extra_services" as never)
-        .select("source_id,service_name,service_price,notes")
+        .select("source_id,service_name,service_price,vendor_cost,notes")
         .eq("source_table", mod.table);
       const m: Record<string, number> = {};
-      const d: Record<string, { service_name: string; service_price: number; notes: string }[]> = {};
-      ((data as { source_id: string; service_name: string; service_price: number; notes: string | null }[] | null) ?? []).forEach((r) => {
+      const d: Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string }[]> = {};
+      ((data as { source_id: string; service_name: string; service_price: number; vendor_cost: number; notes: string | null }[] | null) ?? []).forEach((r) => {
         const k = String(r.source_id);
         m[k] = (m[k] ?? 0) + 1;
         (d[k] ||= []).push({
           service_name: String(r.service_name ?? ""),
           service_price: Number(r.service_price ?? 0),
+          vendor_cost: Number(r.vendor_cost ?? 0),
           notes: String(r.notes ?? ""),
         });
       });
