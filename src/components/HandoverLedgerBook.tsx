@@ -144,7 +144,7 @@ export function HandoverLedgerInline({
         .order("created_at", { ascending: false })
         .limit(500);
       if (mode === "mine") q = q.eq("from_user", user.id);
-      if (mode === "to-me") q = q.eq("to_name", "Kaium Khan (MD)");
+      if (mode === "to-me") q = q.in("to_name", ["Kaium Khan (MD)", "MD Sir"]);
       const { data: hvData } = await q;
       const hvs = (hvData ?? []) as Handover[];
 
