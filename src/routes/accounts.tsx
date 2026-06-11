@@ -799,7 +799,7 @@ ${node.innerHTML.replace(
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
-                  const kindLabel = statusEvt ? "Delivery Info" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
+                  const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                   // Col 1: উৎস/নাম (source/name)
                   const name = isIn
                     ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
@@ -835,7 +835,7 @@ ${node.innerHTML.replace(
                     }
                   }
                   const linkedStatus = isIn && !statusEvt && r.service_table && r.service_row_id
-                    ? statusByServiceDate[`${r.service_table}:${r.service_row_id}:${r.entry_date}`]
+                    ? statusByService[`${r.service_table}:${r.service_row_id}`]
                     : "";
                   const primaryBits: string[] = [];
                   if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
@@ -873,7 +873,7 @@ ${node.innerHTML.replace(
                         ))}
                         {linkedStatus && (
                           <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5 leading-snug break-words">
-                            📦 {linkedStatus} — MD info
+                            📦 {linkedStatus}
                           </p>
                         )}
                         {isPendingHand && (
@@ -929,7 +929,7 @@ ${node.innerHTML.replace(
                       {/* Col 4: Amount + Balance */}
                       <div className="text-right shrink-0">
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
-                          {statusEvt ? "MD info" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
+                          {statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
                         {isIn && !statusEvt && isMdReceivedMethod(r.method) && (
@@ -1018,7 +1018,7 @@ ${node.innerHTML.replace(
                       <td className="wrap">{service}{isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>
                       <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "MD info" : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
+                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
                       <td className="wrap" style={{whiteSpace:"nowrap"}}>
                         {advLines.map((l, idx) => (
@@ -1067,7 +1067,7 @@ ${node.innerHTML.replace(
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? "MD info" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
                            {statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
