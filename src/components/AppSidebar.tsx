@@ -94,6 +94,7 @@ export function AppSidebar() {
           group: "Owner",
           items: [
             { to: "/md-panel", title: "MD Panel", icon: Crown, color: "text-amber-400", bg: "bg-amber-500/15" } as NavItem,
+            { to: "/my-handover", title: "আমার ক্যাশ হিসাব", icon: HandCoins, color: "text-sky-400", bg: "bg-sky-500/15" } as NavItem,
           ],
         },
         ...NAV.slice(3),
