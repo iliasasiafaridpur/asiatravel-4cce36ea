@@ -521,7 +521,9 @@ function HandoverCard({
         : "border-rose-500/60 border-l-rose-500 ring-rose-500/10 bg-card";
 
   return (
-    <div className={`rounded-xl border-2 border-l-[6px] ${accent} shadow-lg ring-1 overflow-hidden`}>
+    <div
+      id={`handover-card-${handover.id}`}
+      className={`rounded-xl border-2 border-l-[6px] ${cardHighlight ? "border-red-500 border-l-red-500 ring-2 ring-red-500 bg-red-500/15 shadow-[0_0_26px_-4px_rgba(239,68,68,0.6)]" : accent} shadow-lg ring-1 overflow-hidden transition-colors`}>
       {/* Header */}
       <div className={`${isPending ? "bg-amber-500/20 border-amber-500/40" : "bg-muted/40"} px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2`}>
 
