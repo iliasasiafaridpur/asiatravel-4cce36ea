@@ -1160,7 +1160,15 @@ ${node.innerHTML.replace(
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-sky-500/10 text-sky-600 border border-sky-500/20">
                       <Send className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sessionStorage.setItem("highlight-handover", h.id);
+                        void navigate({ to: "/my-handover" });
+                      }}
+                      className="flex-1 min-w-0 text-left rounded-md transition-colors hover:bg-red-500/10 focus:outline-none focus:ring-1 focus:ring-red-500 -m-1 p-1"
+                      title="এই হিসাবটি আমার ক্যাশ হিস্টোরিতে দেখুন"
+                    >
                       <div className="flex items-baseline justify-between gap-2">
                         <p className="font-semibold text-sm truncate">{h.to_name}</p>
                         <p className="font-bold text-sky-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(h.amount))}</p>
