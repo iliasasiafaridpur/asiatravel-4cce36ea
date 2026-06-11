@@ -44,6 +44,7 @@ const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-d
 const isStatusEvent = (r: Receipt) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
+const serviceKey = (r: Receipt) => r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
 type Expense = {
   id: string; expense_id?: string | null; amount: number;
   category: string; purpose?: string | null;
@@ -204,6 +205,13 @@ function MyHandoverPage() {
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
+  const moneyServiceKeys = useMemo(() => new Set(
+    receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
+  ), [receipts]);
+  const visibleReceipts = useMemo(
+    () => receipts.filter((r) => !(isStatusEvent(r) && moneyServiceKeys.has(serviceKey(r)))),
+    [receipts, moneyServiceKeys]
+  );
 
   const submit = async () => {
     const cashText = cash.trim();
@@ -236,7 +244,7 @@ function MyHandoverPage() {
         </div>
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl font-bold">আমার ক্যাশ হিসাব</h1>
-          <p className="text-xs text-muted-foreground">Staff Cash Handover — Submit & History</p>
+          <p className="text-xs text-muted-foreground">নিজের পেমেন্ট/ডেলিভারি হিসাব MD-কে পাঠানো ও হিস্টোরি</p>
         </div>
       </div>
 
@@ -247,7 +255,7 @@ function MyHandoverPage() {
             <TrendingUp className="h-3 w-3" /> নগদ আয়
           </div>
           <div className="text-base font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-          <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
+              <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
           {totalMdReceived > 0 && (
             <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} (ব্যালেন্সে নয়)</div>
           )}
@@ -277,10 +285,10 @@ function MyHandoverPage() {
       <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Lock className="h-4 w-4" /> Submit Cash Handover
+            <Lock className="h-4 w-4" /> MD-কে হিসাব পাঠান
           </div>
           <p className="text-xs text-muted-foreground">
-            দিনে একাধিক বার Handover দিতে পারবেন। MD আয়-ব্যয় দেখে Approve করবেন।
+            আপনার আইডির pending পেমেন্ট, delivery ও delivery but due — Submit to MD দিলে Kaium Khan-এর MD panel-এ যাবে।
           </p>
 
           <div className="grid sm:grid-cols-2 gap-3">
@@ -304,15 +312,15 @@ function MyHandoverPage() {
           <div className="grid lg:grid-cols-2 gap-3">
             <div className="rounded-lg border">
               <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-                আয় বিবরণ (Pending Receipts) — {receipts.length}
+                আয়/ডেলিভারি বিবরণ — {visibleReceipts.length}
               </div>
               <div className="max-h-48 overflow-y-auto text-sm">
                 {loading ? (
                   <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
-                ) : receipts.length === 0 ? (
+                ) : visibleReceipts.length === 0 ? (
                   <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
                 ) : (
-                  receipts.map((r, idx) => {
+                  visibleReceipts.map((r, idx) => {
                     const statusEvt = isStatusEvent(r);
                     const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                     return (
@@ -324,7 +332,7 @@ function MyHandoverPage() {
                         </div>
                         {statusEvt && (
                           <div className="text-[11px] text-violet-600 dark:text-violet-400">
-                            {cleanStatusText(r.remarks)} — MD কে অবগতির জন্য (ক্যাশ নয়)
+                            {cleanStatusText(r.remarks)} — ডেলিভারি তথ্য
                           </div>
                         )}
                         {mdRecv && (
