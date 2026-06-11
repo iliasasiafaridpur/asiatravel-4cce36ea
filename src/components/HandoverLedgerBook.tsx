@@ -640,7 +640,7 @@ function HandoverCard({
                 <tr
                   key={r.id}
                   id={`receipt-row-${r.id}`}
-                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : `row-tint-${idx % 4}`}`}
+                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-red-300 dark:bg-red-600/40 ring-2 ring-red-500" : `row-tint-${idx % 4} hover:bg-yellow-200/80 dark:hover:bg-yellow-500/25`}`}
                 >
                   {/* তারিখ */}
                   <td className="px-1.5 py-1 align-top">
