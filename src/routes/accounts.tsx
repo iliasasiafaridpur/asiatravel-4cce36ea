@@ -78,6 +78,7 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
+  const navigate = useNavigate();
   const { isAdmin, isMd, isStaff, loading: roleLoading } = useRole();
   // "আমার হিসাব" — সব ইউজার (MD/Admin সহ) শুধুমাত্র নিজের এন্ট্রি দেখবে
   const seeAll = false;
