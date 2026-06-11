@@ -816,9 +816,7 @@ ${node.innerHTML.replace(
                   const servicePrimary = isIn
                     ? (r.source === "manual"
                         ? (r.remarks || "ম্যানুয়াল আয়")
-                        : statusEvt
-                          ? `📦 ${cleanStatusText(r.remarks)}`
-                          : (r.service_type || "Service"))
+                        : (r.service_type || "Service"))
                     : isHand
                     ? "জমা / Handover"
                     : (e.purpose || "—");
