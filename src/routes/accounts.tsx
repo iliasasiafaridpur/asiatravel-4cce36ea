@@ -535,7 +535,7 @@ ${node.innerHTML.replace(
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
         <StatCard label="নগদ আয় (ব্যালেন্সে)" value={periodIncome} icon={TrendingUp} tone="success" />
-        <StatCard label="Submit Cash Handover" value={periodHand} icon={Send} tone="info" />
+        <StatCard label="MD-কে জমা/পাঠানো" value={periodHand} icon={Send} tone="info" />
         <StatCard label="মোট খরচ" value={periodExp} icon={TrendingDown} tone="warning" />
       </div>
 
@@ -732,7 +732,7 @@ ${node.innerHTML.replace(
           <p className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">{fmt(periodIncome)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Submit Cash Handover</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">MD-কে জমা/পাঠানো</p>
           <p className="text-base sm:text-lg font-bold text-sky-600 tabular-nums">{fmt(periodHand)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
@@ -747,7 +747,7 @@ ${node.innerHTML.replace(
           <TabsTrigger value="timeline" className="text-xs gap-1"><Layers className="h-3.5 w-3.5" />Timeline</TabsTrigger>
           <TabsTrigger value="income"   className="text-xs gap-1"><ArrowDownLeft className="h-3.5 w-3.5" />আয়</TabsTrigger>
           <TabsTrigger value="expense"  className="text-xs gap-1"><Receipt className="h-3.5 w-3.5" />খরচ</TabsTrigger>
-          <TabsTrigger value="handover" className="text-xs gap-1"><ArrowUpRight className="h-3.5 w-3.5" />Cash Handover</TabsTrigger>
+          <TabsTrigger value="handover" className="text-xs gap-1"><ArrowUpRight className="h-3.5 w-3.5" />MD-কে পাঠানো</TabsTrigger>
         </TabsList>
 
         {/* Timeline */}
