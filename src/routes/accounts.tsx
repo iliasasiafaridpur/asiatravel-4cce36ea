@@ -1069,10 +1069,10 @@ ${node.innerHTML.replace(
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
-                           {statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                           {statusEvt ? r.service_type : r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                          {mdRecv && (
                            <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
