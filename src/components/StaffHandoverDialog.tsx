@@ -237,10 +237,10 @@ export function StaffHandoverDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Submit Cash Handover
+            <Lock className="h-4 w-4" /> MD-কে হিসাব পাঠান
           </DialogTitle>
           <DialogDescription>
-            দিনে একাধিক বার Handover দিতে পারবেন। MD আয়-ব্যয় দেখে Approve করবেন।
+            আপনার আইডির pending পেমেন্ট, delivery ও delivery but due — Submit to MD দিলে Kaium Khan-এর MD panel-এ যাবে।
           </DialogDescription>
         </DialogHeader>
 
