@@ -1187,7 +1187,7 @@ ${node.innerHTML.replace(
                         </p>
                       )}
                       {h.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
-                    </div>
+                    </button>
                     <ConfirmDeleteButton allowOwner onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
                 );
