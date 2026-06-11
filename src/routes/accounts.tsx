@@ -632,7 +632,7 @@ ${node.innerHTML.replace(
             </div>
           </div>
           <div className="flex gap-2">
-            {(isStaff || isAdmin) && (
+            {(isStaff || isAdmin || isMd) && (
               <Button asChild size="sm" variant="outline" className="gap-1.5 h-9">
                 <Link to="/my-handover">
                   <LockIcon className="h-4 w-4" /> আমার ক্যাশ হিসাব
