@@ -40,7 +40,7 @@ import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
-import { isMdReceivedMethod } from "@/lib/payment-methods";
+
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
 import { CopyInlineButton } from "@/components/CopyInlineButton";
 
@@ -873,28 +873,22 @@ export function ModulePage({ module: mod }: Props) {
       }
       return <span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span>;
     };
-    // Small badge next to Recv: who/where the received cash is.
-    //  - "Cash"  → received (cash) by the logged-in user
-    //  - "Abc"   → received (cash) by another user (first 3 letters of name)
-    //  - "MD"    → non-cash method (goes straight to MD)
+    // Small badge next to Recv: ALWAYS the first 3 letters of the name of the
+    // user who actually RECEIVED the payment (not the MD who later receives it
+    // through the cash handover). Independent of payment method.
     const recvBadge = (r: Row, recv: number) => {
       if (!(recv > 0)) return null;
       const info = recvInfo[r.id];
-      const method = info?.method ?? null;
-      // Non-cash methods all flow to MD
-      if (method && isMdReceivedMethod(method)) {
-        return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-sky-500/15 text-sky-500">MD</span>;
-      }
       const rbyId = info?.received_by ?? (r.received_by as string | null) ?? null;
-      const rbyName = info?.received_by_name ?? (rbyId ? profileNames[rbyId] : undefined);
-      if (rbyId && user && rbyId === user.id) {
-        return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-emerald-500/15 text-emerald-500">Cash</span>;
+      let rbyName = info?.received_by_name ?? (rbyId ? profileNames[rbyId] : undefined);
+      // Fallback: receipt belongs to the logged-in user but name not loaded yet.
+      if ((!rbyName || !rbyName.trim()) && rbyId && user && rbyId === user.id) {
+        rbyName = displayName(profile, user);
       }
       if (rbyName && rbyName.trim()) {
         return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-amber-500/15 text-amber-500">{rbyName.trim().slice(0, 3)}</span>;
       }
-      // Unknown receiver — assume current user's cash
-      return <span className="inline-flex items-center rounded px-1 mr-1 text-[9px] font-bold align-middle bg-emerald-500/15 text-emerald-500">Cash</span>;
+      return null;
     };
 
     // Unified Amount cell — shows the passenger's FULL account at a glance:

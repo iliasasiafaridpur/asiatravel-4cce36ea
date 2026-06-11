@@ -237,12 +237,16 @@ export function StatusChangeDrawer({
       };
 
       if (markDelivered) {
+        // Notify MD ONCE per distinct status. A repeat of the SAME status (no new
+        // info) does not create another event, but a genuinely new event (e.g.
+        // "Delivery But Due" → "Delivered") creates a fresh notification.
         const existingStatusEvent = await supabase
           .from("payment_receipts")
           .select("id")
           .eq("service_table", request.table)
           .eq("service_row_id", request.row.id)
           .in("source", Array.from(STATUS_EVENT_SOURCES))
+          .eq("remarks", `Status: ${finalStatus}`)
           .limit(1)
           .maybeSingle();
 

@@ -89,19 +89,34 @@ export function HandoverHeaderButton() {
 
   if (isMd) {
     return (
-      <Button
-        asChild
-        size="sm"
-        className={`h-10 px-3 gap-1.5 font-semibold ${hasPending ? "bg-amber-500 hover:bg-amber-500/90 text-amber-950" : "bg-amber-500/15 hover:bg-amber-500/25 text-amber-400"}`}
-      >
-        <Link to="/md-panel">
-          <Crown className="h-4 w-4" />
-          <span className="hidden sm:inline">স্টাফ ক্যাশ রিকোয়েস্ট</span>
-          <span className="sm:hidden">ক্যাশ</span>
-          {Badge}
-          {hasPending && <Bell className="h-3.5 w-3.5 ml-0.5 animate-pulse" />}
-        </Link>
-      </Button>
+      <div className="flex items-center gap-1.5">
+        {/* MD's own cash handover — same flow as staff, lands in MD Panel for self-approval */}
+        <Button
+          asChild
+          size="sm"
+          className="h-10 px-3 gap-1.5 font-semibold bg-sky-500/15 hover:bg-sky-500/25 text-sky-400"
+        >
+          <Link to="/my-handover">
+            <HandCoins className="h-4 w-4" />
+            <span className="hidden sm:inline">আমার ক্যাশ হিসাব</span>
+            <span className="sm:hidden">আমার</span>
+          </Link>
+        </Button>
+        {/* Approval panel for all staff (and MD's own) handover requests */}
+        <Button
+          asChild
+          size="sm"
+          className={`h-10 px-3 gap-1.5 font-semibold ${hasPending ? "bg-amber-500 hover:bg-amber-500/90 text-amber-950" : "bg-amber-500/15 hover:bg-amber-500/25 text-amber-400"}`}
+        >
+          <Link to="/md-panel">
+            <Crown className="h-4 w-4" />
+            <span className="hidden sm:inline">স্টাফ ক্যাশ রিকোয়েস্ট</span>
+            <span className="sm:hidden">ক্যাশ</span>
+            {Badge}
+            {hasPending && <Bell className="h-3.5 w-3.5 ml-0.5 animate-pulse" />}
+          </Link>
+        </Button>
+      </div>
     );
   }
 
