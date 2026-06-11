@@ -33,6 +33,7 @@ const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-d
 const isStatusEvent = (r: Receipt) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
+const serviceKey = (r: Receipt) => r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
 
 type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
@@ -203,6 +204,10 @@ export function StaffHandoverDialog({
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
+  const moneyServiceKeys = new Set(
+    receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
+  );
+  const visibleReceipts = receipts.filter((r) => !(isStatusEvent(r) && moneyServiceKeys.has(serviceKey(r))));
 
   const submit = async () => {
     const cashText = cash.trim();
@@ -232,10 +237,10 @@ export function StaffHandoverDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Submit Cash Handover
+            <Lock className="h-4 w-4" /> MD-কে হিসাব পাঠান
           </DialogTitle>
           <DialogDescription>
-            দিনে একাধিক বার Handover দিতে পারবেন। MD আয়-ব্যয় দেখে Approve করবেন।
+            আপনার আইডির pending পেমেন্ট, delivery ও delivery but due — Submit to MD দিলে Kaium Khan-এর MD panel-এ যাবে।
           </DialogDescription>
         </DialogHeader>
 
@@ -265,7 +270,7 @@ export function StaffHandoverDialog({
                 <TrendingUp className="h-3 w-3" /> নগদ আয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-              <div className="text-[10px] text-muted-foreground">{receipts.length} receipt</div>
+              <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
               {totalMdReceived > 0 && (
                 <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD: {fmt(totalMdReceived)}</div>
               )}
@@ -296,15 +301,15 @@ export function StaffHandoverDialog({
           {/* Income detail */}
           <div className="rounded-lg border">
             <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-              আয় বিবরণ (Pending Receipts) — {receipts.length}
+              আয়/ডেলিভারি বিবরণ — {visibleReceipts.length}
             </div>
             <div className="max-h-32 overflow-y-auto divide-y text-xs">
               {loading ? (
                 <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
-              ) : receipts.length === 0 ? (
+              ) : visibleReceipts.length === 0 ? (
                 <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
               ) : (
-                receipts.map((r) => {
+                visibleReceipts.map((r) => {
                   const statusEvt = isStatusEvent(r);
                   const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                   return (
@@ -316,7 +321,7 @@ export function StaffHandoverDialog({
                       </div>
                       {statusEvt && (
                         <div className="text-[10px] text-violet-600 dark:text-violet-400">
-                          {cleanStatusText(r.remarks)} — অবগতি (ক্যাশ নয়)
+                          {cleanStatusText(r.remarks)} — ডেলিভারি তথ্য
                         </div>
                       )}
                       {mdRecv && (

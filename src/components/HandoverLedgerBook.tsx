@@ -62,6 +62,8 @@ const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-d
 const isStatusEventReceipt = (r: { source?: string | null; method?: string | null }) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
+const receiptServiceKey = (r: { service_table: string | null; service_row_id: string | null }) =>
+  r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
 
 type Expense = {
   id: string;
@@ -142,6 +144,7 @@ export function HandoverLedgerInline({
         .order("created_at", { ascending: false })
         .limit(500);
       if (mode === "mine") q = q.eq("from_user", user.id);
+      if (mode === "to-me") q = q.in("to_name", ["Kaium Khan (MD)", "MD Sir"]);
       const { data: hvData } = await q;
       const hvs = (hvData ?? []) as Handover[];
 
@@ -432,6 +435,10 @@ function HandoverCard({
   const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const moneyServiceKeys = new Set(
+    receipts.filter((r) => !isStatusEventReceipt(r) && Number(r.amount || 0) > 0).map(receiptServiceKey).filter(Boolean)
+  );
+  const visibleReceipts = receipts.filter((r) => !(isStatusEventReceipt(r) && moneyServiceKeys.has(receiptServiceKey(r))));
   const isPending = status === "pending";
   const [cancelling, setCancelling] = useState(false);
 
@@ -585,9 +592,9 @@ function HandoverCard({
             </tr>
           </thead>
           <tbody>
-            {receipts.length === 0 ? (
+            {visibleReceipts.length === 0 ? (
               <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
-            ) : receipts.map((r, idx) => {
+            ) : visibleReceipts.map((r, idx) => {
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
               const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
@@ -755,7 +762,7 @@ function HandoverCard({
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({visibleReceipts.length} আইটেম)</td>
               <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
@@ -829,7 +836,7 @@ function HandoverCard({
       {/* Footer summary bar — mirrors the top header */}
       <div className="bg-muted/40 px-4 py-3 border-t flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0 flex-1 text-sm sm:text-base font-semibold">
-          <span className="whitespace-nowrap">মোট {receipts.length} যাত্রী থেকে আয়</span>
+          <span className="whitespace-nowrap">মোট {visibleReceipts.length} আইটেম থেকে আয়</span>
           <span className="tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ {fmt(cashReceipts)}</span>
           {mdReceipts > 0 && (
             <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)} (ক্যাশে নয়)</span>

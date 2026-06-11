@@ -239,22 +239,26 @@ function AccountsPage() {
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
-  const statusByServiceDate = useMemo(() => {
+  const statusByService = useMemo(() => {
     const out: Record<string, string> = {};
     for (const r of received) {
       if (!isStatusEventReceipt(r) || !r.service_table || !r.service_row_id) continue;
-      out[`${r.service_table}:${r.service_row_id}:${r.entry_date}`] = cleanStatusText(r.remarks);
+      out[`${r.service_table}:${r.service_row_id}`] = cleanStatusText(r.remarks);
     }
     return out;
   }, [received]);
-  const hasMoneyReceiptSameDay = useMemo(() => {
+  const hasMoneyReceiptForService = useMemo(() => {
     const out = new Set<string>();
     for (const r of received) {
       if (isStatusEventReceipt(r) || !r.service_table || !r.service_row_id || Number(r.amount || 0) <= 0) continue;
-      out.add(`${r.service_table}:${r.service_row_id}:${r.entry_date}`);
+      out.add(`${r.service_table}:${r.service_row_id}`);
     }
     return out;
   }, [received]);
+  const displayRecv = useMemo(() => fRecv.filter((r) => {
+    if (!isStatusEventReceipt(r) || !r.service_table || !r.service_row_id) return true;
+    return !hasMoneyReceiptForService.has(`${r.service_table}:${r.service_row_id}`);
+  }), [fRecv, hasMoneyReceiptForService]);
 
   // Only Cash receipts add to the staff's balance. Non-cash (bKash, Nagad, Md cash…)
   // go straight to MD — kept as entries but excluded from balance.
@@ -299,12 +303,12 @@ function AccountsPage() {
       if (it.kind !== "received") return true;
       const r = it.row as Recv;
       if (!isStatusEventReceipt(r) || !r.service_table || !r.service_row_id) return true;
-      return !hasMoneyReceiptSameDay.has(`${r.service_table}:${r.service_row_id}:${r.entry_date}`);
+      return !hasMoneyReceiptForService.has(`${r.service_table}:${r.service_row_id}`);
     });
     if (useDateFilter) return desc.filter(it => inDateRange(it.date));
     if (latestN === 0) return [];
     return desc.slice(0, latestN);
-  }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptSameDay]);
+  }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptForService]);
 
   // Print rows — running balance is SCOPED to the filtered entries only
   // (starts from 0), so a "সর্বশেষ ৩" print shows exactly those 3 lines and
@@ -535,7 +539,7 @@ ${node.innerHTML.replace(
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
         <StatCard label="নগদ আয় (ব্যালেন্সে)" value={periodIncome} icon={TrendingUp} tone="success" />
-        <StatCard label="Submit Cash Handover" value={periodHand} icon={Send} tone="info" />
+        <StatCard label="MD-কে জমা/পাঠানো" value={periodHand} icon={Send} tone="info" />
         <StatCard label="মোট খরচ" value={periodExp} icon={TrendingDown} tone="warning" />
       </div>
 
@@ -627,12 +631,12 @@ ${node.innerHTML.replace(
             {/* Active badge */}
             <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
               {useDateFilter
-                ? `${fRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
+                ? `${displayRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
                 : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
             </div>
           </div>
           <div className="flex gap-2">
-            {(isStaff || isAdmin) && (
+            {(isStaff || isAdmin || isMd) && (
               <Button asChild size="sm" variant="outline" className="gap-1.5 h-9">
                 <Link to="/my-handover">
                   <LockIcon className="h-4 w-4" /> আমার ক্যাশ হিসাব
@@ -732,7 +736,7 @@ ${node.innerHTML.replace(
           <p className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">{fmt(periodIncome)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Submit Cash Handover</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">MD-কে জমা/পাঠানো</p>
           <p className="text-base sm:text-lg font-bold text-sky-600 tabular-nums">{fmt(periodHand)}</p>
         </div>
         <div className="rounded-lg border bg-card p-2.5">
@@ -747,7 +751,7 @@ ${node.innerHTML.replace(
           <TabsTrigger value="timeline" className="text-xs gap-1"><Layers className="h-3.5 w-3.5" />Timeline</TabsTrigger>
           <TabsTrigger value="income"   className="text-xs gap-1"><ArrowDownLeft className="h-3.5 w-3.5" />আয়</TabsTrigger>
           <TabsTrigger value="expense"  className="text-xs gap-1"><Receipt className="h-3.5 w-3.5" />খরচ</TabsTrigger>
-          <TabsTrigger value="handover" className="text-xs gap-1"><ArrowUpRight className="h-3.5 w-3.5" />Cash Handover</TabsTrigger>
+          <TabsTrigger value="handover" className="text-xs gap-1"><ArrowUpRight className="h-3.5 w-3.5" />MD-কে পাঠানো</TabsTrigger>
         </TabsList>
 
         {/* Timeline */}
@@ -799,7 +803,7 @@ ${node.innerHTML.replace(
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
-                  const kindLabel = statusEvt ? "Delivery Info" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
+                  const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                   // Col 1: উৎস/নাম (source/name)
                   const name = isIn
                     ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
@@ -835,7 +839,7 @@ ${node.innerHTML.replace(
                     }
                   }
                   const linkedStatus = isIn && !statusEvt && r.service_table && r.service_row_id
-                    ? statusByServiceDate[`${r.service_table}:${r.service_row_id}:${r.entry_date}`]
+                    ? statusByService[`${r.service_table}:${r.service_row_id}`]
                     : "";
                   const primaryBits: string[] = [];
                   if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
@@ -873,7 +877,7 @@ ${node.innerHTML.replace(
                         ))}
                         {linkedStatus && (
                           <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5 leading-snug break-words">
-                            📦 {linkedStatus} — MD info
+                            📦 {linkedStatus}
                           </p>
                         )}
                         {isPendingHand && (
@@ -929,7 +933,7 @@ ${node.innerHTML.replace(
                       {/* Col 4: Amount + Balance */}
                       <div className="text-right shrink-0">
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
-                          {statusEvt ? "MD info" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
+                          {statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
                         {isIn && !statusEvt && isMdReceivedMethod(r.method) && (
@@ -1018,7 +1022,7 @@ ${node.innerHTML.replace(
                       <td className="wrap">{service}{isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>
                       <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "MD info" : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
+                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
                       <td className="wrap" style={{whiteSpace:"nowrap"}}>
                         {advLines.map((l, idx) => (
@@ -1038,9 +1042,9 @@ ${node.innerHTML.replace(
         {/* Income */}
         <TabsContent value="income" className="mt-3">
           <Card><CardContent className="p-0">
-            {fRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
+            {displayRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
               : <div>
-                {fRecv.map((r, idx) => {
+                {displayRecv.map((r, idx) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
                   if (svc) {
@@ -1067,7 +1071,7 @@ ${node.innerHTML.replace(
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? "MD info" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
                            {statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
