@@ -458,6 +458,8 @@ function HandoverCard({
 
   // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  // Card-level highlight (when navigated from "MD-কে পাঠানো" list)
+  const [cardHighlight, setCardHighlight] = useState(false);
   useEffect(() => {
     const handler = (e: Event) => {
       const id = (e as CustomEvent<string>).detail;
@@ -470,9 +472,23 @@ function HandoverCard({
         setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 4000);
       }
     };
+    const cardHandler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (id !== handover.id) return;
+      setCardHighlight(true);
+      setTimeout(() => {
+        const el = document.getElementById(`handover-card-${handover.id}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      setTimeout(() => setCardHighlight(false), 4000);
+    };
     window.addEventListener("ledger-highlight-receipt", handler);
-    return () => window.removeEventListener("ledger-highlight-receipt", handler);
-  }, [receipts]);
+    window.addEventListener("ledger-highlight-handover", cardHandler);
+    return () => {
+      window.removeEventListener("ledger-highlight-receipt", handler);
+      window.removeEventListener("ledger-highlight-handover", cardHandler);
+    };
+  }, [receipts, handover.id]);
 
   const scrollToReceipt = (id: string) => {
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
