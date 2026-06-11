@@ -112,6 +112,23 @@ function MyHandoverPage() {
   const [loading, setLoading] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
 
+  // When navigated from "MD-কে পাঠানো" list, highlight the target handover card.
+  useEffect(() => {
+    if (!user?.id) return;
+    const targetId = sessionStorage.getItem("highlight-handover");
+    if (!targetId) return;
+    sessionStorage.removeItem("highlight-handover");
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      window.dispatchEvent(new CustomEvent("ledger-highlight-handover", { detail: targetId }));
+      const found = document.getElementById(`handover-card-${targetId}`);
+      if (found || tries > 12) clearInterval(timer);
+    }, 600);
+    return () => clearInterval(timer);
+  }, [user?.id]);
+
+
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
