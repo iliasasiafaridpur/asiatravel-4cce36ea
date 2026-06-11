@@ -24,7 +24,7 @@ import {
   CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
   Lock as LockIcon,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 import { isCashMethod, isMdReceivedMethod, DUE_RECEIVE_METHODS } from "@/lib/payment-methods";
 
@@ -78,6 +78,7 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
 
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
+  const navigate = useNavigate();
   const { isAdmin, isMd, isStaff, loading: roleLoading } = useRole();
   // "আমার হিসাব" — সব ইউজার (MD/Admin সহ) শুধুমাত্র নিজের এন্ট্রি দেখবে
   const seeAll = false;
@@ -816,9 +817,7 @@ ${node.innerHTML.replace(
                   const servicePrimary = isIn
                     ? (r.source === "manual"
                         ? (r.remarks || "ম্যানুয়াল আয়")
-                        : statusEvt
-                          ? `📦 ${cleanStatusText(r.remarks)}`
-                          : (r.service_type || "Service"))
+                        : (r.service_type || "Service"))
                     : isHand
                     ? "জমা / Handover"
                     : (e.purpose || "—");
@@ -933,7 +932,7 @@ ${node.innerHTML.replace(
                       {/* Col 4: Amount + Balance */}
                       <div className="text-right shrink-0">
                         <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
-                          {statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
+                          {statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
                         {isIn && !statusEvt && isMdReceivedMethod(r.method) && (
@@ -1051,6 +1050,7 @@ ${node.innerHTML.replace(
                     if (r.service_table === "tickets") {
                       if (svc.route) bits.push(svc.route);
                       if (svc.airline) bits.push(svc.airline);
+                      if (svc.flight_date) bits.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (r.service_table === "others") {
                       if (svc.service_name) bits.push(svc.service_name);
                       if (svc.airline) bits.push(svc.airline);
@@ -1071,10 +1071,10 @@ ${node.innerHTML.replace(
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? "Delivery" : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
-                           {statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                           {r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                          {mdRecv && (
                            <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
@@ -1160,7 +1160,15 @@ ${node.innerHTML.replace(
                     <div className="shrink-0 h-9 w-9 rounded-full grid place-items-center bg-sky-500/10 text-sky-600 border border-sky-500/20">
                       <Send className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sessionStorage.setItem("highlight-handover", h.id);
+                        void navigate({ to: "/my-handover" });
+                      }}
+                      className="flex-1 min-w-0 text-left rounded-md transition-colors hover:bg-red-500/10 focus:outline-none focus:ring-1 focus:ring-red-500 -m-1 p-1"
+                      title="এই হিসাবটি আমার ক্যাশ হিস্টোরিতে দেখুন"
+                    >
                       <div className="flex items-baseline justify-between gap-2">
                         <p className="font-semibold text-sm truncate">{h.to_name}</p>
                         <p className="font-bold text-sky-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(h.amount))}</p>
@@ -1179,7 +1187,7 @@ ${node.innerHTML.replace(
                         </p>
                       )}
                       {h.remarks && <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{h.remarks}</p>}
-                    </div>
+                    </button>
                     <ConfirmDeleteButton allowOwner onConfirm={() => deleteHand(h.id)} description={`জমা ${h.handover_id} ডিলেট করতে চান?`} />
                   </div>
                 );

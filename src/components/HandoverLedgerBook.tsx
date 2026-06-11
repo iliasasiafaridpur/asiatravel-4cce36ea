@@ -458,6 +458,8 @@ function HandoverCard({
 
   // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  // Card-level highlight (when navigated from "MD-কে পাঠানো" list)
+  const [cardHighlight, setCardHighlight] = useState(false);
   useEffect(() => {
     const handler = (e: Event) => {
       const id = (e as CustomEvent<string>).detail;
@@ -470,9 +472,23 @@ function HandoverCard({
         setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 4000);
       }
     };
+    const cardHandler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (id !== handover.id) return;
+      setCardHighlight(true);
+      setTimeout(() => {
+        const el = document.getElementById(`handover-card-${handover.id}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      setTimeout(() => setCardHighlight(false), 4000);
+    };
     window.addEventListener("ledger-highlight-receipt", handler);
-    return () => window.removeEventListener("ledger-highlight-receipt", handler);
-  }, [receipts]);
+    window.addEventListener("ledger-highlight-handover", cardHandler);
+    return () => {
+      window.removeEventListener("ledger-highlight-receipt", handler);
+      window.removeEventListener("ledger-highlight-handover", cardHandler);
+    };
+  }, [receipts, handover.id]);
 
   const scrollToReceipt = (id: string) => {
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
@@ -505,7 +521,9 @@ function HandoverCard({
         : "border-rose-500/60 border-l-rose-500 ring-rose-500/10 bg-card";
 
   return (
-    <div className={`rounded-xl border-2 border-l-[6px] ${accent} shadow-lg ring-1 overflow-hidden`}>
+    <div
+      id={`handover-card-${handover.id}`}
+      className={`rounded-xl border-2 border-l-[6px] ${cardHighlight ? "border-red-500 border-l-red-500 ring-2 ring-red-500 bg-red-500/15 shadow-[0_0_26px_-4px_rgba(239,68,68,0.6)]" : accent} shadow-lg ring-1 overflow-hidden transition-colors`}>
       {/* Header */}
       <div className={`${isPending ? "bg-amber-500/20 border-amber-500/40" : "bg-muted/40"} px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2`}>
 
@@ -622,7 +640,7 @@ function HandoverCard({
                 <tr
                   key={r.id}
                   id={`receipt-row-${r.id}`}
-                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-yellow-200 dark:bg-yellow-500/30 ring-2 ring-yellow-500" : `row-tint-${idx % 4}`}`}
+                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-red-300 dark:bg-red-600/40 ring-2 ring-red-500" : `row-tint-${idx % 4} hover:bg-yellow-200/80 dark:hover:bg-yellow-500/25`}`}
                 >
                   {/* তারিখ */}
                   <td className="px-1.5 py-1 align-top">
