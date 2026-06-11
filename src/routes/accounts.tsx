@@ -834,6 +834,9 @@ ${node.innerHTML.replace(
                       svcLines.push(svc.country);
                     }
                   }
+                  const linkedStatus = isIn && !statusEvt && r.service_table && r.service_row_id
+                    ? statusByServiceDate[`${r.service_table}:${r.service_row_id}:${r.entry_date}`]
+                    : "";
                   const primaryBits: string[] = [];
                   if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
                   if (isIn && !statusEvt && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
@@ -868,6 +871,11 @@ ${node.innerHTML.replace(
                             {line}
                           </p>
                         ))}
+                        {linkedStatus && (
+                          <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5 leading-snug break-words">
+                            📦 {linkedStatus} — MD info
+                          </p>
+                        )}
                         {isPendingHand && (
                           <p className="text-xs text-amber-600 mt-0.5 leading-snug break-words">
                             MD approval pending
