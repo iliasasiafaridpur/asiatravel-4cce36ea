@@ -255,6 +255,10 @@ function AccountsPage() {
     }
     return out;
   }, [received]);
+  const displayRecv = useMemo(() => fRecv.filter((r) => {
+    if (!isStatusEventReceipt(r) || !r.service_table || !r.service_row_id) return true;
+    return !hasMoneyReceiptForService.has(`${r.service_table}:${r.service_row_id}`);
+  }), [fRecv, hasMoneyReceiptForService]);
 
   // Only Cash receipts add to the staff's balance. Non-cash (bKash, Nagad, Md cash…)
   // go straight to MD — kept as entries but excluded from balance.
@@ -627,7 +631,7 @@ ${node.innerHTML.replace(
             {/* Active badge */}
             <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
               {useDateFilter
-                ? `${fRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
+                ? `${displayRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
                 : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
             </div>
           </div>
@@ -1038,9 +1042,9 @@ ${node.innerHTML.replace(
         {/* Income */}
         <TabsContent value="income" className="mt-3">
           <Card><CardContent className="p-0">
-            {fRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
+            {displayRecv.length === 0 ? <EmptyRow>এই সময়সীমায় কোনো আয় নেই</EmptyRow>
               : <div>
-                {fRecv.map((r, idx) => {
+                {displayRecv.map((r, idx) => {
                   const svc = r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const bits: string[] = [];
                   if (svc) {
