@@ -239,19 +239,19 @@ function AccountsPage() {
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
-  const statusByServiceDate = useMemo(() => {
+  const statusByService = useMemo(() => {
     const out: Record<string, string> = {};
     for (const r of received) {
       if (!isStatusEventReceipt(r) || !r.service_table || !r.service_row_id) continue;
-      out[`${r.service_table}:${r.service_row_id}:${r.entry_date}`] = cleanStatusText(r.remarks);
+      out[`${r.service_table}:${r.service_row_id}`] = cleanStatusText(r.remarks);
     }
     return out;
   }, [received]);
-  const hasMoneyReceiptSameDay = useMemo(() => {
+  const hasMoneyReceiptForService = useMemo(() => {
     const out = new Set<string>();
     for (const r of received) {
       if (isStatusEventReceipt(r) || !r.service_table || !r.service_row_id || Number(r.amount || 0) <= 0) continue;
-      out.add(`${r.service_table}:${r.service_row_id}:${r.entry_date}`);
+      out.add(`${r.service_table}:${r.service_row_id}`);
     }
     return out;
   }, [received]);
@@ -299,12 +299,12 @@ function AccountsPage() {
       if (it.kind !== "received") return true;
       const r = it.row as Recv;
       if (!isStatusEventReceipt(r) || !r.service_table || !r.service_row_id) return true;
-      return !hasMoneyReceiptSameDay.has(`${r.service_table}:${r.service_row_id}:${r.entry_date}`);
+      return !hasMoneyReceiptForService.has(`${r.service_table}:${r.service_row_id}`);
     });
     if (useDateFilter) return desc.filter(it => inDateRange(it.date));
     if (latestN === 0) return [];
     return desc.slice(0, latestN);
-  }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptSameDay]);
+  }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptForService]);
 
   // Print rows — running balance is SCOPED to the filtered entries only
   // (starts from 0), so a "সর্বশেষ ৩" print shows exactly those 3 lines and
