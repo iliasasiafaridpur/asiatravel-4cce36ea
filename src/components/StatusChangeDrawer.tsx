@@ -26,6 +26,7 @@ const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-d
 const DEFAULT_STATUS_ORDER = ["NEW", "File Process", "Card Ready", "Pending Delivery", "Delivered"];
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const eq = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim();
 
 function errMsg(e: unknown): string {
   if (e instanceof Error) return e.message;
@@ -242,15 +243,17 @@ export function StatusChangeDrawer({
         // "Delivery But Due" → "Delivered") creates a fresh notification.
         const existingStatusEvent = await supabase
           .from("payment_receipts")
-          .select("id")
+          .select("id,remarks")
           .eq("service_table", request.table)
           .eq("service_row_id", request.row.id)
           .in("source", Array.from(STATUS_EVENT_SOURCES))
-          .eq("remarks", `Status: ${finalStatus}`)
-          .limit(1)
-          .maybeSingle();
+          .limit(20);
 
-        if (!existingStatusEvent.data) {
+        const alreadySent = ((existingStatusEvent.data ?? []) as Array<{ remarks: string | null }>).some((row) =>
+          eq(cleanStatusText(row.remarks), finalStatus)
+        );
+
+        if (!alreadySent) {
           const statusReceiptId = await mkReceiptId();
           await resilientInsert("payment_receipts", {
             receipt_id: statusReceiptId,
@@ -263,7 +266,7 @@ export function StatusChangeDrawer({
             amount: 0,
             method: "Status",
             source: "status_event",
-            remarks: `Status: ${finalStatus}`,
+            remarks: finalStatus,
             received_by: user!.id,
             received_by_name: me,
             created_by: user!.id,

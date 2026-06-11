@@ -39,7 +39,7 @@ type Receipt = {
   amount: number; method: string; service_type: string;
   service_table: string | null; service_row_id: string | null; ref_id: string | null;
   approval_status: string; received_by: string | null; received_by_name: string | null;
-  handover_id: string | null; source: string; created_at?: string | null;
+  handover_id: string | null; source: string; remarks?: string | null; created_at?: string | null;
 };
 
 type ServiceInfo = {
@@ -50,6 +50,7 @@ type ServiceInfo = {
 };
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
+const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
 
 const SERVICE_TABLES = [
   { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
@@ -462,7 +463,7 @@ function PastEodPanel({
                     {info?.service_name && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
                     {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
                     {info?.airline && <div className="text-xs text-muted-foreground">{info.airline}{info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}</div>}
-                    {statusEvt && <div className="text-xs text-violet-600 dark:text-violet-400">{(r as { remarks?: string | null }).remarks || "ডেলিভারি"} — অবগতি</div>}
+                    {statusEvt && <div className="text-xs text-violet-600 dark:text-violet-400">{cleanStatusText(r.remarks)} — অবগতি</div>}
                     {info && info.discount > 0 && (
                       <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
                         ডিসকাউন্ট: {fmt(info.discount)}
