@@ -61,6 +61,7 @@ type Receipt = {
 const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 const isStatusEventReceipt = (r: { source?: string | null; method?: string | null }) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
+const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
 
 type Expense = {
   id: string;
@@ -608,6 +609,7 @@ function HandoverCard({
               const isHighlighted = highlightId === r.id;
               const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
               const statusEvt = isStatusEventReceipt(r);
+              const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
 
               return (
                 <tr
@@ -707,12 +709,12 @@ function HandoverCard({
                   {/* এই বারের জমা */}
                   <td className="px-1.5 py-1 text-right tabular-nums align-top">
                     {statusEvt ? (
-                      <div className="text-sm font-semibold text-violet-600 dark:text-violet-400 leading-tight">📦 {r.remarks || "Delivery"}</div>
+                      <div className="text-sm font-semibold text-violet-600 dark:text-violet-400 leading-tight">📦 {cleanStatusText(r.remarks)}</div>
                     ) : (
                       <>
                         {isAdvance && <AdvanceBadge advance className="mr-1" />}
-                        <b className={`text-sm ${isMdReceivedMethod(r.method) ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
-                        {isMdReceivedMethod(r.method) && (
+                        <b className={`text-sm ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                        {mdRecv && (
                           <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
                         )}
                       </>

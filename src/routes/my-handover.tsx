@@ -43,6 +43,7 @@ type Receipt = {
 const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 const isStatusEvent = (r: Receipt) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
+const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
 type Expense = {
   id: string; expense_id?: string | null; amount: number;
   category: string; purpose?: string | null;
@@ -312,8 +313,8 @@ function MyHandoverPage() {
                   <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
                 ) : (
                   receipts.map((r, idx) => {
-                    const mdRecv = isMdReceivedMethod(r.method);
                     const statusEvt = isStatusEvent(r);
+                    const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                     return (
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
@@ -323,7 +324,7 @@ function MyHandoverPage() {
                         </div>
                         {statusEvt && (
                           <div className="text-[11px] text-violet-600 dark:text-violet-400">
-                            {r.remarks || "ডেলিভারি"} — MD কে অবগতির জন্য (ক্যাশ নয়)
+                            {cleanStatusText(r.remarks)} — MD কে অবগতির জন্য (ক্যাশ নয়)
                           </div>
                         )}
                         {mdRecv && (

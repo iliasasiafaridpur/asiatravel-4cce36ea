@@ -32,6 +32,7 @@ type Expense = { id: string; expense_id?: string | null; amount: number; categor
 const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 const isStatusEvent = (r: Receipt) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
+const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
 
 type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
@@ -304,8 +305,8 @@ export function StaffHandoverDialog({
                 <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
               ) : (
                 receipts.map((r) => {
-                  const mdRecv = isMdReceivedMethod(r.method);
                   const statusEvt = isStatusEvent(r);
+                  const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                   return (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
@@ -315,7 +316,7 @@ export function StaffHandoverDialog({
                       </div>
                       {statusEvt && (
                         <div className="text-[10px] text-violet-600 dark:text-violet-400">
-                          {r.remarks || "ডেলিভারি"} — অবগতি (ক্যাশ নয়)
+                          {cleanStatusText(r.remarks)} — অবগতি (ক্যাশ নয়)
                         </div>
                       )}
                       {mdRecv && (

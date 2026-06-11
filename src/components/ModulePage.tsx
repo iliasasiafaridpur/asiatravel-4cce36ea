@@ -63,6 +63,7 @@ const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
 
 // মডিউল যেগুলোতে Extra Service যুক্ত করা যাবে (passenger + vendor সহ সার্ভিস মডিউল)
 const EXTRA_SERVICE_MODULES = ["tickets", "bmet", "saudi-visa", "kuwait-visa", "other"];
+const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 
 export type ExtraServiceRow = {
   id?: string;
@@ -255,13 +256,15 @@ export function ModulePage({ module: mod }: Props) {
       const [{ data: receipts }, { data: profs }] = await Promise.all([
         supabase
           .from("payment_receipts")
-          .select("service_row_id,method,received_by,received_by_name,created_at")
+          .select("service_row_id,method,source,amount,received_by,received_by_name,created_at")
           .eq("service_table", mod.table)
           .order("created_at", { ascending: true }),
         supabase.from("profiles").select("user_id,full_name"),
       ]);
       const map: Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }> = {};
-      ((receipts as { service_row_id: string; method: string | null; received_by: string | null; received_by_name: string | null }[] | null) ?? []).forEach((rc) => {
+      ((receipts as { service_row_id: string; method: string | null; source: string | null; amount: number | null; received_by: string | null; received_by_name: string | null }[] | null) ?? []).forEach((rc) => {
+        const isStatus = STATUS_EVENT_SOURCES.has(String(rc.source ?? "")) || String(rc.method ?? "").toLowerCase() === "status";
+        if (isStatus || Number(rc.amount ?? 0) <= 0) return;
         // ascending order → last write wins = most recent receipt
         if (rc.service_row_id) map[String(rc.service_row_id)] = { method: rc.method, received_by: rc.received_by, received_by_name: rc.received_by_name };
       });
