@@ -62,6 +62,8 @@ const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-d
 const isStatusEventReceipt = (r: { source?: string | null; method?: string | null }) =>
   STATUS_EVENT_SOURCES.has(String(r.source ?? "")) || String(r.method ?? "").toLowerCase() === "status";
 const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
+const receiptServiceKey = (r: { service_table: string | null; service_row_id: string | null }) =>
+  r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
 
 type Expense = {
   id: string;
@@ -432,6 +434,10 @@ function HandoverCard({
   const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const moneyServiceKeys = new Set(
+    receipts.filter((r) => !isStatusEventReceipt(r) && Number(r.amount || 0) > 0).map(receiptServiceKey).filter(Boolean)
+  );
+  const visibleReceipts = receipts.filter((r) => !(isStatusEventReceipt(r) && moneyServiceKeys.has(receiptServiceKey(r))));
   const isPending = status === "pending";
   const [cancelling, setCancelling] = useState(false);
 
@@ -585,9 +591,9 @@ function HandoverCard({
             </tr>
           </thead>
           <tbody>
-            {receipts.length === 0 ? (
+            {visibleReceipts.length === 0 ? (
               <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
-            ) : receipts.map((r, idx) => {
+            ) : visibleReceipts.map((r, idx) => {
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
               const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
@@ -755,7 +761,7 @@ function HandoverCard({
               );
             })}
             <tr className="border-t bg-muted/30 font-semibold">
-              <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({receipts.length} যাত্রী)</td>
+              <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({visibleReceipts.length} আইটেম)</td>
               <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
