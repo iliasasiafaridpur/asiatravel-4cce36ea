@@ -40,7 +40,7 @@ import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
-import { isMdReceivedMethod } from "@/lib/payment-methods";
+
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
 import { CopyInlineButton } from "@/components/CopyInlineButton";
 
