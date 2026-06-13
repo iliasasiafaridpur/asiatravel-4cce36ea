@@ -1342,7 +1342,7 @@ export function ModulePage({ module: mod }: Props) {
                       variant="outline"
                       size="sm"
                       className="h-8 gap-1 border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
-                      onClick={() => { const r = editing; setEditing(null); requestRestore(r); }}
+                      onClick={() => { const r = editing; setOpenForm(false); setEditing(null); requestRestore(r); }}
                     >
                       <RotateCcw className="h-3.5 w-3.5" /> বাতিল ফেরত আনুন
                     </Button>
