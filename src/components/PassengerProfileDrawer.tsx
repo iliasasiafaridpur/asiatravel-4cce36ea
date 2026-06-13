@@ -375,11 +375,22 @@ export function PassengerProfileDrawer({
                         {related.length}
                       </Badge>
                     </h4>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      যেকোনো সার্ভিসে ক্লিক করুন — নিচে ঐ সার্ভিসের Tracking Timeline দেখাবে।
+                    </p>
                     <div className="space-y-2">
-                      {related.map((s) => (
-                        <div
+                      {related.map((s) => {
+                        const isActive = activeKey === s.key;
+                        return (
+                        <button
+                          type="button"
                           key={s.key}
-                          className="rounded-lg border bg-muted/30 p-3 text-xs"
+                          onClick={() => setSelectedKey(s.key)}
+                          className={`w-full text-left rounded-lg border p-3 text-xs transition-colors ${
+                            isActive
+                              ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                              : "bg-muted/30 hover:border-primary/40"
+                          }`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -409,8 +420,9 @@ export function PassengerProfileDrawer({
                           {s.entryDate ? (
                             <div className="mt-1 text-[10px] text-muted-foreground">{formatDate(s.entryDate)}</div>
                           ) : null}
-                        </div>
-                      ))}
+                        </button>
+                        );
+                      })}
                     </div>
                   </section>
                 </>
