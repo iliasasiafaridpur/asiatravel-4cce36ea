@@ -1640,21 +1640,19 @@ export function ModulePage({ module: mod }: Props) {
       </Card>
 
 
-      <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
-            <AlertDialogDescription>এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">ডিলিট</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* পাসওয়ার্ড দিয়ে নিশ্চিতকরণ (ডিলিট / বাতিল ফেরত) */}
+      <PasswordConfirmDialog
+        open={!!pwConfirm}
+        onOpenChange={(o) => { if (!o) setPwConfirm(null); }}
+        title={pwConfirm?.title}
+        description={pwConfirm?.description}
+        confirmLabel={pwConfirm?.confirmLabel}
+        confirmClassName={pwConfirm?.confirmClassName}
+        onConfirmed={async () => { await pwConfirm?.action(); setPwConfirm(null); }}
+      />
 
       {/* কাজ বাতিল / ফেরত ডায়ালগ */}
-      <Dialog open={!!cancelRow} onOpenChange={(o) => { if (!o) setCancelRow(null); }}>
+      <Dialog open={!!cancelRow} onOpenChange={(o) => { if (!o) { setCancelRow(null); setCancelPw(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>কাজ বাতিল / ফেরত</DialogTitle>
@@ -1677,15 +1675,25 @@ export function ModulePage({ module: mod }: Props) {
                 rows={3}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">আপনার পাসওয়ার্ড (নিশ্চিত করতে)</Label>
+              <Input
+                type="password"
+                value={cancelPw}
+                onChange={(e) => setCancelPw(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelRow(null)} disabled={cancelBusy}>ফিরে যান</Button>
+            <Button variant="outline" onClick={() => { setCancelRow(null); setCancelPw(""); }} disabled={cancelBusy}>ফিরে যান</Button>
             <Button onClick={confirmCancel} disabled={cancelBusy} className="bg-amber-600 hover:bg-amber-700 text-white">
               {cancelBusy ? "প্রসেস হচ্ছে..." : "বাতিল করুন"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
 
       <DueReceiveDialog
