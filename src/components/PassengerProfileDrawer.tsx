@@ -85,9 +85,56 @@ export function PassengerProfileDrawer({
     if (!open || !row?.id) {
       setReceipts([]);
       setExtras([]);
+      setRelated([]);
       return;
     }
     let cancelled = false;
+    // Load OTHER services for the same passenger across ALL modules
+    // (matched by passport when available, otherwise by name) so a "Self"
+    // passenger who has e.g. an Air Ticket AND a BMET card shows both here.
+    (async () => {
+      const passport = String(row.passport ?? "").trim();
+      const name = String(row.passenger_name ?? "").trim();
+      if (!passport && !name) {
+        if (!cancelled) setRelated([]);
+        return;
+      }
+      const found: RelatedService[] = [];
+      await Promise.all(
+        MODULES.map(async (m) => {
+          let q = supabase.from(m.table as never).select("*").limit(50);
+          q = passport ? q.eq("passport", passport) : q.eq("passenger_name", name);
+          const { data } = await q;
+          for (const r of ((data as Row[] | null) ?? [])) {
+            // Skip the row we're already viewing.
+            if (m.table === serviceTable && r.id === row.id) continue;
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r.received ?? r.received_amount ?? 0);
+            const disc = Number(r.discount_amount ?? 0);
+            const detailParts = [
+              r.country_name, r.trip_road, r.visa_type, r.service_name, r.airline,
+            ].filter((x) => x !== null && x !== undefined && String(x).trim() !== "");
+            found.push({
+              key: `${m.table}:${r.id}`,
+              moduleKey: m.key,
+              moduleLabel: m.short,
+              refId: String(
+                r.ticket_id ?? r.bmet_id ?? r.saudi_id ?? r.kuwait_id ?? r.other_id ?? r.passenger_id ?? r.id,
+              ),
+              status: String(r.status ?? ""),
+              detail: detailParts.map(String).join(" · "),
+              entryDate: (r.entry_date as string) ?? null,
+              sold,
+              received: recv,
+              due: Math.max(0, sold - recv - disc),
+            });
+          }
+        }),
+      );
+      found.sort((a, b) => String(b.entryDate ?? "").localeCompare(String(a.entryDate ?? "")));
+      if (!cancelled) setRelated(found);
+    })();
+
     // Load extra services attached to this service row (passenger bill + vendor cost),
     // and how much of each the customer has already paid (tracked on the extra_services row).
     (async () => {
