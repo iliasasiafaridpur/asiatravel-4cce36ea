@@ -1354,6 +1354,7 @@ export function ModulePage({ module: mod }: Props) {
                       className="h-8 gap-1 border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
                       onClick={() => {
                         const r = editing;
+                        setOpenForm(false);
                         setEditing(null);
                         setCancelReason("");
                         setCancelDate(todayIso());
