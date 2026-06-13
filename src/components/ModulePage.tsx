@@ -1377,7 +1377,7 @@ export function ModulePage({ module: mod }: Props) {
                   variant="outline"
                   onClick={() => {
                     setSearch(""); setStatusFilter("all"); setFieldFilters({});
-                    setDueOnly(false); setStartDate(""); setEndDate("");
+                    setDueOnly(false); setStartDate(""); setEndDate(""); setShowCancelled(false);
                   }}
                   className="h-9 px-2.5 gap-1.5"
                   title="Reset"
