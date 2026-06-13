@@ -61,7 +61,7 @@ function isDeliveryStatus(status: unknown) {
   return s === "delivered" || s === "delivery" || s === "delivery but due";
 }
 
-export function ActionBoardPage() {
+function ActionBoardPage() {
   const navigate = useNavigate();
   const { user, profile } = useCurrentUser();
   const me = displayName(profile, user);
