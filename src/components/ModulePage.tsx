@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
@@ -21,13 +21,10 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye } from "lucide-react";
+import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
@@ -143,14 +140,23 @@ export function ModulePage({ module: mod }: Props) {
   const [extraCounts, setExtraCounts] = useState<Record<string, number>>({});
   const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string; received: number }[]>>({});
   const [saving, setSaving] = useState(false);
-  const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  
   // কাজ বাতিল / ফেরত (soft-cancel)
   const canCancel = CANCELABLE_TABLES.has(mod.table);
   const [cancelRow, setCancelRow] = useState<Row | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelDate, setCancelDate] = useState<string>(todayIso());
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelPw, setCancelPw] = useState("");
   const [showCancelled, setShowCancelled] = useState(false);
+  // Generic password-confirm request (delete / restore)
+  const [pwConfirm, setPwConfirm] = useState<{
+    title: string;
+    description: ReactNode;
+    confirmLabel: string;
+    confirmClassName?: string;
+    action: () => void | Promise<void>;
+  } | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
@@ -601,19 +607,17 @@ export function ModulePage({ module: mod }: Props) {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleteRow) return;
-    const { error } = await supabase.from(mod.table as never).delete().eq("id", deleteRow.id);
-    if (error) toast.error("ডিলিট করতে সমস্যা: " + error.message);
-    else { toast.success("ডিলিট হয়েছে"); await load(); }
-    setDeleteRow(null);
-  };
+
 
   // কাজ বাতিল হিসেবে চিহ্নিত করা — এন্ট্রি ডিলেট না করে রেকর্ড সংরক্ষণ করে।
+  // বাতিল কনফার্ম করতে অবশ্যই user-এর পাসওয়ার্ড দিতে হবে।
   const confirmCancel = async () => {
     if (!cancelRow) return;
+    if (!cancelPw.trim()) { toast.error("নিশ্চিত করতে পাসওয়ার্ড দিন"); return; }
     setCancelBusy(true);
     try {
+      const ok = await verifyCurrentPassword(user?.email ?? "", cancelPw);
+      if (!ok) { toast.error("ভুল পাসওয়ার্ড"); return; }
       const { error } = await supabase
         .from(mod.table as never)
         .update({
@@ -627,6 +631,7 @@ export function ModulePage({ module: mod }: Props) {
       setCancelRow(null);
       setCancelReason("");
       setCancelDate(todayIso());
+      setCancelPw("");
       await load(false);
     } catch (e) {
       toast.error("বাতিল করা যায়নি: " + errMsg(e));
@@ -635,7 +640,7 @@ export function ModulePage({ module: mod }: Props) {
     }
   };
 
-  // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে।
+  // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে। (পাসওয়ার্ড লাগবে)
   const restoreRow = async (r: Row) => {
     try {
       const { error } = await supabase
@@ -649,6 +654,34 @@ export function ModulePage({ module: mod }: Props) {
       toast.error("ফিরিয়ে আনা যায়নি: " + errMsg(e));
     }
   };
+
+  // পাসওয়ার্ড দিয়ে নিশ্চিত করে বাতিল ফিরিয়ে আনা।
+  const requestRestore = (r: Row) => {
+    setPwConfirm({
+      title: "বাতিল ফিরিয়ে আনবেন?",
+      description: `${String(r.passenger_name ?? "")} (${String(r[mod.idColumn] ?? "")}) আবার চলমান কাজে যুক্ত হবে।`,
+      confirmLabel: "ফিরিয়ে আনুন",
+      confirmClassName: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      action: () => restoreRow(r),
+    });
+  };
+
+  // পাসওয়ার্ড দিয়ে নিশ্চিত করে ডিলিট করা।
+  const requestDelete = (r: Row) => {
+    setPwConfirm({
+      title: "ডিলিট নিশ্চিত করুন?",
+      description: `এই এন্ট্রিটি (${String(r[mod.idColumn] ?? "")}) স্থায়ীভাবে মুছে যাবে এবং সংশ্লিষ্ট সকল হিসাব থেকেও সরে যাবে।`,
+      confirmLabel: "ডিলিট করুন",
+      confirmClassName: "bg-rose-600 hover:bg-rose-700 text-white",
+      action: async () => {
+        const { error } = await supabase.from(mod.table as never).delete().eq("id", r.id);
+        if (error) toast.error("ডিলিট করতে সমস্যা: " + error.message);
+        else { toast.success("ডিলিট হয়েছে"); await load(); }
+      },
+    });
+  };
+
+
 
 
   // Inline status change from the table badge dropdown.
@@ -1301,7 +1334,41 @@ export function ModulePage({ module: mod }: Props) {
                   vendorName={String(form.vendor_bought ?? "")}
                 />
               )}
+              {editing && canCancel && (
+                <div className="mt-4 flex justify-end border-t pt-3">
+                  {editing.cancelled ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
+                      onClick={() => { const r = editing; setOpenForm(false); setEditing(null); requestRestore(r); }}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> বাতিল ফেরত আনুন
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                      onClick={() => {
+                        const r = editing;
+                        setOpenForm(false);
+                        setEditing(null);
+                        setCancelReason("");
+                        setCancelDate(todayIso());
+                        setCancelPw("");
+                        setCancelRow(r);
+                      }}
+                    >
+                      <Ban className="h-3.5 w-3.5" /> কাজ বাতিল / ফেরত
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
+
 
           </DialogContent>
         </Dialog>
@@ -1580,24 +1647,16 @@ export function ModulePage({ module: mod }: Props) {
                       )}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          {canCancel && (
-                            r.cancelled ? (
-                              <Button variant="ghost" size="icon" title="বাতিল ফিরিয়ে আনুন" onClick={() => restoreRow(r)}>
-                                <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
-                              </Button>
-                            ) : (
-                              <Button variant="ghost" size="icon" title="কাজ বাতিল / ফেরত" onClick={() => { setCancelReason(""); setCancelDate(todayIso()); setCancelRow(r); }}>
-                                <Ban className="h-3.5 w-3.5 text-amber-600" />
-                              </Button>
-                            )
-                          )}
-                          <Button variant="ghost" size="icon" onClick={() => {
+                          <Button variant="ghost" size="icon" title="সকল তথ্য দেখুন" onClick={() => setProfileRow(r)}>
+                            <Eye className="h-3.5 w-3.5 text-primary" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="এডিট করুন" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" title="ডিলিট করুন" onClick={() => {
                             if (profile?.role !== "admin") {
                               toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
                               return;
                             }
-                            setDeleteRow(r);
+                            requestDelete(r);
                           }}><Trash2 className="h-3.5 w-3.5 text-rose-500" /></Button>
                         </div>
                       </TableCell>
@@ -1610,21 +1669,20 @@ export function ModulePage({ module: mod }: Props) {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
-            <AlertDialogDescription>এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">ডিলিট</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
+      {/* পাসওয়ার্ড দিয়ে নিশ্চিতকরণ (ডিলিট / বাতিল ফেরত) */}
+      <PasswordConfirmDialog
+        open={!!pwConfirm}
+        onOpenChange={(o) => { if (!o) setPwConfirm(null); }}
+        title={pwConfirm?.title}
+        description={pwConfirm?.description}
+        confirmLabel={pwConfirm?.confirmLabel}
+        confirmClassName={pwConfirm?.confirmClassName}
+        onConfirmed={async () => { await pwConfirm?.action(); setPwConfirm(null); }}
+      />
 
       {/* কাজ বাতিল / ফেরত ডায়ালগ */}
-      <Dialog open={!!cancelRow} onOpenChange={(o) => { if (!o) setCancelRow(null); }}>
+      <Dialog open={!!cancelRow} onOpenChange={(o) => { if (!o) { setCancelRow(null); setCancelPw(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>কাজ বাতিল / ফেরত</DialogTitle>
@@ -1647,15 +1705,25 @@ export function ModulePage({ module: mod }: Props) {
                 rows={3}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">আপনার পাসওয়ার্ড (নিশ্চিত করতে)</Label>
+              <Input
+                type="password"
+                value={cancelPw}
+                onChange={(e) => setCancelPw(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelRow(null)} disabled={cancelBusy}>ফিরে যান</Button>
+            <Button variant="outline" onClick={() => { setCancelRow(null); setCancelPw(""); }} disabled={cancelBusy}>ফিরে যান</Button>
             <Button onClick={confirmCancel} disabled={cancelBusy} className="bg-amber-600 hover:bg-amber-700 text-white">
               {cancelBusy ? "প্রসেস হচ্ছে..." : "বাতিল করুন"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
 
       <DueReceiveDialog
