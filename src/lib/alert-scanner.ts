@@ -77,10 +77,11 @@ async function scanTarget(t: Target) {
   const q: any = supabase.from(t.table as any);
   const { data, error } = await q
     .select(
-      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, discount_amount, delivery_date, updated_at, entry_date, vendor_bought`,
+      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, discount_amount, delivery_date, updated_at, entry_date, vendor_bought, cancelled`,
     )
     .in("status", ["Card Ready", "Pending Delivery"])
     .is("delivery_date", null)
+    .neq("cancelled", true)
     .limit(500);
   if (error || !data) return;
 
