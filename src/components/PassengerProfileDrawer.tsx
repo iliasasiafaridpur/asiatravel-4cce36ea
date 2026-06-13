@@ -79,9 +79,16 @@ export function PassengerProfileDrawer({
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null; received: number }[]>([]);
   const [related, setRelated] = useState<RelatedService[]>([]);
+  // Which service's tracking timeline is shown — defaults to the current row.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
+
+  // Reset the selected timeline service whenever the drawer opens on a new row.
+  useEffect(() => {
+    setSelectedKey(row?.id ? `${serviceTable}:${row.id}` : null);
+  }, [open, row?.id, serviceTable]);
 
   useEffect(() => {
     if (!open || !row?.id) {
