@@ -341,7 +341,7 @@ export function PassengerProfileDrawer({
                   <section>
                     <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
                       <Layers className="h-3.5 w-3.5" />
-                      এই যাত্রীর অন্যান্য সার্ভিস
+                      এই যাত্রীর সকল সার্ভিস
                       <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5">
                         {related.length}
                       </Badge>
