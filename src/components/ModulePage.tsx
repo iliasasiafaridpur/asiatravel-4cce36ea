@@ -1550,7 +1550,11 @@ export function ModulePage({ module: mod }: Props) {
                             return (
                               <TableCell key={f.name} className="whitespace-nowrap">
                                 {f.name === "status" && mod.statuses ? (
-                                  <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                                  canCancel && r.cancelled ? (
+                                    <Badge variant="outline" className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40" title={String(r.cancel_reason ?? "") || "কাজ বাতিল"}>❌ বাতিল</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                                  )
                                 ) : f.type === "date" ? (
                                   formatDate(r[f.name] as string | null)
                                 ) : f.type === "number" ? (
