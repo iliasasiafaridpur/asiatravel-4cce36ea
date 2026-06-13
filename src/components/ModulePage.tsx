@@ -1334,7 +1334,40 @@ export function ModulePage({ module: mod }: Props) {
                   vendorName={String(form.vendor_bought ?? "")}
                 />
               )}
+              {editing && canCancel && (
+                <div className="mt-4 flex justify-end border-t pt-3">
+                  {editing.cancelled ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
+                      onClick={() => { const r = editing; setEditing(null); requestRestore(r); }}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> বাতিল ফেরত আনুন
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                      onClick={() => {
+                        const r = editing;
+                        setEditing(null);
+                        setCancelReason("");
+                        setCancelDate(todayIso());
+                        setCancelPw("");
+                        setCancelRow(r);
+                      }}
+                    >
+                      <Ban className="h-3.5 w-3.5" /> কাজ বাতিল / ফেরত
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
+
 
           </DialogContent>
         </Dialog>
