@@ -144,6 +144,13 @@ export function ModulePage({ module: mod }: Props) {
   const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string; received: number }[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  // কাজ বাতিল / ফেরত (soft-cancel)
+  const canCancel = CANCELABLE_TABLES.has(mod.table);
+  const [cancelRow, setCancelRow] = useState<Row | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelDate, setCancelDate] = useState<string>(todayIso());
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
