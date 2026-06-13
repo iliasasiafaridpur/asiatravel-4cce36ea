@@ -121,6 +121,7 @@ export function PassengerProfileDrawer({
             const detailParts = [
               r.country_name, r.trip_road, r.visa_type, r.service_name, r.airline,
             ].filter((x) => x !== null && x !== undefined && String(x).trim() !== "");
+            const derivedStatus = m.deriveStatus?.(r) ?? String(r.status ?? "");
             found.push({
               key: `${m.table}:${r.id}`,
               moduleKey: m.key,
@@ -128,12 +129,14 @@ export function PassengerProfileDrawer({
               refId: String(
                 r.ticket_id ?? r.bmet_id ?? r.saudi_id ?? r.kuwait_id ?? r.other_id ?? r.passenger_id ?? r.id,
               ),
-              status: String(r.status ?? ""),
+              status: derivedStatus,
               detail: detailParts.map(String).join(" · "),
               entryDate: (r.entry_date as string) ?? null,
               sold,
               received: recv,
+              discount: disc,
               due: Math.max(0, sold - recv - disc),
+              row: r,
             });
           }
         }),
