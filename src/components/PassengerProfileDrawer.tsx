@@ -111,8 +111,8 @@ export function PassengerProfileDrawer({
           q = passport ? q.eq("passport", passport) : q.eq("passenger_name", name);
           const { data } = await q;
           for (const r of ((data as Row[] | null) ?? [])) {
-            // Skip the row we're already viewing.
-            if (m.table === serviceTable && r.id === row.id) continue;
+            // Show ALL services for this passenger — including the one we're
+            // currently viewing — so the profile lists the full footprint.
             const sold = Number(r.sold_price ?? 0);
             const recv = Number(r.received ?? r.received_amount ?? 0);
             const disc = Number(r.discount_amount ?? 0);
@@ -341,7 +341,7 @@ export function PassengerProfileDrawer({
                   <section>
                     <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
                       <Layers className="h-3.5 w-3.5" />
-                      এই যাত্রীর অন্যান্য সার্ভিস
+                      এই যাত্রীর সকল সার্ভিস
                       <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5">
                         {related.length}
                       </Badge>
