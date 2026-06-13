@@ -291,11 +291,21 @@ export function PassengerProfileDrawer({
     });
   };
 
-  // Full pipeline timeline from module statuses
-  const pipeline = statusOrder && statusOrder.length > 0 ? statusOrder : [];
+  // The tracking timeline follows whichever service is selected in the list
+  // above. Default to the currently viewed service row.
+  const currentKey = `${serviceTable}:${row.id}`;
+  const activeKey = selectedKey ?? currentKey;
+  const selectedSvc = related.find((s) => s.key === activeKey);
+  const timelineRow: Row = (selectedSvc?.row as Row) ?? row;
+  const timelineModuleKey = selectedSvc?.moduleKey ?? moduleKey;
+  const timelineMod = timelineModuleKey ? moduleByKey(timelineModuleKey) : undefined;
+  const pipeline = timelineMod?.statuses ?? (statusOrder && statusOrder.length > 0 ? statusOrder : []);
+  const timelineStatus = timelineMod?.deriveStatus?.(timelineRow) ?? String(timelineRow.status ?? "");
   const currentIdx = pipeline.findIndex(
-    (s) => s.trim().toLowerCase() === status.trim().toLowerCase(),
+    (s) => s.trim().toLowerCase() === timelineStatus.trim().toLowerCase(),
   );
+  const timelineLabel = selectedSvc?.moduleLabel ?? "";
+  const timelineRefId = selectedSvc?.refId ?? "";
 
   return (
     <>
