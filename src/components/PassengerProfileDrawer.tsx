@@ -24,6 +24,21 @@ type Receipt = {
   approval_status: string | null;
 };
 
+// A service for the SAME passenger (matched by passport / name) but in a
+// different module row — so the profile shows the passenger's full footprint.
+type RelatedService = {
+  key: string;
+  moduleKey: string;
+  moduleLabel: string;
+  refId: string;
+  status: string;
+  detail: string;
+  entryDate: string | null;
+  sold: number;
+  received: number;
+  due: number;
+};
+
 const DASH = "—";
 const val = (v: unknown) => {
   if (v === null || v === undefined || v === "") return DASH;
