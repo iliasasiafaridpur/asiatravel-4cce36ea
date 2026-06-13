@@ -1361,6 +1361,17 @@ export function ModulePage({ module: mod }: Props) {
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
                 )}
+                {canCancel && (
+                  <Button
+                    type="button"
+                    variant={showCancelled ? "default" : "outline"}
+                    onClick={() => setShowCancelled((v) => !v)}
+                    className="h-9 px-2.5 gap-1.5"
+                    title="বাতিল করা এন্ট্রি দেখুন"
+                  >
+                    <Ban className="h-4 w-4" /> বাতিল{cancelledCount > 0 ? ` (${cancelledCount})` : ""}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
