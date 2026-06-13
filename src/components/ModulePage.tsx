@@ -879,6 +879,22 @@ export function ModulePage({ module: mod }: Props) {
     // The drawer owns the status dropdown + automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "") || (mod.statuses?.[0] ?? "");
+      // বাতিল করা এন্ট্রি — স্ট্যাটাসের বদলে স্পষ্ট লাল ব্যাজ দেখাই।
+      if (canCancel && r.cancelled) {
+        const reason = String(r.cancel_reason ?? "").trim();
+        const cdate = r.cancel_date ? formatDate(r.cancel_date as string) : "";
+        return (
+          <div className="mt-1">
+            <Badge
+              variant="outline"
+              className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40"
+              title={[reason && `কারণ: ${reason}`, cdate && `তারিখ: ${cdate}`].filter(Boolean).join("\n") || "কাজ বাতিল"}
+            >
+              ❌ বাতিল{cdate ? ` · ${cdate}` : ""}
+            </Badge>
+          </div>
+        );
+      }
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
       const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
       const computedDue = typeof due === "number" ? due : computeValue(r, dueColumn);
