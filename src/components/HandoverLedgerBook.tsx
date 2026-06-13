@@ -456,7 +456,7 @@ function HandoverCard({
   };
 
 
-  // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
+  // Persistent row selection / highlight (stays yellow until clicking elsewhere)
   const [highlightId, setHighlightId] = useState<string | null>(null);
   // Card-level highlight (when navigated from "MD-কে পাঠানো" list)
   const [cardHighlight, setCardHighlight] = useState(false);
@@ -469,7 +469,6 @@ function HandoverCard({
           const el = document.getElementById(`receipt-row-${id}`);
           if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
-        setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 4000);
       }
     };
     const cardHandler = (e: Event) => {
@@ -489,6 +488,18 @@ function HandoverCard({
       window.removeEventListener("ledger-highlight-handover", cardHandler);
     };
   }, [receipts, handover.id]);
+
+  // Clear the yellow selection whenever the user clicks outside any receipt row.
+  useEffect(() => {
+    if (!highlightId) return;
+    const onDocClick = (ev: MouseEvent) => {
+      const target = ev.target as HTMLElement | null;
+      if (target && target.closest("[data-receipt-row]")) return;
+      setHighlightId(null);
+    };
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [highlightId]);
 
   const scrollToReceipt = (id: string) => {
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
@@ -640,8 +651,11 @@ function HandoverCard({
                 <tr
                   key={r.id}
                   id={`receipt-row-${r.id}`}
-                  className={`border-t align-top transition-colors ${isHighlighted ? "bg-red-300 dark:bg-red-600/40 ring-2 ring-red-500" : `row-tint-${idx % 4} hover:bg-yellow-200/80 dark:hover:bg-yellow-500/25`}`}
+                  data-receipt-row
+                  onClick={() => setHighlightId(r.id)}
+                  className={`border-t align-top transition-colors cursor-pointer ${isHighlighted ? "bg-yellow-300 dark:bg-yellow-500/40 ring-2 ring-yellow-500" : `row-tint-${idx % 4} hover:bg-yellow-200/80 dark:hover:bg-yellow-500/25`}`}
                 >
+
                   {/* তারিখ */}
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{formatDate(r.entry_date)}</div>
@@ -720,7 +734,7 @@ function HandoverCard({
                     {previousPaid > 0 ? (
                       <button
                         type="button"
-                        onClick={() => lastPast && scrollToReceipt(lastPast.id)}
+                        onClick={(e) => { e.stopPropagation(); if (lastPast) scrollToReceipt(lastPast.id); }}
                         className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
                         title="পূর্বের জমা দেখাও"
                       >
