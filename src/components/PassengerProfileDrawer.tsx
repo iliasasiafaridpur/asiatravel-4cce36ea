@@ -487,10 +487,10 @@ export function PassengerProfileDrawer({
                           </span>
                           <div className={`text-sm font-medium ${isCurrent ? "text-primary" : ""}`}>
                             {stepStatus}
-                            {stepStatus.toLowerCase() === "file process" && row.vendor_bought ? (
+                            {stepStatus.toLowerCase() === "file process" && timelineRow.vendor_bought ? (
                               <span className="text-muted-foreground font-normal">
                                 {" "}
-                                — {String(row.vendor_bought)}
+                                — {String(timelineRow.vendor_bought)}
                               </span>
                             ) : null}
                           </div>
