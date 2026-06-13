@@ -255,6 +255,13 @@ export function PassengerProfileDrawer({
   const profit = totalBill - totalDiscount - cost - extraCost;
   const showProfit = (serviceReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
   const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
+
+  // Financial Ledger aggregates EVERY service this passenger has (+ extra services).
+  const hasAllServices = related.length > 0;
+  const ledgerBill = (hasAllServices ? related.reduce((s, r) => s + r.sold, 0) : sold) + extraSold;
+  const ledgerReceived = (hasAllServices ? related.reduce((s, r) => s + r.received, 0) : serviceReceived) + extraReceived;
+  const ledgerDiscount = hasAllServices ? related.reduce((s, r) => s + r.discount, 0) : totalDiscount;
+  const ledgerDue = Math.max(0, ledgerBill - ledgerReceived - ledgerDiscount);
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
 
