@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDate, statusBadgeClass, MODULES } from "@/lib/modules";
+import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES } from "@/lib/modules";
 import { CheckCircle2, Clock, Circle, ReceiptText, Layers } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
@@ -100,8 +100,13 @@ export function PassengerProfileDrawer({
         return;
       }
       const found: RelatedService[] = [];
+      // Only real service modules — never ledger mirrors (vendor_ledger,
+      // agency_ledger) or party tables (agents, vendors), otherwise mirror
+      // rows of the same service show up as duplicate fake "services".
+      const serviceKeys = new Set(SERVICE_CATEGORIES.map((c) => c.key));
+      const serviceModules = MODULES.filter((m) => serviceKeys.has(m.key));
       await Promise.all(
-        MODULES.map(async (m) => {
+        serviceModules.map(async (m) => {
           let q = supabase.from(m.table as never).select("*").limit(50);
           q = passport ? q.eq("passport", passport) : q.eq("passenger_name", name);
           const { data } = await q;
