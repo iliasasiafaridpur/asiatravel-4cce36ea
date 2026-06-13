@@ -329,7 +329,61 @@ export function PassengerProfileDrawer({
                 </div>
               </section>
 
+              {/* Section A2 — Other services for the same passenger (cross-module) */}
+              {related.length > 0 && (
+                <>
+                  <Separator />
+                  <section>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Layers className="h-3.5 w-3.5" />
+                      এই যাত্রীর অন্যান্য সার্ভিস
+                      <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5">
+                        {related.length}
+                      </Badge>
+                    </h4>
+                    <div className="space-y-2">
+                      {related.map((s) => (
+                        <div
+                          key={s.key}
+                          className="rounded-lg border bg-muted/30 p-3 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary shrink-0">
+                                {s.moduleLabel}
+                              </Badge>
+                              <span className="font-mono text-[11px] text-muted-foreground truncate">
+                                {s.refId}
+                              </span>
+                            </div>
+                            {s.status ? (
+                              <Badge variant="outline" className={`shrink-0 text-[10px] py-0 px-1.5 ${statusBadgeClass(s.status)}`}>
+                                {s.status}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          {s.detail ? (
+                            <div className="mt-1 text-muted-foreground truncate">{s.detail}</div>
+                          ) : null}
+                          <div className="mt-1.5 flex items-center justify-between gap-2 tabular-nums">
+                            <span>Bill: <span className="font-semibold">{fmtMoney(s.sold)}</span></span>
+                            <span className="text-emerald-600">Received: {fmtMoney(s.received)}</span>
+                            <span className={s.due > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}>
+                              Due: {fmtMoney(s.due)}
+                            </span>
+                          </div>
+                          {s.entryDate ? (
+                            <div className="mt-1 text-[10px] text-muted-foreground">{formatDate(s.entryDate)}</div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
               <Separator />
+
 
               {/* Section B — Timeline: full status pipeline */}
               <section>
