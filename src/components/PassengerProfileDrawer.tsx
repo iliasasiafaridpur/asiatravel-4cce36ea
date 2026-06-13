@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES } from "@/lib/modules";
+import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { CheckCircle2, Clock, Circle, ReceiptText, Layers } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
