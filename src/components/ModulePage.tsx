@@ -111,6 +111,12 @@ function selectColumns(mod: ModuleSchema): string {
   const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
   // status_by only exists on the service tables that have a status workflow
   if (RECV_META[mod.table]) columns.add("status_by");
+  // soft-cancel columns (BMET / Saudi / Kuwait)
+  if (CANCELABLE_TABLES.has(mod.table)) {
+    columns.add("cancelled");
+    columns.add("cancel_reason");
+    columns.add("cancel_date");
+  }
   mod.fields.forEach((field) => columns.add(field.name));
   return Array.from(columns).join(",");
 }
