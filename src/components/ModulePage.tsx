@@ -620,10 +620,14 @@ export function ModulePage({ module: mod }: Props) {
   };
 
   // কাজ বাতিল হিসেবে চিহ্নিত করা — এন্ট্রি ডিলেট না করে রেকর্ড সংরক্ষণ করে।
+  // বাতিল কনফার্ম করতে অবশ্যই user-এর পাসওয়ার্ড দিতে হবে।
   const confirmCancel = async () => {
     if (!cancelRow) return;
+    if (!cancelPw.trim()) { toast.error("নিশ্চিত করতে পাসওয়ার্ড দিন"); return; }
     setCancelBusy(true);
     try {
+      const ok = await verifyCurrentPassword(user?.email ?? "", cancelPw);
+      if (!ok) { toast.error("ভুল পাসওয়ার্ড"); return; }
       const { error } = await supabase
         .from(mod.table as never)
         .update({
@@ -637,6 +641,7 @@ export function ModulePage({ module: mod }: Props) {
       setCancelRow(null);
       setCancelReason("");
       setCancelDate(todayIso());
+      setCancelPw("");
       await load(false);
     } catch (e) {
       toast.error("বাতিল করা যায়নি: " + errMsg(e));
@@ -645,7 +650,7 @@ export function ModulePage({ module: mod }: Props) {
     }
   };
 
-  // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে।
+  // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে। (পাসওয়ার্ড লাগবে)
   const restoreRow = async (r: Row) => {
     try {
       const { error } = await supabase
@@ -659,6 +664,34 @@ export function ModulePage({ module: mod }: Props) {
       toast.error("ফিরিয়ে আনা যায়নি: " + errMsg(e));
     }
   };
+
+  // পাসওয়ার্ড দিয়ে নিশ্চিত করে বাতিল ফিরিয়ে আনা।
+  const requestRestore = (r: Row) => {
+    setPwConfirm({
+      title: "বাতিল ফিরিয়ে আনবেন?",
+      description: `${String(r.passenger_name ?? "")} (${String(r[mod.idColumn] ?? "")}) আবার চলমান কাজে যুক্ত হবে।`,
+      confirmLabel: "ফিরিয়ে আনুন",
+      confirmClassName: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      action: () => restoreRow(r),
+    });
+  };
+
+  // পাসওয়ার্ড দিয়ে নিশ্চিত করে ডিলিট করা।
+  const requestDelete = (r: Row) => {
+    setPwConfirm({
+      title: "ডিলিট নিশ্চিত করুন?",
+      description: `এই এন্ট্রিটি (${String(r[mod.idColumn] ?? "")}) স্থায়ীভাবে মুছে যাবে এবং সংশ্লিষ্ট সকল হিসাব থেকেও সরে যাবে।`,
+      confirmLabel: "ডিলিট করুন",
+      confirmClassName: "bg-rose-600 hover:bg-rose-700 text-white",
+      action: async () => {
+        const { error } = await supabase.from(mod.table as never).delete().eq("id", r.id);
+        if (error) toast.error("ডিলিট করতে সমস্যা: " + error.message);
+        else { toast.success("ডিলিট হয়েছে"); await load(); }
+      },
+    });
+  };
+
+
 
 
   // Inline status change from the table badge dropdown.
