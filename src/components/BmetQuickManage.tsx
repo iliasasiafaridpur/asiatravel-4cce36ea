@@ -55,14 +55,16 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [saving, setSaving] = useState(false);
 
   const list = useMemo(() => {
+    // বাতিল করা কার্ড চলমান কাজের তালিকায় আসবে না।
+    const active = rows.filter((r) => !r.cancelled);
     if (mode === "send") {
-      return rows.filter((r) => !r.vendor_sent_date);
+      return active.filter((r) => !r.vendor_sent_date);
     }
     if (mode === "ready") {
-      return rows.filter((r) => r.status === "File Process");
+      return active.filter((r) => r.status === "File Process");
     }
     // receive
-    return rows.filter((r) => r.status === "Card Ready" && !r.received_date);
+    return active.filter((r) => r.status === "Card Ready" && !r.received_date);
   }, [rows, mode]);
 
   const allChecked = list.length > 0 && list.every((r) => selected.has(r.id));

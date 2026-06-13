@@ -27,7 +27,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
@@ -52,6 +52,9 @@ const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
   kuwait_visas: { recvCol: "received", serviceType: "Kuwait Visa" },
   others: { recvCol: "received_amount", serviceType: "Other" },
 };
+
+// টেবিল যেগুলোতে "কাজ বাতিল / ফেরত" (soft-cancel) সুবিধা আছে
+const CANCELABLE_TABLES = new Set(["bmet_cards", "saudi_visas", "kuwait_visas"]);
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
@@ -108,6 +111,12 @@ function selectColumns(mod: ModuleSchema): string {
   const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
   // status_by only exists on the service tables that have a status workflow
   if (RECV_META[mod.table]) columns.add("status_by");
+  // soft-cancel columns (BMET / Saudi / Kuwait)
+  if (CANCELABLE_TABLES.has(mod.table)) {
+    columns.add("cancelled");
+    columns.add("cancel_reason");
+    columns.add("cancel_date");
+  }
   mod.fields.forEach((field) => columns.add(field.name));
   return Array.from(columns).join(",");
 }
@@ -135,6 +144,13 @@ export function ModulePage({ module: mod }: Props) {
   const [extraDetails, setExtraDetails] = useState<Record<string, { service_name: string; service_price: number; vendor_cost: number; notes: string; received: number }[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Row | null>(null);
+  // কাজ বাতিল / ফেরত (soft-cancel)
+  const canCancel = CANCELABLE_TABLES.has(mod.table);
+  const [cancelRow, setCancelRow] = useState<Row | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelDate, setCancelDate] = useState<string>(todayIso());
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
@@ -308,8 +324,19 @@ export function ModulePage({ module: mod }: Props) {
     return Number(r[name] ?? 0);
   }, [mod]);
 
+  const cancelledCount = useMemo(
+    () => (canCancel ? rows.filter((r) => r.cancelled).length : 0),
+    [rows, canCancel],
+  );
+
   const filtered = useMemo(() => {
     let xs = rows;
+    // বাতিল করা এন্ট্রি সাধারণত চলমান তালিকা থেকে লুকানো থাকে।
+    if (canCancel && !showCancelled) {
+      xs = xs.filter((r) => !r.cancelled);
+    } else if (canCancel && showCancelled) {
+      xs = xs.filter((r) => r.cancelled);
+    }
     if (statusFilter !== "all") {
       xs = xs.filter((r) => (String(r.status ?? "") || (mod.statuses?.[0] ?? "")) === statusFilter);
     }
@@ -329,7 +356,8 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses, canCancel, showCancelled]);
+
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
@@ -581,6 +609,48 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
+  // কাজ বাতিল হিসেবে চিহ্নিত করা — এন্ট্রি ডিলেট না করে রেকর্ড সংরক্ষণ করে।
+  const confirmCancel = async () => {
+    if (!cancelRow) return;
+    setCancelBusy(true);
+    try {
+      const { error } = await supabase
+        .from(mod.table as never)
+        .update({
+          cancelled: true,
+          cancel_reason: cancelReason.trim() || null,
+          cancel_date: cancelDate || todayIso(),
+        } as never)
+        .eq("id", cancelRow.id);
+      if (error) throw error;
+      toast.success(`বাতিল হয়েছে: ${String(cancelRow[mod.idColumn] ?? "")}`);
+      setCancelRow(null);
+      setCancelReason("");
+      setCancelDate(todayIso());
+      await load(false);
+    } catch (e) {
+      toast.error("বাতিল করা যায়নি: " + errMsg(e));
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
+  // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে।
+  const restoreRow = async (r: Row) => {
+    try {
+      const { error } = await supabase
+        .from(mod.table as never)
+        .update({ cancelled: false, cancel_reason: null, cancel_date: null } as never)
+        .eq("id", r.id);
+      if (error) throw error;
+      toast.success(`ফিরিয়ে আনা হয়েছে: ${String(r[mod.idColumn] ?? "")}`);
+      await load(false);
+    } catch (e) {
+      toast.error("ফিরিয়ে আনা যায়নি: " + errMsg(e));
+    }
+  };
+
+
   // Inline status change from the table badge dropdown.
   // Handles vendor prompt for "File Process", auto-dates for "Pending Delivery",
   // and routes through Due Receive when "Delivered" with outstanding balance.
@@ -809,6 +879,22 @@ export function ModulePage({ module: mod }: Props) {
     // The drawer owns the status dropdown + automation (vendor prompt, dates, due modal).
     const statusOrDeliveryBadge = (r: Row, due?: number) => {
       const status = String(r.status ?? "") || (mod.statuses?.[0] ?? "");
+      // বাতিল করা এন্ট্রি — স্ট্যাটাসের বদলে স্পষ্ট লাল ব্যাজ দেখাই।
+      if (canCancel && r.cancelled) {
+        const reason = String(r.cancel_reason ?? "").trim();
+        const cdate = r.cancel_date ? formatDate(r.cancel_date as string) : "";
+        return (
+          <div className="mt-1">
+            <Badge
+              variant="outline"
+              className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40"
+              title={[reason && `কারণ: ${reason}`, cdate && `তারিখ: ${cdate}`].filter(Boolean).join("\n") || "কাজ বাতিল"}
+            >
+              ❌ বাতিল{cdate ? ` · ${cdate}` : ""}
+            </Badge>
+          </div>
+        );
+      }
       const isServiceMod = ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(mod.key);
       const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
       const computedDue = typeof due === "number" ? due : computeValue(r, dueColumn);
@@ -1122,7 +1208,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel]);
 
   // Smart Search → scroll the main list to the chosen row (panel stays open)
   const scrollToRow = useCallback((row: Row) => {
@@ -1275,12 +1361,23 @@ export function ModulePage({ module: mod }: Props) {
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
                 )}
+                {canCancel && (
+                  <Button
+                    type="button"
+                    variant={showCancelled ? "default" : "outline"}
+                    onClick={() => setShowCancelled((v) => !v)}
+                    className="h-9 px-2.5 gap-1.5"
+                    title="বাতিল করা এন্ট্রি দেখুন"
+                  >
+                    <Ban className="h-4 w-4" /> বাতিল{cancelledCount > 0 ? ` (${cancelledCount})` : ""}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => {
                     setSearch(""); setStatusFilter("all"); setFieldFilters({});
-                    setDueOnly(false); setStartDate(""); setEndDate("");
+                    setDueOnly(false); setStartDate(""); setEndDate(""); setShowCancelled(false);
                   }}
                   className="h-9 px-2.5 gap-1.5"
                   title="Reset"
@@ -1423,7 +1520,7 @@ export function ModulePage({ module: mod }: Props) {
                     <TableRow
                       key={r.id}
                       id={`row-${r.id}`}
-                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${highlightId === r.id ? "row-selected" : "outline-transparent"}`}
+                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${highlightId === r.id ? "row-selected" : "outline-transparent"} ${canCancel && r.cancelled ? "opacity-60" : ""}`}
                       onClick={(e) => {
                         const t = e.target as HTMLElement;
                         if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
@@ -1464,7 +1561,11 @@ export function ModulePage({ module: mod }: Props) {
                             return (
                               <TableCell key={f.name} className="whitespace-nowrap">
                                 {f.name === "status" && mod.statuses ? (
-                                  <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                                  canCancel && r.cancelled ? (
+                                    <Badge variant="outline" className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40" title={String(r.cancel_reason ?? "") || "কাজ বাতিল"}>❌ বাতিল</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className={statusBadgeClass(String(r[f.name] ?? ""))}>{String(r[f.name] ?? "")}</Badge>
+                                  )
                                 ) : f.type === "date" ? (
                                   formatDate(r[f.name] as string | null)
                                 ) : f.type === "number" ? (
@@ -1480,6 +1581,17 @@ export function ModulePage({ module: mod }: Props) {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          {canCancel && (
+                            r.cancelled ? (
+                              <Button variant="ghost" size="icon" title="বাতিল ফিরিয়ে আনুন" onClick={() => restoreRow(r)}>
+                                <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon" title="কাজ বাতিল / ফেরত" onClick={() => { setCancelReason(""); setCancelDate(todayIso()); setCancelRow(r); }}>
+                                <Ban className="h-3.5 w-3.5 text-amber-600" />
+                              </Button>
+                            )
+                          )}
                           <Button variant="ghost" size="icon" onClick={() => {
                             if (profile?.role !== "admin") {
                               toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
@@ -1510,6 +1622,41 @@ export function ModulePage({ module: mod }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* কাজ বাতিল / ফেরত ডায়ালগ */}
+      <Dialog open={!!cancelRow} onOpenChange={(o) => { if (!o) setCancelRow(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>কাজ বাতিল / ফেরত</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{String(cancelRow?.passenger_name ?? "")}</span>
+              {" "}({String(cancelRow?.[mod.idColumn] ?? "")}) — এন্ট্রি ডিলেট হবে না, শুধু "বাতিল" হিসেবে চিহ্নিত হবে এবং চলমান কাজের তালিকা থেকে সরে যাবে।
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-sm">বাতিলের তারিখ</Label>
+              <DateInput value={cancelDate} onChange={(e) => setCancelDate(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">বাতিলের কারণ (ঐচ্ছিক)</Label>
+              <Textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="যেমন: যাত্রী কাজ ফেরত নিয়ে গেছেন"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelRow(null)} disabled={cancelBusy}>ফিরে যান</Button>
+            <Button onClick={confirmCancel} disabled={cancelBusy} className="bg-amber-600 hover:bg-amber-700 text-white">
+              {cancelBusy ? "প্রসেস হচ্ছে..." : "বাতিল করুন"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <DueReceiveDialog
         open={!!duePreselect}
