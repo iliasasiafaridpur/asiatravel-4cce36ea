@@ -151,7 +151,16 @@ export function ModulePage({ module: mod }: Props) {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelDate, setCancelDate] = useState<string>(todayIso());
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelPw, setCancelPw] = useState("");
   const [showCancelled, setShowCancelled] = useState(false);
+  // Generic password-confirm request (delete / restore)
+  const [pwConfirm, setPwConfirm] = useState<{
+    title: string;
+    description: ReactNode;
+    confirmLabel: string;
+    confirmClassName?: string;
+    action: () => void | Promise<void>;
+  } | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
   const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
