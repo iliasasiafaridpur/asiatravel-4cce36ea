@@ -324,8 +324,19 @@ export function ModulePage({ module: mod }: Props) {
     return Number(r[name] ?? 0);
   }, [mod]);
 
+  const cancelledCount = useMemo(
+    () => (canCancel ? rows.filter((r) => r.cancelled).length : 0),
+    [rows, canCancel],
+  );
+
   const filtered = useMemo(() => {
     let xs = rows;
+    // বাতিল করা এন্ট্রি সাধারণত চলমান তালিকা থেকে লুকানো থাকে।
+    if (canCancel && !showCancelled) {
+      xs = xs.filter((r) => !r.cancelled);
+    } else if (canCancel && showCancelled) {
+      xs = xs.filter((r) => r.cancelled);
+    }
     if (statusFilter !== "all") {
       xs = xs.filter((r) => (String(r.status ?? "") || (mod.statuses?.[0] ?? "")) === statusFilter);
     }
@@ -345,7 +356,8 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses, canCancel, showCancelled]);
+
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
