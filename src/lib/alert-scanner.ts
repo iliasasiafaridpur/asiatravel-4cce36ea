@@ -29,6 +29,7 @@ type Row = {
   updated_at?: string | null;
   entry_date?: string | null;
   vendor_bought?: string | null;
+  cancelled?: boolean | null;
   // table-specific IDs (only one will be present per row)
   bmet_id?: string | null;
   saudi_id?: string | null;
