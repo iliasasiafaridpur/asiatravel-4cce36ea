@@ -1625,7 +1625,7 @@ export function ModulePage({ module: mod }: Props) {
             </p>
             <div className="space-y-1.5">
               <Label className="text-sm">বাতিলের তারিখ</Label>
-              <DateInput value={cancelDate} onChange={(v) => setCancelDate(v)} />
+              <DateInput value={cancelDate} onChange={(e) => setCancelDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm">বাতিলের কারণ (ঐচ্ছিক)</Label>
