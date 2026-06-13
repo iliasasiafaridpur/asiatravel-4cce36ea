@@ -1208,7 +1208,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel]);
 
   // Smart Search → scroll the main list to the chosen row (panel stays open)
   const scrollToRow = useCallback((row: Row) => {
