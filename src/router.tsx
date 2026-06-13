@@ -72,11 +72,15 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Stale-While-Revalidate: serve cache instantly, refetch in background
-        staleTime: 30_000,
+        // Stale-While-Revalidate: serve cache instantly, refetch only when
+        // the data is actually stale. "always" forced a full refetch on EVERY
+        // page mount + tab focus, which made every navigation feel like a
+        // fresh load. Respecting staleTime serves the cache instantly and
+        // only hits the network in the background when needed.
+        staleTime: 60_000,
         gcTime: 24 * 60 * 60 * 1000, // keep cache for 24h
-        refetchOnMount: "always",
-        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
         refetchOnReconnect: true,
         retry: 1,
       },
