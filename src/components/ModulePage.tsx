@@ -597,6 +597,48 @@ export function ModulePage({ module: mod }: Props) {
     setDeleteRow(null);
   };
 
+  // কাজ বাতিল হিসেবে চিহ্নিত করা — এন্ট্রি ডিলেট না করে রেকর্ড সংরক্ষণ করে।
+  const confirmCancel = async () => {
+    if (!cancelRow) return;
+    setCancelBusy(true);
+    try {
+      const { error } = await supabase
+        .from(mod.table as never)
+        .update({
+          cancelled: true,
+          cancel_reason: cancelReason.trim() || null,
+          cancel_date: cancelDate || todayIso(),
+        } as never)
+        .eq("id", cancelRow.id);
+      if (error) throw error;
+      toast.success(`বাতিল হয়েছে: ${String(cancelRow[mod.idColumn] ?? "")}`);
+      setCancelRow(null);
+      setCancelReason("");
+      setCancelDate(todayIso());
+      await load(false);
+    } catch (e) {
+      toast.error("বাতিল করা যায়নি: " + errMsg(e));
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
+  // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে।
+  const restoreRow = async (r: Row) => {
+    try {
+      const { error } = await supabase
+        .from(mod.table as never)
+        .update({ cancelled: false, cancel_reason: null, cancel_date: null } as never)
+        .eq("id", r.id);
+      if (error) throw error;
+      toast.success(`ফিরিয়ে আনা হয়েছে: ${String(r[mod.idColumn] ?? "")}`);
+      await load(false);
+    } catch (e) {
+      toast.error("ফিরিয়ে আনা যায়নি: " + errMsg(e));
+    }
+  };
+
+
   // Inline status change from the table badge dropdown.
   // Handles vendor prompt for "File Process", auto-dates for "Pending Delivery",
   // and routes through Due Receive when "Delivered" with outstanding balance.
