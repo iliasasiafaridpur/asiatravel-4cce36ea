@@ -456,7 +456,7 @@ function HandoverCard({
   };
 
 
-  // Highlight listener for cross-instance scroll-to (পূর্বের জমা click)
+  // Persistent row selection / highlight (stays yellow until clicking elsewhere)
   const [highlightId, setHighlightId] = useState<string | null>(null);
   // Card-level highlight (when navigated from "MD-কে পাঠানো" list)
   const [cardHighlight, setCardHighlight] = useState(false);
@@ -469,7 +469,6 @@ function HandoverCard({
           const el = document.getElementById(`receipt-row-${id}`);
           if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
-        setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 4000);
       }
     };
     const cardHandler = (e: Event) => {
@@ -489,6 +488,18 @@ function HandoverCard({
       window.removeEventListener("ledger-highlight-handover", cardHandler);
     };
   }, [receipts, handover.id]);
+
+  // Clear the yellow selection whenever the user clicks outside any receipt row.
+  useEffect(() => {
+    if (!highlightId) return;
+    const onDocClick = (ev: MouseEvent) => {
+      const target = ev.target as HTMLElement | null;
+      if (target && target.closest("[data-receipt-row]")) return;
+      setHighlightId(null);
+    };
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [highlightId]);
 
   const scrollToReceipt = (id: string) => {
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
