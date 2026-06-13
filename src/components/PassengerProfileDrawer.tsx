@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES } from "@/lib/modules";
+import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
 import { CheckCircle2, Clock, Circle, ReceiptText, Layers } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
@@ -36,7 +36,9 @@ type RelatedService = {
   entryDate: string | null;
   sold: number;
   received: number;
+  discount: number;
   due: number;
+  row: Row;
 };
 
 const DASH = "—";
@@ -77,9 +79,16 @@ export function PassengerProfileDrawer({
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null; received: number }[]>([]);
   const [related, setRelated] = useState<RelatedService[]>([]);
+  // Which service's tracking timeline is shown — defaults to the current row.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
+
+  // Reset the selected timeline service whenever the drawer opens on a new row.
+  useEffect(() => {
+    setSelectedKey(row?.id ? `${serviceTable}:${row.id}` : null);
+  }, [open, row?.id, serviceTable]);
 
   useEffect(() => {
     if (!open || !row?.id) {
@@ -119,6 +128,7 @@ export function PassengerProfileDrawer({
             const detailParts = [
               r.country_name, r.trip_road, r.visa_type, r.service_name, r.airline,
             ].filter((x) => x !== null && x !== undefined && String(x).trim() !== "");
+            const derivedStatus = m.deriveStatus?.(r) ?? String(r.status ?? "");
             found.push({
               key: `${m.table}:${r.id}`,
               moduleKey: m.key,
@@ -126,12 +136,14 @@ export function PassengerProfileDrawer({
               refId: String(
                 r.ticket_id ?? r.bmet_id ?? r.saudi_id ?? r.kuwait_id ?? r.other_id ?? r.passenger_id ?? r.id,
               ),
-              status: String(r.status ?? ""),
+              status: derivedStatus,
               detail: detailParts.map(String).join(" · "),
               entryDate: (r.entry_date as string) ?? null,
               sold,
               received: recv,
+              discount: disc,
               due: Math.max(0, sold - recv - disc),
+              row: r,
             });
           }
         }),
@@ -243,6 +255,13 @@ export function PassengerProfileDrawer({
   const profit = totalBill - totalDiscount - cost - extraCost;
   const showProfit = (serviceReceived > 0 && cost > 0) || extraSold > 0 || extraCost > 0;
   const profitClass = profit < 0 ? "text-rose-600" : due <= 0 ? "text-emerald-600" : "text-amber-500";
+
+  // Financial Ledger aggregates EVERY service this passenger has (+ extra services).
+  const hasAllServices = related.length > 0;
+  const ledgerBill = (hasAllServices ? related.reduce((s, r) => s + r.sold, 0) : sold) + extraSold;
+  const ledgerReceived = (hasAllServices ? related.reduce((s, r) => s + r.received, 0) : serviceReceived) + extraReceived;
+  const ledgerDiscount = hasAllServices ? related.reduce((s, r) => s + r.discount, 0) : totalDiscount;
+  const ledgerDue = Math.max(0, ledgerBill - ledgerReceived - ledgerDiscount);
   const country =
     (row.country_name as string) || (row.trip_road as string) || (row.sponsor_name as string) || "";
 
@@ -272,11 +291,21 @@ export function PassengerProfileDrawer({
     });
   };
 
-  // Full pipeline timeline from module statuses
-  const pipeline = statusOrder && statusOrder.length > 0 ? statusOrder : [];
+  // The tracking timeline follows whichever service is selected in the list
+  // above. Default to the currently viewed service row.
+  const currentKey = `${serviceTable}:${row.id}`;
+  const activeKey = selectedKey ?? currentKey;
+  const selectedSvc = related.find((s) => s.key === activeKey);
+  const timelineRow: Row = (selectedSvc?.row as Row) ?? row;
+  const timelineModuleKey = selectedSvc?.moduleKey ?? moduleKey;
+  const timelineMod = timelineModuleKey ? moduleByKey(timelineModuleKey) : undefined;
+  const pipeline = timelineMod?.statuses ?? (statusOrder && statusOrder.length > 0 ? statusOrder : []);
+  const timelineStatus = timelineMod?.deriveStatus?.(timelineRow) ?? String(timelineRow.status ?? "");
   const currentIdx = pipeline.findIndex(
-    (s) => s.trim().toLowerCase() === status.trim().toLowerCase(),
+    (s) => s.trim().toLowerCase() === timelineStatus.trim().toLowerCase(),
   );
+  const timelineLabel = selectedSvc?.moduleLabel ?? "";
+  const timelineRefId = selectedSvc?.refId ?? "";
 
   return (
     <>
@@ -346,11 +375,22 @@ export function PassengerProfileDrawer({
                         {related.length}
                       </Badge>
                     </h4>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      যেকোনো সার্ভিসে ক্লিক করুন — নিচে ঐ সার্ভিসের Tracking Timeline দেখাবে।
+                    </p>
                     <div className="space-y-2">
-                      {related.map((s) => (
-                        <div
+                      {related.map((s) => {
+                        const isActive = activeKey === s.key;
+                        return (
+                        <button
+                          type="button"
                           key={s.key}
-                          className="rounded-lg border bg-muted/30 p-3 text-xs"
+                          onClick={() => setSelectedKey(s.key)}
+                          className={`w-full text-left rounded-lg border p-3 text-xs transition-colors ${
+                            isActive
+                              ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                              : "bg-muted/30 hover:border-primary/40"
+                          }`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -380,8 +420,9 @@ export function PassengerProfileDrawer({
                           {s.entryDate ? (
                             <div className="mt-1 text-[10px] text-muted-foreground">{formatDate(s.entryDate)}</div>
                           ) : null}
-                        </div>
-                      ))}
+                        </button>
+                        );
+                      })}
                     </div>
                   </section>
                 </>
@@ -392,15 +433,23 @@ export function PassengerProfileDrawer({
 
               {/* Section B — Timeline: full status pipeline */}
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5">
                   Tracking Timeline
+                  {timelineLabel ? (
+                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary">
+                      {timelineLabel}
+                    </Badge>
+                  ) : null}
                 </h4>
+                {timelineRefId ? (
+                  <div className="text-[10px] font-mono text-muted-foreground mb-3">{timelineRefId}</div>
+                ) : <div className="mb-3" />}
                 {pipeline.length === 0 ? (
                   <div className="text-xs text-muted-foreground italic">No timeline available.</div>
                 ) : (
                   <ol className="relative border-l-2 border-border ml-2 space-y-3">
                     {pipeline.map((stepStatus, i) => {
-                      let dt = dateForStatus(row, stepStatus);
+                      let dt = dateForStatus(timelineRow, stepStatus);
                       const reached = currentIdx >= 0 && i <= currentIdx;
                       const isCurrent = i === currentIdx;
                       // If this step is reached but has no dedicated date,
@@ -409,12 +458,12 @@ export function PassengerProfileDrawer({
                       // always show a date instead of just "Completed".
                       if (!dt && reached) {
                         for (let j = i + 1; j <= currentIdx; j++) {
-                          const d = dateForStatus(row, pipeline[j]);
+                          const d = dateForStatus(timelineRow, pipeline[j]);
                           if (d) { dt = d; break; }
                         }
                         if (!dt) {
                           for (let j = i - 1; j >= 0; j--) {
-                            const d = dateForStatus(row, pipeline[j]);
+                            const d = dateForStatus(timelineRow, pipeline[j]);
                             if (d) { dt = d; break; }
                           }
                         }
@@ -438,10 +487,10 @@ export function PassengerProfileDrawer({
                           </span>
                           <div className={`text-sm font-medium ${isCurrent ? "text-primary" : ""}`}>
                             {stepStatus}
-                            {stepStatus.toLowerCase() === "file process" && row.vendor_bought ? (
+                            {stepStatus.toLowerCase() === "file process" && timelineRow.vendor_bought ? (
                               <span className="text-muted-foreground font-normal">
                                 {" "}
-                                — {String(row.vendor_bought)}
+                                — {String(timelineRow.vendor_bought)}
                               </span>
                             ) : null}
                           </div>
@@ -475,37 +524,59 @@ export function PassengerProfileDrawer({
                   Financial Ledger
                 </h4>
 
-                {/* Sales summary — combined customer account (service + extra services) */}
+                {/* Sales summary — combined account across ALL of this passenger's services (+ extras) */}
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                  {extraSold > 0 ? (
+                  {/* Per-service bill breakdown so every service's bill is visible here */}
+                  {hasAllServices && related.length > 1 ? (
+                    <div className="space-y-1.5 pb-1">
+                      {related.map((s) => (
+                        <div key={s.key} className="flex items-baseline justify-between text-xs">
+                          <span className="text-muted-foreground truncate mr-2">
+                            {s.moduleLabel}
+                            <span className="font-mono ml-1 opacity-70">{s.refId}</span>
+                          </span>
+                          <span className="tabular-nums font-medium shrink-0">{fmtMoney(s.sold)}</span>
+                        </div>
+                      ))}
+                      {extraSold > 0 ? (
+                        <div className="flex items-baseline justify-between text-xs">
+                          <span className="text-fuchsia-600 dark:text-fuchsia-400">✨ Extra Service</span>
+                          <span className="tabular-nums font-medium text-fuchsia-600 dark:text-fuchsia-400">{fmtMoney(extraSold)}</span>
+                        </div>
+                      ) : null}
+                      <div className="border-t pt-2">
+                        <Line label="Total Bill (সকল সার্ভিস)" value={fmtMoney(ledgerBill)} bold />
+                      </div>
+                    </div>
+                  ) : extraSold > 0 ? (
                     <>
                       <Line label="Main Service Bill" value={fmtMoney(sold)} className="text-muted-foreground" />
                       <Line label="✨ Extra Service Bill" value={fmtMoney(extraSold)} className="text-fuchsia-600 dark:text-fuchsia-400" />
                       <div className="border-t pt-2">
-                        <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                        <Line label="Total Bill" value={fmtMoney(ledgerBill)} bold />
                       </div>
                     </>
                   ) : (
-                    <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                    <Line label="Total Bill" value={fmtMoney(ledgerBill)} bold />
                   )}
                   <Line
                     label="Total Received"
-                    value={fmtMoney(totalReceived)}
+                    value={fmtMoney(ledgerReceived)}
                     className="text-emerald-600"
                   />
-                  {totalDiscount > 0 ? (
+                  {ledgerDiscount > 0 ? (
                     <Line
                       label="Discount Given"
-                      value={fmtMoney(totalDiscount)}
+                      value={fmtMoney(ledgerDiscount)}
                       className="text-amber-600"
                     />
                   ) : null}
                   <div className="border-t pt-2 flex items-baseline justify-between">
                     <span className="text-sm font-semibold">Outstanding Due</span>
                     <span
-                      className={`text-lg font-bold tabular-nums ${due > 0 ? "text-rose-600" : "text-emerald-600"}`}
+                      className={`text-lg font-bold tabular-nums ${ledgerDue > 0 ? "text-rose-600" : "text-emerald-600"}`}
                     >
-                      {fmtMoney(due)}
+                      {fmtMoney(ledgerDue)}
                     </span>
                   </div>
                   {extraDue > 0 ? (
@@ -514,6 +585,7 @@ export function PassengerProfileDrawer({
                     </div>
                   ) : null}
                 </div>
+
 
                 {/* Cost / Profit — separated */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
