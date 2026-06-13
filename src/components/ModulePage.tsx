@@ -611,13 +611,7 @@ export function ModulePage({ module: mod }: Props) {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleteRow) return;
-    const { error } = await supabase.from(mod.table as never).delete().eq("id", deleteRow.id);
-    if (error) toast.error("ডিলিট করতে সমস্যা: " + error.message);
-    else { toast.success("ডিলিট হয়েছে"); await load(); }
-    setDeleteRow(null);
-  };
+
 
   // কাজ বাতিল হিসেবে চিহ্নিত করা — এন্ট্রি ডিলেট না করে রেকর্ড সংরক্ষণ করে।
   // বাতিল কনফার্ম করতে অবশ্যই user-এর পাসওয়ার্ড দিতে হবে।
