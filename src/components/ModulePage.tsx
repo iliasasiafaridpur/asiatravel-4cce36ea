@@ -1612,6 +1612,41 @@ export function ModulePage({ module: mod }: Props) {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* কাজ বাতিল / ফেরত ডায়ালগ */}
+      <Dialog open={!!cancelRow} onOpenChange={(o) => { if (!o) setCancelRow(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>কাজ বাতিল / ফেরত</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{String(cancelRow?.passenger_name ?? "")}</span>
+              {" "}({String(cancelRow?.[mod.idColumn] ?? "")}) — এন্ট্রি ডিলেট হবে না, শুধু "বাতিল" হিসেবে চিহ্নিত হবে এবং চলমান কাজের তালিকা থেকে সরে যাবে।
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-sm">বাতিলের তারিখ</Label>
+              <DateInput value={cancelDate} onChange={(v) => setCancelDate(v)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">বাতিলের কারণ (ঐচ্ছিক)</Label>
+              <Textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="যেমন: যাত্রী কাজ ফেরত নিয়ে গেছেন"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelRow(null)} disabled={cancelBusy}>ফিরে যান</Button>
+            <Button onClick={confirmCancel} disabled={cancelBusy} className="bg-amber-600 hover:bg-amber-700 text-white">
+              {cancelBusy ? "প্রসেস হচ্ছে..." : "বাতিল করুন"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <DueReceiveDialog
         open={!!duePreselect}
         onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
