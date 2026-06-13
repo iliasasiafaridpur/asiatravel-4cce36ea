@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDate, statusBadgeClass } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, ReceiptText } from "lucide-react";
+import { formatDate, statusBadgeClass, MODULES } from "@/lib/modules";
+import { CheckCircle2, Clock, Circle, ReceiptText, Layers } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
@@ -22,6 +22,21 @@ type Receipt = {
   remarks: string | null;
   received_by_name: string | null;
   approval_status: string | null;
+};
+
+// A service for the SAME passenger (matched by passport / name) but in a
+// different module row — so the profile shows the passenger's full footprint.
+type RelatedService = {
+  key: string;
+  moduleKey: string;
+  moduleLabel: string;
+  refId: string;
+  status: string;
+  detail: string;
+  entryDate: string | null;
+  sold: number;
+  received: number;
+  due: number;
 };
 
 const DASH = "—";
@@ -61,6 +76,7 @@ export function PassengerProfileDrawer({
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [extras, setExtras] = useState<{ id: string; service_name: string; service_price: number; vendor_cost: number; vendor_name: string | null; notes: string | null; received: number }[]>([]);
+  const [related, setRelated] = useState<RelatedService[]>([]);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
@@ -69,9 +85,56 @@ export function PassengerProfileDrawer({
     if (!open || !row?.id) {
       setReceipts([]);
       setExtras([]);
+      setRelated([]);
       return;
     }
     let cancelled = false;
+    // Load OTHER services for the same passenger across ALL modules
+    // (matched by passport when available, otherwise by name) so a "Self"
+    // passenger who has e.g. an Air Ticket AND a BMET card shows both here.
+    (async () => {
+      const passport = String(row.passport ?? "").trim();
+      const name = String(row.passenger_name ?? "").trim();
+      if (!passport && !name) {
+        if (!cancelled) setRelated([]);
+        return;
+      }
+      const found: RelatedService[] = [];
+      await Promise.all(
+        MODULES.map(async (m) => {
+          let q = supabase.from(m.table as never).select("*").limit(50);
+          q = passport ? q.eq("passport", passport) : q.eq("passenger_name", name);
+          const { data } = await q;
+          for (const r of ((data as Row[] | null) ?? [])) {
+            // Skip the row we're already viewing.
+            if (m.table === serviceTable && r.id === row.id) continue;
+            const sold = Number(r.sold_price ?? 0);
+            const recv = Number(r.received ?? r.received_amount ?? 0);
+            const disc = Number(r.discount_amount ?? 0);
+            const detailParts = [
+              r.country_name, r.trip_road, r.visa_type, r.service_name, r.airline,
+            ].filter((x) => x !== null && x !== undefined && String(x).trim() !== "");
+            found.push({
+              key: `${m.table}:${r.id}`,
+              moduleKey: m.key,
+              moduleLabel: m.short,
+              refId: String(
+                r.ticket_id ?? r.bmet_id ?? r.saudi_id ?? r.kuwait_id ?? r.other_id ?? r.passenger_id ?? r.id,
+              ),
+              status: String(r.status ?? ""),
+              detail: detailParts.map(String).join(" · "),
+              entryDate: (r.entry_date as string) ?? null,
+              sold,
+              received: recv,
+              due: Math.max(0, sold - recv - disc),
+            });
+          }
+        }),
+      );
+      found.sort((a, b) => String(b.entryDate ?? "").localeCompare(String(a.entryDate ?? "")));
+      if (!cancelled) setRelated(found);
+    })();
+
     // Load extra services attached to this service row (passenger bill + vendor cost),
     // and how much of each the customer has already paid (tracked on the extra_services row).
     (async () => {
@@ -266,7 +329,61 @@ export function PassengerProfileDrawer({
                 </div>
               </section>
 
+              {/* Section A2 — Other services for the same passenger (cross-module) */}
+              {related.length > 0 && (
+                <>
+                  <Separator />
+                  <section>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Layers className="h-3.5 w-3.5" />
+                      এই যাত্রীর অন্যান্য সার্ভিস
+                      <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5">
+                        {related.length}
+                      </Badge>
+                    </h4>
+                    <div className="space-y-2">
+                      {related.map((s) => (
+                        <div
+                          key={s.key}
+                          className="rounded-lg border bg-muted/30 p-3 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary shrink-0">
+                                {s.moduleLabel}
+                              </Badge>
+                              <span className="font-mono text-[11px] text-muted-foreground truncate">
+                                {s.refId}
+                              </span>
+                            </div>
+                            {s.status ? (
+                              <Badge variant="outline" className={`shrink-0 text-[10px] py-0 px-1.5 ${statusBadgeClass(s.status)}`}>
+                                {s.status}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          {s.detail ? (
+                            <div className="mt-1 text-muted-foreground truncate">{s.detail}</div>
+                          ) : null}
+                          <div className="mt-1.5 flex items-center justify-between gap-2 tabular-nums">
+                            <span>Bill: <span className="font-semibold">{fmtMoney(s.sold)}</span></span>
+                            <span className="text-emerald-600">Received: {fmtMoney(s.received)}</span>
+                            <span className={s.due > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}>
+                              Due: {fmtMoney(s.due)}
+                            </span>
+                          </div>
+                          {s.entryDate ? (
+                            <div className="mt-1 text-[10px] text-muted-foreground">{formatDate(s.entryDate)}</div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
               <Separator />
+
 
               {/* Section B — Timeline: full status pipeline */}
               <section>
