@@ -175,6 +175,9 @@ export type Database = {
           agency_sold: string | null
           attested_date: string | null
           bmet_id: string
+          cancel_date: string | null
+          cancel_reason: string | null
+          cancelled: boolean
           cost_price: number | null
           country_name: string | null
           created_at: string
@@ -203,6 +206,9 @@ export type Database = {
           agency_sold?: string | null
           attested_date?: string | null
           bmet_id: string
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           country_name?: string | null
           created_at?: string
@@ -231,6 +237,9 @@ export type Database = {
           agency_sold?: string | null
           attested_date?: string | null
           bmet_id?: string
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           country_name?: string | null
           created_at?: string
@@ -608,6 +617,9 @@ export type Database = {
       kuwait_visas: {
         Row: {
           agency_sold: string | null
+          cancel_date: string | null
+          cancel_reason: string | null
+          cancelled: boolean
           cost_price: number | null
           created_at: string
           created_by: string | null
@@ -636,6 +648,9 @@ export type Database = {
         }
         Insert: {
           agency_sold?: string | null
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -664,6 +679,9 @@ export type Database = {
         }
         Update: {
           agency_sold?: string | null
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -976,6 +994,9 @@ export type Database = {
           bmet_finger: boolean | null
           bmet_status: string | null
           bmet_training: boolean | null
+          cancel_date: string | null
+          cancel_reason: string | null
+          cancelled: boolean
           cost_price: number | null
           created_at: string
           created_by: string | null
@@ -1016,6 +1037,9 @@ export type Database = {
           bmet_finger?: boolean | null
           bmet_status?: string | null
           bmet_training?: boolean | null
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -1056,6 +1080,9 @@ export type Database = {
           bmet_finger?: boolean | null
           bmet_status?: string | null
           bmet_training?: boolean | null
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
