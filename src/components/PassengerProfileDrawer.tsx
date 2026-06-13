@@ -433,15 +433,23 @@ export function PassengerProfileDrawer({
 
               {/* Section B — Timeline: full status pipeline */}
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5">
                   Tracking Timeline
+                  {timelineLabel ? (
+                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary">
+                      {timelineLabel}
+                    </Badge>
+                  ) : null}
                 </h4>
+                {timelineRefId ? (
+                  <div className="text-[10px] font-mono text-muted-foreground mb-3">{timelineRefId}</div>
+                ) : <div className="mb-3" />}
                 {pipeline.length === 0 ? (
                   <div className="text-xs text-muted-foreground italic">No timeline available.</div>
                 ) : (
                   <ol className="relative border-l-2 border-border ml-2 space-y-3">
                     {pipeline.map((stepStatus, i) => {
-                      let dt = dateForStatus(row, stepStatus);
+                      let dt = dateForStatus(timelineRow, stepStatus);
                       const reached = currentIdx >= 0 && i <= currentIdx;
                       const isCurrent = i === currentIdx;
                       // If this step is reached but has no dedicated date,
@@ -450,12 +458,12 @@ export function PassengerProfileDrawer({
                       // always show a date instead of just "Completed".
                       if (!dt && reached) {
                         for (let j = i + 1; j <= currentIdx; j++) {
-                          const d = dateForStatus(row, pipeline[j]);
+                          const d = dateForStatus(timelineRow, pipeline[j]);
                           if (d) { dt = d; break; }
                         }
                         if (!dt) {
                           for (let j = i - 1; j >= 0; j--) {
-                            const d = dateForStatus(row, pipeline[j]);
+                            const d = dateForStatus(timelineRow, pipeline[j]);
                             if (d) { dt = d; break; }
                           }
                         }
