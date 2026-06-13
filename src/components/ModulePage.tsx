@@ -1570,6 +1570,17 @@ export function ModulePage({ module: mod }: Props) {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          {canCancel && (
+                            r.cancelled ? (
+                              <Button variant="ghost" size="icon" title="বাতিল ফিরিয়ে আনুন" onClick={() => restoreRow(r)}>
+                                <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon" title="কাজ বাতিল / ফেরত" onClick={() => { setCancelReason(""); setCancelDate(todayIso()); setCancelRow(r); }}>
+                                <Ban className="h-3.5 w-3.5 text-amber-600" />
+                              </Button>
+                            )
+                          )}
                           <Button variant="ghost" size="icon" onClick={() => {
                             if (profile?.role !== "admin") {
                               toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
