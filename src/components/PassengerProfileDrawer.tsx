@@ -524,37 +524,59 @@ export function PassengerProfileDrawer({
                   Financial Ledger
                 </h4>
 
-                {/* Sales summary — combined customer account (service + extra services) */}
+                {/* Sales summary — combined account across ALL of this passenger's services (+ extras) */}
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                  {extraSold > 0 ? (
+                  {/* Per-service bill breakdown so every service's bill is visible here */}
+                  {hasAllServices && related.length > 1 ? (
+                    <div className="space-y-1.5 pb-1">
+                      {related.map((s) => (
+                        <div key={s.key} className="flex items-baseline justify-between text-xs">
+                          <span className="text-muted-foreground truncate mr-2">
+                            {s.moduleLabel}
+                            <span className="font-mono ml-1 opacity-70">{s.refId}</span>
+                          </span>
+                          <span className="tabular-nums font-medium shrink-0">{fmtMoney(s.sold)}</span>
+                        </div>
+                      ))}
+                      {extraSold > 0 ? (
+                        <div className="flex items-baseline justify-between text-xs">
+                          <span className="text-fuchsia-600 dark:text-fuchsia-400">✨ Extra Service</span>
+                          <span className="tabular-nums font-medium text-fuchsia-600 dark:text-fuchsia-400">{fmtMoney(extraSold)}</span>
+                        </div>
+                      ) : null}
+                      <div className="border-t pt-2">
+                        <Line label="Total Bill (সকল সার্ভিস)" value={fmtMoney(ledgerBill)} bold />
+                      </div>
+                    </div>
+                  ) : extraSold > 0 ? (
                     <>
                       <Line label="Main Service Bill" value={fmtMoney(sold)} className="text-muted-foreground" />
                       <Line label="✨ Extra Service Bill" value={fmtMoney(extraSold)} className="text-fuchsia-600 dark:text-fuchsia-400" />
                       <div className="border-t pt-2">
-                        <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                        <Line label="Total Bill" value={fmtMoney(ledgerBill)} bold />
                       </div>
                     </>
                   ) : (
-                    <Line label="Total Bill" value={fmtMoney(totalBill)} bold />
+                    <Line label="Total Bill" value={fmtMoney(ledgerBill)} bold />
                   )}
                   <Line
                     label="Total Received"
-                    value={fmtMoney(totalReceived)}
+                    value={fmtMoney(ledgerReceived)}
                     className="text-emerald-600"
                   />
-                  {totalDiscount > 0 ? (
+                  {ledgerDiscount > 0 ? (
                     <Line
                       label="Discount Given"
-                      value={fmtMoney(totalDiscount)}
+                      value={fmtMoney(ledgerDiscount)}
                       className="text-amber-600"
                     />
                   ) : null}
                   <div className="border-t pt-2 flex items-baseline justify-between">
                     <span className="text-sm font-semibold">Outstanding Due</span>
                     <span
-                      className={`text-lg font-bold tabular-nums ${due > 0 ? "text-rose-600" : "text-emerald-600"}`}
+                      className={`text-lg font-bold tabular-nums ${ledgerDue > 0 ? "text-rose-600" : "text-emerald-600"}`}
                     >
-                      {fmtMoney(due)}
+                      {fmtMoney(ledgerDue)}
                     </span>
                   </div>
                   {extraDue > 0 ? (
@@ -563,6 +585,7 @@ export function PassengerProfileDrawer({
                     </div>
                   ) : null}
                 </div>
+
 
                 {/* Cost / Profit — separated */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
