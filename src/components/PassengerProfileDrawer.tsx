@@ -36,7 +36,9 @@ type RelatedService = {
   entryDate: string | null;
   sold: number;
   received: number;
+  discount: number;
   due: number;
+  row: Row;
 };
 
 const DASH = "—";
