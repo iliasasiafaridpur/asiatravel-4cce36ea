@@ -307,6 +307,17 @@ export function PassengerProfileDrawer({
   const timelineLabel = selectedSvc?.moduleLabel ?? "";
   const timelineRefId = selectedSvc?.refId ?? "";
 
+  // Cost Price follows the selected service (same as the timeline above).
+  const timelineIsTicket = timelineModuleKey === "tickets";
+  const timelineIsTicketBook =
+    timelineIsTicket && String(timelineRow.status ?? "").toUpperCase() === "BOOK";
+  const selectedCost = timelineIsTicketBook ? 0 : Number(timelineRow.cost_price ?? 0);
+  const selectedCostLabel = selectedSvc
+    ? `${selectedSvc.moduleLabel}${selectedSvc.refId ? ` ${selectedSvc.refId}` : ""}`
+    : moduleKey
+      ? moduleByKey(moduleKey)?.short ?? ""
+      : "";
+
   return (
     <>
       <ReceiptDialog
