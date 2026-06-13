@@ -598,13 +598,15 @@ export function PassengerProfileDrawer({
                 </div>
 
 
-                {/* Cost / Profit — separated */}
+                {/* Cost / Profit — separated. Cost Price follows the selected service above. */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  {!isTicketBook ? (
+                  {!timelineIsTicketBook ? (
                     <div className="rounded-lg border bg-background p-3">
-                      <div className="text-[11px] text-muted-foreground">Cost Price</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Cost Price{selectedCostLabel ? ` · ${selectedCostLabel}` : ""}
+                      </div>
                       <div className="mt-0.5 text-sm font-semibold tabular-nums">
-                        {fmtMoney(cost)}
+                        {fmtMoney(selectedCost)}
                       </div>
                     </div>
                   ) : null}
