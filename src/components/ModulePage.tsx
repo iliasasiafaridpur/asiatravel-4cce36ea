@@ -53,6 +53,9 @@ const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
   others: { recvCol: "received_amount", serviceType: "Other" },
 };
 
+// টেবিল যেগুলোতে "কাজ বাতিল / ফেরত" (soft-cancel) সুবিধা আছে
+const CANCELABLE_TABLES = new Set(["bmet_cards", "saudi_visas", "kuwait_visas"]);
+
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
   tickets: "tickets",
