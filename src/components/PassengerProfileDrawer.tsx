@@ -307,6 +307,17 @@ export function PassengerProfileDrawer({
   const timelineLabel = selectedSvc?.moduleLabel ?? "";
   const timelineRefId = selectedSvc?.refId ?? "";
 
+  // Cost Price follows the selected service (same as the timeline above).
+  const timelineIsTicket = timelineModuleKey === "tickets";
+  const timelineIsTicketBook =
+    timelineIsTicket && String(timelineRow.status ?? "").toUpperCase() === "BOOK";
+  const selectedCost = timelineIsTicketBook ? 0 : Number(timelineRow.cost_price ?? 0);
+  const selectedCostLabel = selectedSvc
+    ? `${selectedSvc.moduleLabel}${selectedSvc.refId ? ` ${selectedSvc.refId}` : ""}`
+    : moduleKey
+      ? moduleByKey(moduleKey)?.short ?? ""
+      : "";
+
   return (
     <>
       <ReceiptDialog
@@ -587,13 +598,15 @@ export function PassengerProfileDrawer({
                 </div>
 
 
-                {/* Cost / Profit — separated */}
+                {/* Cost / Profit — separated. Cost Price follows the selected service above. */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  {!isTicketBook ? (
+                  {!timelineIsTicketBook ? (
                     <div className="rounded-lg border bg-background p-3">
-                      <div className="text-[11px] text-muted-foreground">Cost Price</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Cost Price{selectedCostLabel ? ` · ${selectedCostLabel}` : ""}
+                      </div>
                       <div className="mt-0.5 text-sm font-semibold tabular-nums">
-                        {fmtMoney(cost)}
+                        {fmtMoney(selectedCost)}
                       </div>
                     </div>
                   ) : null}
