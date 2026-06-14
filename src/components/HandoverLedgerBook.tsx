@@ -310,7 +310,7 @@ export function HandoverLedgerInline({
         return false;
       });
     });
-  }, [handovers, search, receiptsByH, expensesByH, serviceMap]);
+  }, [handovers, search, startDate, endDate, receiptsByH, expensesByH, serviceMap]);
 
   return (
     <div className="flex flex-col gap-3">
