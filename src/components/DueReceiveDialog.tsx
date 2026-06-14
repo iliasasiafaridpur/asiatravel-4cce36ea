@@ -416,7 +416,7 @@ export function DueReceiveDialog({
           total_bill: 0,
           received_amount: excess,
           advance_applied: 0,
-          payment_method: method,
+          payment_method: multiMode ? "Multi" : method,
           source_table: "due_excess",
           source_id: selected.id,
           remarks: `Advance Received · Due Receive excess from ${selected.refId} (${selected.service.type})${remarks ? " · " + remarks : ""}`,
