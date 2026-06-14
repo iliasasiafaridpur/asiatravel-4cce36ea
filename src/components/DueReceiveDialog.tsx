@@ -345,10 +345,10 @@ export function DueReceiveDialog({
         upd,
       );
 
-      // 2) insert payment_receipts entry — record the full cash received
-      let receiptId: string;
+      // 2) insert payment_receipts entries — one per payment method.
+      let baseReceiptId: string;
       try {
-        receiptId = await generateNextId({
+        baseReceiptId = await generateNextId({
           key: "_rcpt", label: "", short: "", table: "payment_receipts",
           idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
         });
@@ -357,32 +357,37 @@ export function DueReceiveDialog({
         const d = new Date();
         const mm = String(d.getMonth() + 1).padStart(2, "0");
         const yy = String(d.getFullYear()).slice(-2);
-        receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+        baseReceiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
       }
 
       const remarkParts: string[] = [];
       if (remarks) remarkParts.push(remarks);
       if (disc > 0) remarkParts.push(`Discount ৳${disc.toLocaleString()} প্রয়োগ`);
       if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
+      if (payments.length > 1) remarkParts.push(`একাধিক মেথড: ${payments.map((p) => `${p.method} ৳${p.amount.toLocaleString()}`).join(", ")}`);
       const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
-      const insRes = amt > 0
-        ? await resilientInsert("payment_receipts", {
-            receipt_id: receiptId,
-            entry_date: today,
-            service_type: selected.service.type,
-            service_table: selected.service.table,
-            service_row_id: selected.id,
-            ref_id: selected.refId,
-            passenger_name: selected.passenger,
-            amount: amt,
-            method,
-            source: "due",
-            remarks: receiptRemarks,
-            received_by: user.id,
-            received_by_name: me,
-          })
-        : { offline: false };
+      let receiptsOffline = false;
+      for (let i = 0; i < payments.length; i++) {
+        const p = payments[i];
+        const res = await resilientInsert("payment_receipts", {
+          receipt_id: payments.length > 1 ? `${baseReceiptId}-${i + 1}` : baseReceiptId,
+          entry_date: today,
+          service_type: selected.service.type,
+          service_table: selected.service.table,
+          service_row_id: selected.id,
+          ref_id: selected.refId,
+          passenger_name: selected.passenger,
+          amount: p.amount,
+          method: p.method,
+          source: "due",
+          remarks: receiptRemarks,
+          received_by: user.id,
+          received_by_name: me,
+        });
+        if (res.offline) receiptsOffline = true;
+      }
+      const insRes = { offline: receiptsOffline };
 
       // 3) if excess → route to agency_ledger as Advance Received
       let ledgerOffline = false;
