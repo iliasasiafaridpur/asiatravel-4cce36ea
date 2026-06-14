@@ -1757,6 +1757,14 @@ export function ModulePage({ module: mod }: Props) {
         statusOrder={mod.statuses}
       />
 
+      <RowDetailDrawer
+        open={!!detailRow}
+        onOpenChange={(v) => { if (!v) setDetailRow(null); }}
+        row={detailRow}
+        module={mod}
+      />
+
+
       <SmartSearchPanel
         open={smartOpen}
         onClose={() => setSmartOpen(false)}
