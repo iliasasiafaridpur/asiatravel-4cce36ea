@@ -677,9 +677,9 @@ export function DueReceiveDialog({
                   {Number(discount) > 0 && <> · Discount: ৳{Number(discount).toLocaleString()} · Effective Due: ৳{Math.max(0, selected.due - Number(discount)).toLocaleString()}</>}
                   {" "}— অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
                 </div>
-                {Number(amount) > Math.max(0, selected.due - (Number(discount) || 0)) && (
+                {enteredTotal > Math.max(0, selected.due - (Number(discount) || 0)) && (
                   <p className="text-[11px] text-amber-600 font-semibold -mt-2">
-                    অতিরিক্ত: ৳{(Number(amount) - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
+                    অতিরিক্ত: ৳{(enteredTotal - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
                   </p>
                 )}
                 <div>
