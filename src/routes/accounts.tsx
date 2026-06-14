@@ -517,7 +517,8 @@ ${node.innerHTML.replace(
   // TEMP: Admin has full master access — no redirect.
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto pb-8">
+    <div className="relative z-10 space-y-4 max-w-6xl mx-auto pb-8">
+      <PageWatermark text="ACCOUNTS" size="sm" />
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
