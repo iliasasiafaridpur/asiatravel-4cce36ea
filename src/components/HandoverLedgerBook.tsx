@@ -133,6 +133,8 @@ export function HandoverLedgerInline({
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
