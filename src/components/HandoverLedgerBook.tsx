@@ -285,8 +285,11 @@ export function HandoverLedgerInline({
       const st = (h.status ?? "pending").toLowerCase();
       if (st === "cancelled" || st === "canceled") return false;
       if (st === "pending") {
-        return (receiptsByH[h.id]?.length ?? 0) > 0 || (expensesByH[h.id]?.length ?? 0) > 0;
+        if (!((receiptsByH[h.id]?.length ?? 0) > 0 || (expensesByH[h.id]?.length ?? 0) > 0)) return false;
       }
+      const d = String(h.entry_date ?? "").slice(0, 10);
+      if (startDate && d < startDate) return false;
+      if (endDate && d > endDate) return false;
       return true;
     });
     if (!q) return activeHandovers;
