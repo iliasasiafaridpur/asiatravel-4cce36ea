@@ -1249,15 +1249,44 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel]);
 
+  // Mark a row as "the one I am working on": remember scroll position, set the
+  // persistent red selection, and keep it visible. Used for status change, due
+  // receive, view, edit, search — so the user never loses their place.
+  const selectRow = useCallback((id: string) => {
+    workScrollRef.current = window.scrollY;
+    setSelectedId(id);
+  }, []);
+
+  // After any action overlay (edit / due / status / view) closes, restore the
+  // list scroll position and gently bring the worked row back into view.
+  const anyOverlay =
+    openForm || !!duePreselect || !!extraDuePreselect || !!statusChange ||
+    !!profileRow || !!detailRow || !!cancelRow || !!pwConfirm;
+  const prevOverlayRef = useRef(anyOverlay);
+  useEffect(() => {
+    if (prevOverlayRef.current && !anyOverlay) {
+      const y = workScrollRef.current;
+      const restore = () => {
+        if (y > 0) window.scrollTo(0, y);
+        if (selectedId) {
+          const el = document.getElementById(`row-${selectedId}`);
+          el?.scrollIntoView({ block: "nearest" });
+        }
+      };
+      requestAnimationFrame(() => requestAnimationFrame(restore));
+      window.setTimeout(restore, 150);
+      window.setTimeout(restore, 350);
+    }
+    prevOverlayRef.current = anyOverlay;
+  }, [anyOverlay, selectedId]);
+
   // Smart Search → scroll the main list to the chosen row (panel stays open)
   const scrollToRow = useCallback((row: Row) => {
+    selectRow(row.id);
     const el = document.getElementById(`row-${row.id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setHighlightId(row.id);
-      window.setTimeout(() => setHighlightId((h) => (h === row.id ? null : h)), 2500);
-    }
-  }, []);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selectRow]);
+
 
 
 
