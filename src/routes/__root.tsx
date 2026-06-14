@@ -200,6 +200,24 @@ function RootComponent() {
 
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
+  // GLOBAL "last-clicked row" highlight — works on every page (all module data
+  // pages, customer/vendor ledgers, my accounts, etc.). Whenever any tinted row
+  // is clicked, mark it active and clear the previous one. Persists until
+  // another row is clicked (or the list re-renders).
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const row = target.closest('[class*="row-tint-"]');
+      document.querySelectorAll(".row-active").forEach((el) => {
+        if (el !== row) el.classList.remove("row-active");
+      });
+      if (row) row.classList.add("row-active");
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthGate>

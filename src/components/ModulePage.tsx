@@ -35,6 +35,7 @@ import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueRece
 import { ExtraDueReceiveDialog, type ExtraDuePreselect } from "@/components/ExtraDueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+import { RowDetailDrawer } from "@/components/RowDetailDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
@@ -161,6 +162,7 @@ export function ModulePage({ module: mod }: Props) {
   const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
+  const [detailRow, setDetailRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -1647,7 +1649,7 @@ export function ModulePage({ module: mod }: Props) {
                       )}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" title="সকল তথ্য দেখুন" onClick={() => setProfileRow(r)}>
+                          <Button variant="ghost" size="icon" title="সকল তথ্য দেখুন" onClick={() => setDetailRow(r)}>
                             <Eye className="h-3.5 w-3.5 text-primary" />
                           </Button>
                           <Button variant="ghost" size="icon" title="এডিট করুন" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -1754,6 +1756,14 @@ export function ModulePage({ module: mod }: Props) {
         moduleKey={mod.key}
         statusOrder={mod.statuses}
       />
+
+      <RowDetailDrawer
+        open={!!detailRow}
+        onOpenChange={(v) => { if (!v) setDetailRow(null); }}
+        row={detailRow}
+        module={mod}
+      />
+
 
       <SmartSearchPanel
         open={smartOpen}
