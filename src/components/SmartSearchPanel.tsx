@@ -58,15 +58,15 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
       passenger: pick(r, ["passenger_name"]),
       country: pick(r, ["country_name", "country_route", "trip_road"]),
       agency: pick(r, ["agency_sold"]),
+      // Full searchable text across every field so even one letter finds matches.
+      blob: Object.values(r).map((v) => String(v ?? "")).join(" ").toLowerCase(),
     }));
   }, [rows, idColumn]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return items;
-    return items.filter((it) =>
-      `${it.id} ${it.passenger} ${it.country} ${it.agency}`.toLowerCase().includes(term),
-    );
+    return items.filter((it) => it.blob.includes(term));
   }, [items, q]);
 
   return (

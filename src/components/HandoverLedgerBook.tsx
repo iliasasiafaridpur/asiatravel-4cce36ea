@@ -8,6 +8,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,6 +133,8 @@ export function HandoverLedgerInline({
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
@@ -281,8 +285,11 @@ export function HandoverLedgerInline({
       const st = (h.status ?? "pending").toLowerCase();
       if (st === "cancelled" || st === "canceled") return false;
       if (st === "pending") {
-        return (receiptsByH[h.id]?.length ?? 0) > 0 || (expensesByH[h.id]?.length ?? 0) > 0;
+        if (!((receiptsByH[h.id]?.length ?? 0) > 0 || (expensesByH[h.id]?.length ?? 0) > 0)) return false;
       }
+      const d = String(h.entry_date ?? "").slice(0, 10);
+      if (startDate && d < startDate) return false;
+      if (endDate && d > endDate) return false;
       return true;
     });
     if (!q) return activeHandovers;
@@ -303,7 +310,7 @@ export function HandoverLedgerInline({
         return false;
       });
     });
-  }, [handovers, search, receiptsByH, expensesByH, serviceMap]);
+  }, [handovers, search, startDate, endDate, receiptsByH, expensesByH, serviceMap]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -313,8 +320,8 @@ export function HandoverLedgerInline({
           {title}
         </div>
       )}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 min-w-0 max-w-md">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="relative flex-1 min-w-[160px] max-w-md">
           <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={search}
@@ -323,6 +330,20 @@ export function HandoverLedgerInline({
             className="h-9 pl-7"
           />
         </div>
+        <div className="space-y-1 w-32">
+          <Label className="text-[11px] text-muted-foreground">শুরুর তারিখ</Label>
+          <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 px-2 text-sm" />
+        </div>
+        <div className="space-y-1 w-32">
+          <Label className="text-[11px] text-muted-foreground">শেষ তারিখ</Label>
+          <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 px-2 text-sm" />
+        </div>
+        {(startDate || endDate || search) && (
+          <Button type="button" variant="outline" size="sm" className="h-9 gap-1"
+            onClick={() => { setSearch(""); setStartDate(""); setEndDate(""); }}>
+            <XCircle className="h-3.5 w-3.5" /> রিসেট
+          </Button>
+        )}
         {(() => {
           const visibleCount = (onlyPending
             ? filtered.filter((h) => (h.status ?? "pending") === "pending")

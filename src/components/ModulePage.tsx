@@ -1382,33 +1382,65 @@ export function ModulePage({ module: mod }: Props) {
             </DialogHeader>
             <div className="px-4 sm:px-6 pb-4 pt-3">
               <FormSections mod={mod} form={form} setForm={setForm} isEdit={!!editing} />
-              {supportsExtra && (
+              {supportsExtra ? (
                 <ExtraServiceSection
                   rows={extraServices}
                   setRows={setExtraServices}
                   show={showExtra}
                   setShow={setShowExtra}
                   vendorName={String(form.vendor_bought ?? "")}
+                  headerExtra={
+                    editing && canCancel ? (
+                      editing.cancelled ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1 px-2 text-xs border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
+                          onClick={() => { const r = editing; setOpenForm(false); setEditing(null); requestRestore(r); }}
+                        >
+                          <RotateCcw className="h-3 w-3" /> ফেরত আনুন
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1 px-2 text-xs border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                          onClick={() => {
+                            const r = editing;
+                            setOpenForm(false);
+                            setEditing(null);
+                            setCancelReason("");
+                            setCancelDate(todayIso());
+                            setCancelPw("");
+                            setCancelRow(r);
+                          }}
+                        >
+                          <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
+                        </Button>
+                      )
+                    ) : null
+                  }
                 />
-              )}
-              {editing && canCancel && (
+              ) : editing && canCancel ? (
                 <div className="mt-4 flex justify-end border-t pt-3">
                   {editing.cancelled ? (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1 border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
+                      className="h-7 gap-1 px-2 text-xs border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
                       onClick={() => { const r = editing; setOpenForm(false); setEditing(null); requestRestore(r); }}
                     >
-                      <RotateCcw className="h-3.5 w-3.5" /> বাতিল ফেরত আনুন
+                      <RotateCcw className="h-3 w-3" /> ফেরত আনুন
                     </Button>
                   ) : (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1 border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                      className="h-7 gap-1 px-2 text-xs border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
                       onClick={() => {
                         const r = editing;
                         setOpenForm(false);
@@ -1419,11 +1451,11 @@ export function ModulePage({ module: mod }: Props) {
                         setCancelRow(r);
                       }}
                     >
-                      <Ban className="h-3.5 w-3.5" /> কাজ বাতিল / ফেরত
+                      <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
                     </Button>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
 
 
@@ -1939,12 +1971,13 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   );
 }
 
-export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
+export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, headerExtra }: {
   rows: ExtraServiceRow[];
   setRows: React.Dispatch<React.SetStateAction<ExtraServiceRow[]>>;
   show: boolean;
   setShow: React.Dispatch<React.SetStateAction<boolean>>;
   vendorName: string;
+  headerExtra?: ReactNode;
 }) {
   const addRow = () => {
     setShow(true);
@@ -1960,10 +1993,14 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }
         <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           Extra Service
         </h3>
-        <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
-          <Plus className="h-3.5 w-3.5" /> Extra Service
-        </Button>
+        <div className="flex items-center gap-2">
+          {headerExtra}
+          <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
+            <Plus className="h-3.5 w-3.5" /> Extra Service
+          </Button>
+        </div>
       </div>
+
 
       {show && rows.length > 0 && (
         <div className="space-y-2 mt-2">
@@ -2086,8 +2123,19 @@ function FormField({ field, value, onChange, disabled }: {
   // Compact fixed widths with flex-wrap; textareas take full row.
   // Grid-based layout: each field fills one auto-fill column. Wide fields span more.
   let widthStyle: React.CSSProperties = {};
+  const isAmount = field.type === "number";
   if (field.type === "textarea") {
-    widthStyle = { gridColumn: "1 / -1" };
+    // Notes: half-width instead of full row.
+    widthStyle = { gridColumn: "span 2" };
+  } else if (field.name === "passenger_name") {
+    // Passenger name needs the most room.
+    widthStyle = { gridColumn: "span 3" };
+  } else if (field.name === "airline") {
+    // Airline: compact single column (just fits "Airline").
+    widthStyle = {};
+  } else if (isAmount) {
+    // Money fields: just wide enough for ~8 digits.
+    widthStyle = { gridColumn: "span 1", maxWidth: 130 };
   } else if (field.lookup) {
     widthStyle = { gridColumn: "span 2" };
   }
