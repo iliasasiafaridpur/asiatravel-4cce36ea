@@ -390,7 +390,22 @@ export function StatusChangeDrawer({
   };
 
   const isWarn = direction === "backward";
-  const anchorRef = { current: request.anchorEl ?? null } as React.RefObject<HTMLElement>;
+  // Anchor to the viewport center (not the clicked row) so the popup is always
+  // fully on-screen — rows near the top/bottom edge no longer clip the popup.
+  const anchorRef = {
+    current: {
+      getBoundingClientRect: () => {
+        const w = typeof window !== "undefined" ? window.innerWidth : 0;
+        const h = typeof window !== "undefined" ? window.innerHeight : 0;
+        return {
+          width: 0, height: 0,
+          top: h / 2, bottom: h / 2, left: w / 2, right: w / 2,
+          x: w / 2, y: h / 2,
+          toJSON: () => ({}),
+        } as DOMRect;
+      },
+    },
+  } as React.RefObject<HTMLElement>;
   const row = request.row;
   const passport = String(row.passport ?? "");
   const country = String(row.country_name ?? row.country_route ?? "");
