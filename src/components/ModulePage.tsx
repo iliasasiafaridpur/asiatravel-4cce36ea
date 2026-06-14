@@ -1382,33 +1382,65 @@ export function ModulePage({ module: mod }: Props) {
             </DialogHeader>
             <div className="px-4 sm:px-6 pb-4 pt-3">
               <FormSections mod={mod} form={form} setForm={setForm} isEdit={!!editing} />
-              {supportsExtra && (
+              {supportsExtra ? (
                 <ExtraServiceSection
                   rows={extraServices}
                   setRows={setExtraServices}
                   show={showExtra}
                   setShow={setShowExtra}
                   vendorName={String(form.vendor_bought ?? "")}
+                  headerExtra={
+                    editing && canCancel ? (
+                      editing.cancelled ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1 px-2 text-xs border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
+                          onClick={() => { const r = editing; setOpenForm(false); setEditing(null); requestRestore(r); }}
+                        >
+                          <RotateCcw className="h-3 w-3" /> ফেরত আনুন
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1 px-2 text-xs border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                          onClick={() => {
+                            const r = editing;
+                            setOpenForm(false);
+                            setEditing(null);
+                            setCancelReason("");
+                            setCancelDate(todayIso());
+                            setCancelPw("");
+                            setCancelRow(r);
+                          }}
+                        >
+                          <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
+                        </Button>
+                      )
+                    ) : null
+                  }
                 />
-              )}
-              {editing && canCancel && (
+              ) : editing && canCancel ? (
                 <div className="mt-4 flex justify-end border-t pt-3">
                   {editing.cancelled ? (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1 border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
+                      className="h-7 gap-1 px-2 text-xs border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"
                       onClick={() => { const r = editing; setOpenForm(false); setEditing(null); requestRestore(r); }}
                     >
-                      <RotateCcw className="h-3.5 w-3.5" /> বাতিল ফেরত আনুন
+                      <RotateCcw className="h-3 w-3" /> ফেরত আনুন
                     </Button>
                   ) : (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1 border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                      className="h-7 gap-1 px-2 text-xs border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
                       onClick={() => {
                         const r = editing;
                         setOpenForm(false);
@@ -1419,11 +1451,11 @@ export function ModulePage({ module: mod }: Props) {
                         setCancelRow(r);
                       }}
                     >
-                      <Ban className="h-3.5 w-3.5" /> কাজ বাতিল / ফেরত
+                      <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
                     </Button>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
 
 
