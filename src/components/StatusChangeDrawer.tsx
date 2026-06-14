@@ -74,6 +74,10 @@ export function StatusChangeDrawer({
   const [amount, setAmount] = useState<string>("");
   const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
+  // Multi-method pay: split one due across several methods (only Cash hits the
+  // staff balance; bKash/Bank/etc. still route to MD as before).
+  const [multiMode, setMultiMode] = useState(false);
+  const [methodAmts, setMethodAmts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -118,6 +122,8 @@ export function StatusChangeDrawer({
     setAmount("");
     setDiscount("");
     setMethod("Cash");
+    setMultiMode(false);
+    setMethodAmts({});
     setRemarks("");
   }, [request]);
 
@@ -207,10 +213,23 @@ export function StatusChangeDrawer({
 
       let paid = 0;
       let discAmt = 0;
+      let payments: { method: string; amount: number }[] = [];
       if (receiveDue) {
         discAmt = Math.max(0, Math.min(due, Number(discount) || 0));
         const maxPay = Math.max(0, due - discAmt);
-        paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
+        // Build (method, amount) lines — multi-mode splits across methods.
+        payments = multiMode
+          ? DUE_RECEIVE_METHODS
+              .map((m) => ({ method: m, amount: Number(methodAmts[m]) || 0 }))
+              .filter((p) => p.amount > 0)
+          : (Number(amount) > 0 ? [{ method, amount: Number(amount) }] : []);
+        const enteredTotal = payments.reduce((s, p) => s + p.amount, 0);
+        if (enteredTotal > maxPay) {
+          setSaving(false);
+          toast.error(`সর্বোচ্চ ৳${maxPay.toLocaleString()} নেওয়া যাবে`);
+          return;
+        }
+        paid = enteredTotal;
         if (paid + discAmt <= 0) { setSaving(false); toast.error("Amount বা Discount দিন"); return; }
         // Cash received only; discount is a price adjustment, NOT income.
         patch[request.recvCol] = received + paid;
@@ -278,24 +297,31 @@ export function StatusChangeDrawer({
         // Discount is a non-cash price adjustment (already applied to sold_price)
         // and must NEVER create its own payment_receipts row — otherwise it
         // inflates daily cash income. We append it to the cash receipt's remarks.
-        if (paid > 0) {
-          const rid = await mkReceiptId();
-          firstReceiptId = rid;
+        if (paid > 0 && payments.length > 0) {
+          const baseRid = await mkReceiptId();
+          firstReceiptId = baseRid;
           const discNote = discAmt > 0 ? `Discount ৳${discAmt.toLocaleString()} প্রয়োগ` : "";
-          const combinedRemarks = [remarks, discNote].filter(Boolean).join(" · ") || null;
-          await resilientInsert("payment_receipts", {
-            receipt_id: rid,
-            entry_date: todayIso(),
-            service_type: request.serviceType,
-            service_table: request.table,
-            service_row_id: request.row.id,
-            ref_id: request.refId,
-            passenger_name: String(request.row.passenger_name ?? ""),
-            amount: paid, method, source: "due",
-            remarks: combinedRemarks,
-            received_by: user!.id,
-            received_by_name: me,
-          });
+          const multiNote = payments.length > 1
+            ? `একাধিক মেথড: ${payments.map((p) => `${p.method} ৳${p.amount.toLocaleString()}`).join(", ")}`
+            : "";
+          const combinedRemarks = [remarks, discNote, multiNote].filter(Boolean).join(" · ") || null;
+          // One receipt per method line; only Cash hits the staff balance.
+          for (let i = 0; i < payments.length; i++) {
+            const p = payments[i];
+            await resilientInsert("payment_receipts", {
+              receipt_id: payments.length > 1 ? `${baseRid}-${i + 1}` : baseRid,
+              entry_date: todayIso(),
+              service_type: request.serviceType,
+              service_table: request.table,
+              service_row_id: request.row.id,
+              ref_id: request.refId,
+              passenger_name: String(request.row.passenger_name ?? ""),
+              amount: p.amount, method: p.method, source: "due",
+              remarks: combinedRemarks,
+              received_by: user!.id,
+              received_by_name: me,
+            });
+          }
         }
       }
 
@@ -502,7 +528,8 @@ export function StatusChangeDrawer({
           )}
 
           {isDeliveredWithDue && (() => {
-            const payN = Number(amount) || 0;
+            const multiTotal = DUE_RECEIVE_METHODS.reduce((s, m) => s + (Number(methodAmts[m]) || 0), 0);
+            const payN = multiMode ? multiTotal : (Number(amount) || 0);
             const discN = Number(discount) || 0;
             const remaining = Math.max(0, due - payN - discN);
             return (
@@ -515,37 +542,84 @@ export function StatusChangeDrawer({
                     {" · "}Due <span className="font-semibold text-rose-500 tabular-nums">৳{due.toLocaleString()}</span>
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <div className="space-y-0.5">
-                    <Label className="text-[10px]">Pay *</Label>
-                    <Input className="h-8 text-sm" type="number" inputMode="decimal" value={amount}
-                      onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <Label className="text-[10px] text-amber-600">− Discount</Label>
-                    <Input className="h-8 text-sm text-amber-600" type="number" inputMode="decimal" value={discount}
-                      onChange={(e) => {
-                        const d = e.target.value;
-                        setDiscount(d);
-                        const dn = Math.max(0, Math.min(due, Number(d) || 0));
-                        setAmount(String(Math.max(0, due - dn)));
-                      }} placeholder="0" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <Label className="text-[10px]">Method</Label>
-                    <Select value={method} onValueChange={setMethod}>
-                      <SelectTrigger className="h-8 text-sm px-2"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {DUE_RECEIVE_METHODS.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+
+                {/* Single vs multi-method toggle */}
+                <div className="flex items-center gap-1.5">
+                  <Button type="button" size="sm" variant={multiMode ? "outline" : "default"}
+                    className="h-7 text-[10px] flex-1" onClick={() => setMultiMode(false)}>
+                    একক মেথড
+                  </Button>
+                  <Button type="button" size="sm" variant={multiMode ? "default" : "outline"}
+                    className="h-7 text-[10px] flex-1"
+                    onClick={() => {
+                      setMultiMode(true);
+                      setMethodAmts((prev) => (Object.keys(prev).length ? prev : { Cash: amount || "" }));
+                    }}>
+                    একাধিক মেথডে (Multi)
+                  </Button>
                 </div>
-                {isMdReceivedMethod(method) && (
-                  <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
-                    ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+
+                {!multiMode ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-[10px]">Pay *</Label>
+                        <Input className="h-8 text-sm" type="number" inputMode="decimal" value={amount}
+                          onChange={(e) => setAmount(e.target.value)} placeholder="0" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <Label className="text-[10px] text-amber-600">− Discount</Label>
+                        <Input className="h-8 text-sm text-amber-600" type="number" inputMode="decimal" value={discount}
+                          onChange={(e) => {
+                            const d = e.target.value;
+                            setDiscount(d);
+                            const dn = Math.max(0, Math.min(due, Number(d) || 0));
+                            setAmount(String(Math.max(0, due - dn)));
+                          }} placeholder="0" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <Label className="text-[10px]">Method</Label>
+                        <Select value={method} onValueChange={setMethod}>
+                          <SelectTrigger className="h-8 text-sm px-2"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {DUE_RECEIVE_METHODS.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {isMdReceivedMethod(method) && (
+                      <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
+                        ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="rounded-md border p-2 space-y-1.5">
+                    <p className="text-[10px] font-medium text-muted-foreground">প্রতিটি মেথডে কত টাকা জমা হলো লিখুন:</p>
+                    {DUE_RECEIVE_METHODS.map((m) => (
+                      <div key={m} className="flex items-center gap-1.5">
+                        <Label className="w-20 shrink-0 text-[11px]">{m}</Label>
+                        <Input className="h-7 text-sm" type="number" inputMode="decimal"
+                          value={methodAmts[m] ?? ""}
+                          onChange={(e) => setMethodAmts((prev) => ({ ...prev, [m]: e.target.value }))}
+                          placeholder="0" />
+                        {isMdReceivedMethod(m)
+                          ? <span className="text-[9px] text-amber-600 dark:text-amber-400 whitespace-nowrap w-12">→ MD</span>
+                          : <span className="text-[9px] text-emerald-600 whitespace-nowrap w-12">→ ব্যালেন্স</span>}
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between border-t pt-1.5 text-[11px]">
+                      <span className="font-medium">মোট জমা</span>
+                      <span className="font-bold tabular-nums text-emerald-600">৳{multiTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <Label className="w-20 shrink-0 text-[11px] text-amber-600">− Discount</Label>
+                      <Input className="h-7 text-sm text-amber-600" type="number" inputMode="decimal" value={discount}
+                        onChange={(e) => setDiscount(e.target.value)} placeholder="0" />
+                    </div>
+                    <p className="text-[9px] text-muted-foreground">শুধু Cash আপনার ক্যাশ ব্যালেন্সে যোগ হবে; বাকিগুলো (bKash, Bank ইত্যাদি) আগের মতোই MD-এর কাছে যাবে।</p>
                   </div>
                 )}
                 {(payN > 0 || discN > 0) && (
