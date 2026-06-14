@@ -776,7 +776,7 @@ export function ModulePage({ module: mod }: Props) {
       moduleKey: mod.key,
       anchorEl: anchorEl ?? null,
     });
-  }, [mod]);
+  }, [mod, selectRow]);
 
 
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
