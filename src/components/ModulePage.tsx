@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye, UserRound, Users, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye, UserRound, Users, Building2, X } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -1329,9 +1329,9 @@ export function ModulePage({ module: mod }: Props) {
               <Plus className="h-4 w-4" /> নতুন এন্ট্রি
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 [&>button.absolute]:hidden">
             <DialogHeader className="sticky top-0 z-20 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b px-4 sm:px-6 py-3">
-              <div className="flex items-center justify-between gap-2 pr-12">
+              <div className="flex items-center justify-between gap-2">
                 <DialogTitle className="text-base sm:text-lg truncate">
                   {editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}
                 </DialogTitle>
@@ -1376,6 +1376,16 @@ export function ModulePage({ module: mod }: Props) {
                   >
                     <Save className="h-3.5 w-3.5" />
                     {saving ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setOpenForm(false)}
+                    className="h-8 w-8 shrink-0"
+                    title="বন্ধ করুন"
+                  >
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -2125,14 +2135,14 @@ function FormField({ field, value, onChange, disabled }: {
   let widthStyle: React.CSSProperties = {};
   const isAmount = field.type === "number";
   if (field.type === "textarea") {
-    // Notes: half-width instead of full row.
+    // Notes: half-width, single row height.
     widthStyle = { gridColumn: "span 2" };
   } else if (field.name === "passenger_name") {
-    // Passenger name needs the most room.
-    widthStyle = { gridColumn: "span 3" };
+    // Passenger name: moderate width (half of before).
+    widthStyle = { gridColumn: "span 2" };
   } else if (field.name === "airline") {
-    // Airline: compact single column (just fits "Airline").
-    widthStyle = {};
+    // Airline lookup needs room for its select + add/manage buttons.
+    widthStyle = { gridColumn: "span 2" };
   } else if (isAmount) {
     // Money fields: just wide enough for ~8 digits.
     widthStyle = { gridColumn: "span 1", maxWidth: 130 };
@@ -2147,7 +2157,7 @@ function FormField({ field, value, onChange, disabled }: {
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
-        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={2} className="min-h-[44px]" />
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-9" />
       ) : field.type === "select" ? (
         <Select value={strVal} onValueChange={onChange}>
           <SelectTrigger><SelectValue /></SelectTrigger>
