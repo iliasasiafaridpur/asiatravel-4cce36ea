@@ -1703,7 +1703,7 @@ export function ModulePage({ module: mod }: Props) {
                       )}
                       <TableCell className="text-right p-1">
                         <div className="flex justify-end gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="সকল তথ্য দেখুন" onClick={() => { selectRow(r.id); setDetailRow(r); }}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => { selectRow(r.id); setDetailRow(r); }}>
                             <Eye className="h-3 w-3 text-primary" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="এডিট করুন" onClick={() => { selectRow(r.id); startEdit(r); }}><Pencil className="h-3 w-3" /></Button>
