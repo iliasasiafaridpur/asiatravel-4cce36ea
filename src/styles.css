@@ -261,6 +261,26 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
 }
 .row-selected td, .dark .row-selected td { color: inherit !important; }
 
+/* GLOBAL last-clicked / active row highlight — persists until another row is
+   clicked. Applied everywhere (all module data pages, customer & vendor
+   ledgers, my accounts, etc.) via a delegated click handler in __root.tsx.
+   Cyan glow look matching the requested reference. */
+.row-active,
+.row-active:hover {
+  background-color: #d3f1fb !important;
+  color: #0f172a !important;
+  box-shadow: inset 4px 0 0 0 #06b6d4, 0 0 0 2px #06b6d4 !important;
+}
+.dark .row-active,
+.dark .row-active:hover {
+  background-color: #0f3b4a !important;
+  color: #ffffff !important;
+  box-shadow: inset 4px 0 0 0 #22d3ee, 0 0 0 2px #22d3ee !important;
+}
+.row-active td, .dark .row-active td { color: inherit !important; }
+
+
+
 
 @media print {
   body { background: white !important; background-image: none !important; color: black !important; }
