@@ -255,7 +255,7 @@ function MyHandoverPage() {
 
   return (
     <div className="relative z-10 container mx-auto p-3 sm:p-5 space-y-4 max-w-7xl">
-      <PageWatermark text="HANDOVER HISTORY" />
+      <PageWatermark text="HANDOVER HISTORY" size="sm" />
       {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b">
         <div className="h-10 w-10 rounded-lg bg-sky-500/15 flex items-center justify-center">
