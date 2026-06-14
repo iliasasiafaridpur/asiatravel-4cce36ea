@@ -1255,7 +1255,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
 
 
   // After any action overlay (edit / due / status / view) closes, restore the
