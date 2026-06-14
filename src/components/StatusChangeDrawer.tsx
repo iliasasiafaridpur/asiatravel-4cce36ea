@@ -74,6 +74,10 @@ export function StatusChangeDrawer({
   const [amount, setAmount] = useState<string>("");
   const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
+  // Multi-method pay: split one due across several methods (only Cash hits the
+  // staff balance; bKash/Bank/etc. still route to MD as before).
+  const [multiMode, setMultiMode] = useState(false);
+  const [methodAmts, setMethodAmts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
   const [saving, setSaving] = useState(false);
