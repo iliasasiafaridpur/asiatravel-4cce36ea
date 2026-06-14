@@ -213,10 +213,23 @@ export function StatusChangeDrawer({
 
       let paid = 0;
       let discAmt = 0;
+      let payments: { method: string; amount: number }[] = [];
       if (receiveDue) {
         discAmt = Math.max(0, Math.min(due, Number(discount) || 0));
         const maxPay = Math.max(0, due - discAmt);
-        paid = Math.max(0, Math.min(maxPay, Number(amount) || 0));
+        // Build (method, amount) lines — multi-mode splits across methods.
+        payments = multiMode
+          ? DUE_RECEIVE_METHODS
+              .map((m) => ({ method: m, amount: Number(methodAmts[m]) || 0 }))
+              .filter((p) => p.amount > 0)
+          : (Number(amount) > 0 ? [{ method, amount: Number(amount) }] : []);
+        const enteredTotal = payments.reduce((s, p) => s + p.amount, 0);
+        if (enteredTotal > maxPay) {
+          setSaving(false);
+          toast.error(`সর্বোচ্চ ৳${maxPay.toLocaleString()} নেওয়া যাবে`);
+          return;
+        }
+        paid = enteredTotal;
         if (paid + discAmt <= 0) { setSaving(false); toast.error("Amount বা Discount দিন"); return; }
         // Cash received only; discount is a price adjustment, NOT income.
         patch[request.recvCol] = received + paid;
