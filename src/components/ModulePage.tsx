@@ -1648,7 +1648,7 @@ export function ModulePage({ module: mod }: Props) {
                                   {isServiceDue ? (
                                     <button
                                       type="button"
-                                      onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
+                                      onClick={() => { selectRow(r.id); setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id }); }}
                                       className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                                       title="Due Receive"
                                     >
