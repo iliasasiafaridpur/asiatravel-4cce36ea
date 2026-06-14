@@ -2086,8 +2086,19 @@ function FormField({ field, value, onChange, disabled }: {
   // Compact fixed widths with flex-wrap; textareas take full row.
   // Grid-based layout: each field fills one auto-fill column. Wide fields span more.
   let widthStyle: React.CSSProperties = {};
+  const isAmount = field.type === "number";
   if (field.type === "textarea") {
-    widthStyle = { gridColumn: "1 / -1" };
+    // Notes: half-width instead of full row.
+    widthStyle = { gridColumn: "span 2" };
+  } else if (field.name === "passenger_name") {
+    // Passenger name needs the most room.
+    widthStyle = { gridColumn: "span 3" };
+  } else if (field.name === "airline") {
+    // Airline: compact single column (just fits "Airline").
+    widthStyle = {};
+  } else if (isAmount) {
+    // Money fields: just wide enough for ~8 digits.
+    widthStyle = { gridColumn: "span 1", maxWidth: 130 };
   } else if (field.lookup) {
     widthStyle = { gridColumn: "span 2" };
   }
