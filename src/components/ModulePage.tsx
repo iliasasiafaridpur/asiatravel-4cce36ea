@@ -1971,12 +1971,13 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   );
 }
 
-export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }: {
+export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, headerExtra }: {
   rows: ExtraServiceRow[];
   setRows: React.Dispatch<React.SetStateAction<ExtraServiceRow[]>>;
   show: boolean;
   setShow: React.Dispatch<React.SetStateAction<boolean>>;
   vendorName: string;
+  headerExtra?: ReactNode;
 }) {
   const addRow = () => {
     setShow(true);
@@ -1992,10 +1993,14 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName }
         <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           Extra Service
         </h3>
-        <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
-          <Plus className="h-3.5 w-3.5" /> Extra Service
-        </Button>
+        <div className="flex items-center gap-2">
+          {headerExtra}
+          <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
+            <Plus className="h-3.5 w-3.5" /> Extra Service
+          </Button>
+        </div>
       </div>
+
 
       {show && rows.length > 0 && (
         <div className="space-y-2 mt-2">
