@@ -2125,14 +2125,14 @@ function FormField({ field, value, onChange, disabled }: {
   let widthStyle: React.CSSProperties = {};
   const isAmount = field.type === "number";
   if (field.type === "textarea") {
-    // Notes: half-width instead of full row.
+    // Notes: half-width, single row height.
     widthStyle = { gridColumn: "span 2" };
   } else if (field.name === "passenger_name") {
-    // Passenger name needs the most room.
-    widthStyle = { gridColumn: "span 3" };
+    // Passenger name: moderate width (half of before).
+    widthStyle = { gridColumn: "span 2" };
   } else if (field.name === "airline") {
-    // Airline: compact single column (just fits "Airline").
-    widthStyle = {};
+    // Airline lookup needs room for its select + add/manage buttons.
+    widthStyle = { gridColumn: "span 2" };
   } else if (isAmount) {
     // Money fields: just wide enough for ~8 digits.
     widthStyle = { gridColumn: "span 1", maxWidth: 130 };
