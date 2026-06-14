@@ -1053,6 +1053,7 @@ export function ModulePage({ module: mod }: Props) {
               data-row-noopen
               onClick={(e) => {
                 e.stopPropagation();
+                selectRow(r.id);
                 setExtraDuePreselect({
                   sourceTable: mod.table,
                   sourceId: r.id,
