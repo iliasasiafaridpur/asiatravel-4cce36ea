@@ -474,6 +474,11 @@ export function DueReceiveDialog({
     }
   };
 
+  // Total amount the user has entered (single field, or sum of multi-method rows).
+  const enteredTotal = multiMode
+    ? DUE_RECEIVE_METHODS.reduce((s, m) => s + (Number(methodAmts[m]) || 0), 0)
+    : (Number(amount) || 0);
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
