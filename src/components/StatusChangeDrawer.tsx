@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { createPortal } from "react-dom";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -390,22 +390,6 @@ export function StatusChangeDrawer({
   };
 
   const isWarn = direction === "backward";
-  // Anchor to the viewport center (not the clicked row) so the popup is always
-  // fully on-screen — rows near the top/bottom edge no longer clip the popup.
-  const anchorRef = {
-    current: {
-      getBoundingClientRect: () => {
-        const w = typeof window !== "undefined" ? window.innerWidth : 0;
-        const h = typeof window !== "undefined" ? window.innerHeight : 0;
-        return {
-          width: 0, height: 0,
-          top: h / 2, bottom: h / 2, left: w / 2, right: w / 2,
-          x: w / 2, y: h / 2,
-          toJSON: () => ({}),
-        } as DOMRect;
-      },
-    },
-  } as React.RefObject<HTMLElement>;
   const row = request.row;
   const passport = String(row.passport ?? "");
   const country = String(row.country_name ?? row.country_route ?? "");
@@ -421,15 +405,10 @@ export function StatusChangeDrawer({
       open={!!receipt}
       onClose={() => { setReceipt(null); onClose(); }}
     />
-    <Popover open={open && !receipt} onOpenChange={(v) => { if (!v && !receipt) onClose(); }}>
-      <PopoverAnchor virtualRef={anchorRef} />
-      <PopoverContent
-        side="bottom"
-        align="center"
-        sideOffset={8}
-        collisionPadding={12}
-        avoidCollisions
-        className="w-[min(22rem,calc(100vw-1.5rem))] p-2.5 pt-3 max-h-[85vh] overflow-y-auto relative"
+    {open && !receipt && typeof document !== "undefined" && createPortal(
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/35 p-2 backdrop-blur-[1px]" onClick={onClose}>
+      <div
+        className="relative flex max-h-[calc(100dvh-1rem)] w-[min(22rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-md border bg-popover p-2.5 pt-3 text-popover-foreground shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -462,7 +441,7 @@ export function StatusChangeDrawer({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-0.5 pb-2 pr-1">
           <Select value={next} onValueChange={setTargetStatus}>
             <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -659,7 +638,7 @@ export function StatusChangeDrawer({
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="sticky bottom-0 z-40 -mx-0.5 flex gap-2 border-t bg-popover px-0.5 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2">
             {isDeliveredWithDue ? (
               <Button
                 variant="outline"
@@ -683,8 +662,10 @@ export function StatusChangeDrawer({
             </Button>
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      </div>
+      </div>,
+      document.body,
+    )}
     </>
   );
 }
