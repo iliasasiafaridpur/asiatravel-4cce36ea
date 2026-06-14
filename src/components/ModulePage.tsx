@@ -1377,6 +1377,16 @@ export function ModulePage({ module: mod }: Props) {
                     <Save className="h-3.5 w-3.5" />
                     {saving ? "Saving..." : "Save"}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setOpenForm(false)}
+                    className="h-8 w-8 shrink-0"
+                    title="বন্ধ করুন"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </DialogHeader>
