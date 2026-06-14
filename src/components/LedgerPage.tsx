@@ -5,6 +5,7 @@ import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
+import { PageWatermark } from "@/components/PageWatermark";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { LookupSelect } from "@/components/LookupSelect";
@@ -1287,7 +1288,8 @@ export function LedgerPage({ module: mod }: Props) {
   };
 
   return (
-    <div className="space-y-4 print:space-y-2">
+    <div className="relative z-10 space-y-4 print:space-y-2">
+      <PageWatermark text={mod.label} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between print:hidden">
         <div>

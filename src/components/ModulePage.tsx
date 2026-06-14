@@ -5,6 +5,7 @@ import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, type Field, type ModuleSchema, type Section } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
+import { PageWatermark } from "@/components/PageWatermark";
 import { LookupSelect } from "@/components/LookupSelect";
 import { applyFormat, capitalizeWords } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -1311,7 +1312,8 @@ export function ModulePage({ module: mod }: Props) {
 
 
   return (
-    <div className="space-y-4">
+    <div className="relative z-10 space-y-4">
+      <PageWatermark text={mod.label} />
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">{mod.label}</h1>

@@ -7,6 +7,7 @@
 //       amount numeric, category text, description text, created_at timestamptz default now())
 
 import { DateInput } from "@/components/ui/date-input";
+import { PageWatermark } from "@/components/PageWatermark";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,8 @@ export default function AccountingModule() {
   };
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto p-2 sm:p-4">
+    <div className="relative z-10 space-y-4 max-w-6xl mx-auto p-2 sm:p-4">
+      <PageWatermark text="ACCOUNTS" />
       <header className="rounded-xl border bg-card p-4 shadow-sm">
         <h1 className="text-2xl font-bold flex items-center gap-2"><Wallet className="h-6 w-6" /> Accounting Module</h1>
         <p className="text-sm text-muted-foreground mt-1">Travel Agency — User-wise income, expense, hand-over & ledger</p>
