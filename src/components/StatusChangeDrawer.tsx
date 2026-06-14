@@ -122,6 +122,8 @@ export function StatusChangeDrawer({
     setAmount("");
     setDiscount("");
     setMethod("Cash");
+    setMultiMode(false);
+    setMethodAmts({});
     setRemarks("");
   }, [request]);
 
