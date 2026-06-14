@@ -284,15 +284,15 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
    .row-active so it always wins when both classes are present on a row. */
 .row-worked,
 .row-worked:hover {
-  background-color: #fde2e2 !important;
+  background-color: #fdeeee !important;
   color: #7f1d1d !important;
-  box-shadow: inset 6px 0 0 0 #dc2626, 0 0 0 2px #dc2626 !important;
+  box-shadow: inset 5px 0 0 0 #f87171, 0 0 0 1px #fca5a5 !important;
 }
 .dark .row-worked,
 .dark .row-worked:hover {
-  background-color: #4c1d1d !important;
+  background-color: #3a1f1f !important;
   color: #ffffff !important;
-  box-shadow: inset 6px 0 0 0 #f87171, 0 0 0 2px #ef4444 !important;
+  box-shadow: inset 5px 0 0 0 #f87171, 0 0 0 1px #ef4444 !important;
 }
 .row-worked td, .dark .row-worked td { color: inherit !important; }
 
