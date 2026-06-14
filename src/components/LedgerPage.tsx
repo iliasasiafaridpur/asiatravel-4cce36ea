@@ -1869,16 +1869,16 @@ export function LedgerPage({ module: mod }: Props) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-7 w-7"
                             onClick={(e) => { e.stopPropagation(); startEdit(r); }}
                             title="Edit"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (profile?.role !== "admin") {
@@ -1889,7 +1889,7 @@ export function LedgerPage({ module: mod }: Props) {
                             }}
                             title="Delete"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                            <Trash2 className="h-3 w-3 text-rose-500" />
                           </Button>
                         </div>
                       </div>

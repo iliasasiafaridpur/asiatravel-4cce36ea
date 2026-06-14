@@ -160,22 +160,19 @@ body { font-size: 1rem !important; }
   input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 }
 
-/* Global 4-color repeating row tints (A B C D A B C D ...) — SOFT / LIGHT */
+/* Global 2-color repeating row tints (A B A B ...) — SOFT / LIGHT.
+   Code still uses idx % 4, so tint-0/2 = blue (A) and tint-1/3 = green (B). */
 /* Light mode: gently tinted, readable with dark text */
-.row-tint-0 { background-color: #eaf2fc !important; color: #0f172a !important; } /* A: soft blue */
-.row-tint-1 { background-color: #f0ecf8 !important; color: #0f172a !important; } /* B: soft lavender */
-.row-tint-2 { background-color: #ebf5ec !important; color: #0f172a !important; } /* C: soft sage */
-.row-tint-3 { background-color: #faf3e1 !important; color: #0f172a !important; } /* D: soft cream */
+.row-tint-0, .row-tint-2 { background-color: #eaf2fc !important; color: #0f172a !important; } /* A: soft blue */
+.row-tint-1, .row-tint-3 { background-color: #ebf5ec !important; color: #0f172a !important; } /* B: soft green */
 /* Hover = darken the row's OWN tint color (no cyan overlay) */
 .row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover, .row-tint-3:hover {
   filter: brightness(0.9) saturate(1.15) !important;
   box-shadow: none !important;
 }
 /* Dark mode: softer, lighter muted tones */
-.dark .row-tint-0 { background-color: #2b3850 !important; color: #ffffff !important; }
-.dark .row-tint-1 { background-color: #353144 !important; color: #ffffff !important; }
-.dark .row-tint-2 { background-color: #2a3c3c !important; color: #ffffff !important; }
-.dark .row-tint-3 { background-color: #423829 !important; color: #ffffff !important; }
+.dark .row-tint-0, .dark .row-tint-2 { background-color: #2b3850 !important; color: #ffffff !important; }
+.dark .row-tint-1, .dark .row-tint-3 { background-color: #2a3c3c !important; color: #ffffff !important; }
 .dark .row-tint-0:hover, .dark .row-tint-1:hover,
 .dark .row-tint-2:hover, .dark .row-tint-3:hover {
   filter: brightness(1.35) saturate(1.25) !important;
