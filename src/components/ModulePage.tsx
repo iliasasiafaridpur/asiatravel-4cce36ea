@@ -23,7 +23,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye, UserRound, Users, Building2 } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -1838,6 +1838,12 @@ export const SECTION_LABELS: Record<Section, string> = {
   vendor: "৩. Vendor Information",
 };
 
+export const SECTION_META: Record<Section, { label: string; icon: typeof UserRound }> = {
+  passenger: { label: "Passenger Details", icon: UserRound },
+  agency: { label: "Sub Agency / Reference", icon: Users },
+  vendor: { label: "Vendor Information", icon: Building2 },
+};
+
 export function FormSections({ mod, form, setForm, isEdit }: {
   mod: ModuleSchema;
   form: Record<string, unknown>;
@@ -1891,26 +1897,41 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       {hasPassportFields && (
         <PassportScanner onResult={applyOcr} />
       )}
-      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: shownFields }]).map((g) => (
-        <div key={g.section}>
-          {usesSections && (
-            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 pb-0.5 border-b">
-              {SECTION_LABELS[g.section]}
-            </h3>
-          )}
-          <div className="flex flex-wrap gap-1.5 items-start">
-            {g.fields.map((field) => (
-              <FormField
-                key={field.name}
-                field={field}
-                value={form[field.name]}
-                onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
-                disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: shownFields }]).map((g, gi) => {
+        const meta = SECTION_META[g.section];
+        const Icon = meta.icon;
+        return (
+          <section key={g.section} className="rounded-xl border bg-card/40 shadow-sm overflow-hidden">
+            {usesSections && (
+              <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/40">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+                  {meta.label}
+                </h3>
+                <span className="ml-auto text-[10px] font-medium text-muted-foreground tabular-nums">
+                  {gi + 1}/{grouped.length}
+                </span>
+              </div>
+            )}
+            <div
+              className="grid gap-x-3 gap-y-2.5 p-3"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(185px, 1fr))" }}
+            >
+              {g.fields.map((field) => (
+                <FormField
+                  key={field.name}
+                  field={field}
+                  value={form[field.name]}
+                  onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+                  disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
 
     </div>
   );
@@ -2061,26 +2082,18 @@ function FormField({ field, value, onChange, disabled }: {
 }) {
   const strVal = (value as string) ?? "";
   // Compact fixed widths with flex-wrap; textareas take full row.
-  let widthStyle: React.CSSProperties = { width: 180, flex: "0 0 auto" };
+  // Grid-based layout: each field fills one auto-fill column. Wide fields span more.
+  let widthStyle: React.CSSProperties = {};
   if (field.type === "textarea") {
-    widthStyle = { width: "100%", flex: "1 1 100%" };
+    widthStyle = { gridColumn: "1 / -1" };
   } else if (field.lookup) {
-    widthStyle = { width: 240, flex: "0 0 auto" };
-  } else if ((field.type === "text" || !field.type) && strVal.length > 22) {
-    const extra = Math.min(220, (strVal.length - 22) * 8);
-    widthStyle = { width: 180 + extra, flex: "0 0 auto" };
-  } else if (field.type === "date") {
-    widthStyle = { width: 150, flex: "0 0 auto" };
-  } else if (field.type === "number") {
-    widthStyle = { width: 140, flex: "0 0 auto" };
+    widthStyle = { gridColumn: "span 2" };
   }
-  // Never let a field exceed the dialog width on small screens (prevents cut-off).
-  widthStyle = { ...widthStyle, maxWidth: "100%" };
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className="space-y-1" style={widthStyle}>
+    <div className="space-y-1 min-w-0" style={widthStyle}>
 
-      <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+      <Label className="text-xs font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
