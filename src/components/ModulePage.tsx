@@ -2082,26 +2082,18 @@ function FormField({ field, value, onChange, disabled }: {
 }) {
   const strVal = (value as string) ?? "";
   // Compact fixed widths with flex-wrap; textareas take full row.
-  let widthStyle: React.CSSProperties = { width: 180, flex: "0 0 auto" };
+  // Grid-based layout: each field fills one auto-fill column. Wide fields span more.
+  let widthStyle: React.CSSProperties = {};
   if (field.type === "textarea") {
-    widthStyle = { width: "100%", flex: "1 1 100%" };
+    widthStyle = { gridColumn: "1 / -1" };
   } else if (field.lookup) {
-    widthStyle = { width: 240, flex: "0 0 auto" };
-  } else if ((field.type === "text" || !field.type) && strVal.length > 22) {
-    const extra = Math.min(220, (strVal.length - 22) * 8);
-    widthStyle = { width: 180 + extra, flex: "0 0 auto" };
-  } else if (field.type === "date") {
-    widthStyle = { width: 150, flex: "0 0 auto" };
-  } else if (field.type === "number") {
-    widthStyle = { width: 140, flex: "0 0 auto" };
+    widthStyle = { gridColumn: "span 2" };
   }
-  // Never let a field exceed the dialog width on small screens (prevents cut-off).
-  widthStyle = { ...widthStyle, maxWidth: "100%" };
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className="space-y-1" style={widthStyle}>
+    <div className="space-y-1 min-w-0" style={widthStyle}>
 
-      <Label className="text-sm font-medium">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+      <Label className="text-xs font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
