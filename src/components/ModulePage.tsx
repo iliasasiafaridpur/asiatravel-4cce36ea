@@ -169,6 +169,12 @@ export function ModulePage({ module: mod }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Remembers list scroll position so it is restored after an action overlay closes.
   const workScrollRef = useRef(0);
+  // Mark a row as "the one I am working on": remember scroll position + set the
+  // persistent RED selection. Used for status change, due receive, view, edit, search.
+  const selectRow = useCallback((id: string) => {
+    workScrollRef.current = window.scrollY;
+    setSelectedId(id);
+  }, []);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-row latest receive info (method + receiver) for the Recv method badge
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
