@@ -2091,9 +2091,9 @@ function FormField({ field, value, onChange, disabled }: {
   }
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className="space-y-1 min-w-0" style={widthStyle}>
+    <div className="space-y-0.5 min-w-0" style={widthStyle}>
 
-      <Label className="text-xs font-medium text-muted-foreground">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
+      <Label className="text-[11px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
