@@ -1,5 +1,7 @@
 interface Props {
   text: string;
+  /** "default" = standard size, "sm" = half size */
+  size?: "default" | "sm";
 }
 
 /**
@@ -8,7 +10,11 @@ interface Props {
  * otherwise hide a behind-the-content watermark). Stays in the same screen
  * position while the page scrolls and never intercepts clicks.
  */
-export function PageWatermark({ text }: Props) {
+export function PageWatermark({ text, size = "default" }: Props) {
+  const fontSize =
+    size === "sm"
+      ? "clamp(0.75rem, 3vw, 2.75rem)"
+      : "clamp(1.5rem, 6vw, 5.5rem)";
   return (
     <div
       aria-hidden
@@ -18,7 +24,7 @@ export function PageWatermark({ text }: Props) {
         className="whitespace-nowrap font-extrabold uppercase tracking-widest text-foreground/[0.07] dark:text-foreground/[0.08]"
         style={{
           transform: "rotate(-30deg)",
-          fontSize: "clamp(1.5rem, 6vw, 5.5rem)",
+          fontSize,
           lineHeight: 1,
         }}
       >
