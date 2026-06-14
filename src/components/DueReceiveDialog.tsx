@@ -560,52 +560,113 @@ export function DueReceiveDialog({
 
               <TabsContent value="pay" className="space-y-3 pt-3">
 
-
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Amount</Label>
-                    <Input
-                      type="number" inputMode="decimal" min={0}
-                      value={amount} onChange={(e) => setAmount(e.target.value)}
-                      className="mt-1.5 text-lg font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <Label>Discount</Label>
-                    <Input
-                      type="number" inputMode="decimal" min={0}
-                      value={discount}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setDiscount(v);
-                        if (selected) {
-                          const d = Math.max(0, Math.min(selected.due, Number(v) || 0));
-                          setAmount(String(Math.max(0, selected.due - d)));
-                        }
-                      }}
-                      className="mt-1.5 text-lg font-semibold"
-                      placeholder="0"
-                    />
-
-                  </div>
-                  <div>
-                    <Label>Method</Label>
-                    <Select value={method} onValueChange={setMethod}>
-                      <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {DUE_RECEIVE_METHODS.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {isMdReceivedMethod(method) && (
-                      <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
-                        ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
-                      </p>
-                    )}
-                  </div>
+                {/* Single vs multi-method toggle */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={multiMode ? "outline" : "default"}
+                    onClick={() => setMultiMode(false)}
+                  >
+                    একক মেথড
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={multiMode ? "default" : "outline"}
+                    onClick={() => {
+                      setMultiMode(true);
+                      // seed Cash with the current single amount for convenience
+                      setMethodAmts((prev) => (Object.keys(prev).length ? prev : { Cash: amount || "" }));
+                    }}
+                  >
+                    একাধিক মেথডে (Multi)
+                  </Button>
                 </div>
+
+                {!multiMode ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label>Amount</Label>
+                      <Input
+                        type="number" inputMode="decimal" min={0}
+                        value={amount} onChange={(e) => setAmount(e.target.value)}
+                        className="mt-1.5 text-lg font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <Label>Discount</Label>
+                      <Input
+                        type="number" inputMode="decimal" min={0}
+                        value={discount}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setDiscount(v);
+                          if (selected) {
+                            const d = Math.max(0, Math.min(selected.due, Number(v) || 0));
+                            setAmount(String(Math.max(0, selected.due - d)));
+                          }
+                        }}
+                        className="mt-1.5 text-lg font-semibold"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label>Method</Label>
+                      <Select value={method} onValueChange={setMethod}>
+                        <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DUE_RECEIVE_METHODS.map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {isMdReceivedMethod(method) && (
+                        <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                          ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="rounded-lg border p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">প্রতিটি মেথডে কত টাকা জমা হলো লিখুন:</p>
+                      {DUE_RECEIVE_METHODS.map((m) => (
+                        <div key={m} className="flex items-center gap-2">
+                          <Label className="w-28 shrink-0 text-sm">{m}</Label>
+                          <Input
+                            type="number" inputMode="decimal" min={0}
+                            value={methodAmts[m] ?? ""}
+                            onChange={(e) => setMethodAmts((prev) => ({ ...prev, [m]: e.target.value }))}
+                            placeholder="0"
+                            className="text-base font-semibold"
+                          />
+                          {isMdReceivedMethod(m)
+                            ? <span className="text-[10px] text-amber-600 dark:text-amber-400 whitespace-nowrap">→ MD</span>
+                            : <span className="text-[10px] text-emerald-600 whitespace-nowrap">→ আপনার ব্যালেন্স</span>}
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between border-t pt-2 text-sm">
+                        <span className="font-medium">মোট জমা</span>
+                        <span className="font-bold tabular-nums text-emerald-600">
+                          ৳{DUE_RECEIVE_METHODS.reduce((s, m) => s + (Number(methodAmts[m]) || 0), 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">শুধু Cash আপনার ক্যাশ ব্যালেন্সে যোগ হবে; বাকিগুলো (bKash, Bank ইত্যাদি) আগের মতোই MD-এর কাছে যাবে।</p>
+                    </div>
+                    <div className="max-w-[200px]">
+                      <Label>Discount</Label>
+                      <Input
+                        type="number" inputMode="decimal" min={0}
+                        value={discount}
+                        onChange={(e) => setDiscount(e.target.value)}
+                        className="mt-1.5 text-base font-semibold"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="text-[11px] text-muted-foreground -mt-1">
                   Due: {selected.due.toLocaleString()}
                   {Number(discount) > 0 && <> · Discount: ৳{Number(discount).toLocaleString()} · Effective Due: ৳{Math.max(0, selected.due - Number(discount)).toLocaleString()}</>}
