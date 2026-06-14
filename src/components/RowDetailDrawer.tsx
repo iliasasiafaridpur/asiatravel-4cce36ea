@@ -228,12 +228,6 @@ export function RowDetailDrawer({
                   <span className="text-muted-foreground">সর্বশেষ আপডেট</span>
                   <span className="font-medium">{fmtDateTime(row.updated_at)}</span>
                 </div>
-                {row.entry_by_name != null && String(row.entry_by_name) !== "" && (
-                  <div className="flex items-center justify-between gap-2 px-2.5 py-1">
-                    <span className="text-muted-foreground">এন্ট্রি করেছেন</span>
-                    <span className="font-medium">{String(row.entry_by_name)}</span>
-                  </div>
-                )}
               </div>
             </section>
           </div>
