@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
+import { PageWatermark } from "@/components/PageWatermark";
 import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
 
 export const Route = createFileRoute("/my-handover")({
