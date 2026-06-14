@@ -166,10 +166,10 @@ body { font-size: 1rem !important; }
 .row-tint-1 { background-color: #f0ecf8 !important; color: #0f172a !important; } /* B: soft lavender */
 .row-tint-2 { background-color: #ebf5ec !important; color: #0f172a !important; } /* C: soft sage */
 .row-tint-3 { background-color: #faf3e1 !important; color: #0f172a !important; } /* D: soft cream */
+/* Hover = darken the row's OWN tint color (no cyan overlay) */
 .row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover, .row-tint-3:hover {
-  background-color: rgba(6, 182, 212, 0.15) !important;
-  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
-  filter: none;
+  filter: brightness(0.9) saturate(1.15) !important;
+  box-shadow: none !important;
 }
 /* Dark mode: softer, lighter muted tones */
 .dark .row-tint-0 { background-color: #2b3850 !important; color: #ffffff !important; }
@@ -178,21 +178,20 @@ body { font-size: 1rem !important; }
 .dark .row-tint-3 { background-color: #423829 !important; color: #ffffff !important; }
 .dark .row-tint-0:hover, .dark .row-tint-1:hover,
 .dark .row-tint-2:hover, .dark .row-tint-3:hover {
-  background-color: rgba(6, 182, 212, 0.2) !important;
+  filter: brightness(1.35) saturate(1.25) !important;
   color: #ffffff !important;
-  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
-  filter: none;
+  box-shadow: none !important;
 }
 
-/* Global cyan hover for ALL table rows */
-table tbody tr { transition: background-color 0.15s ease, box-shadow 0.15s ease; }
-table tbody tr:hover {
-  background-color: rgba(6, 182, 212, 0.18) !important;
-  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
+/* Generic table rows (no tint class): darken on hover */
+table tbody tr { transition: filter 0.15s ease, background-color 0.15s ease; }
+table tbody tr:not([class*="row-tint-"]):hover {
+  filter: brightness(0.95) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
 }
-.dark table tbody tr:hover {
-  background-color: rgba(6, 182, 212, 0.22) !important;
-  box-shadow: inset 4px 0 0 0 #06b6d4 !important;
+.dark table tbody tr:not([class*="row-tint-"]):hover {
+  filter: none !important;
+  background-color: rgba(255, 255, 255, 0.07) !important;
 }
 
 
