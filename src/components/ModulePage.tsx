@@ -1897,26 +1897,41 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       {hasPassportFields && (
         <PassportScanner onResult={applyOcr} />
       )}
-      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: shownFields }]).map((g) => (
-        <div key={g.section}>
-          {usesSections && (
-            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 pb-0.5 border-b">
-              {SECTION_LABELS[g.section]}
-            </h3>
-          )}
-          <div className="flex flex-wrap gap-1.5 items-start">
-            {g.fields.map((field) => (
-              <FormField
-                key={field.name}
-                field={field}
-                value={form[field.name]}
-                onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
-                disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+      {(usesSections ? grouped : [{ section: "passenger" as Section, fields: shownFields }]).map((g, gi) => {
+        const meta = SECTION_META[g.section];
+        const Icon = meta.icon;
+        return (
+          <section key={g.section} className="rounded-xl border bg-card/40 shadow-sm overflow-hidden">
+            {usesSections && (
+              <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/40">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+                  {meta.label}
+                </h3>
+                <span className="ml-auto text-[10px] font-medium text-muted-foreground tabular-nums">
+                  {gi + 1}/{grouped.length}
+                </span>
+              </div>
+            )}
+            <div
+              className="grid gap-x-3 gap-y-2.5 p-3"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(185px, 1fr))" }}
+            >
+              {g.fields.map((field) => (
+                <FormField
+                  key={field.name}
+                  field={field}
+                  value={form[field.name]}
+                  onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+                  disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
 
     </div>
   );
