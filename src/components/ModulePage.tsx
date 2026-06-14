@@ -1838,6 +1838,12 @@ export const SECTION_LABELS: Record<Section, string> = {
   vendor: "৩. Vendor Information",
 };
 
+export const SECTION_META: Record<Section, { label: string; icon: typeof UserRound }> = {
+  passenger: { label: "Passenger Details", icon: UserRound },
+  agency: { label: "Sub Agency / Reference", icon: Users },
+  vendor: { label: "Vendor Information", icon: Building2 },
+};
+
 export function FormSections({ mod, form, setForm, isEdit }: {
   mod: ModuleSchema;
   form: Record<string, unknown>;
