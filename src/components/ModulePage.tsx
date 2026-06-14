@@ -5,6 +5,7 @@ import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, type Field, type ModuleSchema, type Section } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
+import { PageWatermark } from "@/components/PageWatermark";
 import { LookupSelect } from "@/components/LookupSelect";
 import { applyFormat, capitalizeWords } from "@/lib/format";
 import { Button } from "@/components/ui/button";
