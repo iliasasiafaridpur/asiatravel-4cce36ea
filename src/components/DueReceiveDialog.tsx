@@ -249,6 +249,8 @@ export function DueReceiveDialog({
     setAmount(String(row.due));
     setDiscount("");
     setMethod("Cash");
+    setMultiMode(false);
+    setMethodAmts({});
     setRemarks("");
     setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
   };
