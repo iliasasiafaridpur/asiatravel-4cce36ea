@@ -297,24 +297,31 @@ export function StatusChangeDrawer({
         // Discount is a non-cash price adjustment (already applied to sold_price)
         // and must NEVER create its own payment_receipts row — otherwise it
         // inflates daily cash income. We append it to the cash receipt's remarks.
-        if (paid > 0) {
-          const rid = await mkReceiptId();
-          firstReceiptId = rid;
+        if (paid > 0 && payments.length > 0) {
+          const baseRid = await mkReceiptId();
+          firstReceiptId = baseRid;
           const discNote = discAmt > 0 ? `Discount ৳${discAmt.toLocaleString()} প্রয়োগ` : "";
-          const combinedRemarks = [remarks, discNote].filter(Boolean).join(" · ") || null;
-          await resilientInsert("payment_receipts", {
-            receipt_id: rid,
-            entry_date: todayIso(),
-            service_type: request.serviceType,
-            service_table: request.table,
-            service_row_id: request.row.id,
-            ref_id: request.refId,
-            passenger_name: String(request.row.passenger_name ?? ""),
-            amount: paid, method, source: "due",
-            remarks: combinedRemarks,
-            received_by: user!.id,
-            received_by_name: me,
-          });
+          const multiNote = payments.length > 1
+            ? `একাধিক মেথড: ${payments.map((p) => `${p.method} ৳${p.amount.toLocaleString()}`).join(", ")}`
+            : "";
+          const combinedRemarks = [remarks, discNote, multiNote].filter(Boolean).join(" · ") || null;
+          // One receipt per method line; only Cash hits the staff balance.
+          for (let i = 0; i < payments.length; i++) {
+            const p = payments[i];
+            await resilientInsert("payment_receipts", {
+              receipt_id: payments.length > 1 ? `${baseRid}-${i + 1}` : baseRid,
+              entry_date: todayIso(),
+              service_type: request.serviceType,
+              service_table: request.table,
+              service_row_id: request.row.id,
+              ref_id: request.refId,
+              passenger_name: String(request.row.passenger_name ?? ""),
+              amount: p.amount, method: p.method, source: "due",
+              remarks: combinedRemarks,
+              received_by: user!.id,
+              received_by_name: me,
+            });
+          }
         }
       }
 
