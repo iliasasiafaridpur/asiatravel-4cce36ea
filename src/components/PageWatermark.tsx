@@ -10,7 +10,7 @@ export function PageWatermark({ text }: Props) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
+      className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none print:hidden"
     >
       <span
         className="whitespace-nowrap font-extrabold uppercase tracking-widest text-foreground/[0.05] dark:text-foreground/[0.06]"
