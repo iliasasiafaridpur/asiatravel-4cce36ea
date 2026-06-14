@@ -162,6 +162,7 @@ export function ModulePage({ module: mod }: Props) {
   const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
+  const [detailRow, setDetailRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
