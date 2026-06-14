@@ -295,7 +295,14 @@ export function DueReceiveDialog({
 
   const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
-    const amt = Number(amount) || 0;
+    // Build the list of (method, amount) payments. In multi-mode each method
+    // line becomes its own receipt; otherwise it's a single method.
+    const payments = multiMode
+      ? DUE_RECEIVE_METHODS
+          .map((m) => ({ method: m, amount: Number(methodAmts[m]) || 0 }))
+          .filter((p) => p.amount > 0)
+      : (Number(amount) > 0 ? [{ method, amount: Number(amount) }] : []);
+    const amt = payments.reduce((s, p) => s + p.amount, 0);
     const disc = Math.max(0, Math.min(selected.due, Number(discount) || 0));
     if (amt <= 0 && disc <= 0) return toast.error("সঠিক টাকার পরিমাণ অথবা ডিসকাউন্ট দিন");
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
