@@ -1250,13 +1250,6 @@ export function ModulePage({ module: mod }: Props) {
     }
   }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel]);
 
-  // Mark a row as "the one I am working on": remember scroll position, set the
-  // persistent red selection, and keep it visible. Used for status change, due
-  // receive, view, edit, search — so the user never loses their place.
-  const selectRow = useCallback((id: string) => {
-    workScrollRef.current = window.scrollY;
-    setSelectedId(id);
-  }, []);
 
   // After any action overlay (edit / due / status / view) closes, restore the
   // list scroll position and gently bring the worked row back into view.
