@@ -2147,7 +2147,7 @@ function FormField({ field, value, onChange, disabled }: {
       {field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
-        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={2} className="min-h-[44px]" />
+        <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-9" />
       ) : field.type === "select" ? (
         <Select value={strVal} onValueChange={onChange}>
           <SelectTrigger><SelectValue /></SelectTrigger>
