@@ -164,7 +164,16 @@ export function ModulePage({ module: mod }: Props) {
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [detailRow, setDetailRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
+  // Persistent "row I just worked on" — stays RED until another row is acted on.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Remembers list scroll position so it is restored after an action overlay closes.
+  const workScrollRef = useRef(0);
+  // Mark a row as "the one I am working on": remember scroll position + set the
+  // persistent RED selection. Used for status change, due receive, view, edit, search.
+  const selectRow = useCallback((id: string) => {
+    workScrollRef.current = window.scrollY;
+    setSelectedId(id);
+  }, []);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-row latest receive info (method + receiver) for the Recv method badge
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
@@ -746,6 +755,7 @@ export function ModulePage({ module: mod }: Props) {
   }, [mod, computeValue, load, profile, user]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
+    selectRow(row.id);
     const hasField = (n: string) => mod.fields.some((f) => f.name === n);
     const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
     // Auto-advance: if clicked badge is current status, preselect the NEXT one in order
@@ -771,7 +781,7 @@ export function ModulePage({ module: mod }: Props) {
       moduleKey: mod.key,
       anchorEl: anchorEl ?? null,
     });
-  }, [mod]);
+  }, [mod, selectRow]);
 
 
   const startGroupPayment = (groupKey: string, dueAmount: number) => {
@@ -987,7 +997,7 @@ export function ModulePage({ module: mod }: Props) {
         return (
           <button
             type="button"
-            onClick={() => setDuePreselect({ serviceKey: svc, rowId: r.id })}
+            onClick={() => { selectRow(r.id); setDuePreselect({ serviceKey: svc, rowId: r.id }); }}
             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
             title="Due Receive"
           >
@@ -1042,6 +1052,7 @@ export function ModulePage({ module: mod }: Props) {
               data-row-noopen
               onClick={(e) => {
                 e.stopPropagation();
+                selectRow(r.id);
                 setExtraDuePreselect({
                   sourceTable: mod.table,
                   sourceId: r.id,
@@ -1243,17 +1254,39 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel]);
+  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
+
+
+  // After any action overlay (edit / due / status / view) closes, restore the
+  // list scroll position and gently bring the worked row back into view.
+  const anyOverlay =
+    openForm || !!duePreselect || !!extraDuePreselect || !!statusChange ||
+    !!profileRow || !!detailRow || !!cancelRow || !!pwConfirm;
+  const prevOverlayRef = useRef(anyOverlay);
+  useEffect(() => {
+    if (prevOverlayRef.current && !anyOverlay) {
+      const y = workScrollRef.current;
+      const restore = () => {
+        if (y > 0) window.scrollTo(0, y);
+        if (selectedId) {
+          const el = document.getElementById(`row-${selectedId}`);
+          el?.scrollIntoView({ block: "nearest" });
+        }
+      };
+      requestAnimationFrame(() => requestAnimationFrame(restore));
+      window.setTimeout(restore, 150);
+      window.setTimeout(restore, 350);
+    }
+    prevOverlayRef.current = anyOverlay;
+  }, [anyOverlay, selectedId]);
 
   // Smart Search → scroll the main list to the chosen row (panel stays open)
   const scrollToRow = useCallback((row: Row) => {
+    selectRow(row.id);
     const el = document.getElementById(`row-${row.id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setHighlightId(row.id);
-      window.setTimeout(() => setHighlightId((h) => (h === row.id ? null : h)), 2500);
-    }
-  }, []);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selectRow]);
+
 
 
 
@@ -1589,10 +1622,11 @@ export function ModulePage({ module: mod }: Props) {
                     <TableRow
                       key={r.id}
                       id={`row-${r.id}`}
-                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${highlightId === r.id ? "row-selected" : "outline-transparent"} ${canCancel && r.cancelled ? "opacity-60" : ""}`}
+                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${selectedId === r.id ? "row-worked" : "outline-transparent"} ${canCancel && r.cancelled ? "opacity-60" : ""}`}
                       onClick={(e) => {
                         const t = e.target as HTMLElement;
                         if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
+                        selectRow(r.id);
                         setProfileRow(r);
                       }}
                     >
@@ -1614,7 +1648,7 @@ export function ModulePage({ module: mod }: Props) {
                                   {isServiceDue ? (
                                     <button
                                       type="button"
-                                      onClick={() => setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id })}
+                                      onClick={() => { selectRow(r.id); setDuePreselect({ serviceKey: DUE_SERVICE_KEY[mod.key], rowId: r.id }); }}
                                       className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold"
                                       title="Due Receive"
                                     >
@@ -1649,11 +1683,12 @@ export function ModulePage({ module: mod }: Props) {
                       )}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" title="সকল তথ্য দেখুন" onClick={() => setDetailRow(r)}>
+                          <Button variant="ghost" size="icon" title="সকল তথ্য দেখুন" onClick={() => { selectRow(r.id); setDetailRow(r); }}>
                             <Eye className="h-3.5 w-3.5 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="icon" title="এডিট করুন" onClick={() => startEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" title="এডিট করুন" onClick={() => { selectRow(r.id); startEdit(r); }}><Pencil className="h-3.5 w-3.5" /></Button>
                           <Button variant="ghost" size="icon" title="ডিলিট করুন" onClick={() => {
+                            selectRow(r.id);
                             if (profile?.role !== "admin") {
                               toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
                               return;

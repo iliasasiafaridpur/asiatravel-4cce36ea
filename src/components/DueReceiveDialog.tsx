@@ -94,6 +94,10 @@ export function DueReceiveDialog({
   const [amount, setAmount] = useState<string>("");
   const [discount, setDiscount] = useState<string>("");
   const [method, setMethod] = useState<string>("Cash");
+  // Multi-method pay: split one due across several methods (only Cash hits the
+  // staff balance; bKash/Bank/etc. still route to MD as before).
+  const [multiMode, setMultiMode] = useState(false);
+  const [methodAmts, setMethodAmts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState<"Pending" | "Delivered">("Pending");
@@ -150,6 +154,8 @@ export function DueReceiveDialog({
       setAmount(String(row.due));
       setDiscount("");
       setMethod("Cash");
+      setMultiMode(false);
+      setMethodAmts({});
       setRemarks("");
       setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
     })();
@@ -243,6 +249,8 @@ export function DueReceiveDialog({
     setAmount(String(row.due));
     setDiscount("");
     setMethod("Cash");
+    setMultiMode(false);
+    setMethodAmts({});
     setRemarks("");
     setDeliveryStatus(row.deliveryDate ? "Delivered" : "Pending");
   };
@@ -287,7 +295,14 @@ export function DueReceiveDialog({
 
   const submitPayment = async (withDelivery: boolean) => {
     if (!selected) return;
-    const amt = Number(amount) || 0;
+    // Build the list of (method, amount) payments. In multi-mode each method
+    // line becomes its own receipt; otherwise it's a single method.
+    const payments = multiMode
+      ? DUE_RECEIVE_METHODS
+          .map((m) => ({ method: m, amount: Number(methodAmts[m]) || 0 }))
+          .filter((p) => p.amount > 0)
+      : (Number(amount) > 0 ? [{ method, amount: Number(amount) }] : []);
+    const amt = payments.reduce((s, p) => s + p.amount, 0);
     const disc = Math.max(0, Math.min(selected.due, Number(discount) || 0));
     if (amt <= 0 && disc <= 0) return toast.error("সঠিক টাকার পরিমাণ অথবা ডিসকাউন্ট দিন");
     if (!user?.id) return toast.error("লগইন প্রয়োজন");
@@ -330,10 +345,10 @@ export function DueReceiveDialog({
         upd,
       );
 
-      // 2) insert payment_receipts entry — record the full cash received
-      let receiptId: string;
+      // 2) insert payment_receipts entries — one per payment method.
+      let baseReceiptId: string;
       try {
-        receiptId = await generateNextId({
+        baseReceiptId = await generateNextId({
           key: "_rcpt", label: "", short: "", table: "payment_receipts",
           idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
         });
@@ -342,32 +357,37 @@ export function DueReceiveDialog({
         const d = new Date();
         const mm = String(d.getMonth() + 1).padStart(2, "0");
         const yy = String(d.getFullYear()).slice(-2);
-        receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
+        baseReceiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
       }
 
       const remarkParts: string[] = [];
       if (remarks) remarkParts.push(remarks);
       if (disc > 0) remarkParts.push(`Discount ৳${disc.toLocaleString()} প্রয়োগ`);
       if (excess > 0) remarkParts.push(`অতিরিক্ত ৳${excess.toLocaleString()} → ${selected.agencySold} এর Advance Ledger-এ যুক্ত`);
+      if (payments.length > 1) remarkParts.push(`একাধিক মেথড: ${payments.map((p) => `${p.method} ৳${p.amount.toLocaleString()}`).join(", ")}`);
       const receiptRemarks = remarkParts.length ? remarkParts.join(" · ") : null;
 
-      const insRes = amt > 0
-        ? await resilientInsert("payment_receipts", {
-            receipt_id: receiptId,
-            entry_date: today,
-            service_type: selected.service.type,
-            service_table: selected.service.table,
-            service_row_id: selected.id,
-            ref_id: selected.refId,
-            passenger_name: selected.passenger,
-            amount: amt,
-            method,
-            source: "due",
-            remarks: receiptRemarks,
-            received_by: user.id,
-            received_by_name: me,
-          })
-        : { offline: false };
+      let receiptsOffline = false;
+      for (let i = 0; i < payments.length; i++) {
+        const p = payments[i];
+        const res = await resilientInsert("payment_receipts", {
+          receipt_id: payments.length > 1 ? `${baseReceiptId}-${i + 1}` : baseReceiptId,
+          entry_date: today,
+          service_type: selected.service.type,
+          service_table: selected.service.table,
+          service_row_id: selected.id,
+          ref_id: selected.refId,
+          passenger_name: selected.passenger,
+          amount: p.amount,
+          method: p.method,
+          source: "due",
+          remarks: receiptRemarks,
+          received_by: user.id,
+          received_by_name: me,
+        });
+        if (res.offline) receiptsOffline = true;
+      }
+      const insRes = { offline: receiptsOffline };
 
       // 3) if excess → route to agency_ledger as Advance Received
       let ledgerOffline = false;
@@ -396,7 +416,7 @@ export function DueReceiveDialog({
           total_bill: 0,
           received_amount: excess,
           advance_applied: 0,
-          payment_method: method,
+          payment_method: multiMode ? "Multi" : method,
           source_table: "due_excess",
           source_id: selected.id,
           remarks: `Advance Received · Due Receive excess from ${selected.refId} (${selected.service.type})${remarks ? " · " + remarks : ""}`,
@@ -453,6 +473,11 @@ export function DueReceiveDialog({
       setSaving(false);
     }
   };
+
+  // Total amount the user has entered (single field, or sum of multi-method rows).
+  const enteredTotal = multiMode
+    ? DUE_RECEIVE_METHODS.reduce((s, m) => s + (Number(methodAmts[m]) || 0), 0)
+    : (Number(amount) || 0);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -540,60 +565,121 @@ export function DueReceiveDialog({
 
               <TabsContent value="pay" className="space-y-3 pt-3">
 
-
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Amount</Label>
-                    <Input
-                      type="number" inputMode="decimal" min={0}
-                      value={amount} onChange={(e) => setAmount(e.target.value)}
-                      className="mt-1.5 text-lg font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <Label>Discount</Label>
-                    <Input
-                      type="number" inputMode="decimal" min={0}
-                      value={discount}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setDiscount(v);
-                        if (selected) {
-                          const d = Math.max(0, Math.min(selected.due, Number(v) || 0));
-                          setAmount(String(Math.max(0, selected.due - d)));
-                        }
-                      }}
-                      className="mt-1.5 text-lg font-semibold"
-                      placeholder="0"
-                    />
-
-                  </div>
-                  <div>
-                    <Label>Method</Label>
-                    <Select value={method} onValueChange={setMethod}>
-                      <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {DUE_RECEIVE_METHODS.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {isMdReceivedMethod(method) && (
-                      <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
-                        ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
-                      </p>
-                    )}
-                  </div>
+                {/* Single vs multi-method toggle */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={multiMode ? "outline" : "default"}
+                    onClick={() => setMultiMode(false)}
+                  >
+                    একক মেথড
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={multiMode ? "default" : "outline"}
+                    onClick={() => {
+                      setMultiMode(true);
+                      // seed Cash with the current single amount for convenience
+                      setMethodAmts((prev) => (Object.keys(prev).length ? prev : { Cash: amount || "" }));
+                    }}
+                  >
+                    একাধিক মেথডে (Multi)
+                  </Button>
                 </div>
+
+                {!multiMode ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label>Amount</Label>
+                      <Input
+                        type="number" inputMode="decimal" min={0}
+                        value={amount} onChange={(e) => setAmount(e.target.value)}
+                        className="mt-1.5 text-lg font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <Label>Discount</Label>
+                      <Input
+                        type="number" inputMode="decimal" min={0}
+                        value={discount}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setDiscount(v);
+                          if (selected) {
+                            const d = Math.max(0, Math.min(selected.due, Number(v) || 0));
+                            setAmount(String(Math.max(0, selected.due - d)));
+                          }
+                        }}
+                        className="mt-1.5 text-lg font-semibold"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label>Method</Label>
+                      <Select value={method} onValueChange={setMethod}>
+                        <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DUE_RECEIVE_METHODS.map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {isMdReceivedMethod(method) && (
+                        <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                          ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="rounded-lg border p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">প্রতিটি মেথডে কত টাকা জমা হলো লিখুন:</p>
+                      {DUE_RECEIVE_METHODS.map((m) => (
+                        <div key={m} className="flex items-center gap-2">
+                          <Label className="w-28 shrink-0 text-sm">{m}</Label>
+                          <Input
+                            type="number" inputMode="decimal" min={0}
+                            value={methodAmts[m] ?? ""}
+                            onChange={(e) => setMethodAmts((prev) => ({ ...prev, [m]: e.target.value }))}
+                            placeholder="0"
+                            className="text-base font-semibold"
+                          />
+                          {isMdReceivedMethod(m)
+                            ? <span className="text-[10px] text-amber-600 dark:text-amber-400 whitespace-nowrap">→ MD</span>
+                            : <span className="text-[10px] text-emerald-600 whitespace-nowrap">→ আপনার ব্যালেন্স</span>}
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between border-t pt-2 text-sm">
+                        <span className="font-medium">মোট জমা</span>
+                        <span className="font-bold tabular-nums text-emerald-600">
+                          ৳{DUE_RECEIVE_METHODS.reduce((s, m) => s + (Number(methodAmts[m]) || 0), 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">শুধু Cash আপনার ক্যাশ ব্যালেন্সে যোগ হবে; বাকিগুলো (bKash, Bank ইত্যাদি) আগের মতোই MD-এর কাছে যাবে।</p>
+                    </div>
+                    <div className="max-w-[200px]">
+                      <Label>Discount</Label>
+                      <Input
+                        type="number" inputMode="decimal" min={0}
+                        value={discount}
+                        onChange={(e) => setDiscount(e.target.value)}
+                        className="mt-1.5 text-base font-semibold"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="text-[11px] text-muted-foreground -mt-1">
                   Due: {selected.due.toLocaleString()}
                   {Number(discount) > 0 && <> · Discount: ৳{Number(discount).toLocaleString()} · Effective Due: ৳{Math.max(0, selected.due - Number(discount)).toLocaleString()}</>}
                   {" "}— অতিরিক্ত দিলে Agent এর Advance Ledger-এ যুক্ত হবে।
                 </div>
-                {Number(amount) > Math.max(0, selected.due - (Number(discount) || 0)) && (
+                {enteredTotal > Math.max(0, selected.due - (Number(discount) || 0)) && (
                   <p className="text-[11px] text-amber-600 font-semibold -mt-2">
-                    অতিরিক্ত: ৳{(Number(amount) - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
+                    অতিরিক্ত: ৳{(enteredTotal - Math.max(0, selected.due - (Number(discount) || 0))).toLocaleString()} → {selected.agencySold || "(no agency)"}
                   </p>
                 )}
                 <div>

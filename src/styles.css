@@ -279,6 +279,23 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
 }
 .row-active td, .dark .row-active td { color: inherit !important; }
 
+/* PERSISTENT "row I just worked on" highlight (status change / due receive /
+   view / edit / search). Stays RED until another row is clicked. Defined after
+   .row-active so it always wins when both classes are present on a row. */
+.row-worked,
+.row-worked:hover {
+  background-color: #fde2e2 !important;
+  color: #7f1d1d !important;
+  box-shadow: inset 6px 0 0 0 #dc2626, 0 0 0 2px #dc2626 !important;
+}
+.dark .row-worked,
+.dark .row-worked:hover {
+  background-color: #4c1d1d !important;
+  color: #ffffff !important;
+  box-shadow: inset 6px 0 0 0 #f87171, 0 0 0 2px #ef4444 !important;
+}
+.row-worked td, .dark .row-worked td { color: inherit !important; }
+
 
 
 
