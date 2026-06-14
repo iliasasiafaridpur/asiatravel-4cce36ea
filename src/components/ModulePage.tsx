@@ -1329,9 +1329,9 @@ export function ModulePage({ module: mod }: Props) {
               <Plus className="h-4 w-4" /> নতুন এন্ট্রি
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 [&>button.absolute]:hidden">
             <DialogHeader className="sticky top-0 z-20 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b px-4 sm:px-6 py-3">
-              <div className="flex items-center justify-between gap-2 pr-12">
+              <div className="flex items-center justify-between gap-2">
                 <DialogTitle className="text-base sm:text-lg truncate">
                   {editing ? "এডিট করুন" : "নতুন এন্ট্রি"} — {mod.label}
                 </DialogTitle>
