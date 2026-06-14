@@ -638,7 +638,9 @@ export function StatusChangeDrawer({
             </div>
           )}
 
-          <div className="sticky bottom-0 z-40 -mx-0.5 flex gap-2 border-t bg-popover px-0.5 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2">
+        </div>
+
+          <div className="shrink-0 -mx-0.5 flex gap-2 border-t bg-popover px-0.5 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2">
             {isDeliveredWithDue ? (
               <Button
                 variant="outline"
@@ -661,7 +663,6 @@ export function StatusChangeDrawer({
               {isSame ? "একই Status" : isDeliveredWithDue ? "Receive & Deliver" : isWarn ? "Revert" : "Confirm"}
             </Button>
           </div>
-        </div>
       </div>
       </div>,
       document.body,
