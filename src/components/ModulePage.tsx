@@ -1280,6 +1280,26 @@ export function ModulePage({ module: mod }: Props) {
     prevOverlayRef.current = anyOverlay;
   }, [anyOverlay, selectedId]);
 
+  // Clear the RED "worked row" highlight when the user clicks anywhere that is
+  // NOT a data row (empty space, header, another control). Clicking a row sets
+  // a new selection via selectRow; clicking elsewhere removes the red. Skipped
+  // while an action overlay is open so scroll-restore keeps the row marked.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (anyOverlay) return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Inside a data row? keep / let selectRow handle it.
+      if (target.closest('[id^="row-"]')) return;
+      // Inside a popover/dialog/portal layer? ignore (action UI).
+      if (target.closest('[role="dialog"],[data-radix-popper-content-wrapper]')) return;
+      setSelectedId(null);
+    };
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
+  }, [selectedId, anyOverlay]);
+
   // Smart Search → scroll the main list to the chosen row (panel stays open)
   const scrollToRow = useCallback((row: Row) => {
     selectRow(row.id);
