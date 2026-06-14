@@ -750,6 +750,7 @@ export function ModulePage({ module: mod }: Props) {
   }, [mod, computeValue, load, profile, user]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
+    selectRow(row.id);
     const hasField = (n: string) => mod.fields.some((f) => f.name === n);
     const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
     // Auto-advance: if clicked badge is current status, preselect the NEXT one in order
