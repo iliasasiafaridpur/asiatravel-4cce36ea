@@ -1893,7 +1893,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   };
 
   return (
-    <div className="space-y-3 py-1" onKeyDown={onFormKeyDown}>
+    <div className="space-y-2 py-0.5" onKeyDown={onFormKeyDown}>
       {hasPassportFields && (
         <PassportScanner onResult={applyOcr} />
       )}
@@ -1903,9 +1903,9 @@ export function FormSections({ mod, form, setForm, isEdit }: {
         return (
           <section key={g.section} className="rounded-xl border bg-card/40 shadow-sm overflow-hidden">
             {usesSections && (
-              <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/40">
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <Icon className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-2 px-2.5 py-1.5 border-b bg-muted/40">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon className="h-3 w-3" />
                 </span>
                 <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
                   {meta.label}
@@ -1916,8 +1916,8 @@ export function FormSections({ mod, form, setForm, isEdit }: {
               </div>
             )}
             <div
-              className="grid gap-x-3 gap-y-2.5 p-3"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(185px, 1fr))" }}
+              className="grid gap-x-2 gap-y-1.5 p-2"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
             >
               {g.fields.map((field) => (
                 <FormField
