@@ -35,6 +35,7 @@ import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueRece
 import { ExtraDueReceiveDialog, type ExtraDuePreselect } from "@/components/ExtraDueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+import { RowDetailDrawer } from "@/components/RowDetailDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
