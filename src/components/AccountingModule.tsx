@@ -7,6 +7,7 @@
 //       amount numeric, category text, description text, created_at timestamptz default now())
 
 import { DateInput } from "@/components/ui/date-input";
+import { PageWatermark } from "@/components/PageWatermark";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
