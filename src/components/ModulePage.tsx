@@ -165,6 +165,10 @@ export function ModulePage({ module: mod }: Props) {
   const [detailRow, setDetailRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  // Persistent "row I just worked on" — stays RED until another row is acted on.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Remembers list scroll position so it is restored after an action overlay closes.
+  const workScrollRef = useRef(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-row latest receive info (method + receiver) for the Recv method badge
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
