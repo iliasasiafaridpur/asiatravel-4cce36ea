@@ -558,7 +558,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const dueByGroup = useMemo(() => {
     const due = new Map<string, number>();
     for (const r of rows) {
-      if (isAdvanceRow(r)) continue;
+      if (isAdvanceRow(r) || isPaymentRow(r)) continue;
       const k = String(r[groupField] ?? "");
       due.set(k, (due.get(k) ?? 0) + (advanceAdjustedRows.get(r.id)?.displayDue ?? 0));
     }
