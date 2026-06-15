@@ -2364,13 +2364,19 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   checked={payAsMdDeposit}
                   onCheckedChange={(c) => {
                     setPayAsMdDeposit(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); setPayAsAdjust(false); }
+                    if (c) {
+                      setSelectedLines({});
+                      setPayAsAdvance(false);
+                      setPayAsAdjust(false);
+                      setPayMode("fifo");
+                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                    }
                   }}
                 />
                 <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
                   Mark as Vendor Deposit From MD Sir
                   <span className="block text-[11px] text-muted-foreground font-normal">
-                    টিকেটিং পোর্টাল বা vendor কে Deposit করুন। যা লেজারের বাহিরের টাকা, user এর balance অপরিবর্তিত থাকবে।
+                    টিকেটিং পোর্টাল বা vendor কে Deposit করুন। Auto FIFO / Bill-by-Bill দিয়ে বিলে adjust হবে — due না থাকলে বাকি টাকা advance হিসেবে জমা থাকবে। লেজারের বাহিরের টাকা, user এর balance অপরিবর্তিত থাকবে।
                   </span>
                 </Label>
               </div>
