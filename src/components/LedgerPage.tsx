@@ -927,9 +927,12 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   };
 
   // Record an unallocated advance entry. Used for the leftover when "Payment from
-  // User Balance" exceeds total due. Reduces user balance via the cash-sync trigger
-  // (real payment_method, no source_table).
-  const recordAdvanceEntry = async (advAmt: number) => {
+  // User Balance" / "MD Sir Deposit" exceeds total due.
+  // - User Balance: real payment_method, no source_table -> reduces user balance
+  //   via the cash-sync trigger.
+  // - MD Sir Deposit (asMdDeposit): source_table='md_deposit' -> cash/bank
+  //   balances stay untouched (external money kept as vendor advance).
+  const recordAdvanceEntry = async (advAmt: number, asMdDeposit = false) => {
     const advId = await generateNextId({
       key: mod.key, label: "", short: "", table: mod.table,
       idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
@@ -942,10 +945,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       service_type: "ADVANCE",
       [billCol]: 0,
       [paidCol]: advAmt,
-      payment_method: payMethod,
-      remarks: `Advance ${isAgency ? "Received" : "Paid"} (leftover) · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
+      payment_method: asMdDeposit ? "MD Sir Deposit" : payMethod,
+      remarks: asMdDeposit
+        ? `MD Sir External Deposit (leftover advance)${payRemarks ? " · " + payRemarks : ""}`
+        : `Advance ${isAgency ? "Received" : "Paid"} (leftover) · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
       created_by: user?.id ?? null,
     };
+    if (asMdDeposit) advPayload.source_table = "md_deposit";
     if (isAgency) advPayload.received_by = user?.id ?? null;
     await resilientInsert(mod.table, advPayload as Record<string, unknown>);
   };
