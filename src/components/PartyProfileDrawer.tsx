@@ -468,7 +468,7 @@ export function PartyProfileDrawer({
                       <tr className="text-left">
                         <th className="px-2 py-1.5 font-medium">Date</th>
                         <th className="px-2 py-1.5 font-medium">Passenger</th>
-                        <th className="px-2 py-1.5 font-medium">Service</th>
+                        <th className="px-2 py-1.5 font-medium text-right">{isCustomer ? "Bill" : "Vendor Cost"}</th>
                         <th className="px-2 py-1.5 font-medium text-right">Due</th>
                       </tr>
                     </thead>
@@ -482,7 +482,7 @@ export function PartyProfileDrawer({
                           <tr key={r.id} className="border-t">
                             <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date as string)}</td>
                             <td className="px-2 py-1.5 truncate max-w-[110px]">{String(r.passenger_name ?? "—")}</td>
-                            <td className="px-2 py-1.5">{String(r.service_type ?? "—")}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums">{fmtMoney(b)}</td>
                             <td className={`px-2 py-1.5 text-right tabular-nums ${due > 0 ? "text-rose-600 font-medium" : "text-emerald-600"}`}>
                               {due > 0 ? fmtMoney(due) : "Paid"}
                             </td>
