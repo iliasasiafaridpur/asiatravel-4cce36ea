@@ -177,8 +177,42 @@ export function PartyProfileDrawer({
           .eq("name", activeName)
           .maybeSingle(),
       ]);
+      const ledgerRows = ((ledgerRes.data as unknown as LedgerRow[]) ?? []);
+
+      // For vendors: figure out which delivery-based source files (BMET / Saudi /
+      // Kuwait) have actually been received from the vendor, so the Recent Service
+      // Files list only shows files that count in the vendor's accounting.
+      const received = new Set<string>();
+      if (!isCustomer) {
+        const byTable: Record<string, string[]> = {
+          bmet_cards: [],
+          saudi_visas: [],
+          kuwait_visas: [],
+        };
+        for (const r of ledgerRows) {
+          const src = String(r.source_table ?? "");
+          const sid = String(r.source_id ?? "");
+          if (sid && (src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas")) {
+            byTable[src].push(sid);
+          }
+        }
+        await Promise.all(
+          Object.entries(byTable).map(async ([tbl, ids]) => {
+            if (!ids.length) return;
+            const { data } = await supabase
+              .from(tbl as never)
+              .select("id,received_date")
+              .in("id", ids);
+            for (const row of (data as { id: string; received_date: string | null }[] | null) ?? []) {
+              if (row.received_date) received.add(row.id);
+            }
+          }),
+        );
+      }
+
       if (!cancelled) {
-        setRows(((ledgerRes.data as unknown as LedgerRow[]) ?? []));
+        setRows(ledgerRows);
+        setReceivedSrcIds(received);
         setContact((contactRes.data as Contact | null) ?? null);
         setLoading(false);
       }
@@ -186,7 +220,7 @@ export function PartyProfileDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, partyName, displayName, table, groupField, contactsTable]);
+  }, [open, partyName, displayName, table, groupField, contactsTable, isCustomer]);
 
   const stats = useMemo(() => {
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
