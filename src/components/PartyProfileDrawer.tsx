@@ -226,7 +226,8 @@ export function PartyProfileDrawer({
           (r) =>
             isPayment(r) ||
             isAdvance(r) ||
-            Number(r[paidCol] ?? 0) > 0,
+            Number(r[paidCol] ?? 0) > 0 ||
+            Number(r.advance_applied ?? 0) > 0,
         )
         .slice(0, 20),
     [rows, paidCol],
@@ -467,7 +468,7 @@ export function PartyProfileDrawer({
                       <tr className="text-left">
                         <th className="px-2 py-1.5 font-medium">Date</th>
                         <th className="px-2 py-1.5 font-medium">Passenger</th>
-                        <th className="px-2 py-1.5 font-medium">Service</th>
+                        <th className="px-2 py-1.5 font-medium text-right">{isCustomer ? "Bill" : "Vendor Cost"}</th>
                         <th className="px-2 py-1.5 font-medium text-right">Due</th>
                       </tr>
                     </thead>
@@ -481,7 +482,7 @@ export function PartyProfileDrawer({
                           <tr key={r.id} className="border-t">
                             <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date as string)}</td>
                             <td className="px-2 py-1.5 truncate max-w-[110px]">{String(r.passenger_name ?? "—")}</td>
-                            <td className="px-2 py-1.5">{String(r.service_type ?? "—")}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums">{fmtMoney(b)}</td>
                             <td className={`px-2 py-1.5 text-right tabular-nums ${due > 0 ? "text-rose-600 font-medium" : "text-emerald-600"}`}>
                               {due > 0 ? fmtMoney(due) : "Paid"}
                             </td>
@@ -508,30 +509,56 @@ export function PartyProfileDrawer({
                   <table className="w-full text-xs">
                     <thead className="bg-muted/50">
                       <tr className="text-left">
-                        <th className="px-2 py-1.5 font-medium">Date</th>
+                        <th className="px-2 py-1.5 font-medium">Date / সমন্বিত বিল</th>
                         <th className="px-2 py-1.5 font-medium text-right">Amount</th>
-                        <th className="px-2 py-1.5 font-medium">Method</th>
                         <th className="px-2 py-1.5 font-medium">Type</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paymentRows.map((r) => {
                         const adv = isAdvance(r);
+                        const cash = Number(r[paidCol] ?? 0);
+                        const applied = Number(r.advance_applied ?? 0);
+                        const amount = adv ? cash : cash + applied;
+                        const billName = adv
+                          ? "অগ্রিম জমা (নির্দিষ্ট ফাইল নয়)"
+                          : String(r.passenger_name ?? "—");
+                        const typeLabel = adv
+                          ? "Advance"
+                          : cash > 0 && applied > 0
+                            ? "Cash + Advance"
+                            : applied > 0
+                              ? "Advance Applied"
+                              : "Cash";
                         return (
-                          <tr key={r.id} className="border-t">
-                            <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date as string)}</td>
-                            <td className="px-2 py-1.5 text-right tabular-nums font-medium">
-                              {fmtMoney(Number(r[paidCol] ?? 0))}
+                          <tr key={r.id} className="border-t align-top">
+                            <td className="px-2 py-1.5">
+                              <div className="whitespace-nowrap">{formatDate(r.entry_date as string)}</div>
+                              <div className="text-[10px] text-muted-foreground truncate max-w-[130px]">
+                                {billName}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">{String(r.payment_method ?? "—")}</div>
                             </td>
-                            <td className="px-2 py-1.5">{String(r.payment_method ?? "—")}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums font-medium">
+                              {fmtMoney(amount)}
+                              {!adv && cash > 0 && applied > 0 && (
+                                <div className="text-[10px] font-normal text-muted-foreground">
+                                  Cash {fmtMoney(cash)} + Adv {fmtMoney(applied)}
+                                </div>
+                              )}
+                            </td>
                             <td className="px-2 py-1.5">
                               {adv ? (
                                 <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
                                   Advance
                                 </Badge>
+                              ) : applied > 0 && cash === 0 ? (
+                                <Badge variant="outline" className="border-sky-500/50 text-sky-600 text-[10px]">
+                                  {typeLabel}
+                                </Badge>
                               ) : (
                                 <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
-                                  Payment
+                                  {typeLabel}
                                 </Badge>
                               )}
                             </td>
