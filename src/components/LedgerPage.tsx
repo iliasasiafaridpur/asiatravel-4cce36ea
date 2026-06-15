@@ -570,8 +570,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     let xs = rows;
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
     if (serviceFilter !== "all") xs = xs.filter((r) => String(r.service_type ?? "") === serviceFilter);
-    // "শুধু Due" — show rows whose group has a net positive balance (so paid-off vendors disappear entirely).
-    if (dueOnly) xs = xs.filter((r) => (dueByGroup.get(String(r[groupField] ?? "")) ?? 0) > 0);
+    // "শুধু Due" — show only the individual files that are received from the
+    // vendor AND still carry a per-file vendor due (paid-off / not-yet-payable
+    // files disappear, not just whole vendors).
+    if (dueOnly) xs = xs.filter((r) => (advanceAdjustedRows.get(r.id)?.displayDue ?? 0) > 0);
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
     const q = search.trim().toLowerCase();
