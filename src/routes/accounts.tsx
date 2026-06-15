@@ -405,15 +405,6 @@ function AccountsPage() {
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
-  // Which column holds the "received" total on each service table
-  const RECV_COL: Record<string, string> = {
-    tickets: "received",
-    kuwait_visas: "received",
-    bmet_cards: "received_amount",
-    saudi_visas: "received_amount",
-    others: "received_amount",
-    extra_services: "received_amount",
-  };
   const deleteRecv = async (id: string): Promise<void> => {
     const { error } = await supabase.rpc("delete_payment_receipt_and_revert" as never, { _receipt_id: id } as never);
     if (error) {
