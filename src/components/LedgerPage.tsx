@@ -777,6 +777,18 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     setPayOpen(true);
   };
 
+  // Auto-open the payment dialog when a caller (e.g. the Vendors page) navigates
+  // here with a target vendor/agent. Wait until rows are loaded so dues compute.
+  const autoPayHandledRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoPay || loading) return;
+    if (autoPayHandledRef.current === autoPay) return;
+    autoPayHandledRef.current = autoPay;
+    openPayment(autoPay, 0);
+    onAutoPayHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPay, loading]);
+
   // Map source table -> column to bump for THIS ledger's payment side.
   // Agency receives: customer-received column on each service row.
   // Vendor pays: only saudi_visas tracks vendor-paid (received_vendor).
