@@ -2022,12 +2022,25 @@ export function LedgerPage({ module: mod }: Props) {
           <DialogHeader>
             <DialogTitle>এন্ট্রি বিস্তারিত — {String(viewRow?.[mod.idColumn] ?? "")}</DialogTitle>
           </DialogHeader>
-          {viewRow && (
+          {viewRow && (() => {
+            const adjusted = advanceAdjustedRows.get(viewRow.id);
+            const applied = Number(viewRow.advance_applied ?? 0);
+            const cashPaid = Number(viewRow[paidCol] ?? 0);
+            const displayPaid = adjusted?.displayPaid ?? cashPaid + applied;
+            const displayDue = adjusted?.displayDue ?? Math.max(balanceOf(viewRow), 0);
+            const srcId = String(viewRow.source_id ?? "");
+            const info = srcId ? sourceInfoMap.get(srcId) : undefined;
+            const cb = String(viewRow.created_by ?? "");
+            const byName = cb ? profilesMap[cb] : "";
+            return (
             <div className="grid grid-cols-2 gap-3 text-sm">
               {mod.fields.map((f) => {
                 const v = viewRow[f.name];
-                const display =
-                  f.type === "date"
+                // Show the FULL paid (cash + applied advance) so it never reads 0.
+                const isPaidField = f.name === paidCol;
+                const display = isPaidField
+                  ? displayPaid.toLocaleString()
+                  : f.type === "date"
                     ? formatDate(v as string | null)
                     : f.type === "number"
                       ? Number(v ?? 0).toLocaleString()
@@ -2035,23 +2048,53 @@ export function LedgerPage({ module: mod }: Props) {
                 return (
                   <div key={f.name} className="space-y-0.5">
                     <div className="text-xs text-muted-foreground">{f.label}</div>
-                    <div className="font-medium break-words">{display || "—"}</div>
+                    <div className="font-medium break-words">
+                      {display || "—"}
+                      {isPaidField && applied > 0 ? (
+                        <span className="ml-1 text-[11px] text-muted-foreground">
+                          (Cash {cashPaid.toLocaleString()} + Advance {applied.toLocaleString()})
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}
+              {(info?.passport || info?.mobile) && (
+                <>
+                  {info?.passport && (
+                    <div className="space-y-0.5">
+                      <div className="text-xs text-muted-foreground">Passport</div>
+                      <div className="font-medium break-words">{info.passport}</div>
+                    </div>
+                  )}
+                  {info?.mobile && (
+                    <div className="space-y-0.5">
+                      <div className="text-xs text-muted-foreground">Mobile</div>
+                      <div className="font-medium break-words">{info.mobile}</div>
+                    </div>
+                  )}
+                </>
+              )}
+              {byName && (
+                <div className="space-y-0.5 col-span-2">
+                  <div className="text-xs text-muted-foreground">Entry By</div>
+                  <div className="font-medium break-words">{byName}</div>
+                </div>
+              )}
               <div className="space-y-0.5 col-span-2 pt-2 border-t border-border/60">
                 <div className="text-xs text-muted-foreground">Balance Due</div>
                 <div
                   className={cn(
                     "text-lg font-bold tabular-nums",
-                    balanceOf(viewRow) > 0 ? "text-rose-500" : "text-emerald-600",
+                    displayDue > 0 ? "text-rose-500" : "text-emerald-600",
                   )}
                 >
-                  ৳ {balanceOf(viewRow).toLocaleString()}
+                  ৳ {displayDue.toLocaleString()}
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewRow(null)}>
               বন্ধ করুন
