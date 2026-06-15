@@ -511,6 +511,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
+  // PAYMENT log rows are a visible, deletable record of a vendor payment. The
+  // actual money was already applied into the individual bill rows, so PAYMENT
+  // log rows must NEVER count toward bill/paid/due/advance totals — they exist
+  // purely for display + reversible (admin) delete.
+  const isPaymentRow = (r: Row) =>
+    String(r.service_type ?? "").toUpperCase() === "PAYMENT";
+
   // For vendor-ledger: a bill row sourced from BMET/Saudi/Kuwait modules only
   // becomes a payable to the Vendor once the source customer's status is
   // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
