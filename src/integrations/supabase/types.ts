@@ -1228,6 +1228,7 @@ export type Database = {
       vendor_ledger: {
         Row: {
           advance_applied: number
+          alloc_detail: Json | null
           country_route: string | null
           created_at: string
           created_by: string | null
@@ -1252,6 +1253,7 @@ export type Database = {
         }
         Insert: {
           advance_applied?: number
+          alloc_detail?: Json | null
           country_route?: string | null
           created_at?: string
           created_by?: string | null
@@ -1276,6 +1278,7 @@ export type Database = {
         }
         Update: {
           advance_applied?: number
+          alloc_detail?: Json | null
           country_route?: string | null
           created_at?: string
           created_by?: string | null
