@@ -926,6 +926,30 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     return;
   };
 
+  // Record an unallocated advance entry. Used for the leftover when "Payment from
+  // User Balance" exceeds total due. Reduces user balance via the cash-sync trigger
+  // (real payment_method, no source_table).
+  const recordAdvanceEntry = async (advAmt: number) => {
+    const advId = await generateNextId({
+      key: mod.key, label: "", short: "", table: mod.table,
+      idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
+      monthlyId: true, fields: [],
+    });
+    const advPayload: Record<string, unknown> = {
+      [mod.idColumn]: advId,
+      entry_date: payDate,
+      [groupField]: payTarget,
+      service_type: "ADVANCE",
+      [billCol]: 0,
+      [paidCol]: advAmt,
+      payment_method: payMethod,
+      remarks: `Advance ${isAgency ? "Received" : "Paid"} (leftover) · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
+      created_by: user?.id ?? null,
+    };
+    if (isAgency) advPayload.received_by = user?.id ?? null;
+    await resilientInsert(mod.table, advPayload as Record<string, unknown>);
+  };
+
   const submitPayment = async () => {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
