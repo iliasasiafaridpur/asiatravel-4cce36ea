@@ -1327,14 +1327,25 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
   const confirmDelete = async () => {
     if (!deleteRow) return;
-    const { error } = await supabase
-      .from(mod.table as never)
-      .delete()
-      .eq("id", deleteRow.id);
-    if (error) toast.error("ডিলিট সমস্যা: " + error.message);
-    else {
-      toast.success("ডিলিট হয়েছে");
+    try {
+      // A PAYMENT log row: first reverse the money it applied to the bills (and
+      // any leftover-advance row), then delete the log row itself.
+      if (!isAgency && isPaymentRow(deleteRow) && deleteRow.alloc_detail) {
+        await reversePaymentLog(deleteRow);
+      }
+      const { error } = await supabase
+        .from(mod.table as never)
+        .delete()
+        .eq("id", deleteRow.id);
+      if (error) throw error;
+      toast.success(
+        !isAgency && isPaymentRow(deleteRow)
+          ? "পেমেন্ট রিভার্স ও ডিলিট হয়েছে"
+          : "ডিলিট হয়েছে",
+      );
       await load();
+    } catch (e) {
+      toast.error("ডিলিট সমস্যা: " + errMsg(e));
     }
     setDeleteRow(null);
   };
