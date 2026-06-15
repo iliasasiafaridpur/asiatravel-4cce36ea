@@ -1887,6 +1887,15 @@ export function LedgerPage({ module: mod }: Props) {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
+                            onClick={(e) => { e.stopPropagation(); setViewRow(r); }}
+                            title="View"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
                             onClick={(e) => { e.stopPropagation(); startEdit(r); }}
                             title="Edit"
                           >
