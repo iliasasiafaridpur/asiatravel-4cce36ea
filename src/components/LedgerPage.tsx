@@ -684,6 +684,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     let paid = 0;
     for (const r of rows) {
       if (String(r[groupField] ?? "").trim() !== key) continue;
+      if (isPaymentRow(r)) continue;
       const isThis = r.id === editing.id;
       if (isAdvanceRow(r)) {
         advanceIn += isThis ? Number(form[paidCol] ?? 0) : Number(r[paidCol] ?? 0);
