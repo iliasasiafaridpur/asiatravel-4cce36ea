@@ -2335,7 +2335,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Mark as Advance Payment toggle (bulk mode only) */}
+            {/* Payment from User Balance toggle (bulk mode only) */}
             {!payRow && payTarget && (
               <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2.5">
                 <Checkbox
@@ -2343,13 +2343,19 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   checked={payAsAdvance}
                   onCheckedChange={(c) => {
                     setPayAsAdvance(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); setPayAsAdjust(false); }
+                    if (c) {
+                      setSelectedLines({});
+                      setPayAsMdDeposit(false);
+                      setPayAsAdjust(false);
+                      setPayMode("fifo");
+                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                    }
                   }}
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
-                  Mark as Advance Payment
+                  Mark as Payment from User Balance
                   <span className="block text-[11px] text-muted-foreground font-normal">
-                    কোনো বুকিং-এর সাথে যুক্ত না করে advance হিসেবে রাখুন — পরের বুকিং থেকে auto adjust হবে
+                    vendor কে পেমেন্ট দিন user এর balance থেকে। Auto FIFO / Bill-by-Bill দিয়ে বিলে adjust হবে — বেশি দিলে বাকি টাকা advance হিসেবে জমা থাকবে।
                   </span>
                 </Label>
               </div>
