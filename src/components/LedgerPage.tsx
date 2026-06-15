@@ -592,7 +592,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     }
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup]);
+  }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup, advanceAdjustedRows]);
 
   const totals = useMemo(() => {
     let bill = 0,
