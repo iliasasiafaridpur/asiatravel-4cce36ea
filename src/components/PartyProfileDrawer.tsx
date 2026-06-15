@@ -275,10 +275,12 @@ export function PartyProfileDrawer({
       rows
         .filter(
           (r) =>
-            isPayment(r) ||
-            isAdvance(r) ||
-            Number(r[paidCol] ?? 0) > 0 ||
-            Number(r.advance_applied ?? 0) > 0,
+            // Exclude PAYMENT log rows (display-only summary in the main ledger);
+            // the actual paid amounts already live on the individual bill rows.
+            !isPayment(r) &&
+            (isAdvance(r) ||
+              Number(r[paidCol] ?? 0) > 0 ||
+              Number(r.advance_applied ?? 0) > 0),
         )
         .slice(0, 20),
     [rows, paidCol],
