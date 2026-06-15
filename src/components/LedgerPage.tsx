@@ -927,9 +927,12 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   };
 
   // Record an unallocated advance entry. Used for the leftover when "Payment from
-  // User Balance" exceeds total due. Reduces user balance via the cash-sync trigger
-  // (real payment_method, no source_table).
-  const recordAdvanceEntry = async (advAmt: number) => {
+  // User Balance" / "MD Sir Deposit" exceeds total due.
+  // - User Balance: real payment_method, no source_table -> reduces user balance
+  //   via the cash-sync trigger.
+  // - MD Sir Deposit (asMdDeposit): source_table='md_deposit' -> cash/bank
+  //   balances stay untouched (external money kept as vendor advance).
+  const recordAdvanceEntry = async (advAmt: number, asMdDeposit = false) => {
     const advId = await generateNextId({
       key: mod.key, label: "", short: "", table: mod.table,
       idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
@@ -942,10 +945,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       service_type: "ADVANCE",
       [billCol]: 0,
       [paidCol]: advAmt,
-      payment_method: payMethod,
-      remarks: `Advance ${isAgency ? "Received" : "Paid"} (leftover) · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
+      payment_method: asMdDeposit ? "MD Sir Deposit" : payMethod,
+      remarks: asMdDeposit
+        ? `MD Sir External Deposit (leftover advance)${payRemarks ? " · " + payRemarks : ""}`
+        : `Advance ${isAgency ? "Received" : "Paid"} (leftover) · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
       created_by: user?.id ?? null,
     };
+    if (asMdDeposit) advPayload.source_table = "md_deposit";
     if (isAgency) advPayload.received_by = user?.id ?? null;
     await resilientInsert(mod.table, advPayload as Record<string, unknown>);
   };
@@ -998,42 +1004,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         return;
       }
 
-      // ---------- MD Sir External Deposit (vendor advance, no cash/bank impact) ----------
-      if (payAsMdDeposit && !payRow && !isAgency) {
-        const amt = Number(payAmount);
-        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-        const ledgerId = await generateNextId({
-          key: mod.key, label: "", short: "", table: mod.table,
-          idColumn: mod.idColumn, idPrefix: "VDL",
-          monthlyId: true, fields: [],
-        });
-        const payload: Record<string, unknown> = {
-          [mod.idColumn]: ledgerId,
-          entry_date: payDate,
-          [groupField]: payTarget,
-          service_type: "ADVANCE",
-          [billCol]: 0,
-          [paidCol]: amt,
-          payment_method: "MD Sir Deposit",
-          // Setting source_table makes sync_vendor_payment_to_cash skip the
-          // cash_expenses mirror — so system Cash/Bank balances are untouched.
-          source_table: "md_deposit",
-          remarks: `MD Sir External Deposit${payRemarks ? " · " + payRemarks : ""}`,
-          created_by: user?.id ?? null,
-        };
-        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        if (!offline) notify.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`, {
-          meta: { vendor: String(payTarget), service: "MD Sir Deposit (Vendor Advance)", refId: ledgerId, amount: amt },
-        });
-        setPayOpen(false);
-        void load();
-        return;
-      }
+      // ---------- MD Sir Deposit / Payment from User Balance ----------
+      // Both now fall through to the normal FIFO / Bill-by-Bill allocation below.
+      // - Bills are paid via applyAllocationToRow (vendor bill rows carry a
+      //   source_table, so sync_vendor_payment_to_cash never mirrors them to
+      //   cash — Cash/Bank balances stay untouched for the bill portion).
+      // - Any leftover beyond total due is recorded as an advance via
+      //   recordAdvanceEntry(). For MD Sir Deposit the leftover advance also keeps
+      //   Cash untouched (source_table='md_deposit'); for User Balance it reduces
+      //   the user balance via the cash-sync trigger.
 
-      // ---------- Payment from User Balance (payAsAdvance) ----------
-      // No longer a pure unallocated advance. It now falls through to the normal
-      // FIFO / Bill-by-Bill allocation below, where any leftover beyond total due
-      // is recorded as an advance via recordAdvanceEntry().
 
 
       // ---------- Passenger-specific (single row) ----------
@@ -1086,10 +1066,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
         await writeCashMirror(total, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
-        notify.success(`✓ ${entries.length}টি বিলে পেমেন্ট সংরক্ষিত: ${total.toLocaleString()}`, {
+        notify.success(`✓ ${entries.length}টি বিলে ${payAsMdDeposit ? "MD Sir Deposit" : "পেমেন্ট"} সংরক্ষিত: ${total.toLocaleString()}`, {
           meta: {
             vendor: String(payTarget),
-            service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (${entries.length} bills)`,
+            service: `${payAsMdDeposit ? "MD Sir Deposit" : isAgency ? "Agent Receipt" : "Vendor Payment"} (${entries.length} bills)`,
             refId: parts.map((p) => p.split("=")[0]).join(", "),
             amount: total,
           },
@@ -1108,10 +1088,12 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         0,
       );
       // Normal flow caps at total due. "Payment from User Balance" (payAsAdvance)
-      // allows overpay — the leftover beyond due is kept as an advance.
-      if (!payAsAdvance && amt > totalDue + 0.001)
+      // and "MD Sir Deposit" (payAsMdDeposit) allow overpay — the leftover beyond
+      // due is kept as an advance.
+      const allowOverpay = payAsAdvance || payAsMdDeposit;
+      if (!allowOverpay && amt > totalDue + 0.001)
         return toast.error(`Total Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${totalDue})`);
-      if (!payAsAdvance && list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
+      if (!allowOverpay && list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
 
       let remaining = amt;
       const parts: string[] = [];
@@ -1124,23 +1106,24 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
-      // Leftover (when paying from user balance) is stored as an advance entry.
+      // Leftover (from user balance or MD deposit) is stored as an advance entry.
       let advLeft = 0;
-      if (payAsAdvance && remaining > 0.0001) {
+      if (allowOverpay && remaining > 0.0001) {
         advLeft = remaining;
-        await recordAdvanceEntry(advLeft);
+        await recordAdvanceEntry(advLeft, payAsMdDeposit);
         parts.push(`ADVANCE=${advLeft}`);
       }
       const billCount = parts.filter((p) => !p.startsWith("ADVANCE")).length;
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
+      const depositLabel = payAsMdDeposit ? "MD Sir Deposit" : "FIFO পেমেন্ট";
       notify.success(
         advLeft > 0
-          ? `✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (বিলে ${(amt - advLeft).toLocaleString()} + advance ${advLeft.toLocaleString()})`
-          : `✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${billCount}টি বিল)`,
+          ? `✓ ${depositLabel} সংরক্ষিত: ${amt.toLocaleString()} (বিলে ${(amt - advLeft).toLocaleString()} + advance ${advLeft.toLocaleString()})`
+          : `✓ ${depositLabel} সংরক্ষিত: ${amt.toLocaleString()} (${billCount}টি বিল)`,
         {
           meta: {
             vendor: String(payTarget),
-            service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${billCount} bills${advLeft > 0 ? " + advance" : ""})`,
+            service: `${payAsMdDeposit ? "MD Sir Deposit" : isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${billCount} bills${advLeft > 0 ? " + advance" : ""})`,
             refId: parts.map((p) => p.split("=")[0]).join(", "),
             amount: amt,
           },
@@ -2381,13 +2364,19 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   checked={payAsMdDeposit}
                   onCheckedChange={(c) => {
                     setPayAsMdDeposit(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsAdvance(false); setPayAsAdjust(false); }
+                    if (c) {
+                      setSelectedLines({});
+                      setPayAsAdvance(false);
+                      setPayAsAdjust(false);
+                      setPayMode("fifo");
+                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                    }
                   }}
                 />
                 <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
                   Mark as Vendor Deposit From MD Sir
                   <span className="block text-[11px] text-muted-foreground font-normal">
-                    টিকেটিং পোর্টাল বা vendor কে Deposit করুন। যা লেজারের বাহিরের টাকা, user এর balance অপরিবর্তিত থাকবে।
+                    টিকেটিং পোর্টাল বা vendor কে Deposit করুন। Auto FIFO / Bill-by-Bill দিয়ে বিলে adjust হবে — due না থাকলে বাকি টাকা advance হিসেবে জমা থাকবে। লেজারের বাহিরের টাকা, user এর balance অপরিবর্তিত থাকবে।
                   </span>
                 </Label>
               </div>
@@ -2450,27 +2439,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Deposit amount input (only for MD-deposit toggle) */}
-            {!payRow && payTarget && payAsMdDeposit && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  MD Sir Deposit Amount <span className="text-rose-500">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="h-10 text-lg font-semibold tabular-nums"
-                  autoFocus
-                />
-              </div>
-            )}
-
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill). Shown for the normal flow
-                and for "Payment from User Balance" (payAsAdvance). Hidden for MD
-                deposit / manual adjustment. */}
-            {!payRow && payTarget && !payAsMdDeposit && !payAsAdjust && (
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill). Shown for the normal flow,
+                "Payment from User Balance" (payAsAdvance) and "MD Sir Deposit"
+                (payAsMdDeposit). Hidden only for manual adjustment. */}
+            {!payRow && payTarget && !payAsAdjust && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
