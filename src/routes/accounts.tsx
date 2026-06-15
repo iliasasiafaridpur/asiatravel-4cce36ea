@@ -237,7 +237,8 @@ function AccountsPage() {
     return () => { cancelled = true; };
   }, [received]);
 
-  const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
+  const accountingReceived = useMemo(() => received.filter((r) => !isStatusEventReceipt(r)), [received]);
+  const fRecv = useMemo(() => useDateFilter ? accountingReceived.filter(r => inDateRange(r.entry_date)) : accountingReceived.slice(0, latestN), [accountingReceived, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
@@ -285,7 +286,7 @@ function AccountsPage() {
 
   const fullAsc = useMemo<(TLItem & { running: number; created: string })[]>(() => {
     const items: (TLItem & { created: string })[] = [
-      ...received.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r, created: (r as Recv & { created_at?: string }).created_at ?? r.entry_date })),
+      ...accountingReceived.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r, created: (r as Recv & { created_at?: string }).created_at ?? r.entry_date })),
       ...handovers.map((h) => ({ kind: "handover" as const, date: h.entry_date, row: h, created: (h as Hand & { created_at?: string }).created_at ?? h.entry_date })),
       ...expenses.map((e) => ({ kind: "expense"  as const, date: e.entry_date, row: e, created: (e as Exp & { created_at?: string }).created_at ?? e.entry_date })),
     ];
@@ -298,7 +299,7 @@ function AccountsPage() {
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
     });
-  }, [received, handovers, expenses]);
+  }, [accountingReceived, handovers, expenses]);
 
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
     const desc = [...fullAsc].reverse().filter((it) => {
@@ -400,50 +401,26 @@ function AccountsPage() {
   };
 
   const deleteHand = async (id: string): Promise<void> => {
-    const { error } = await supabase.from("cash_handovers").delete().eq("id", id);
+    const { data, error } = await supabase.from("cash_handovers").delete().eq("id", id).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("ডিলেট হয়নি — অনুমতি বা রেকর্ড মিলছে না"); return; }
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
-  // Which column holds the "received" total on each service table
-  const RECV_COL: Record<string, string> = {
-    tickets: "received",
-    kuwait_visas: "received",
-    bmet_cards: "received_amount",
-    saudi_visas: "received_amount",
-    others: "received_amount",
-    extra_services: "received_amount",
-  };
   const deleteRecv = async (id: string): Promise<void> => {
-    // Find the receipt first so we can roll back the linked service's received total.
-    const rec = received.find((r) => r.id === id);
-    const { error } = await supabase.from("payment_receipts").delete().eq("id", id);
-    if (error) { toast.error("ডিলেট ব্যর্থ: " + error.message); return; }
-
-    // Roll back the service row's received amount so module pages stop showing it.
-    if (rec?.service_table && rec.service_row_id && RECV_COL[rec.service_table]) {
-      const col = RECV_COL[rec.service_table];
-      const { data: svcRow } = await supabase
-        .from(rec.service_table as never)
-        .select(`id,${col}`)
-        .eq("id", rec.service_row_id)
-        .maybeSingle();
-      if (svcRow) {
-        const current = Number((svcRow as Record<string, unknown>)[col] ?? 0);
-        const next = Math.max(0, current - Number(rec.amount || 0));
-        await supabase
-          .from(rec.service_table as never)
-          .update({ [col]: next } as never)
-          .eq("id", rec.service_row_id);
-      }
+    const { error } = await supabase.rpc("delete_payment_receipt_and_revert" as never, { _receipt_id: id } as never);
+    if (error) {
+      toast.error("ডিলেট ব্যর্থ: " + error.message);
+      return;
     }
 
     toast.success("ডিলেট সম্পন্ন");
     await reload(true);
   };
   const deleteExp = async (id: string): Promise<void> => {
-    const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
+    const { data, error } = await supabase.from("cash_expenses").delete().eq("id", id).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("ডিলেট হয়নি — অনুমতি বা রেকর্ড মিলছে না"); return; }
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
