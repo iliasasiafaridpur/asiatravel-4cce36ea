@@ -1346,6 +1346,10 @@ export type Database = {
         Returns: undefined
       }
       cancel_handover: { Args: { _handover_id: string }; Returns: undefined }
+      delete_payment_receipt_and_revert: {
+        Args: { _receipt_id: string }
+        Returns: Json
+      }
       get_accounts_overview: {
         Args: never
         Returns: {
