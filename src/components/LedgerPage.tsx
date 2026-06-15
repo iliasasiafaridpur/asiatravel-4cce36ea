@@ -536,7 +536,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const advanceAdjustedRows = useMemo(() => {
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
     for (const r of rows) {
-      if (isAdvanceRow(r)) continue;
+      if (isAdvanceRow(r) || isPaymentRow(r)) continue;
       const applied = Number(r.advance_applied ?? 0);
       const cashPaid = Number(r[paidCol] ?? 0);
       const discount = discountOf(r);
