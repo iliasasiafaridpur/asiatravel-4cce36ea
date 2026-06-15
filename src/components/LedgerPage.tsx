@@ -2438,11 +2438,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Advance amount input (when advance OR MD deposit toggle ON) */}
-            {!payRow && payTarget && (payAsAdvance || payAsMdDeposit) && (
+            {/* Deposit amount input (only for MD-deposit toggle) */}
+            {!payRow && payTarget && payAsMdDeposit && (
               <div className="space-y-1.5">
                 <Label className="text-xs">
-                  {payAsMdDeposit ? "MD Sir Deposit Amount" : "Advance Amount"} <span className="text-rose-500">*</span>
+                  MD Sir Deposit Amount <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   type="number"
@@ -2455,13 +2455,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance/MD deposit */}
-            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && !payAsAdjust && (
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill). Shown for the normal flow
+                and for "Payment from User Balance" (payAsAdvance). Hidden for MD
+                deposit / manual adjustment. */}
+            {!payRow && payTarget && !payAsMdDeposit && !payAsAdjust && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
                   <TabsTrigger value="specific">Bill-by-Bill (নির্দিষ্ট)</TabsTrigger>
                 </TabsList>
+
 
                 <TabsContent value="fifo" className="space-y-3 pt-3">
                   <div className="grid grid-cols-2 gap-3">
