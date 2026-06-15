@@ -101,6 +101,9 @@ function selectColumns(mod: ModuleSchema): string {
     cols.add("source_table");
     cols.add("advance_applied");
   }
+  if (mod.key === "vendor-ledger") {
+    cols.add("alloc_detail");
+  }
   mod.fields.forEach((field) => cols.add(field.name));
   return Array.from(cols).join(",");
 }
