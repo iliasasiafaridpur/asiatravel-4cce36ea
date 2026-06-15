@@ -1030,38 +1030,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         return;
       }
 
-      // ---------- Advance Payment (no booking allocation) ----------
-      if (payAsAdvance && !payRow) {
-        const amt = Number(payAmount);
-        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-        const ledgerId = await generateNextId({
-          key: mod.key, label: "", short: "", table: mod.table,
-          idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
-          monthlyId: true, fields: [],
-        });
-        const payload: Record<string, unknown> = {
-          [mod.idColumn]: ledgerId,
-          entry_date: payDate,
-          [groupField]: payTarget,
-          service_type: "ADVANCE",
-          [billCol]: 0,
-          [paidCol]: amt,
-          payment_method: payMethod,
-          remarks: `Advance ${isAgency ? "Received" : "Paid"} · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
-          created_by: user?.id ?? null,
-        };
-        if (isAgency) payload.received_by = user?.id ?? null;
-        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        if (!offline) {
-          await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
-          notify.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`, {
-            meta: { vendor: String(payTarget), service: isAgency ? "Agent Advance Received" : "Vendor Advance Paid", refId: ledgerId, amount: amt },
-          });
-        }
-        setPayOpen(false);
-        void load();
-        return;
-      }
+      // ---------- Payment from User Balance (payAsAdvance) ----------
+      // No longer a pure unallocated advance. It now falls through to the normal
+      // FIFO / Bill-by-Bill allocation below, where any leftover beyond total due
+      // is recorded as an advance via recordAdvanceEntry().
+
 
       // ---------- Passenger-specific (single row) ----------
       if (payRow) {
