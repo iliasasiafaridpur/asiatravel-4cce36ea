@@ -114,7 +114,7 @@ function errMsg(e: unknown): string {
   return String(e);
 }
 
-export function LedgerPage({ module: mod }: Props) {
+export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const { user, profile } = useCurrentUser();
   const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
