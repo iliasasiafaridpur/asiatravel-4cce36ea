@@ -613,6 +613,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       advance = 0,
       due = 0;
     for (const r of filtered) {
+      if (isPaymentRow(r)) continue;
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
       } else if (countsForVendorDue(r)) {
