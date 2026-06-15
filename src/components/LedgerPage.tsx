@@ -1088,10 +1088,12 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         0,
       );
       // Normal flow caps at total due. "Payment from User Balance" (payAsAdvance)
-      // allows overpay — the leftover beyond due is kept as an advance.
-      if (!payAsAdvance && amt > totalDue + 0.001)
+      // and "MD Sir Deposit" (payAsMdDeposit) allow overpay — the leftover beyond
+      // due is kept as an advance.
+      const allowOverpay = payAsAdvance || payAsMdDeposit;
+      if (!allowOverpay && amt > totalDue + 0.001)
         return toast.error(`Total Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${totalDue})`);
-      if (!payAsAdvance && list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
+      if (!allowOverpay && list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
 
       let remaining = amt;
       const parts: string[] = [];
@@ -1104,23 +1106,24 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
-      // Leftover (when paying from user balance) is stored as an advance entry.
+      // Leftover (from user balance or MD deposit) is stored as an advance entry.
       let advLeft = 0;
-      if (payAsAdvance && remaining > 0.0001) {
+      if (allowOverpay && remaining > 0.0001) {
         advLeft = remaining;
-        await recordAdvanceEntry(advLeft);
+        await recordAdvanceEntry(advLeft, payAsMdDeposit);
         parts.push(`ADVANCE=${advLeft}`);
       }
       const billCount = parts.filter((p) => !p.startsWith("ADVANCE")).length;
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
+      const depositLabel = payAsMdDeposit ? "MD Sir Deposit" : "FIFO পেমেন্ট";
       notify.success(
         advLeft > 0
-          ? `✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (বিলে ${(amt - advLeft).toLocaleString()} + advance ${advLeft.toLocaleString()})`
-          : `✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${billCount}টি বিল)`,
+          ? `✓ ${depositLabel} সংরক্ষিত: ${amt.toLocaleString()} (বিলে ${(amt - advLeft).toLocaleString()} + advance ${advLeft.toLocaleString()})`
+          : `✓ ${depositLabel} সংরক্ষিত: ${amt.toLocaleString()} (${billCount}টি বিল)`,
         {
           meta: {
             vendor: String(payTarget),
-            service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${billCount} bills${advLeft > 0 ? " + advance" : ""})`,
+            service: `${payAsMdDeposit ? "MD Sir Deposit" : isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${billCount} bills${advLeft > 0 ? " + advance" : ""})`,
             refId: parts.map((p) => p.split("=")[0]).join(", "),
             amount: amt,
           },
