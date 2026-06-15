@@ -226,6 +226,10 @@ export function PartyProfileDrawer({
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
     const byService = new Map<string, { count: number; bill: number; paid: number; due: number }>();
     for (const r of rows) {
+      // PAYMENT log rows are a display-only summary; their amount is already
+      // reflected in the individual bills' paid figures, so skip to avoid
+      // double-counting the vendor's total paid.
+      if (isPayment(r)) continue;
       const applyAmt = Number(r.advance_applied ?? 0);
       if (isAdvance(r)) {
         advance += Number(r[paidCol] ?? 0);
@@ -271,10 +275,12 @@ export function PartyProfileDrawer({
       rows
         .filter(
           (r) =>
-            isPayment(r) ||
-            isAdvance(r) ||
-            Number(r[paidCol] ?? 0) > 0 ||
-            Number(r.advance_applied ?? 0) > 0,
+            // Exclude PAYMENT log rows (display-only summary in the main ledger);
+            // the actual paid amounts already live on the individual bill rows.
+            !isPayment(r) &&
+            (isAdvance(r) ||
+              Number(r[paidCol] ?? 0) > 0 ||
+              Number(r.advance_applied ?? 0) > 0),
         )
         .slice(0, 20),
     [rows, paidCol],

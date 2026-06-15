@@ -101,6 +101,9 @@ function selectColumns(mod: ModuleSchema): string {
     cols.add("source_table");
     cols.add("advance_applied");
   }
+  if (mod.key === "vendor-ledger") {
+    cols.add("alloc_detail");
+  }
   mod.fields.forEach((field) => cols.add(field.name));
   return Array.from(cols).join(",");
 }
@@ -508,6 +511,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const isAdvanceRow = (r: Row) =>
     String(r.service_type ?? "").toUpperCase() === "ADVANCE";
 
+  // PAYMENT log rows are a visible, deletable record of a vendor payment. The
+  // actual money was already applied into the individual bill rows, so PAYMENT
+  // log rows must NEVER count toward bill/paid/due/advance totals — they exist
+  // purely for display + reversible (admin) delete.
+  const isPaymentRow = (r: Row) =>
+    String(r.service_type ?? "").toUpperCase() === "PAYMENT";
+
   // For vendor-ledger: a bill row sourced from BMET/Saudi/Kuwait modules only
   // becomes a payable to the Vendor once the source customer's status is
   // "Pending Delivery" AND (for BMET) Received Date From Vendor is entered.
@@ -526,7 +536,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const advanceAdjustedRows = useMemo(() => {
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
     for (const r of rows) {
-      if (isAdvanceRow(r)) continue;
+      if (isAdvanceRow(r) || isPaymentRow(r)) continue;
       const applied = Number(r.advance_applied ?? 0);
       const cashPaid = Number(r[paidCol] ?? 0);
       const discount = discountOf(r);
@@ -548,7 +558,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const dueByGroup = useMemo(() => {
     const due = new Map<string, number>();
     for (const r of rows) {
-      if (isAdvanceRow(r)) continue;
+      if (isAdvanceRow(r) || isPaymentRow(r)) continue;
       const k = String(r[groupField] ?? "");
       due.set(k, (due.get(k) ?? 0) + (advanceAdjustedRows.get(r.id)?.displayDue ?? 0));
     }
@@ -603,6 +613,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       advance = 0,
       due = 0;
     for (const r of filtered) {
+      if (isPaymentRow(r)) continue;
       if (isAdvanceRow(r)) {
         advance += Number(r[paidCol] ?? 0);
       } else if (countsForVendorDue(r)) {
@@ -631,6 +642,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const groupSummary = useMemo(() => {
     const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number; due: number }>();
     for (const r of filtered) {
+      if (isPaymentRow(r)) continue;
       const k = String(r[groupField] ?? "—") || "—";
       const cur = map.get(k) ?? { bill: 0, cashPaid: 0, discount: 0, applied: 0, advance: 0, due: 0 };
       if (isAdvanceRow(r)) {
@@ -672,6 +684,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     let paid = 0;
     for (const r of rows) {
       if (String(r[groupField] ?? "").trim() !== key) continue;
+      if (isPaymentRow(r)) continue;
       const isThis = r.id === editing.id;
       if (isAdvanceRow(r)) {
         advanceIn += isThis ? Number(form[paidCol] ?? 0) : Number(r[paidCol] ?? 0);
@@ -851,9 +864,20 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     return null;
   };
 
+  // A single bill-allocation record, stored on the PAYMENT log row so an admin
+  // delete can reverse exactly what was applied.
+  type AllocItem = {
+    id: string;            // ledger row UUID the payment touched
+    ledger_id: string;     // human ledger id (for display)
+    amt: number;
+    src_table: string | null;
+    src_id: string | null;
+    recv_col: string | null; // when set, the amount was applied to the source row column
+  };
+
   // Apply `amt` to a single ledger row: update source row if linked (trigger refreshes ledger),
-  // otherwise bump the ledger row's paidCol directly.
-  const applyAllocationToRow = async (row: Row, amt: number) => {
+  // otherwise bump the ledger row's paidCol directly. Returns allocation metadata.
+  const applyAllocationToRow = async (row: Row, amt: number): Promise<AllocItem> => {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
     const recvCol = srcTable ? sourceRecvCol(srcTable) : null;
@@ -889,6 +913,97 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       .from(mod.table as never)
         .update({ payment_method: payMethod, payment_date: payDate } as never)
       .eq("id", row.id);
+    return {
+      id: row.id,
+      ledger_id: String(row[mod.idColumn] ?? ""),
+      amt,
+      src_table: srcTable && srcId && recvCol ? srcTable : null,
+      src_id: srcTable && srcId && recvCol ? srcId : null,
+      recv_col: srcTable && srcId && recvCol ? recvCol : null,
+    };
+  };
+
+  // Insert a visible, deletable PAYMENT log row recording a vendor payment.
+  // The money has already been applied into the bills (alloc items) so this row
+  // is financially neutral (excluded from all totals; source_table='payment_log'
+  // makes the cash-sync trigger skip it). Vendor side only.
+  const recordPaymentLog = async (
+    items: AllocItem[],
+    totalAmt: number,
+    advanceRowId: string | null,
+  ) => {
+    if (isAgency) return;
+    if (totalAmt <= 0 || items.length === 0) return;
+    const method = payAsMdDeposit ? "MD Sir Deposit" : payMethod;
+    const logId = await generateNextId({
+      key: mod.key, label: "", short: "", table: mod.table,
+      idColumn: mod.idColumn, idPrefix: "VDL", monthlyId: true, fields: [],
+    });
+    const payload: Record<string, unknown> = {
+      [mod.idColumn]: logId,
+      entry_date: payDate,
+      [groupField]: payTarget,
+      service_type: "PAYMENT",
+      [billCol]: 0,
+      [paidCol]: totalAmt,
+      payment_method: method,
+      payment_date: payDate,
+      source_table: "payment_log",
+      remarks: `Vendor Payment · ${method}${payRemarks ? " · " + payRemarks : ""}`,
+      alloc_detail: {
+        kind: "vendor_payment",
+        method,
+        as_md_deposit: payAsMdDeposit,
+        as_user_balance: payAsAdvance,
+        items,
+        advance_row_id: advanceRowId,
+      },
+      created_by: user?.id ?? null,
+    };
+    await resilientInsert(mod.table, payload as Record<string, unknown>);
+  };
+
+  // Reverse a PAYMENT log row's allocations, then return so the caller can
+  // delete the log row itself. Admin-only (guarded at the call site).
+  const reversePaymentLog = async (logRow: Row) => {
+    const detail = logRow.alloc_detail as
+      | { items?: AllocItem[]; advance_row_id?: string | null }
+      | null;
+    const items = detail?.items ?? [];
+    for (const it of items) {
+      if (!it || !it.amt) continue;
+      if (it.src_table && it.src_id && it.recv_col) {
+        const { data: srcRow } = await supabase
+          .from(it.src_table as never)
+          .select(`id, ${it.recv_col}`)
+          .eq("id", it.src_id)
+          .maybeSingle();
+        const cur = Number((srcRow as Record<string, unknown> | null)?.[it.recv_col] ?? 0);
+        await supabase
+          .from(it.src_table as never)
+          .update({ [it.recv_col]: Math.max(cur - it.amt, 0) } as never)
+          .eq("id", it.src_id);
+      } else {
+        const { data: ledRow } = await supabase
+          .from(mod.table as never)
+          .select(`id, ${paidCol}`)
+          .eq("id", it.id)
+          .maybeSingle();
+        const cur = Number((ledRow as Record<string, unknown> | null)?.[paidCol] ?? 0);
+        await supabase
+          .from(mod.table as never)
+          .update({ [paidCol]: Math.max(cur - it.amt, 0) } as never)
+          .eq("id", it.id);
+      }
+    }
+    // Remove any leftover-advance row created together with this payment
+    // (advance_row_id holds the human ledger id).
+    if (detail?.advance_row_id) {
+      await supabase
+        .from(mod.table as never)
+        .delete()
+        .eq(mod.idColumn as never, detail.advance_row_id as never);
+    }
   };
 
   // Live FIFO allocation preview for the current payAmount.
@@ -932,7 +1047,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   //   via the cash-sync trigger.
   // - MD Sir Deposit (asMdDeposit): source_table='md_deposit' -> cash/bank
   //   balances stay untouched (external money kept as vendor advance).
-  const recordAdvanceEntry = async (advAmt: number, asMdDeposit = false) => {
+  const recordAdvanceEntry = async (advAmt: number, asMdDeposit = false): Promise<string> => {
     const advId = await generateNextId({
       key: mod.key, label: "", short: "", table: mod.table,
       idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
@@ -954,6 +1069,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     if (asMdDeposit) advPayload.source_table = "md_deposit";
     if (isAgency) advPayload.received_by = user?.id ?? null;
     await resilientInsert(mod.table, advPayload as Record<string, unknown>);
+    return advId;
   };
 
   const submitPayment = async () => {
@@ -1022,7 +1138,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
         if (amt > payDue + 0.001)
           return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
-        await applyAllocationToRow(payRow, amt);
+        const allocItem = await applyAllocationToRow(payRow, amt);
+        await recordPaymentLog([allocItem], amt, null);
         await writeCashMirror(amt, String(payRow[mod.idColumn] ?? ""),
           `${String(payRow[mod.idColumn] ?? "")}=${amt}`);
         notify.success(`✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()}`, {
@@ -1059,12 +1176,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         }
         let total = 0;
         const parts: string[] = [];
+        const allocItems: AllocItem[] = [];
         for (const e of entries) {
           const r = rowById.get(e.id)!;
-          await applyAllocationToRow(r, e.amt);
+          allocItems.push(await applyAllocationToRow(r, e.amt));
           total += e.amt;
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
+        await recordPaymentLog(allocItems, total, null);
         await writeCashMirror(total, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
         notify.success(`✓ ${entries.length}টি বিলে ${payAsMdDeposit ? "MD Sir Deposit" : "পেমেন্ট"} সংরক্ষিত: ${total.toLocaleString()}`, {
           meta: {
@@ -1097,22 +1216,26 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
       let remaining = amt;
       const parts: string[] = [];
+      const allocItems: AllocItem[] = [];
       for (const r of list) {
         if (remaining <= 0.0001) break;
         const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
-        await applyAllocationToRow(r, take);
+        allocItems.push(await applyAllocationToRow(r, take));
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
       // Leftover (from user balance or MD deposit) is stored as an advance entry.
       let advLeft = 0;
+      let advRowId: string | null = null;
       if (allowOverpay && remaining > 0.0001) {
         advLeft = remaining;
-        await recordAdvanceEntry(advLeft, payAsMdDeposit);
+        advRowId = await recordAdvanceEntry(advLeft, payAsMdDeposit);
         parts.push(`ADVANCE=${advLeft}`);
       }
+      // Visible, deletable PAYMENT log for the bill-allocated portion (vendor side).
+      await recordPaymentLog(allocItems, amt - advLeft, advRowId);
       const billCount = parts.filter((p) => !p.startsWith("ADVANCE")).length;
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
       const depositLabel = payAsMdDeposit ? "MD Sir Deposit" : "FIFO পেমেন্ট";
@@ -1204,14 +1327,25 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
   const confirmDelete = async () => {
     if (!deleteRow) return;
-    const { error } = await supabase
-      .from(mod.table as never)
-      .delete()
-      .eq("id", deleteRow.id);
-    if (error) toast.error("ডিলিট সমস্যা: " + error.message);
-    else {
-      toast.success("ডিলিট হয়েছে");
+    try {
+      // A PAYMENT log row: first reverse the money it applied to the bills (and
+      // any leftover-advance row), then delete the log row itself.
+      if (!isAgency && isPaymentRow(deleteRow) && deleteRow.alloc_detail) {
+        await reversePaymentLog(deleteRow);
+      }
+      const { error } = await supabase
+        .from(mod.table as never)
+        .delete()
+        .eq("id", deleteRow.id);
+      if (error) throw error;
+      toast.success(
+        !isAgency && isPaymentRow(deleteRow)
+          ? "পেমেন্ট রিভার্স ও ডিলিট হয়েছে"
+          : "ডিলিট হয়েছে",
+      );
       await load();
+    } catch (e) {
+      toast.error("ডিলিট সমস্যা: " + errMsg(e));
     }
     setDeleteRow(null);
   };
@@ -1876,6 +2010,23 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Amount
                         </div>
+                        {isPayment ? (
+                          <>
+                            <div className="font-bold text-base text-rose-500">
+                              − ৳ {Number(r[paidCol] ?? 0).toLocaleString()}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {String(r.payment_method ?? "—")}
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className="mt-1 border-sky-500/50 text-sky-600 dark:text-sky-400 text-[10px]"
+                            >
+                              {isAgency ? "Payment Received" : "Payment Paid"}
+                            </Badge>
+                          </>
+                        ) : (
+                          <>
                         <div className="font-bold text-base">
                           ৳ {Number(r[billCol] ?? 0).toLocaleString()}
                         </div>
@@ -1934,6 +2085,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           >
                             Profit: {profit.toLocaleString()}
                           </div>
+                        )}
+                          </>
                         )}
                       </div>
                       <div className="print:hidden">
@@ -2207,7 +2360,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
             <AlertDialogDescription>
-              এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।
+              {!isAgency && deleteRow && isPaymentRow(deleteRow)
+                ? `এই পেমেন্ট এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছলে এর মাধ্যমে যেসব বিলে টাকা adjust হয়েছিল তা ফেরত গিয়ে বিলগুলো আবার Due হয়ে যাবে।`
+                : `এই এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
