@@ -642,6 +642,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const groupSummary = useMemo(() => {
     const map = new Map<string, { bill: number; cashPaid: number; discount: number; applied: number; advance: number; due: number }>();
     for (const r of filtered) {
+      if (isPaymentRow(r)) continue;
       const k = String(r[groupField] ?? "—") || "—";
       const cur = map.get(k) ?? { bill: 0, cashPaid: 0, discount: 0, applied: 0, advance: 0, due: 0 };
       if (isAdvanceRow(r)) {
