@@ -2010,6 +2010,23 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Amount
                         </div>
+                        {isPayment ? (
+                          <>
+                            <div className="font-bold text-base text-rose-500">
+                              − ৳ {Number(r[paidCol] ?? 0).toLocaleString()}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {String(r.payment_method ?? "—")}
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className="mt-1 border-sky-500/50 text-sky-600 dark:text-sky-400 text-[10px]"
+                            >
+                              {isAgency ? "Payment Received" : "Payment Paid"}
+                            </Badge>
+                          </>
+                        ) : (
+                          <>
                         <div className="font-bold text-base">
                           ৳ {Number(r[billCol] ?? 0).toLocaleString()}
                         </div>
@@ -2068,6 +2085,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           >
                             Profit: {profit.toLocaleString()}
                           </div>
+                        )}
+                          </>
                         )}
                       </div>
                       <div className="print:hidden">
