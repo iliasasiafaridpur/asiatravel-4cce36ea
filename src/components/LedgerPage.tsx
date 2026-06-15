@@ -996,9 +996,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           .eq("id", it.id);
       }
     }
-    // Remove any leftover-advance row created together with this payment.
+    // Remove any leftover-advance row created together with this payment
+    // (advance_row_id holds the human ledger id).
     if (detail?.advance_row_id) {
-      await supabase.from(mod.table as never).delete().eq("id", detail.advance_row_id);
+      await supabase
+        .from(mod.table as never)
+        .delete()
+        .eq(mod.idColumn as never, detail.advance_row_id as never);
     }
   };
 
