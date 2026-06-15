@@ -864,9 +864,20 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     return null;
   };
 
+  // A single bill-allocation record, stored on the PAYMENT log row so an admin
+  // delete can reverse exactly what was applied.
+  type AllocItem = {
+    id: string;            // ledger row UUID the payment touched
+    ledger_id: string;     // human ledger id (for display)
+    amt: number;
+    src_table: string | null;
+    src_id: string | null;
+    recv_col: string | null; // when set, the amount was applied to the source row column
+  };
+
   // Apply `amt` to a single ledger row: update source row if linked (trigger refreshes ledger),
-  // otherwise bump the ledger row's paidCol directly.
-  const applyAllocationToRow = async (row: Row, amt: number) => {
+  // otherwise bump the ledger row's paidCol directly. Returns allocation metadata.
+  const applyAllocationToRow = async (row: Row, amt: number): Promise<AllocItem> => {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
     const recvCol = srcTable ? sourceRecvCol(srcTable) : null;
@@ -902,6 +913,93 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       .from(mod.table as never)
         .update({ payment_method: payMethod, payment_date: payDate } as never)
       .eq("id", row.id);
+    return {
+      id: row.id,
+      ledger_id: String(row[mod.idColumn] ?? ""),
+      amt,
+      src_table: srcTable && srcId && recvCol ? srcTable : null,
+      src_id: srcTable && srcId && recvCol ? srcId : null,
+      recv_col: srcTable && srcId && recvCol ? recvCol : null,
+    };
+  };
+
+  // Insert a visible, deletable PAYMENT log row recording a vendor payment.
+  // The money has already been applied into the bills (alloc items) so this row
+  // is financially neutral (excluded from all totals; source_table='payment_log'
+  // makes the cash-sync trigger skip it). Vendor side only.
+  const recordPaymentLog = async (
+    items: AllocItem[],
+    totalAmt: number,
+    advanceRowId: string | null,
+  ) => {
+    if (isAgency) return;
+    if (totalAmt <= 0 || items.length === 0) return;
+    const method = payAsMdDeposit ? "MD Sir Deposit" : payMethod;
+    const logId = await generateNextId({
+      key: mod.key, label: "", short: "", table: mod.table,
+      idColumn: mod.idColumn, idPrefix: "VDL", monthlyId: true, fields: [],
+    });
+    const payload: Record<string, unknown> = {
+      [mod.idColumn]: logId,
+      entry_date: payDate,
+      [groupField]: payTarget,
+      service_type: "PAYMENT",
+      [billCol]: 0,
+      [paidCol]: totalAmt,
+      payment_method: method,
+      payment_date: payDate,
+      source_table: "payment_log",
+      remarks: `Vendor Payment · ${method}${payRemarks ? " · " + payRemarks : ""}`,
+      alloc_detail: {
+        kind: "vendor_payment",
+        method,
+        as_md_deposit: payAsMdDeposit,
+        as_user_balance: payAsAdvance,
+        items,
+        advance_row_id: advanceRowId,
+      },
+      created_by: user?.id ?? null,
+    };
+    await resilientInsert(mod.table, payload as Record<string, unknown>);
+  };
+
+  // Reverse a PAYMENT log row's allocations, then return so the caller can
+  // delete the log row itself. Admin-only (guarded at the call site).
+  const reversePaymentLog = async (logRow: Row) => {
+    const detail = logRow.alloc_detail as
+      | { items?: AllocItem[]; advance_row_id?: string | null }
+      | null;
+    const items = detail?.items ?? [];
+    for (const it of items) {
+      if (!it || !it.amt) continue;
+      if (it.src_table && it.src_id && it.recv_col) {
+        const { data: srcRow } = await supabase
+          .from(it.src_table as never)
+          .select(`id, ${it.recv_col}`)
+          .eq("id", it.src_id)
+          .maybeSingle();
+        const cur = Number((srcRow as Record<string, unknown> | null)?.[it.recv_col] ?? 0);
+        await supabase
+          .from(it.src_table as never)
+          .update({ [it.recv_col]: Math.max(cur - it.amt, 0) } as never)
+          .eq("id", it.src_id);
+      } else {
+        const { data: ledRow } = await supabase
+          .from(mod.table as never)
+          .select(`id, ${paidCol}`)
+          .eq("id", it.id)
+          .maybeSingle();
+        const cur = Number((ledRow as Record<string, unknown> | null)?.[paidCol] ?? 0);
+        await supabase
+          .from(mod.table as never)
+          .update({ [paidCol]: Math.max(cur - it.amt, 0) } as never)
+          .eq("id", it.id);
+      }
+    }
+    // Remove any leftover-advance row created together with this payment.
+    if (detail?.advance_row_id) {
+      await supabase.from(mod.table as never).delete().eq("id", detail.advance_row_id);
+    }
   };
 
   // Live FIFO allocation preview for the current payAmount.
