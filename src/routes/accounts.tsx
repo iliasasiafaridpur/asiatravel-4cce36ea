@@ -401,8 +401,9 @@ function AccountsPage() {
   };
 
   const deleteHand = async (id: string): Promise<void> => {
-    const { error } = await supabase.from("cash_handovers").delete().eq("id", id);
+    const { data, error } = await supabase.from("cash_handovers").delete().eq("id", id).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("ডিলেট হয়নি — অনুমতি বা রেকর্ড মিলছে না"); return; }
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
@@ -417,8 +418,9 @@ function AccountsPage() {
     await reload(true);
   };
   const deleteExp = async (id: string): Promise<void> => {
-    const { error } = await supabase.from("cash_expenses").delete().eq("id", id);
+    const { data, error } = await supabase.from("cash_expenses").delete().eq("id", id).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("ডিলেট হয়নি — অনুমতি বা রেকর্ড মিলছে না"); return; }
     toast.success("ডিলেট সম্পন্ন");
     void reload(true);
   };
