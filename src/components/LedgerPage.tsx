@@ -1176,12 +1176,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         }
         let total = 0;
         const parts: string[] = [];
+        const allocItems: AllocItem[] = [];
         for (const e of entries) {
           const r = rowById.get(e.id)!;
-          await applyAllocationToRow(r, e.amt);
+          allocItems.push(await applyAllocationToRow(r, e.amt));
           total += e.amt;
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
+        await recordPaymentLog(allocItems, total, null);
         await writeCashMirror(total, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
         notify.success(`✓ ${entries.length}টি বিলে ${payAsMdDeposit ? "MD Sir Deposit" : "পেমেন্ট"} সংরক্ষিত: ${total.toLocaleString()}`, {
           meta: {
