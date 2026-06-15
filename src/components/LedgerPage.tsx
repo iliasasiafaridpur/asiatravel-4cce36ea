@@ -1216,22 +1216,26 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
       let remaining = amt;
       const parts: string[] = [];
+      const allocItems: AllocItem[] = [];
       for (const r of list) {
         if (remaining <= 0.0001) break;
         const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
-        await applyAllocationToRow(r, take);
+        allocItems.push(await applyAllocationToRow(r, take));
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
       // Leftover (from user balance or MD deposit) is stored as an advance entry.
       let advLeft = 0;
+      let advRowId: string | null = null;
       if (allowOverpay && remaining > 0.0001) {
         advLeft = remaining;
-        await recordAdvanceEntry(advLeft, payAsMdDeposit);
+        advRowId = await recordAdvanceEntry(advLeft, payAsMdDeposit);
         parts.push(`ADVANCE=${advLeft}`);
       }
+      // Visible, deletable PAYMENT log for the bill-allocated portion (vendor side).
+      await recordPaymentLog(allocItems, amt - advLeft, advRowId);
       const billCount = parts.filter((p) => !p.startsWith("ADVANCE")).length;
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
       const depositLabel = payAsMdDeposit ? "MD Sir Deposit" : "FIFO পেমেন্ট";
