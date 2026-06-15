@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ModulePage } from "@/components/ModulePage";
 import { moduleByKey } from "@/lib/modules";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Eye, Wallet } from "lucide-react";
+import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 
 export const Route = createFileRoute("/vendors")({
   head: () => ({ meta: [{ title: "Vendor List — Travel Manager" }] }),
@@ -15,6 +18,8 @@ interface Bal { vendor_name: string; total_payable: number; total_paid: number; 
 
 function VendorsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
+  const [profileVendor, setProfileVendor] = useState<string | null>(null);
+  const navigate = useNavigate();
   const load = async () => {
     const { data } = await supabase.rpc("get_vendor_balances" as never);
     setBals(((data as unknown) as Bal[]) ?? []);
@@ -33,9 +38,9 @@ function VendorsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.vendor_name} className={`row-tint-${idx % 4}`}>
                       <TableCell className="font-medium">{b.vendor_name}</TableCell>
@@ -43,6 +48,28 @@ function VendorsPage() {
                       <TableCell className="text-right tabular-nums text-emerald-600">৳ {Number(b.total_paid).toLocaleString()}</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${b.balance_due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {Number(b.balance_due).toLocaleString()}</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${Number(b.advance_balance) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {Number(b.advance_balance ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            title="বিস্তারিত / পেমেন্ট দেখুন"
+                            onClick={() => setProfileVendor(b.vendor_name)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1 px-2 text-xs"
+                            title="পেমেন্ট দিন"
+                            onClick={() => navigate({ to: "/vendor-ledger", search: { pay: b.vendor_name } })}
+                          >
+                            <Wallet className="h-3.5 w-3.5" /> Pay
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -51,6 +78,12 @@ function VendorsPage() {
         </CardContent>
       </Card>
       <ModulePage module={moduleByKey("vendors")!} />
+      <PartyProfileDrawer
+        open={!!profileVendor}
+        onOpenChange={(o) => !o && setProfileVendor(null)}
+        kind="vendor"
+        partyName={profileVendor}
+      />
     </div>
   );
 }
