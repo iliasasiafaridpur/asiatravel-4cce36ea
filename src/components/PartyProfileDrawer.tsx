@@ -44,6 +44,9 @@ export function PartyProfileDrawer({
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
+  // Source ids (bmet/saudi/kuwait) that have actually been RECEIVED from the vendor.
+  // Used to show only vendor-received files in the Recent Service Files list.
+  const [receivedSrcIds, setReceivedSrcIds] = useState<Set<string>>(new Set());
   const { colorFor } = useMobileColors();
 
   const [displayName, setDisplayName] = useState<string | null>(partyName);
@@ -174,8 +177,42 @@ export function PartyProfileDrawer({
           .eq("name", activeName)
           .maybeSingle(),
       ]);
+      const ledgerRows = ((ledgerRes.data as unknown as LedgerRow[]) ?? []);
+
+      // For vendors: figure out which delivery-based source files (BMET / Saudi /
+      // Kuwait) have actually been received from the vendor, so the Recent Service
+      // Files list only shows files that count in the vendor's accounting.
+      const received = new Set<string>();
+      if (!isCustomer) {
+        const byTable: Record<string, string[]> = {
+          bmet_cards: [],
+          saudi_visas: [],
+          kuwait_visas: [],
+        };
+        for (const r of ledgerRows) {
+          const src = String(r.source_table ?? "");
+          const sid = String(r.source_id ?? "");
+          if (sid && (src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas")) {
+            byTable[src].push(sid);
+          }
+        }
+        await Promise.all(
+          Object.entries(byTable).map(async ([tbl, ids]) => {
+            if (!ids.length) return;
+            const { data } = await supabase
+              .from(tbl as never)
+              .select("id,received_date")
+              .in("id", ids);
+            for (const row of (data as { id: string; received_date: string | null }[] | null) ?? []) {
+              if (row.received_date) received.add(row.id);
+            }
+          }),
+        );
+      }
+
       if (!cancelled) {
-        setRows(((ledgerRes.data as unknown as LedgerRow[]) ?? []));
+        setRows(ledgerRows);
+        setReceivedSrcIds(received);
         setContact((contactRes.data as Contact | null) ?? null);
         setLoading(false);
       }
@@ -183,7 +220,7 @@ export function PartyProfileDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, partyName, displayName, table, groupField, contactsTable]);
+  }, [open, partyName, displayName, table, groupField, contactsTable, isCustomer]);
 
   const stats = useMemo(() => {
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
@@ -215,10 +252,20 @@ export function PartyProfileDrawer({
     return { bill, totalPaid, due, advance: advBal, profit, byService };
   }, [rows, billCol, paidCol]);
 
-  const serviceRows = useMemo(
-    () => rows.filter((r) => !isAdvance(r) && !isPayment(r)).slice(0, 20),
-    [rows],
-  );
+  const serviceRows = useMemo(() => {
+    const base = rows.filter((r) => !isAdvance(r) && !isPayment(r));
+    if (isCustomer) return base.slice(0, 20);
+    // Vendor: only show files actually received from the vendor (i.e. counted in
+    // the vendor's accounting). Delivery-based files (BMET/Saudi/Kuwait) must have
+    // a "Received Date From Vendor"; other sources (tickets/others) always count.
+    return base
+      .filter((r) => {
+        const src = String(r.source_table ?? "");
+        if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+        return receivedSrcIds.has(String(r.source_id ?? ""));
+      })
+      .slice(0, 20);
+  }, [rows, isCustomer, receivedSrcIds]);
   const paymentRows = useMemo(
     () =>
       rows

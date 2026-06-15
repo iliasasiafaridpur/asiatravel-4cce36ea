@@ -2369,7 +2369,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                 <Label htmlFor="payAsMdDeposit" className="text-sm font-medium cursor-pointer flex-1">
                   Mark as Vendor Deposit From MD Sir
                   <span className="block text-[11px] text-muted-foreground font-normal">
-                    টিকেটিং পোর্টাল এ Deposit করুন। যা লেজারের বাহিরের টাকা। User এর ব্যালেঞ্জ অপরিবর্তিত থাকবে।
+                    টিকেটিং পোর্টাল বা vendor কে Deposit করুন। যা লেজারের বাহিরের টাকা, user এর balance অপরিবর্তিত থাকবে।
                   </span>
                 </Label>
               </div>
