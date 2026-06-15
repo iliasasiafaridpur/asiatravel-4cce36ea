@@ -44,6 +44,9 @@ export function PartyProfileDrawer({
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
+  // Source ids (bmet/saudi/kuwait) that have actually been RECEIVED from the vendor.
+  // Used to show only vendor-received files in the Recent Service Files list.
+  const [receivedSrcIds, setReceivedSrcIds] = useState<Set<string>>(new Set());
   const { colorFor } = useMobileColors();
 
   const [displayName, setDisplayName] = useState<string | null>(partyName);
