@@ -678,6 +678,12 @@ export function LedgerPage({ module: mod }: Props) {
     const f: Record<string, unknown> = {};
     for (const field of mod.fields)
       f[field.name] = r[field.name] ?? (field.type === "number" ? 0 : "");
+    // Vendor/Agent payments made by applying advance are stored in `advance_applied`,
+    // not in the raw paid column. Show the FULL paid (cash + applied advance) in the
+    // "Paid" box so it doesn't wrongly read 0. On save we subtract the applied part
+    // back out (see submit) to avoid double-counting.
+    const applied = Number(r.advance_applied ?? 0);
+    if (applied > 0) f[paidCol] = Number(r[paidCol] ?? 0) + applied;
     setForm(f);
     setOpenForm(true);
   };
