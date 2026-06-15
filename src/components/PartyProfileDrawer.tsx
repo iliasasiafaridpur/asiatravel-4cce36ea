@@ -226,7 +226,8 @@ export function PartyProfileDrawer({
           (r) =>
             isPayment(r) ||
             isAdvance(r) ||
-            Number(r[paidCol] ?? 0) > 0,
+            Number(r[paidCol] ?? 0) > 0 ||
+            Number(r.advance_applied ?? 0) > 0,
         )
         .slice(0, 20),
     [rows, paidCol],
