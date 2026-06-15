@@ -74,6 +74,10 @@ type Row = Record<string, unknown> & { id: string };
 
 interface Props {
   module: ModuleSchema;
+  /** When set, auto-open the payment dialog for this group (vendor/agent) on mount. */
+  autoPay?: string;
+  /** Called once the autoPay dialog has been opened, so the caller can clear the intent. */
+  onAutoPayHandled?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
