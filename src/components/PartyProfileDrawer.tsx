@@ -252,10 +252,20 @@ export function PartyProfileDrawer({
     return { bill, totalPaid, due, advance: advBal, profit, byService };
   }, [rows, billCol, paidCol]);
 
-  const serviceRows = useMemo(
-    () => rows.filter((r) => !isAdvance(r) && !isPayment(r)).slice(0, 20),
-    [rows],
-  );
+  const serviceRows = useMemo(() => {
+    const base = rows.filter((r) => !isAdvance(r) && !isPayment(r));
+    if (isCustomer) return base.slice(0, 20);
+    // Vendor: only show files actually received from the vendor (i.e. counted in
+    // the vendor's accounting). Delivery-based files (BMET/Saudi/Kuwait) must have
+    // a "Received Date From Vendor"; other sources (tickets/others) always count.
+    return base
+      .filter((r) => {
+        const src = String(r.source_table ?? "");
+        if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+        return receivedSrcIds.has(String(r.source_id ?? ""));
+      })
+      .slice(0, 20);
+  }, [rows, isCustomer, receivedSrcIds]);
   const paymentRows = useMemo(
     () =>
       rows
