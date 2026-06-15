@@ -1043,7 +1043,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   //   via the cash-sync trigger.
   // - MD Sir Deposit (asMdDeposit): source_table='md_deposit' -> cash/bank
   //   balances stay untouched (external money kept as vendor advance).
-  const recordAdvanceEntry = async (advAmt: number, asMdDeposit = false) => {
+  const recordAdvanceEntry = async (advAmt: number, asMdDeposit = false): Promise<string> => {
     const advId = await generateNextId({
       key: mod.key, label: "", short: "", table: mod.table,
       idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
@@ -1065,6 +1065,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     if (asMdDeposit) advPayload.source_table = "md_deposit";
     if (isAgency) advPayload.received_by = user?.id ?? null;
     await resilientInsert(mod.table, advPayload as Record<string, unknown>);
+    return advId;
   };
 
   const submitPayment = async () => {
