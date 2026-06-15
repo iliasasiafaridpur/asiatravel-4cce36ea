@@ -926,6 +926,30 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     return;
   };
 
+  // Record an unallocated advance entry. Used for the leftover when "Payment from
+  // User Balance" exceeds total due. Reduces user balance via the cash-sync trigger
+  // (real payment_method, no source_table).
+  const recordAdvanceEntry = async (advAmt: number) => {
+    const advId = await generateNextId({
+      key: mod.key, label: "", short: "", table: mod.table,
+      idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
+      monthlyId: true, fields: [],
+    });
+    const advPayload: Record<string, unknown> = {
+      [mod.idColumn]: advId,
+      entry_date: payDate,
+      [groupField]: payTarget,
+      service_type: "ADVANCE",
+      [billCol]: 0,
+      [paidCol]: advAmt,
+      payment_method: payMethod,
+      remarks: `Advance ${isAgency ? "Received" : "Paid"} (leftover) · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
+      created_by: user?.id ?? null,
+    };
+    if (isAgency) advPayload.received_by = user?.id ?? null;
+    await resilientInsert(mod.table, advPayload as Record<string, unknown>);
+  };
+
   const submitPayment = async () => {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
     setPaySaving(true);
@@ -1006,38 +1030,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         return;
       }
 
-      // ---------- Advance Payment (no booking allocation) ----------
-      if (payAsAdvance && !payRow) {
-        const amt = Number(payAmount);
-        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-        const ledgerId = await generateNextId({
-          key: mod.key, label: "", short: "", table: mod.table,
-          idColumn: mod.idColumn, idPrefix: isAgency ? "AGL" : "VDL",
-          monthlyId: true, fields: [],
-        });
-        const payload: Record<string, unknown> = {
-          [mod.idColumn]: ledgerId,
-          entry_date: payDate,
-          [groupField]: payTarget,
-          service_type: "ADVANCE",
-          [billCol]: 0,
-          [paidCol]: amt,
-          payment_method: payMethod,
-          remarks: `Advance ${isAgency ? "Received" : "Paid"} · ${payMethod}${payRemarks ? " · " + payRemarks : ""}`,
-          created_by: user?.id ?? null,
-        };
-        if (isAgency) payload.received_by = user?.id ?? null;
-        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        if (!offline) {
-          await writeCashMirror(amt, ledgerId, `ADVANCE=${amt}`);
-          notify.success(`✓ Advance ${isAgency ? "গ্রহণ" : "পরিশোধ"} সংরক্ষিত: ${amt.toLocaleString()}`, {
-            meta: { vendor: String(payTarget), service: isAgency ? "Agent Advance Received" : "Vendor Advance Paid", refId: ledgerId, amount: amt },
-          });
-        }
-        setPayOpen(false);
-        void load();
-        return;
-      }
+      // ---------- Payment from User Balance (payAsAdvance) ----------
+      // No longer a pure unallocated advance. It now falls through to the normal
+      // FIFO / Bill-by-Bill allocation below, where any leftover beyond total due
+      // is recorded as an advance via recordAdvanceEntry().
+
 
       // ---------- Passenger-specific (single row) ----------
       if (payRow) {
@@ -1110,9 +1107,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         (s, r) => s + (advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0)),
         0,
       );
-      if (amt > totalDue + 0.001)
+      // Normal flow caps at total due. "Payment from User Balance" (payAsAdvance)
+      // allows overpay — the leftover beyond due is kept as an advance.
+      if (!payAsAdvance && amt > totalDue + 0.001)
         return toast.error(`Total Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${totalDue})`);
-      if (list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
+      if (!payAsAdvance && list.length === 0) return toast.error("কোনো অপরিশোধিত বিল নেই");
 
       let remaining = amt;
       const parts: string[] = [];
@@ -1125,15 +1124,28 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
+      // Leftover (when paying from user balance) is stored as an advance entry.
+      let advLeft = 0;
+      if (payAsAdvance && remaining > 0.0001) {
+        advLeft = remaining;
+        await recordAdvanceEntry(advLeft);
+        parts.push(`ADVANCE=${advLeft}`);
+      }
+      const billCount = parts.filter((p) => !p.startsWith("ADVANCE")).length;
       await writeCashMirror(amt, parts[0]?.split("=")[0] ?? payTarget, parts.join(", "));
-      notify.success(`✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${parts.length}টি বিল)`, {
-        meta: {
-          vendor: String(payTarget),
-          service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${parts.length} bills)`,
-          refId: parts.map((p) => p.split("=")[0]).join(", "),
-          amount: amt,
+      notify.success(
+        advLeft > 0
+          ? `✓ পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (বিলে ${(amt - advLeft).toLocaleString()} + advance ${advLeft.toLocaleString()})`
+          : `✓ FIFO পেমেন্ট সংরক্ষিত: ${amt.toLocaleString()} (${billCount}টি বিল)`,
+        {
+          meta: {
+            vendor: String(payTarget),
+            service: `${isAgency ? "Agent Receipt" : "Vendor Payment"} (FIFO, ${billCount} bills${advLeft > 0 ? " + advance" : ""})`,
+            refId: parts.map((p) => p.split("=")[0]).join(", "),
+            amount: amt,
+          },
         },
-      });
+      );
       setPayOpen(false);
       void load();
     } catch (e) {
@@ -2335,7 +2347,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Mark as Advance Payment toggle (bulk mode only) */}
+            {/* Payment from User Balance toggle (bulk mode only) */}
             {!payRow && payTarget && (
               <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2.5">
                 <Checkbox
@@ -2343,13 +2355,19 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   checked={payAsAdvance}
                   onCheckedChange={(c) => {
                     setPayAsAdvance(!!c);
-                    if (c) { setPayAmount(""); setSelectedLines({}); setPayAsMdDeposit(false); setPayAsAdjust(false); }
+                    if (c) {
+                      setSelectedLines({});
+                      setPayAsMdDeposit(false);
+                      setPayAsAdjust(false);
+                      setPayMode("fifo");
+                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                    }
                   }}
                 />
                 <Label htmlFor="payAsAdvance" className="text-sm font-medium cursor-pointer flex-1">
-                  Mark as Advance Payment
+                  Mark as Payment from User Balance
                   <span className="block text-[11px] text-muted-foreground font-normal">
-                    কোনো বুকিং-এর সাথে যুক্ত না করে advance হিসেবে রাখুন — পরের বুকিং থেকে auto adjust হবে
+                    vendor কে পেমেন্ট দিন user এর balance থেকে। Auto FIFO / Bill-by-Bill দিয়ে বিলে adjust হবে — বেশি দিলে বাকি টাকা advance হিসেবে জমা থাকবে।
                   </span>
                 </Label>
               </div>
@@ -2432,11 +2450,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Advance amount input (when advance OR MD deposit toggle ON) */}
-            {!payRow && payTarget && (payAsAdvance || payAsMdDeposit) && (
+            {/* Deposit amount input (only for MD-deposit toggle) */}
+            {!payRow && payTarget && payAsMdDeposit && (
               <div className="space-y-1.5">
                 <Label className="text-xs">
-                  {payAsMdDeposit ? "MD Sir Deposit Amount" : "Advance Amount"} <span className="text-rose-500">*</span>
+                  MD Sir Deposit Amount <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   type="number"
@@ -2449,13 +2467,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill) — hidden when paying advance/MD deposit */}
-            {!payRow && payTarget && !payAsAdvance && !payAsMdDeposit && !payAsAdjust && (
+            {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill). Shown for the normal flow
+                and for "Payment from User Balance" (payAsAdvance). Hidden for MD
+                deposit / manual adjustment. */}
+            {!payRow && payTarget && !payAsMdDeposit && !payAsAdjust && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
                   <TabsTrigger value="specific">Bill-by-Bill (নির্দিষ্ট)</TabsTrigger>
                 </TabsList>
+
 
                 <TabsContent value="fifo" className="space-y-3 pt-3">
                   <div className="grid grid-cols-2 gap-3">
