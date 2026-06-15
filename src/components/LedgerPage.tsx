@@ -2050,6 +2050,49 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               );
             })()}
           <FormSections mod={formMod} form={form} setForm={setForm} />
+          {editing && editBalancePreview && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+              <div className="mb-1 text-xs font-semibold text-muted-foreground">
+                {groupLabel}: {editBalancePreview.key} — সমন্বিত হিসাব
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-4">
+                <div>
+                  <span className="opacity-60">মোট {billLabel}:</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    ৳{Math.round(editBalancePreview.bill).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="opacity-60">মোট {paidLabel}:</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    ৳{Math.round(editBalancePreview.paid).toLocaleString()}
+                  </span>
+                </div>
+                {editBalancePreview.advance > 0 && (
+                  <div>
+                    <span className="opacity-60">অগ্রিম:</span>{" "}
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      ৳{Math.round(editBalancePreview.advance).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="opacity-60">মোট ব্যালেন্স:</span>{" "}
+                  {editBalancePreview.net > 0 ? (
+                    <span className="font-bold text-destructive">
+                      ৳{Math.round(editBalancePreview.net).toLocaleString()} বাকি
+                    </span>
+                  ) : editBalancePreview.net < 0 ? (
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      ৳{Math.round(-editBalancePreview.net).toLocaleString()} অগ্রিম
+                    </span>
+                  ) : (
+                    <span className="font-bold text-foreground">পরিশোধিত</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <DialogFooter className="sm:justify-between gap-2">
             <Button
               type="button"
