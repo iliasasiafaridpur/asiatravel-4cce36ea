@@ -656,6 +656,48 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       .sort((a, b) => b.due - a.due);
   }, [filtered, groupField, billCol, paidCol, countsForVendorDue, advanceAdjustedRows]);
 
+  // Live balance preview while editing: shows the party's (vendor/agent) overall
+  // due/advance recomputed with the CURRENT form value for the edited paid amount,
+  // so changing "Paid" instantly reflects how the total balance adjusts.
+  const editBalancePreview = useMemo(() => {
+    if (!editing) return null;
+    const key = String(editing[groupField] ?? "").trim();
+    if (!key) return null;
+    let due = 0;
+    let advanceIn = 0;
+    let applied = 0;
+    let bill = 0;
+    let paid = 0;
+    for (const r of rows) {
+      if (String(r[groupField] ?? "").trim() !== key) continue;
+      const isThis = r.id === editing.id;
+      if (isAdvanceRow(r)) {
+        advanceIn += isThis ? Number(form[paidCol] ?? 0) : Number(r[paidCol] ?? 0);
+        continue;
+      }
+      if (!countsForVendorDue(r)) continue;
+      // For the edited row the "Paid" box already contains cash + applied advance
+      // (set in startEdit); for other rows reconstruct the same total.
+      const rowBill = isThis ? Number(form[billCol] ?? 0) : Number(r[billCol] ?? 0);
+      const rowPaid = isThis
+        ? Number(form[paidCol] ?? 0)
+        : Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0);
+      const rowDisc = isAgency
+        ? isThis
+          ? Number(form.discount_amount ?? 0)
+          : Number(r.discount_amount ?? 0)
+        : 0;
+      const rowApplied = isThis
+        ? Number(editing.advance_applied ?? 0)
+        : Number(r.advance_applied ?? 0);
+      bill += rowBill;
+      paid += rowPaid;
+      due += Math.max(rowBill - rowPaid - rowDisc, 0);
+      applied += rowApplied;
+    }
+    const advance = Math.max(advanceIn - applied, 0);
+    return { key, bill, paid, due, advance, net: due - advance };
+  }, [editing, form, rows, groupField, billCol, paidCol, isAgency, countsForVendorDue]);
 
   const groupOptions = useMemo(() => {
     const set = new Set<string>();
@@ -2008,6 +2050,49 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               );
             })()}
           <FormSections mod={formMod} form={form} setForm={setForm} />
+          {editing && editBalancePreview && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+              <div className="mb-1 text-xs font-semibold text-muted-foreground">
+                {groupLabel}: {editBalancePreview.key} — সমন্বিত হিসাব
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-4">
+                <div>
+                  <span className="opacity-60">মোট {billLabel}:</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    ৳{Math.round(editBalancePreview.bill).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="opacity-60">মোট {paidLabel}:</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    ৳{Math.round(editBalancePreview.paid).toLocaleString()}
+                  </span>
+                </div>
+                {editBalancePreview.advance > 0 && (
+                  <div>
+                    <span className="opacity-60">অগ্রিম:</span>{" "}
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      ৳{Math.round(editBalancePreview.advance).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="opacity-60">মোট ব্যালেন্স:</span>{" "}
+                  {editBalancePreview.net > 0 ? (
+                    <span className="font-bold text-destructive">
+                      ৳{Math.round(editBalancePreview.net).toLocaleString()} বাকি
+                    </span>
+                  ) : editBalancePreview.net < 0 ? (
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      ৳{Math.round(-editBalancePreview.net).toLocaleString()} অগ্রিম
+                    </span>
+                  ) : (
+                    <span className="font-bold text-foreground">পরিশোধিত</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <DialogFooter className="sm:justify-between gap-2">
             <Button
               type="button"
