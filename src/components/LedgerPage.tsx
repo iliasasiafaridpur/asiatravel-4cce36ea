@@ -1004,42 +1004,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         return;
       }
 
-      // ---------- MD Sir External Deposit (vendor advance, no cash/bank impact) ----------
-      if (payAsMdDeposit && !payRow && !isAgency) {
-        const amt = Number(payAmount);
-        if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
-        const ledgerId = await generateNextId({
-          key: mod.key, label: "", short: "", table: mod.table,
-          idColumn: mod.idColumn, idPrefix: "VDL",
-          monthlyId: true, fields: [],
-        });
-        const payload: Record<string, unknown> = {
-          [mod.idColumn]: ledgerId,
-          entry_date: payDate,
-          [groupField]: payTarget,
-          service_type: "ADVANCE",
-          [billCol]: 0,
-          [paidCol]: amt,
-          payment_method: "MD Sir Deposit",
-          // Setting source_table makes sync_vendor_payment_to_cash skip the
-          // cash_expenses mirror — so system Cash/Bank balances are untouched.
-          source_table: "md_deposit",
-          remarks: `MD Sir External Deposit${payRemarks ? " · " + payRemarks : ""}`,
-          created_by: user?.id ?? null,
-        };
-        const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
-        if (!offline) notify.success(`✓ MD Sir Deposit সংরক্ষিত (Vendor Advance +৳${amt.toLocaleString()}, Cash অপরিবর্তিত)`, {
-          meta: { vendor: String(payTarget), service: "MD Sir Deposit (Vendor Advance)", refId: ledgerId, amount: amt },
-        });
-        setPayOpen(false);
-        void load();
-        return;
-      }
+      // ---------- MD Sir Deposit / Payment from User Balance ----------
+      // Both now fall through to the normal FIFO / Bill-by-Bill allocation below.
+      // - Bills are paid via applyAllocationToRow (vendor bill rows carry a
+      //   source_table, so sync_vendor_payment_to_cash never mirrors them to
+      //   cash — Cash/Bank balances stay untouched for the bill portion).
+      // - Any leftover beyond total due is recorded as an advance via
+      //   recordAdvanceEntry(). For MD Sir Deposit the leftover advance also keeps
+      //   Cash untouched (source_table='md_deposit'); for User Balance it reduces
+      //   the user balance via the cash-sync trigger.
 
-      // ---------- Payment from User Balance (payAsAdvance) ----------
-      // No longer a pure unallocated advance. It now falls through to the normal
-      // FIFO / Bill-by-Bill allocation below, where any leftover beyond total due
-      // is recorded as an advance via recordAdvanceEntry().
 
 
       // ---------- Passenger-specific (single row) ----------
