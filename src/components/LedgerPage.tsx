@@ -2360,7 +2360,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
             <AlertDialogDescription>
-              এই এন্ট্রিটি ({String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।
+              {!isAgency && deleteRow && isPaymentRow(deleteRow)
+                ? `এই পেমেন্ট এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছলে এর মাধ্যমে যেসব বিলে টাকা adjust হয়েছিল তা ফেরত গিয়ে বিলগুলো আবার Due হয়ে যাবে।`
+                : `এই এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
