@@ -237,7 +237,8 @@ function AccountsPage() {
     return () => { cancelled = true; };
   }, [received]);
 
-  const fRecv = useMemo(() => useDateFilter ? received.filter(r => inDateRange(r.entry_date)) : received.slice(0, latestN), [received, latestN, useDateFilter, inDateRange]);
+  const accountingReceived = useMemo(() => received.filter((r) => !isStatusEventReceipt(r)), [received]);
+  const fRecv = useMemo(() => useDateFilter ? accountingReceived.filter(r => inDateRange(r.entry_date)) : accountingReceived.slice(0, latestN), [accountingReceived, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
   const isHandoverSubmitted = (h: Hand) => Boolean(h.submitted_amount !== null && h.submitted_amount !== undefined) || Boolean(h.closing_date) || (h.status ?? "approved") === "pending";
@@ -285,7 +286,7 @@ function AccountsPage() {
 
   const fullAsc = useMemo<(TLItem & { running: number; created: string })[]>(() => {
     const items: (TLItem & { created: string })[] = [
-      ...received.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r, created: (r as Recv & { created_at?: string }).created_at ?? r.entry_date })),
+      ...accountingReceived.map((r) => ({ kind: "received" as const, date: r.entry_date, row: r, created: (r as Recv & { created_at?: string }).created_at ?? r.entry_date })),
       ...handovers.map((h) => ({ kind: "handover" as const, date: h.entry_date, row: h, created: (h as Hand & { created_at?: string }).created_at ?? h.entry_date })),
       ...expenses.map((e) => ({ kind: "expense"  as const, date: e.entry_date, row: e, created: (e as Exp & { created_at?: string }).created_at ?? e.entry_date })),
     ];
@@ -298,7 +299,7 @@ function AccountsPage() {
       else bal -= Number(it.row.amount);
       return { ...it, running: bal };
     });
-  }, [received, handovers, expenses]);
+  }, [accountingReceived, handovers, expenses]);
 
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
     const desc = [...fullAsc].reverse().filter((it) => {
