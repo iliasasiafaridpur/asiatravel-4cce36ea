@@ -2,7 +2,7 @@ import {
   ResponsiveContainer, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, ComposedChart, Area, Line, XAxis, YAxis, Legend,
 } from "recharts";
-import { TrendingUp, TrendingDown, Percent, Trophy, Medal, Award, Crown } from "lucide-react";
+import { TrendingUp, TrendingDown, Percent, Medal, Award, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PIE_COLORS = [
