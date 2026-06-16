@@ -522,6 +522,9 @@ function DashboardPage() {
     if (moduleFilter === "bmet") {
       return { mode: "bmet", country: groupByKey(filtered, (r) => r.country_name).slice(0, 12) };
     }
+    if (moduleFilter === "other") {
+      return { mode: "service", service: groupByKey(filtered, (r) => r.service_name).slice(0, 12) };
+    }
     if (moduleFilter === "saudi-visa" || moduleFilter === "kuwait-visa") {
       const label = TARGET_MODULES.find((m) => m.key === moduleFilter)?.label ?? moduleFilter;
       const count = filtered.length;
