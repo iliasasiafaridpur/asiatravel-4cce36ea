@@ -306,15 +306,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date,cancelled")
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date,cancelled")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date,cancelled")
           .limit(2000),
         supabase
           .from("others")
