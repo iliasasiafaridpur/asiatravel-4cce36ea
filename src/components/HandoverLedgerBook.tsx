@@ -681,7 +681,7 @@ function HandoverCard({
                       <div className="text-sm text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-sm text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
+                      <div className="text-sm text-muted-foreground leading-tight">Rec:By {r.received_by_name.split(" ")[0]}</div>
                     )}
                   </td>
                   {/* কাস্টমার */}
@@ -772,14 +772,9 @@ function HandoverCard({
                         {isAdvance && <AdvanceBadge advance className="mr-1" />}
                         <b className={`text-sm ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                         {mdRecv && (
-                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
                         )}
                       </>
-                    )}
-                    {(r.received_by_name || r.created_at) && (
-                      <div className="text-sm text-muted-foreground font-normal leading-tight">
-                        {r.received_by_name ? r.received_by_name : ""}{r.received_by_name && r.created_at ? " · " : ""}{r.created_at ? formatDateTime(r.created_at) : ""}
-                      </div>
                     )}
                   </td>
                   {/* বাকি (after this handover) — bolder + larger */}
@@ -816,7 +811,7 @@ function HandoverCard({
               <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
-                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
+                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)}</div>
                 )}
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
@@ -889,7 +884,7 @@ function HandoverCard({
           <span className="whitespace-nowrap">মোট {visibleReceipts.length} আইটেম থেকে আয়</span>
           <span className="tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ {fmt(cashReceipts)}</span>
           {mdReceipts > 0 && (
-            <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)} (ক্যাশে নয়)</span>
+            <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)}</span>
           )}
           {totalExpenses > 0 && (
             <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>
