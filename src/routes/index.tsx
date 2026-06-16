@@ -77,6 +77,7 @@ type Row = {
   status?: string;
   country_name?: string;
   airline?: string;
+  trip_road?: string;
   sold_price?: number;
   received?: number;
   discount?: number;
