@@ -187,7 +187,7 @@ function AccountsPage() {
   // Service detail map (for timeline secondary text & due display)
    type SvcDetail = {
      country?: string | null; route?: string | null; airline?: string | null;
-     service_name?: string | null;
+     service_name?: string | null; passport?: string | null;
      flight_date?: string | null; vendor?: string | null; cost?: number;
       sold?: number; received_total?: number; discount?: number; agent?: string | null;
       delivery_date?: string | null; has_delivery?: boolean;
@@ -202,24 +202,24 @@ function AccountsPage() {
     }
     const tableConfigs: Record<string, { cols: string; map: (row: Record<string, unknown>) => SvcDetail }> = {
       tickets: {
-        cols: "id,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount",
-        map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false }),
+        cols: "id,passport,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount",
+        map: (r) => ({ passport: r.passport as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false }),
       },
       bmet_cards: {
-        cols: "id,country_name,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
-        map: (r) => ({ country: r.country_name as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
+        cols: "id,passport,country_name,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
+        map: (r) => ({ passport: r.passport as string, country: r.country_name as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
       },
       saudi_visas: {
-        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
-        map: (r) => ({ country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
+        cols: "id,passport,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
+        map: (r) => ({ passport: r.passport as string, country: "Saudi Arabia", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
       },
       kuwait_visas: {
-        cols: "id,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount,delivery_date",
-        map: (r) => ({ country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
+        cols: "id,passport,vendor_bought,agency_sold,sold_price,cost_price,received,discount_amount,delivery_date",
+        map: (r) => ({ passport: r.passport as string, country: "Kuwait", vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
       },
       others: {
-        cols: "id,service_name,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
-        map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
+        cols: "id,passport,service_name,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
+        map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
       },
     };
     let cancelled = false;
@@ -781,7 +781,9 @@ ${node.innerHTML.replace(
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const statusEvt = isIn && isStatusEventReceipt(r);
+                  const isMdRecv = isIn && !statusEvt && isMdReceivedMethod(r.method);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
+                  const amountTone = isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                   // Col 1: উৎস/নাম (source/name)
@@ -832,11 +834,10 @@ ${node.innerHTML.replace(
                   const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
-                      {/* Col 1: Name */}
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[0.7fr_1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
+                      {/* Col 1: Type + date */}
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm leading-tight break-words">{name}</p>
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-0.5">
@@ -844,6 +845,15 @@ ${node.innerHTML.replace(
                         </p>
                         {isIn && r.ref_id && <p className="text-xs text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
+
+                      {/* Col 2 (NEW): Name + Passport */}
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm leading-tight break-words">{name}</p>
+                        {isIn && svc?.passport && (
+                          <p className="text-xs text-muted-foreground mt-0.5 font-mono break-words">{svc.passport}</p>
+                        )}
+                      </div>
+
 
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
@@ -910,12 +920,12 @@ ${node.innerHTML.replace(
 
                       {/* Col 4: Amount + Balance */}
                       <div className="text-right shrink-0">
-                        <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
+                        <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${amountTone}`}>
                           {statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
-                        {isIn && !statusEvt && isMdReceivedMethod(r.method) && (
-                          <p className="text-[10px] text-sky-600 dark:text-sky-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}<br />ব্যালেন্সে যোগ হয়নি</p>
+                        {isMdRecv && (
+                          <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
                         )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
