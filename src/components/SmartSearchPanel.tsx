@@ -2,6 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -29,13 +36,30 @@ function pick(r: Row, keys: string[]): string {
   return "";
 }
 
+const MONTHS_BN = [
+  "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+  "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+];
+
+/** Best-effort date for a row: prefers created_at, falls back to common date columns. */
+function rowDate(r: Row): Date | null {
+  const v = pick(r, ["created_at", "issue_date", "trip_date", "flight_date", "travel_date", "date"]);
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, onPick }: Props) {
   const [q, setQ] = useState("");
+  const [year, setYear] = useState("all");
+  const [month, setMonth] = useState("all");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setQ("");
+      setYear("all");
+      setMonth("all");
       const t = setTimeout(() => inputRef.current?.focus(), 150);
       return () => clearTimeout(t);
     }
@@ -52,22 +76,37 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
   }, [open, onClose]);
 
   const items = useMemo(() => {
-    return rows.map((r) => ({
-      row: r,
-      id: String(r[idColumn] ?? ""),
-      passenger: pick(r, ["passenger_name"]),
-      country: pick(r, ["country_name", "country_route", "trip_road"]),
-      agency: pick(r, ["agency_sold"]),
-      // Full searchable text across every field so even one letter finds matches.
-      blob: Object.values(r).map((v) => String(v ?? "")).join(" ").toLowerCase(),
-    }));
+    return rows.map((r) => {
+      const d = rowDate(r);
+      return {
+        row: r,
+        id: String(r[idColumn] ?? ""),
+        passenger: pick(r, ["passenger_name"]),
+        country: pick(r, ["country_name", "country_route", "trip_road"]),
+        agency: pick(r, ["agency_sold"]),
+        year: d ? d.getFullYear() : null,
+        month: d ? d.getMonth() : null,
+        // Full searchable text across every field so even one letter finds matches.
+        blob: Object.values(r).map((v) => String(v ?? "")).join(" ").toLowerCase(),
+      };
+    });
   }, [rows, idColumn]);
+
+  const years = useMemo(() => {
+    const set = new Set<number>();
+    items.forEach((it) => it.year != null && set.add(it.year));
+    return Array.from(set).sort((a, b) => b - a);
+  }, [items]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((it) => it.blob.includes(term));
-  }, [items, q]);
+    return items.filter((it) => {
+      if (term && !it.blob.includes(term)) return false;
+      if (year !== "all" && it.year !== Number(year)) return false;
+      if (month !== "all" && it.month !== Number(month)) return false;
+      return true;
+    });
+  }, [items, q, year, month]);
 
   return (
     <>
@@ -75,7 +114,7 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
       {open && <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />}
 
       <aside
-        className={`fixed right-0 top-0 z-50 flex h-full w-[min(88vw,380px)] flex-col border-l bg-background shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-12 z-50 flex h-[calc(100%-3rem)] w-[min(88vw,380px)] flex-col border-l bg-background shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -93,7 +132,7 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
           </Button>
         </div>
 
-        <div className="border-b p-2">
+        <div className="space-y-2 border-b p-2">
           <div className="relative">
             <Search className="absolute left-2 top-1.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -103,6 +142,30 @@ export function SmartSearchPanel({ open, onClose, rows, idColumn, moduleLabel, o
               placeholder="নাম / আইডি / দেশ / এজেন্সি..."
               className="h-7 pl-7 text-xs"
             />
+          </div>
+          <div className="flex gap-2">
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger className="h-7 flex-1 text-xs">
+                <SelectValue placeholder="বছর" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">সব বছর</SelectItem>
+                {years.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="h-7 flex-1 text-xs">
+                <SelectValue placeholder="মাস" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">সব মাস</SelectItem>
+                {MONTHS_BN.map((m, i) => (
+                  <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
