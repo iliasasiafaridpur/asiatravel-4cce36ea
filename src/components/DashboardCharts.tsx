@@ -1,7 +1,8 @@
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  PieChart, Pie, Legend, AreaChart, Area,
+  PieChart, Pie, Legend, ComposedChart, Area, Line,
 } from "recharts";
+import { TrendingUp, TrendingDown, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PIE_COLORS = [
