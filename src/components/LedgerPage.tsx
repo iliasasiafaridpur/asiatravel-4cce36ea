@@ -1907,6 +1907,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         ? info.sold - Number(info.discount ?? 0) - info.cost
                         : 0;
                   const status = info?.status ?? "";
+                  const rowCancelled = !!info?.cancelled;
                   return (
                     <div
                       key={r.id}
@@ -1919,9 +1920,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           void openProfileFor(r);
                         }
                       }}
-                      className={`row-tint-${idx % 4} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
-                      title={isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
+                      className={`row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
+                      title={rowCancelled ? "বাতিল করা কাজ — " + (isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন") : isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
                     >
+                      {rowCancelled && (
+                        <span className="absolute right-3 top-3 rounded-full bg-rose-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          বাতিল
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Date / ID
