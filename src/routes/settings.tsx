@@ -52,12 +52,13 @@ function SettingsPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id;
       if (!uid) return;
-      supabase.from("profiles").select("full_name,mobile,designation,role").eq("user_id", uid).maybeSingle()
+      supabase.from("profiles").select("full_name,mobile,designation,role,notify_email").eq("user_id", uid).maybeSingle()
         .then(({ data }) => {
-          const p = (data ?? {}) as { full_name?: string; mobile?: string; designation?: string; role?: string };
+          const p = (data ?? {}) as { full_name?: string; mobile?: string; designation?: string; role?: string; notify_email?: string };
           setFullName(p.full_name ?? "");
           setMobile(p.mobile ?? "");
           setDesignation(p.designation ?? "");
+          setNotifyEmail(p.notify_email ?? "");
           setIsAdmin((p.role ?? "") === "admin");
         });
     });
