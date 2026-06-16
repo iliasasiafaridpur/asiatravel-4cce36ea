@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import { HandoverHeaderButton } from "@/components/HandoverHeaderButton";
 import { installToastInterceptor } from "@/lib/toast-interceptor";
