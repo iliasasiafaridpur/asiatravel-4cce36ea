@@ -1688,7 +1688,7 @@ export function ModulePage({ module: mod }: Props) {
                     <TableRow
                       key={r.id}
                       id={`row-${r.id}`}
-                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${selectedId === r.id ? "row-worked" : "outline-transparent"} ${canCancel && r.cancelled ? "opacity-60" : ""}`}
+                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${selectedId === r.id ? "row-worked" : "outline-transparent"} ${canCancel && r.cancelled ? "opacity-70 grayscale bg-muted/60 text-muted-foreground [&_*]:!text-muted-foreground line-through decoration-rose-400/70" : ""}`}
                       onClick={(e) => {
                         const t = e.target as HTMLElement;
                         if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
