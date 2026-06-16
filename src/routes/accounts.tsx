@@ -788,7 +788,7 @@ ${node.innerHTML.replace(
                   const name = isIn
                     ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
                     : isHand
-                    ? (h.to_name || "প্রাপক")
+                    ? (`${h.from_name ?? "প্রেরক"} → ${h.to_name || "প্রাপক"}`)
                     : (e.category || "খরচ");
 
                   // Col 2: উদ্দেশ্য (purpose) — primary line
@@ -953,7 +953,7 @@ ${node.innerHTML.replace(
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
-                  const name = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
                   let region = "";
@@ -1149,7 +1149,7 @@ ${node.innerHTML.replace(
                       title="এই হিসাবটি আমার ক্যাশ হিস্টোরিতে দেখুন"
                     >
                       <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold text-sm truncate">{h.to_name}</p>
+                        <p className="font-semibold text-sm truncate">{h.from_name ?? "প্রেরক"} → {h.to_name}</p>
                         <p className="font-bold text-sky-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(h.amount))}</p>
                       </div>
                       <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
