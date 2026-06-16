@@ -389,24 +389,74 @@ function moduleAll(modules: Extract<ServiceBreakdown, { mode: "all" }>["modules"
 
 /* --------------------------- top group (3) ------------------------------- */
 
+function TopRankColumn({ icon: Icon, title, accent, items, isLoading, emptyText, limit = 5 }: {
+  icon: React.ElementType; title: string; accent: string; items: GroupItem[]; isLoading: boolean; emptyText?: string; limit?: number;
+}) {
+  const top = items.slice(0, limit);
+  const max = Math.max(1, ...top.map((x) => x.count));
+  return (
+    <div className="flex flex-col min-h-0 rounded-lg bg-foreground/[0.03] p-2.5">
+      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold">
+        <span className="grid place-items-center h-5 w-5 rounded-md" style={{ background: `${accent}22`, color: accent }}>
+          <Icon className="h-3 w-3" />
+        </span>
+        <span className="truncate">{title}</span>
+      </div>
+      {top.length === 0 ? (
+        <Empty loading={isLoading} text={emptyText} />
+      ) : (
+        <div className="space-y-2">
+          {top.map((g, i) => {
+            const RankIcon = RANK_ICONS[i];
+            return (
+              <div key={g.name + i} className="space-y-1">
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    {RankIcon ? (
+                      <RankIcon className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
+                    ) : (
+                      <span className="h-4 w-4 grid place-items-center shrink-0 text-[9px] font-bold text-muted-foreground">{i + 1}</span>
+                    )}
+                    <span className="truncate font-medium">{g.name}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{g.count} টি · {compact(g.sold)}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${(g.count / max) * 100}%`, background: accent }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TopGroupCard({ moduleFilter, topGroup, isLoading }: {
   moduleFilter: string; topGroup: DashboardChartsProps["topGroup"]; isLoading: boolean;
 }) {
   const showAirlines = moduleFilter === "tickets" || moduleFilter === "all";
   const showCountries = moduleFilter === "bmet" || moduleFilter === "all";
   const noGroup = !showAirlines && !showCountries;
+  const both = showAirlines && showCountries;
 
   return (
-    <ChartCard title="টপ দেশ ও এয়ারলাইন্স" subtitle="এন্ট্রি ও বিক্রি অনুযায়ী র‍্যাংকিং" tint={CARD_TINTS[4]} className="h-64">
+    <ChartCard
+      title="টপ দেশ ও এয়ারলাইন্স"
+      subtitle="এন্ট্রি ও বিক্রি অনুযায়ী র‍্যাংকিং"
+      tint={CARD_TINTS[4]}
+      className="h-64"
+    >
       {noGroup ? (
         <Empty loading={isLoading} text="এই সার্ভিসে দেশ / এয়ারলাইন্স প্রযোজ্য নয়" />
       ) : (
-        <div className={cn("h-full overflow-y-auto pr-1", showAirlines && showCountries ? "grid grid-cols-1 gap-3" : "")}>
+        <div className={cn("h-full overflow-y-auto pr-1", both ? "grid grid-cols-2 gap-2.5 items-start" : "")}>
           {showAirlines && (
-            <CompactGroup icon={Plane} title="টপ এয়ারলাইন্স" items={topGroup.airlines} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" limit={6} />
+            <TopRankColumn icon={Plane} title="টপ এয়ারলাইন্স" accent={PIE_COLORS[0]} items={topGroup.airlines} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" limit={5} />
           )}
           {showCountries && (
-            <CompactGroup icon={Globe2} title="টপ দেশ" items={topGroup.countries} isLoading={isLoading} emptyText="দেশ ডাটা নেই" limit={6} />
+            <TopRankColumn icon={Globe2} title="টপ দেশ" accent={PIE_COLORS[1]} items={topGroup.countries} isLoading={isLoading} emptyText="দেশ ডাটা নেই" limit={5} />
           )}
         </div>
       )}
