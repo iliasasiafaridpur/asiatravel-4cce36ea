@@ -142,6 +142,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         received_from_vendor?: boolean;
         delivery_date?: string | null;
         has_delivery?: boolean;
+        cancelled?: boolean;
       }
     >
   >(new Map());
