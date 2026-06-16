@@ -171,6 +171,19 @@ export function StatusChangeDrawer({
   if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) backwardClears.push("Received Date");
   if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) backwardClears.push("Delivery Date");
   if (crossesOutOfLedger && costPrice > 0) backwardClears.push(`Vendor "${vendorName || "—"}" cost reverse`);
+  // Full financial revert: stepping back below "Delivered" returns the row to its
+  // earlier, unpaid state — received goes to 0 and ALL related receipts (incl.
+  // handed-over ones) are removed so accounts match the prior status.
+  const wasDeliveredLike =
+    (dlIdx >= 0 && currentIdx >= dlIdx) ||
+    eq(current, "Delivered") || eq(current, "DELIVERED") ||
+    eq(current, "Delivery") || eq(current, "Delivery But Due");
+  const revertFinancials =
+    direction === "backward" && dlIdx >= 0 && targetIdx >= 0 && targetIdx < dlIdx && wasDeliveredLike;
+  if (revertFinancials && received > 0) {
+    backwardClears.push(`Received ৳${received.toLocaleString()} → ৳0 (সব রসিদ ফেরত)`);
+  }
+
 
   const apply = async (asDeliveryButDue = false) => {
     if (isSame && !asDeliveryButDue) return;
