@@ -36,7 +36,7 @@ export const Route = createFileRoute("/")({
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   tickets: Plane, bmet: IdCard, "saudi-visa": Globe2, "kuwait-visa": Globe2,
-  "agency-ledger": Users, "vendor-ledger": Truck,
+  other: ClipboardList, "agency-ledger": Users, "vendor-ledger": Truck,
 };
 
 // Soft pastel colors matching the 7 stat cards palette
@@ -46,6 +46,7 @@ const MODULE_COLORS: Record<string, string> = {
   bmet: "#6ee7b7",          // emerald-300
   "saudi-visa": "#fdba74",  // orange-300
   "kuwait-visa": "#c4b5fd", // violet-300
+  other: "#f0abfc",         // fuchsia-300
 };
 
 const PIE_COLORS = [
@@ -78,6 +79,7 @@ type Row = {
   country_name?: string;
   airline?: string;
   trip_road?: string;
+  service_name?: string;
   sold_price?: number;
   received?: number;
   discount?: number;
