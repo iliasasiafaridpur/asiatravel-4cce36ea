@@ -1920,7 +1920,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           void openProfileFor(r);
                         }
                       }}
-                      className={`row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
+                      className={`relative row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
                       title={rowCancelled ? "বাতিল করা কাজ — " + (isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন") : isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
                     >
                       {rowCancelled && (
