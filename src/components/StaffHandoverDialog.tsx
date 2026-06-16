@@ -300,24 +300,33 @@ export function StaffHandoverDialog({
 </div>`;
   };
 
-  const sendReport = async () => {
-    const to = recipientEmail.trim();
-    if (!to) return toast.error("প্রাপকের ইমেইল দিন");
+  const sendTo = async (to: string): Promise<boolean> => {
+    const target = to.trim();
+    if (!target) {
+      toast.error("প্রাপকের ইমেইল দিন");
+      return false;
+    }
     setSendingEmail(true);
     try {
       await sendEmailFn({
         data: {
-          to,
+          to: target,
           subject: `Cash Handover Report — ${formatDate(closingDate)}`,
           html: buildReportHtml(),
         },
       });
-      toast.success(`রিপোর্ট ইমেইলে পাঠানো হয়েছে: ${to}`);
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "ইমেইল পাঠানো যায়নি");
+      return false;
     } finally {
       setSendingEmail(false);
     }
+  };
+
+  const sendReport = async () => {
+    const ok = await sendTo(recipientEmail);
+    if (ok) toast.success(`রিপোর্ট ইমেইলে পাঠানো হয়েছে: ${recipientEmail.trim()}`);
   };
 
 
