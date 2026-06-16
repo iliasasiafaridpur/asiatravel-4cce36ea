@@ -30,7 +30,7 @@ type NameValue = { name: string; value: number };
 export interface DashboardChartsProps {
   isLoading: boolean;
   moduleFilter: string;
-  monthlyTrend: { month: string; sold: number; received: number }[];
+  monthlyTrend: { month: string; sold: number; received: number; due: number; collection: number }[];
   pieModule: NameValue[];
   userReceived: { name: string; amount: number }[];
   userEntries: NameValue[];
