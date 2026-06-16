@@ -236,9 +236,22 @@ export function StaffHandoverDialog({
       _closing_date: closingDate,
       _remarks: remarks || null,
     } as never);
-    setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
     toast.success("Handover submitted. Awaiting MD approval.");
+
+    // Auto-email the report to the MD's saved email (Settings → ইমেইল ঠিকানা).
+    const to = (recipientEmail.trim() || mdEmail.trim());
+    if (to) {
+      const ok = await sendTo(to);
+      if (ok) toast.success(`📧 রিপোর্ট MD-কে ইমেইলে পাঠানো হয়েছে: ${to}`);
+    } else {
+      toast.warning("MD এখনো নোটিফিকেশন ইমেইল সেট করেননি — শুধু MD panel-এ গেছে, ইমেইল যায়নি।");
+    }
+
+    setSaving(false);
     setCash("");
     setRemarks("");
     onOpenChange(false);
