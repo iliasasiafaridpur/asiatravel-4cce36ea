@@ -355,18 +355,23 @@ function DashboardPage() {
     return { total, sold, received, due, profit, realizedProfit };
   }, [filtered]);
 
-  // === Per-user received ===
+  // === Per-user received (amount + receipt count, ranked) ===
   const userReceived = useMemo(() => {
-    const m = new Map<string, number>();
+    const m = new Map<string, { amount: number; count: number }>();
     filtered.forEach((r) => {
       if (!r.received_by || !r.received) return;
       const name = profileName(r.received_by) ?? "Unknown";
-      m.set(name, (m.get(name) ?? 0) + (r.received ?? 0));
+      const prev = m.get(name) ?? { amount: 0, count: 0 };
+      prev.amount += r.received ?? 0;
+      prev.count += 1;
+      m.set(name, prev);
     });
-    return Array.from(m.entries()).map(([name, amount]) => ({ name, amount }));
+    return Array.from(m.entries())
+      .map(([name, v]) => ({ name, amount: v.amount, count: v.count }))
+      .sort((a, b) => b.amount - a.amount);
   }, [filtered, profiles]);
 
-  // === Per-user entries ===
+  // === Per-user entries (ranked) ===
   const userEntries = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => {
@@ -374,7 +379,9 @@ function DashboardPage() {
       const name = profileName(r.created_by) ?? "Unknown";
       m.set(name, (m.get(name) ?? 0) + 1);
     });
-    return Array.from(m.entries()).map(([name, value]) => ({ name, value }));
+    return Array.from(m.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [filtered, profiles]);
 
   // === Sold vs Received vs Due by month (smart trend) ===
@@ -400,22 +407,39 @@ function DashboardPage() {
       .map((m) => ({ ...m, collection: m.sold > 0 ? Math.round((m.received / m.sold) * 100) : 0 }));
   }, [filtered]);
 
-  // === Pie: module-wise count ===
-  const pieModule = useMemo(() => {
-    const m = new Map<string, number>();
-    filtered.forEach((r) => m.set(r.moduleLabel, (m.get(r.moduleLabel) ?? 0) + 1));
-    return Array.from(m.entries()).map(([name, value]) => ({ name, value }));
+  // === Smart module breakdown (count + money + collection rate) ===
+  const moduleBreakdown = useMemo(() => {
+    const m = new Map<string, { name: string; key: string; count: number; sold: number; received: number; due: number }>();
+    filtered.forEach((r) => {
+      const prev = m.get(r.module) ?? { name: r.moduleLabel, key: r.module, count: 0, sold: 0, received: 0, due: 0 };
+      prev.count += 1;
+      prev.sold += r.sold_price ?? 0;
+      prev.received += r.received ?? 0;
+      prev.due += Math.max(0, (r.sold_price ?? 0) - (r.received ?? 0) - (r.discount ?? 0));
+      m.set(r.module, prev);
+    });
+    return Array.from(m.values())
+      .map((x) => ({
+        ...x,
+        collection: x.sold > 0 ? Math.round((x.received / x.sold) * 100) : 0,
+        color: MODULE_COLORS[x.key] ?? "#cbd5e1",
+      }))
+      .sort((a, b) => b.count - a.count);
   }, [filtered]);
 
-  // === Top countries / airlines ===
+  // === Top countries / airlines (count + sold) ===
   const topGroup = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, { count: number; sold: number }>();
     filtered.forEach((r) => {
       const k = r.module === "bmet" ? r.country_name : r.airline;
       if (!k) return;
-      map.set(k, (map.get(k) ?? 0) + 1);
+      const prev = map.get(k) ?? { count: 0, sold: 0 };
+      prev.count += 1;
+      prev.sold += r.sold_price ?? 0;
+      map.set(k, prev);
     });
-    return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
+    return Array.from(map.entries())
+      .map(([name, v]) => ({ name, count: v.count, sold: v.sold }))
       .sort((a, b) => b.count - a.count).slice(0, 6);
   }, [filtered]);
 
@@ -625,7 +649,7 @@ function DashboardPage() {
           isLoading={isLoading}
           moduleFilter={moduleFilter}
           monthlyTrend={monthlyTrend}
-          pieModule={pieModule}
+          moduleBreakdown={moduleBreakdown}
           userReceived={userReceived}
           userEntries={userEntries}
           topGroup={topGroup}

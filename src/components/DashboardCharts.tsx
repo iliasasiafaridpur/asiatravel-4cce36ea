@@ -1,8 +1,8 @@
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  PieChart, Pie, Legend, ComposedChart, Area, Line,
+  ResponsiveContainer, CartesianGrid, Tooltip,
+  PieChart, Pie, Cell, ComposedChart, Area, Line, XAxis, YAxis, Legend,
 } from "recharts";
-import { TrendingUp, TrendingDown, Percent } from "lucide-react";
+import { TrendingUp, TrendingDown, Percent, Medal, Award, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PIE_COLORS = [
@@ -31,33 +31,82 @@ export interface DashboardChartsProps {
   isLoading: boolean;
   moduleFilter: string;
   monthlyTrend: { month: string; sold: number; received: number; due: number; collection: number }[];
-  pieModule: NameValue[];
-  userReceived: { name: string; amount: number }[];
+  moduleBreakdown: { name: string; key: string; count: number; sold: number; received: number; due: number; collection: number; color: string }[];
+  userReceived: { name: string; amount: number; count: number }[];
   userEntries: NameValue[];
-  topGroup: { name: string; count: number }[];
+  topGroup: { name: string; count: number; sold: number }[];
   cashByMethod: NameValue[];
 }
 
-function ChartCard({ title, children, className, tint }: { title: string; children: React.ReactNode; className?: string; tint?: string }) {
+const bdt = (n: number) => "৳ " + Math.round(n).toLocaleString();
+const compact = (n: number) =>
+  n >= 1e7 ? (n / 1e7).toFixed(1) + "Cr" : n >= 1e5 ? (n / 1e5).toFixed(1) + "L" : n >= 1e3 ? (n / 1e3).toFixed(0) + "k" : String(n);
+
+/* ----------------------------- shared shells ----------------------------- */
+
+function ChartCard({ title, subtitle, children, className, tint }: { title: string; subtitle?: string; children: React.ReactNode; className?: string; tint?: string }) {
   return (
-    <div className={cn("rounded-xl border shadow-sm", tint ?? "bg-card border-border/60", className)}>
-      <div className="p-4 pb-2"><h3 className="text-sm font-semibold">{title}</h3></div>
-      <div className="px-4 pb-4 h-64">{children}</div>
+    <div className={cn("rounded-xl border shadow-sm flex flex-col", tint ?? "bg-card border-border/60", className)}>
+      <div className="p-4 pb-2">
+        <h3 className="text-sm font-semibold leading-tight">{title}</h3>
+        {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
+      </div>
+      <div className="px-4 pb-4 flex-1 min-h-0">{children}</div>
     </div>
   );
 }
 
 function Empty({ loading, text }: { loading: boolean; text?: string }) {
   return (
-    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+    <div className="h-full min-h-[180px] flex items-center justify-center text-sm text-muted-foreground">
       {loading ? "লোড হচ্ছে..." : (text ?? "কোনো ডাটা নেই")}
     </div>
   );
 }
 
-const bdt = (n: number) => "৳ " + Math.round(n).toLocaleString();
-const compact = (n: number) =>
-  n >= 1e7 ? (n / 1e7).toFixed(1) + "Cr" : n >= 1e5 ? (n / 1e5).toFixed(1) + "L" : n >= 1e3 ? (n / 1e3).toFixed(0) + "k" : String(n);
+/* ----------------------------- ranked list ------------------------------- */
+
+const RANK_ICONS = [Crown, Medal, Award];
+
+function RankList({
+  items, format, accent,
+}: {
+  items: { label: string; value: number; sub?: string }[];
+  format: (n: number) => string;
+  accent: (i: number) => string;
+}) {
+  const max = Math.max(1, ...items.map((x) => x.value));
+  return (
+    <div className="h-full overflow-y-auto pr-1 space-y-2">
+      {items.map((it, i) => {
+        const Icon = RANK_ICONS[i];
+        return (
+          <div key={it.label + i} className="space-y-1">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex items-center gap-1.5 min-w-0">
+                {Icon ? (
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: accent(i) }} />
+                ) : (
+                  <span className="h-4 w-4 shrink-0 text-center text-[10px] font-bold text-muted-foreground">{i + 1}</span>
+                )}
+                <span className="truncate font-medium">{it.label}</span>
+              </span>
+              <span className="flex items-center gap-1.5 shrink-0">
+                {it.sub && <span className="text-[10px] text-muted-foreground">{it.sub}</span>}
+                <span className="font-semibold tabular-nums">{format(it.value)}</span>
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${(it.value / max) * 100}%`, background: accent(i) }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ----------------------------- trend tooltip ----------------------------- */
 
 const TREND_LABELS: Record<string, string> = { sold: "বিক্রি", received: "রিসিভ", due: "বকেয়া" };
 
@@ -107,12 +156,60 @@ function TrendSummary({ data }: { data: DashboardChartsProps["monthlyTrend"] }) 
   );
 }
 
+/* --------------------------- donut with center --------------------------- */
+
+function DonutCard({
+  title, subtitle, tint, data, isLoading, emptyText, colorAt,
+}: {
+  title: string; subtitle?: string; tint: string;
+  data: { name: string; value: number }[]; isLoading: boolean; emptyText?: string;
+  colorAt: (i: number) => string;
+}) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  return (
+    <ChartCard title={title} subtitle={subtitle} tint={tint} className="h-64">
+      {data.length === 0 ? <Empty loading={isLoading} text={emptyText} /> : (
+        <div className="grid grid-cols-2 gap-2 h-full items-center">
+          <div className="relative h-full min-h-[160px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={70} paddingAngle={2} stroke="none">
+                  {data.map((_, i) => <Cell key={i} fill={colorAt(i)} />)}
+                </Pie>
+                <Tooltip formatter={(v: number, n: string) => [bdt(Number(v)), n]} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-[10px] text-muted-foreground">মোট</span>
+              <span className="text-sm font-bold tabular-nums">{compact(total)}</span>
+            </div>
+          </div>
+          <div className="h-full overflow-y-auto pr-1 space-y-1.5">
+            {data.map((d, i) => (
+              <div key={d.name + i} className="flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: colorAt(i) }} />
+                  <span className="truncate">{d.name}</span>
+                </span>
+                <span className="font-semibold tabular-nums shrink-0">{compact(d.value)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </ChartCard>
+  );
+}
+
+/* ------------------------------- main view ------------------------------- */
+
 export default function DashboardCharts({
-  isLoading, moduleFilter, monthlyTrend, pieModule, userReceived, userEntries, topGroup, cashByMethod,
+  isLoading, moduleFilter, monthlyTrend, moduleBreakdown, userReceived, userEntries, topGroup, cashByMethod,
 }: DashboardChartsProps) {
+  const topEntries = userEntries.slice(0, 8);
   return (
     <>
-      {/* Trend + Pie */}
+      {/* Trend + Smart module breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className={cn("rounded-xl border shadow-sm lg:col-span-2", CARD_TINTS[0])}>
           <div className="p-4 pb-1"><h3 className="text-sm font-semibold">মাসিক বিক্রি · রিসিভ · বকেয়া</h3></div>
@@ -149,80 +246,101 @@ export default function DashboardCharts({
           )}
         </div>
 
-        <ChartCard title="মডিউল অনুযায়ী এন্ট্রি" tint={CARD_TINTS[1]}>
-          {pieModule.length === 0 ? <Empty loading={isLoading} /> : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieModule} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
-                  {pieModule.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </ChartCard>
+        {/* Smart module breakdown: donut + per-module money & collection */}
+        <div className={cn("rounded-xl border shadow-sm", CARD_TINTS[1])}>
+          <div className="p-4 pb-2">
+            <h3 className="text-sm font-semibold leading-tight">মডিউল অনুযায়ী এন্ট্রি</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">এন্ট্রি · বিক্রি · কালেকশন রেট</p>
+          </div>
+          <div className="px-4 pb-4">
+            {moduleBreakdown.length === 0 ? <div className="h-56"><Empty loading={isLoading} /></div> : (
+              <>
+                <div className="relative h-28">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={moduleBreakdown} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={36} outerRadius={54} paddingAngle={2} stroke="none">
+                        {moduleBreakdown.map((m, i) => <Cell key={i} fill={m.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: number, n: string) => [`${v} এন্ট্রি`, n]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-[10px] text-muted-foreground">মোট</span>
+                    <span className="text-base font-bold tabular-nums">{moduleBreakdown.reduce((s, m) => s + m.count, 0)}</span>
+                  </div>
+                </div>
+                <div className="mt-2 space-y-2">
+                  {moduleBreakdown.map((m) => (
+                    <div key={m.key} className="space-y-1">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: m.color }} />
+                          <span className="truncate font-medium">{m.name}</span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">· {m.count}</span>
+                        </span>
+                        <span className="font-semibold tabular-nums shrink-0">{compact(m.sold)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-1.5 flex-1 rounded-full bg-foreground/10 overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${m.collection}%`, background: m.color }} />
+                        </div>
+                        <span className="text-[10px] tabular-nums text-muted-foreground w-9 text-right">{m.collection}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* User stats + Top groups */}
+      {/* Per-user received + Per-user entries + Top groups + Cash methods */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Per-User Received Amount (কে কত টাকা রিসিভ করেছে)" tint={CARD_TINTS[2]}>
+        <ChartCard title="কে কত টাকা রিসিভ করেছে" subtitle="পরিমাণ অনুযায়ী র‍্যাংকিং" tint={CARD_TINTS[2]} className="h-64">
           {userReceived.length === 0 ? <Empty loading={isLoading} text="এখনো কেউ টাকা রিসিভ করেনি" /> : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={userReceived}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                  {userReceived.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <RankList
+              items={userReceived.slice(0, 8).map((u) => ({ label: u.name, value: u.amount, sub: `${u.count} টি` }))}
+              format={bdt}
+              accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
+            />
           )}
         </ChartCard>
 
-        <ChartCard title="Per-User Entries (কে কত এন্ট্রি দিয়েছে)" tint={CARD_TINTS[3]}>
-          {userEntries.length === 0 ? <Empty loading={isLoading} text="ইউজার-ভিত্তিক ডাটা নেই" /> : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={userEntries} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
-                  {userEntries.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
+        <ChartCard title="কে কত এন্ট্রি দিয়েছে" subtitle="এন্ট্রি সংখ্যা অনুযায়ী র‍্যাংকিং" tint={CARD_TINTS[3]} className="h-64">
+          {topEntries.length === 0 ? <Empty loading={isLoading} text="ইউজার-ভিত্তিক ডাটা নেই" /> : (
+            <RankList
+              items={topEntries.map((u) => ({ label: u.name, value: u.value, sub: "এন্ট্রি" }))}
+              format={(n) => String(n)}
+              accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
+            />
           )}
         </ChartCard>
 
-        <ChartCard title={moduleFilter === "tickets" ? "Top Airlines" : "Top Countries"} tint={CARD_TINTS[4]}>
+        <ChartCard
+          title={moduleFilter === "tickets" ? "টপ এয়ারলাইন্স" : "টপ দেশ / এয়ারলাইন্স"}
+          subtitle="এন্ট্রি ও বিক্রি অনুযায়ী"
+          tint={CARD_TINTS[4]}
+          className="h-64"
+        >
           {topGroup.length === 0 ? <Empty loading={isLoading} /> : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topGroup} layout="vertical" margin={{ left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip />
-                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="#6ee7b7" />
-              </BarChart>
-            </ResponsiveContainer>
+            <RankList
+              items={topGroup.map((g) => ({ label: g.name, value: g.count, sub: bdt(g.sold) }))}
+              format={(n) => `${n} টি`}
+              accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
+            />
           )}
         </ChartCard>
 
-        <ChartCard title="Accounts Methods" tint={CARD_TINTS[5]}>
-          {cashByMethod.length === 0 ? <Empty loading={isLoading} text="কোনো Accounts নেই" /> : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={cashByMethod} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
-                  {cashByMethod.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </ChartCard>
+        <DonutCard
+          title="Accounts Methods"
+          subtitle="মাধ্যম অনুযায়ী হস্তান্তর"
+          tint={CARD_TINTS[5]}
+          data={cashByMethod}
+          isLoading={isLoading}
+          emptyText="কোনো Accounts নেই"
+          colorAt={(i) => PIE_COLORS[i % PIE_COLORS.length]}
+        />
       </div>
     </>
   );
