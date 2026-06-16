@@ -36,7 +36,7 @@ export const Route = createFileRoute("/")({
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   tickets: Plane, bmet: IdCard, "saudi-visa": Globe2, "kuwait-visa": Globe2,
-  "agency-ledger": Users, "vendor-ledger": Truck,
+  other: ClipboardList, "agency-ledger": Users, "vendor-ledger": Truck,
 };
 
 // Soft pastel colors matching the 7 stat cards palette
@@ -46,6 +46,7 @@ const MODULE_COLORS: Record<string, string> = {
   bmet: "#6ee7b7",          // emerald-300
   "saudi-visa": "#fdba74",  // orange-300
   "kuwait-visa": "#c4b5fd", // violet-300
+  other: "#f0abfc",         // fuchsia-300
 };
 
 const PIE_COLORS = [
@@ -78,6 +79,7 @@ type Row = {
   country_name?: string;
   airline?: string;
   trip_road?: string;
+  service_name?: string;
   sold_price?: number;
   received?: number;
   discount?: number;
@@ -90,13 +92,14 @@ type Row = {
 };
 
 type Range = "all" | "today" | "month" | "year" | "custom";
-const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(m.key));
-const DASHBOARD_CACHE_KEY = "dashboard_entries_v2";
+const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa", "other"].includes(m.key));
+const DASHBOARD_CACHE_KEY = "dashboard_entries_v3";
 const DASHBOARD_SELECTS: Record<string, string> = {
   tickets: "ticket_id,passenger_name,status,airline,trip_road,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   bmet_cards: "bmet_id,passenger_name,status,country_name,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   saudi_visas: "saudi_id,passenger_name,status,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   kuwait_visas: "kuwait_id,passenger_name,status,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  others: "other_id,passenger_name,status,service_name,airline,trip_road,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
 };
 
 function withTimeout<T>(promise: PromiseLike<T>, ms = 6500): Promise<T> {
@@ -178,6 +181,7 @@ function DashboardPage() {
             country_name: r.country_name as string | undefined,
             airline: r.airline as string | undefined,
             trip_road: r.trip_road as string | undefined,
+            service_name: r.service_name as string | undefined,
             sold_price: Number(r.sold_price ?? 0),
             received: Number((r.received ?? r.received_amount) ?? 0),
             discount: Number(r.discount_amount ?? 0),
@@ -517,6 +521,9 @@ function DashboardPage() {
     }
     if (moduleFilter === "bmet") {
       return { mode: "bmet", country: groupByKey(filtered, (r) => r.country_name).slice(0, 12) };
+    }
+    if (moduleFilter === "other") {
+      return { mode: "service", service: groupByKey(filtered, (r) => r.service_name).slice(0, 12) };
     }
     if (moduleFilter === "saudi-visa" || moduleFilter === "kuwait-visa") {
       const label = TARGET_MODULES.find((m) => m.key === moduleFilter)?.label ?? moduleFilter;
