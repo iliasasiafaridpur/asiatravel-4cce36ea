@@ -349,8 +349,10 @@ export function ModulePage({ module: mod }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
+    const searching = search.trim().length > 0;
     // বাতিল করা এন্ট্রি সাধারণত চলমান তালিকা থেকে লুকানো থাকে।
-    if (canCancel && !showCancelled) {
+    // তবে সার্চ করলে বাতিল করা এন্ট্রিও দেখা যাবে (ধূসর রঙে ও বিশেষ চিহ্নসহ)।
+    if (canCancel && !showCancelled && !searching) {
       xs = xs.filter((r) => !r.cancelled);
     } else if (canCancel && showCancelled) {
       xs = xs.filter((r) => r.cancelled);
@@ -1686,7 +1688,7 @@ export function ModulePage({ module: mod }: Props) {
                     <TableRow
                       key={r.id}
                       id={`row-${r.id}`}
-                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${selectedId === r.id ? "row-worked" : "outline-transparent"} ${canCancel && r.cancelled ? "opacity-60" : ""}`}
+                      className={`align-top row-tint-${idx % 4} cursor-pointer outline outline-1 transition-colors hover:outline-primary/60 hover:shadow-md ${selectedId === r.id ? "row-worked" : "outline-transparent"} ${canCancel && r.cancelled ? "cancelled-row opacity-70 grayscale bg-muted/50 text-muted-foreground" : ""}`}
                       onClick={(e) => {
                         const t = e.target as HTMLElement;
                         if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
