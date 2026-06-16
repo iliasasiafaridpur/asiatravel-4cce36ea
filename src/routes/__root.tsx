@@ -244,6 +244,7 @@ function RootComponent() {
           </div>
         </SidebarProvider>
       </AuthGate>
+      <ScrollToTopButton />
       <OfflineSyncManager />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
