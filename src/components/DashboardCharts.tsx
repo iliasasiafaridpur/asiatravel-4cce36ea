@@ -32,6 +32,7 @@ export type ServiceBreakdown =
   | { mode: "all"; modules: { name: string; key: string; count: number; sold: number; received: number; due: number; collection: number; color: string }[] }
   | { mode: "tickets"; tripRoad: GroupItem[]; airline: GroupItem[] }
   | { mode: "bmet"; country: GroupItem[] }
+  | { mode: "service"; service: GroupItem[] }
   | { mode: "single"; label: string; count: number; sold: number; received: number; due: number; collection: number };
 
 export interface DashboardChartsProps {
