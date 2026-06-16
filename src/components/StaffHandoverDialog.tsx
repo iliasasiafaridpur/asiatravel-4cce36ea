@@ -110,7 +110,8 @@ export function StaffHandoverDialog({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openHistory, setOpenHistory] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("elias.rahman777@gmail.com");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [mdEmail, setMdEmail] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmailFn = useServerFn(sendGmail);
 
@@ -119,7 +120,7 @@ export function StaffHandoverDialog({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [r, e] = await Promise.all([
+      const [r, e, md] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -138,10 +139,20 @@ export function StaffHandoverDialog({
           .is("handover_id", null)
           .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("notify_email")
+          .eq("role", "admin")
+          .not("notify_email", "is", null)
+          .limit(1)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
+      const foundMdEmail = ((md?.data as { notify_email?: string } | null)?.notify_email ?? "").trim();
+      setMdEmail(foundMdEmail);
+      setRecipientEmail((prev) => prev || foundMdEmail);
       const recs = ((r.data ?? []) as unknown) as Receipt[];
 
       // Enrich each receipt with the discount stored on its underlying service row.
@@ -225,9 +236,22 @@ export function StaffHandoverDialog({
       _closing_date: closingDate,
       _remarks: remarks || null,
     } as never);
-    setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
     toast.success("Handover submitted. Awaiting MD approval.");
+
+    // Auto-email the report to the MD's saved email (Settings → ইমেইল ঠিকানা).
+    const to = (recipientEmail.trim() || mdEmail.trim());
+    if (to) {
+      const ok = await sendTo(to);
+      if (ok) toast.success(`📧 রিপোর্ট MD-কে ইমেইলে পাঠানো হয়েছে: ${to}`);
+    } else {
+      toast.warning("MD এখনো নোটিফিকেশন ইমেইল সেট করেননি — শুধু MD panel-এ গেছে, ইমেইল যায়নি।");
+    }
+
+    setSaving(false);
     setCash("");
     setRemarks("");
     onOpenChange(false);
@@ -276,24 +300,33 @@ export function StaffHandoverDialog({
 </div>`;
   };
 
-  const sendReport = async () => {
-    const to = recipientEmail.trim();
-    if (!to) return toast.error("প্রাপকের ইমেইল দিন");
+  const sendTo = async (to: string): Promise<boolean> => {
+    const target = to.trim();
+    if (!target) {
+      toast.error("প্রাপকের ইমেইল দিন");
+      return false;
+    }
     setSendingEmail(true);
     try {
       await sendEmailFn({
         data: {
-          to,
+          to: target,
           subject: `Cash Handover Report — ${formatDate(closingDate)}`,
           html: buildReportHtml(),
         },
       });
-      toast.success(`রিপোর্ট ইমেইলে পাঠানো হয়েছে: ${to}`);
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "ইমেইল পাঠানো যায়নি");
+      return false;
     } finally {
       setSendingEmail(false);
     }
+  };
+
+  const sendReport = async () => {
+    const ok = await sendTo(recipientEmail);
+    if (ok) toast.success(`রিপোর্ট ইমেইলে পাঠানো হয়েছে: ${recipientEmail.trim()}`);
   };
 
 
@@ -481,14 +514,14 @@ export function StaffHandoverDialog({
           {/* Email report */}
           <div className="rounded-lg border p-3 space-y-2">
             <Label className="text-xs flex items-center gap-1">
-              <Mail className="h-3.5 w-3.5" /> ইমেইলে রিপোর্ট পাঠান (Gmail)
+              <Mail className="h-3.5 w-3.5" /> MD-এর ইমেইল (Submit to MD দিলে এখানে রিপোর্ট যাবে)
             </Label>
             <div className="flex gap-2">
               <Input
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="recipient@gmail.com"
+                placeholder="md@gmail.com"
               />
               <Button
                 type="button"
@@ -498,10 +531,16 @@ export function StaffHandoverDialog({
                 className="shrink-0 gap-1"
               >
                 <Mail className="h-4 w-4" />
-                {sendingEmail ? "পাঠানো হচ্ছে…" : "পাঠান"}
+                {sendingEmail ? "পাঠানো হচ্ছে…" : "এখনই পাঠান"}
               </Button>
             </div>
+            {!mdEmail && (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                ⚠️ MD এখনো Settings-এ ইমেইল সেট করেননি। অটো-ইমেইল পেতে MD-কে Settings → ইমেইল ঠিকানা সেট করতে বলুন।
+              </p>
+            )}
           </div>
+
         </div>
 
 
