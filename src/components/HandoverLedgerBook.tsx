@@ -772,14 +772,9 @@ function HandoverCard({
                         {isAdvance && <AdvanceBadge advance className="mr-1" />}
                         <b className={`text-sm ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                         {mdRecv && (
-                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method} (ক্যাশে নয়)</div>
+                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
                         )}
                       </>
-                    )}
-                    {(r.received_by_name || r.created_at) && (
-                      <div className="text-sm text-muted-foreground font-normal leading-tight">
-                        {r.received_by_name ? r.received_by_name : ""}{r.received_by_name && r.created_at ? " · " : ""}{r.created_at ? formatDateTime(r.created_at) : ""}
-                      </div>
                     )}
                   </td>
                   {/* বাকি (after this handover) — bolder + larger */}
