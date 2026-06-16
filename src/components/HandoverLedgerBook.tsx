@@ -811,7 +811,7 @@ function HandoverCard({
               <td className="px-1.5 py-1.5 text-right tabular-nums">
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
-                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)} (ক্যাশে নয়)</div>
+                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)}</div>
                 )}
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
