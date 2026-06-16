@@ -540,6 +540,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     [isAgency, sourceInfoMap],
   );
 
+  // একটি ledger row যদি বাতিল করা (soft-cancel) BMET/Saudi/Kuwait কাজ থেকে আসে কিনা
+  const isCancelledRow = useCallback(
+    (r: Row) => {
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return false;
+      return !!sourceInfoMap.get(String(r.source_id ?? ""))?.cancelled;
+    },
+    [sourceInfoMap],
+  );
+
   const advanceAdjustedRows = useMemo(() => {
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
     for (const r of rows) {
