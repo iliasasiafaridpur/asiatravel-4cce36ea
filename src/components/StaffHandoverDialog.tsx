@@ -141,16 +141,17 @@ export function StaffHandoverDialog({
           .order("created_at", { ascending: false }),
         supabase
           .from("profiles")
-          .select("notify_email")
-          .eq("role", "admin")
-          .not("notify_email", "is", null)
-          .limit(1)
-          .maybeSingle(),
+          .select("notify_email,role")
+          .in("role", ["md", "admin"])
+          .not("notify_email", "is", null),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
-      const foundMdEmail = ((md?.data as { notify_email?: string } | null)?.notify_email ?? "").trim();
+      // Prefer the MD's email; fall back to an admin's email if MD has none set.
+      const mdRows = ((md?.data ?? []) as Array<{ notify_email?: string; role?: string }>);
+      const pick = mdRows.find((p) => p.role === "md") ?? mdRows[0];
+      const foundMdEmail = (pick?.notify_email ?? "").trim();
       setMdEmail(foundMdEmail);
       setRecipientEmail((prev) => prev || foundMdEmail);
       const recs = ((r.data ?? []) as unknown) as Receipt[];
