@@ -349,12 +349,9 @@ export function ModulePage({ module: mod }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
-    const searching = search.trim().length > 0;
-    // বাতিল করা এন্ট্রি সাধারণত চলমান তালিকা থেকে লুকানো থাকে।
-    // তবে সার্চ করলে বাতিল করা এন্ট্রিও দেখা যাবে (ধূসর রঙে ও বিশেষ চিহ্নসহ)।
-    if (canCancel && !showCancelled && !searching) {
-      xs = xs.filter((r) => !r.cancelled);
-    } else if (canCancel && showCancelled) {
+    // বাতিল করা এন্ট্রি চলমান তালিকায়ও দেখানো হয় (ধূসর রঙে ও বিশেষ চিহ্নসহ),
+    // সার্চ করা হোক বা না হোক। শুধু "বাতিল" বাটন চাপলে কেবল বাতিল এন্ট্রি দেখা যায়।
+    if (canCancel && showCancelled) {
       xs = xs.filter((r) => r.cancelled);
     }
     if (statusFilter !== "all") {
