@@ -741,11 +741,11 @@ function DashboardPage() {
           isLoading={isLoading}
           moduleFilter={moduleFilter}
           monthlyTrend={monthlyTrend}
-          moduleBreakdown={moduleBreakdown}
+          serviceBreakdown={serviceBreakdown}
           userReceived={userReceived}
           userEntries={userEntries}
           topGroup={topGroup}
-          cashByMethod={cashSummary.byMethod}
+          accountsMethods={accountsMethods}
         />
       </Suspense>
 
