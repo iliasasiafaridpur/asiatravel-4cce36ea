@@ -110,6 +110,9 @@ export function StaffHandoverDialog({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openHistory, setOpenHistory] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("elias.rahman777@gmail.com");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const sendEmailFn = useServerFn(sendGmail);
 
   useEffect(() => {
     if (!open || !user?.id) return;
