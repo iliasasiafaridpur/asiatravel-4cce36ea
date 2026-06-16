@@ -39,6 +39,7 @@ function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
   const [designation, setDesignation] = useState("");
+  const [notifyEmail, setNotifyEmail] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
