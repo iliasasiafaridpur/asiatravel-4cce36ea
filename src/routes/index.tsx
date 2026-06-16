@@ -93,7 +93,7 @@ type Range = "all" | "today" | "month" | "year" | "custom";
 const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(m.key));
 const DASHBOARD_CACHE_KEY = "dashboard_entries_v2";
 const DASHBOARD_SELECTS: Record<string, string> = {
-  tickets: "ticket_id,passenger_name,status,airline,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  tickets: "ticket_id,passenger_name,status,airline,trip_road,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   bmet_cards: "bmet_id,passenger_name,status,country_name,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   saudi_visas: "saudi_id,passenger_name,status,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   kuwait_visas: "kuwait_id,passenger_name,status,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
