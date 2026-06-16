@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useServerFn } from "@tanstack/react-start";
+import { sendGmail } from "@/lib/send-email.functions";
 import { toast } from "sonner";
 import {
-  Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen,
+  Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen, Mail,
 } from "lucide-react";
 import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
@@ -112,6 +114,9 @@ function MyHandoverPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
+  const [mdEmail, setMdEmail] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const sendEmailFn = useServerFn(sendGmail);
 
   // When navigated from "MD-কে পাঠানো" list, highlight the target handover card.
   useEffect(() => {
@@ -135,7 +140,7 @@ function MyHandoverPage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [r, e] = await Promise.all([
+      const [r, e, md] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -154,10 +159,18 @@ function MyHandoverPage() {
           .is("handover_id", null)
           .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("notify_email,role")
+          .in("role", ["md", "admin"])
+          .not("notify_email", "is", null),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
+      const mdRows = ((md?.data ?? []) as Array<{ notify_email?: string | null; role?: string | null }>);
+      const pick = mdRows.find((p) => p.role === "md") ?? mdRows[0];
+      setMdEmail((pick?.notify_email ?? "").trim());
       const recs = ((r.data ?? []) as unknown) as Receipt[];
 
       const byTable: Record<string, Set<string>> = {};
@@ -231,6 +244,67 @@ function MyHandoverPage() {
     [receipts, moneyServiceKeys]
   );
 
+  const buildReportHtml = () => {
+    const row = (label: string, value: string, color: string) =>
+      `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee;color:#555;">${label}</td><td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:${color};">${value}</td></tr>`;
+    const incomeRows = visibleReceipts
+      .map((r) => {
+        const evt = isStatusEvent(r);
+        const amt = evt ? "📦 Delivery" : `৳ ${Number(r.amount || 0).toLocaleString()}`;
+        return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${r.passenger_name || "—"}<br><span style="color:#999;font-size:11px;">${svcLine(r) || (r.receipt_id || "")}</span></td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:#059669;">${amt}</td></tr>`;
+      })
+      .join("");
+    const expenseRows = expenses
+      .map((e) => `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${e.category}${e.purpose ? ` — ${e.purpose}` : ""}</td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:#dc2626;">− ৳ ${Number(e.amount || 0).toLocaleString()}</td></tr>`)
+      .join("");
+    return `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
+  <div style="background:#0f172a;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;">
+    <h2 style="margin:0;font-size:18px;">Cash Handover Report</h2>
+    <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Asia Travel — Closing Date: ${formatDate(closingDate)}</p>
+  </div>
+  <div style="border:1px solid #e5e7eb;border-top:none;padding:16px 8px;border-radius:0 0 8px 8px;">
+    <p style="padding:0 12px;font-size:13px;color:#555;">Staff: <b>${user?.email || user?.id || "—"}</b></p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      ${row("নগদ আয় (Cash Received)", `৳ ${totalReceived.toLocaleString()}`, "#059669")}
+      ${row("ব্যয় (Expense)", `− ৳ ${totalExpense.toLocaleString()}`, "#dc2626")}
+      ${row("ডিসকাউন্ট (Discount)", `৳ ${totalDiscount.toLocaleString()}`, "#d97706")}
+      ${row("Net Cash", `৳ ${netCash.toLocaleString()}`, "#0f172a")}
+      ${row("Physical Cash Counted", `৳ ${declared.toLocaleString()}`, "#0f172a")}
+      ${row("Variance", `${variance >= 0 ? "+" : ""}৳ ${variance.toLocaleString()}`, variance >= 0 ? "#059669" : "#d97706")}
+    </table>
+    ${incomeRows ? `<h3 style="margin:16px 12px 4px;font-size:14px;">আয়/ডেলিভারি বিবরণ</h3><table style="width:100%;border-collapse:collapse;font-size:12px;">${incomeRows}</table>` : ""}
+    ${expenseRows ? `<h3 style="margin:16px 12px 4px;font-size:14px;">ব্যয় বিবরণ</h3><table style="width:100%;border-collapse:collapse;font-size:12px;">${expenseRows}</table>` : ""}
+    ${remarks ? `<p style="padding:12px;font-size:13px;color:#555;"><b>Remarks:</b> ${remarks}</p>` : ""}
+  </div>
+</div>`;
+  };
+
+  const sendToMd = async (): Promise<boolean> => {
+    const target = mdEmail.trim();
+    if (!target) {
+      toast.warning("MD এখনো নোটিফিকেশন ইমেইল সেট করেননি — শুধু MD panel-এ গেছে, ইমেইল যায়নি।");
+      return false;
+    }
+    setSendingEmail(true);
+    try {
+      await sendEmailFn({
+        data: {
+          to: target,
+          subject: `Cash Handover Report — ${formatDate(closingDate)}`,
+          html: buildReportHtml(),
+        },
+      });
+      toast.success(`📧 রিপোর্ট MD-কে ইমেইলে পাঠানো হয়েছে: ${target}`);
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ইমেইল পাঠানো যায়নি");
+      return false;
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const submit = async () => {
     const cashText = cash.trim();
     const amt = Number(cashText);
@@ -242,9 +316,13 @@ function MyHandoverPage() {
       _closing_date: closingDate,
       _remarks: remarks || null,
     } as never);
-    setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
     toast.success("Handover submitted. Awaiting MD approval.");
+    await sendToMd();
+    setSaving(false);
     setCash("");
     setRemarks("");
     setReloadTick((t) => t + 1);
@@ -427,10 +505,15 @@ function MyHandoverPage() {
             />
           </div>
 
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <Mail className="h-3.5 w-3.5" />
+            MD email: {mdEmail || "সেট করা নেই"}
+          </div>
+
           <div className="flex justify-end">
-            <Button onClick={submit} disabled={saving || cash.trim() === "" || receipts.length + expenses.length === 0} className="gap-1.5">
+            <Button onClick={submit} disabled={saving || sendingEmail || cash.trim() === "" || receipts.length + expenses.length === 0} className="gap-1.5">
               <Lock className="h-4 w-4" />
-              {saving ? "Submitting…" : "Submit to MD"}
+              {saving || sendingEmail ? "Submitting…" : "Submit to MD"}
             </Button>
           </div>
         </CardContent>
