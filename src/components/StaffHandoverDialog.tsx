@@ -477,7 +477,33 @@ export function StaffHandoverDialog({
               placeholder="MD এর জন্য নোট…"
             />
           </div>
+
+          {/* Email report */}
+          <div className="rounded-lg border p-3 space-y-2">
+            <Label className="text-xs flex items-center gap-1">
+              <Mail className="h-3.5 w-3.5" /> ইমেইলে রিপোর্ট পাঠান (Gmail)
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="recipient@gmail.com"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={sendReport}
+                disabled={sendingEmail || loading}
+                className="shrink-0 gap-1"
+              >
+                <Mail className="h-4 w-4" />
+                {sendingEmail ? "পাঠানো হচ্ছে…" : "পাঠান"}
+              </Button>
+            </div>
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
