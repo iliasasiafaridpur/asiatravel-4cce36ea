@@ -77,6 +77,7 @@ type Row = {
   status?: string;
   country_name?: string;
   airline?: string;
+  trip_road?: string;
   sold_price?: number;
   received?: number;
   discount?: number;
@@ -92,7 +93,7 @@ type Range = "all" | "today" | "month" | "year" | "custom";
 const TARGET_MODULES = MODULES.filter((m) => ["tickets", "bmet", "saudi-visa", "kuwait-visa"].includes(m.key));
 const DASHBOARD_CACHE_KEY = "dashboard_entries_v2";
 const DASHBOARD_SELECTS: Record<string, string> = {
-  tickets: "ticket_id,passenger_name,status,airline,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
+  tickets: "ticket_id,passenger_name,status,airline,trip_road,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   bmet_cards: "bmet_id,passenger_name,status,country_name,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   saudi_visas: "saudi_id,passenger_name,status,sold_price,received_amount,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
   kuwait_visas: "kuwait_id,passenger_name,status,sold_price,received,discount_amount,cost_price,entry_date,created_at,created_by,received_by,entry_by",
@@ -176,6 +177,7 @@ function DashboardPage() {
             status: r.status as string | undefined,
             country_name: r.country_name as string | undefined,
             airline: r.airline as string | undefined,
+            trip_road: r.trip_road as string | undefined,
             sold_price: Number(r.sold_price ?? 0),
             received: Number((r.received ?? r.received_amount) ?? 0),
             discount: Number(r.discount_amount ?? 0),
@@ -218,6 +220,24 @@ function DashboardPage() {
       }>;
     },
   });
+
+  // Payment receipts — used for "who received how much" (cash per user vs MD other-method)
+  // and for the Accounts Methods split (hand cash vs bank/bKash/etc).
+  const { data: receipts = [] } = useQuery({
+    queryKey: ["dashboard", "receipts"],
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data } = await supabase.from("payment_receipts")
+        .select("amount,method,source,received_by,received_by_name,entry_date")
+        .order("entry_date", { ascending: false })
+        .limit(3000);
+      return (data ?? []) as Array<{
+        amount: number; method: string | null; source: string | null;
+        received_by: string | null; received_by_name: string | null; entry_date: string;
+      }>;
+    },
+  });
+
 
   // Robust per-user balance: query receipts/expenses/handovers directly.
   // Works even if RPC permissions/cache hiccup.
@@ -355,21 +375,63 @@ function DashboardPage() {
     return { total, sold, received, due, profit, realizedProfit };
   }, [filtered]);
 
-  // === Per-user received (amount + receipt count, ranked) ===
+  // === Receipts within the active date range (excludes discount rows) ===
+  const filteredReceipts = useMemo(() => {
+    const now = new Date();
+    const inRange = (dStr: string) => {
+      const d = new Date(dStr);
+      if (range === "all") return true;
+      if (range === "today") return d.toDateString() === now.toDateString();
+      if (range === "month") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      if (range === "year") return d.getFullYear() === now.getFullYear();
+      if (range === "custom" && customDate) {
+        return d.getMonth() === customDate.getMonth() && d.getFullYear() === customDate.getFullYear();
+      }
+      return true;
+    };
+    return receipts.filter((r) => {
+      if (r.source === "discount" || (r.method ?? "").toLowerCase() === "discount") return false;
+      return inRange(r.entry_date);
+    });
+  }, [receipts, range, customDate]);
+
+  // === Per-user received ===
+  // Cash physically reaches the staff member → counted under that user.
+  // Non-cash (bank / bKash / Nagad / cheque …) goes straight to MD →
+  // aggregated under "MD (অন্যান্য মাধ্যম)".
   const userReceived = useMemo(() => {
     const m = new Map<string, { amount: number; count: number }>();
-    filtered.forEach((r) => {
-      if (!r.received_by || !r.received) return;
-      const name = profileName(r.received_by) ?? "Unknown";
-      const prev = m.get(name) ?? { amount: 0, count: 0 };
-      prev.amount += r.received ?? 0;
-      prev.count += 1;
-      m.set(name, prev);
+    let mdAmount = 0, mdCount = 0;
+    filteredReceipts.forEach((r) => {
+      const amt = Number(r.amount || 0);
+      if (!amt) return;
+      if (isCashMethod(r.method)) {
+        const name = profileName(r.received_by) ?? r.received_by_name ?? "Unknown";
+        const prev = m.get(name) ?? { amount: 0, count: 0 };
+        prev.amount += amt;
+        prev.count += 1;
+        m.set(name, prev);
+      } else {
+        mdAmount += amt;
+        mdCount += 1;
+      }
     });
-    return Array.from(m.entries())
-      .map(([name, v]) => ({ name, amount: v.amount, count: v.count }))
-      .sort((a, b) => b.amount - a.amount);
-  }, [filtered, profiles]);
+    const list = Array.from(m.entries()).map(([name, v]) => ({ name, amount: v.amount, count: v.count }));
+    if (mdAmount > 0) list.push({ name: "MD (অন্যান্য মাধ্যম)", amount: mdAmount, count: mdCount });
+    return list.sort((a, b) => b.amount - a.amount);
+  }, [filteredReceipts, profiles]);
+
+  // === Accounts methods: hand cash vs each non-cash method (bank/bKash/…) ===
+  const accountsMethods = useMemo(() => {
+    const m = new Map<string, number>();
+    filteredReceipts.forEach((r) => {
+      const amt = Number(r.amount || 0);
+      if (!amt) return;
+      const label = isCashMethod(r.method) ? "হ্যান্ড ক্যাশ" : (r.method?.trim() || "অন্যান্য মাধ্যম");
+      m.set(label, (m.get(label) ?? 0) + amt);
+    });
+    return Array.from(m.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [filteredReceipts]);
 
   // === Per-user entries (ranked) ===
   const userEntries = useMemo(() => {
@@ -427,21 +489,51 @@ function DashboardPage() {
       .sort((a, b) => b.count - a.count);
   }, [filtered]);
 
-  // === Top countries / airlines (count + sold) ===
-  const topGroup = useMemo(() => {
-    const map = new Map<string, { count: number; sold: number }>();
-    filtered.forEach((r) => {
-      const k = r.module === "bmet" ? r.country_name : r.airline;
+  // === Generic grouping helper for service-level breakdowns ===
+  const groupByKey = (rows: Row[], keyFn: (r: Row) => string | undefined | null) => {
+    const map = new Map<string, { count: number; sold: number; received: number }>();
+    rows.forEach((r) => {
+      const k = keyFn(r);
       if (!k) return;
-      const prev = map.get(k) ?? { count: 0, sold: 0 };
+      const prev = map.get(k) ?? { count: 0, sold: 0, received: 0 };
       prev.count += 1;
       prev.sold += r.sold_price ?? 0;
+      prev.received += r.received ?? 0;
       map.set(k, prev);
     });
     return Array.from(map.entries())
-      .map(([name, v]) => ({ name, count: v.count, sold: v.sold }))
-      .sort((a, b) => b.count - a.count).slice(0, 6);
-  }, [filtered]);
+      .map(([name, v]) => ({ name, count: v.count, sold: v.sold, received: v.received }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  // === Service-based breakdown (adapts to the selected module) ===
+  const serviceBreakdown = useMemo<import("@/components/DashboardCharts").ServiceBreakdown>(() => {
+    if (moduleFilter === "tickets") {
+      return {
+        mode: "tickets",
+        tripRoad: groupByKey(filtered, (r) => r.trip_road).slice(0, 8),
+        airline: groupByKey(filtered, (r) => r.airline).slice(0, 8),
+      };
+    }
+    if (moduleFilter === "bmet") {
+      return { mode: "bmet", country: groupByKey(filtered, (r) => r.country_name).slice(0, 12) };
+    }
+    if (moduleFilter === "saudi-visa" || moduleFilter === "kuwait-visa") {
+      const label = TARGET_MODULES.find((m) => m.key === moduleFilter)?.label ?? moduleFilter;
+      const count = filtered.length;
+      const sold = filtered.reduce((s, r) => s + (r.sold_price ?? 0), 0);
+      const received = filtered.reduce((s, r) => s + (r.received ?? 0), 0);
+      const due = Math.max(0, sold - received - filtered.reduce((s, r) => s + (r.discount ?? 0), 0));
+      return { mode: "single", label, count, sold, received, due, collection: sold > 0 ? Math.round((received / sold) * 100) : 0 };
+    }
+    return { mode: "all", modules: moduleBreakdown };
+  }, [filtered, moduleFilter, moduleBreakdown]);
+
+  // === Top countries (BMET) + airlines (tickets) ===
+  const topGroup = useMemo(() => ({
+    airlines: groupByKey(filtered.filter((r) => r.module === "tickets"), (r) => r.airline).slice(0, 6),
+    countries: groupByKey(filtered.filter((r) => r.module === "bmet"), (r) => r.country_name).slice(0, 6),
+  }), [filtered]);
 
   // === Cash transfer summary (within date range) ===
   const cashSummary = useMemo(() => {
@@ -649,11 +741,11 @@ function DashboardPage() {
           isLoading={isLoading}
           moduleFilter={moduleFilter}
           monthlyTrend={monthlyTrend}
-          moduleBreakdown={moduleBreakdown}
+          serviceBreakdown={serviceBreakdown}
           userReceived={userReceived}
           userEntries={userEntries}
           topGroup={topGroup}
-          cashByMethod={cashSummary.byMethod}
+          accountsMethods={accountsMethods}
         />
       </Suspense>
 
