@@ -70,8 +70,14 @@ function SettingsPage() {
     const { data: { session } } = await supabase.auth.getSession();
     const uid = session?.user?.id;
     if (!uid) { setSavingProfile(false); return; }
+    const email = notifyEmail.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setSavingProfile(false);
+      toast.error("সঠিক ইমেইল ঠিকানা দিন");
+      return;
+    }
     const { error } = await supabase.from("profiles")
-      .update({ full_name: fullName, mobile, designation }).eq("user_id", uid);
+      .update({ full_name: fullName, mobile, designation, notify_email: email || null }).eq("user_id", uid);
     setSavingProfile(false);
     if (error) toast.error("সেইভ ব্যর্থ"); else toast.success("প্রোফাইল আপডেটেড");
   };
