@@ -156,6 +156,18 @@ function SettingsPage() {
               <Label className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" /> পদবি</Label>
               <Input value={designation} onChange={(e) => setDesignation(e.target.value)} />
             </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> ইমেইল ঠিকানা (Gmail)</Label>
+              <Input
+                type="email"
+                value={notifyEmail}
+                onChange={(e) => setNotifyEmail(e.target.value)}
+                placeholder="example@gmail.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Cash handover ও নোটিফিকেশন এই ইমেইলে পাঠানো হবে।
+              </p>
+            </div>
             <div className="sm:col-span-2 flex justify-end">
               <Button type="submit" disabled={savingProfile}>{savingProfile ? "Saving…" : "Save Profile"}</Button>
             </div>
