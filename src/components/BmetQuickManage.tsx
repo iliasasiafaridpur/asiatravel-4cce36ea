@@ -187,9 +187,28 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
             ))}
           </RadioGroup>
 
-          <div className="text-sm text-muted-foreground">
-            মোট {list.length} টি রেকর্ড পাওয়া গেছে · সিলেক্টেড: {selected.size}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              মোট {list.length} টি রেকর্ড পাওয়া গেছে · সিলেক্টেড: {selected.size}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                type="date"
+                value={dateQuery}
+                onChange={(e) => setDateQuery(e.target.value)}
+                className="h-8 w-full sm:w-40 text-sm"
+                title="এন্ট্রি তারিখ সার্চ"
+              />
+              <Input
+                value={nameQuery}
+                onChange={(e) => setNameQuery(e.target.value)}
+                placeholder="নাম সার্চ..."
+                className="h-8 w-full sm:w-48 text-sm"
+                title="নাম সার্চ"
+              />
+            </div>
           </div>
+
 
           <div className="border rounded-md overflow-x-auto max-h-[50vh] overflow-y-auto">
             <Table>
