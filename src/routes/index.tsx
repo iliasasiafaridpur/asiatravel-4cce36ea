@@ -375,21 +375,63 @@ function DashboardPage() {
     return { total, sold, received, due, profit, realizedProfit };
   }, [filtered]);
 
-  // === Per-user received (amount + receipt count, ranked) ===
+  // === Receipts within the active date range (excludes discount rows) ===
+  const filteredReceipts = useMemo(() => {
+    const now = new Date();
+    const inRange = (dStr: string) => {
+      const d = new Date(dStr);
+      if (range === "all") return true;
+      if (range === "today") return d.toDateString() === now.toDateString();
+      if (range === "month") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      if (range === "year") return d.getFullYear() === now.getFullYear();
+      if (range === "custom" && customDate) {
+        return d.getMonth() === customDate.getMonth() && d.getFullYear() === customDate.getFullYear();
+      }
+      return true;
+    };
+    return receipts.filter((r) => {
+      if (r.source === "discount" || (r.method ?? "").toLowerCase() === "discount") return false;
+      return inRange(r.entry_date);
+    });
+  }, [receipts, range, customDate]);
+
+  // === Per-user received ===
+  // Cash physically reaches the staff member → counted under that user.
+  // Non-cash (bank / bKash / Nagad / cheque …) goes straight to MD →
+  // aggregated under "MD (অন্যান্য মাধ্যম)".
   const userReceived = useMemo(() => {
     const m = new Map<string, { amount: number; count: number }>();
-    filtered.forEach((r) => {
-      if (!r.received_by || !r.received) return;
-      const name = profileName(r.received_by) ?? "Unknown";
-      const prev = m.get(name) ?? { amount: 0, count: 0 };
-      prev.amount += r.received ?? 0;
-      prev.count += 1;
-      m.set(name, prev);
+    let mdAmount = 0, mdCount = 0;
+    filteredReceipts.forEach((r) => {
+      const amt = Number(r.amount || 0);
+      if (!amt) return;
+      if (isCashMethod(r.method)) {
+        const name = profileName(r.received_by) ?? r.received_by_name ?? "Unknown";
+        const prev = m.get(name) ?? { amount: 0, count: 0 };
+        prev.amount += amt;
+        prev.count += 1;
+        m.set(name, prev);
+      } else {
+        mdAmount += amt;
+        mdCount += 1;
+      }
     });
-    return Array.from(m.entries())
-      .map(([name, v]) => ({ name, amount: v.amount, count: v.count }))
-      .sort((a, b) => b.amount - a.amount);
-  }, [filtered, profiles]);
+    const list = Array.from(m.entries()).map(([name, v]) => ({ name, amount: v.amount, count: v.count }));
+    if (mdAmount > 0) list.push({ name: "MD (অন্যান্য মাধ্যম)", amount: mdAmount, count: mdCount });
+    return list.sort((a, b) => b.amount - a.amount);
+  }, [filteredReceipts, profiles]);
+
+  // === Accounts methods: hand cash vs each non-cash method (bank/bKash/…) ===
+  const accountsMethods = useMemo(() => {
+    const m = new Map<string, number>();
+    filteredReceipts.forEach((r) => {
+      const amt = Number(r.amount || 0);
+      if (!amt) return;
+      const label = isCashMethod(r.method) ? "হ্যান্ড ক্যাশ" : (r.method?.trim() || "অন্যান্য মাধ্যম");
+      m.set(label, (m.get(label) ?? 0) + amt);
+    });
+    return Array.from(m.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [filteredReceipts]);
 
   // === Per-user entries (ranked) ===
   const userEntries = useMemo(() => {
