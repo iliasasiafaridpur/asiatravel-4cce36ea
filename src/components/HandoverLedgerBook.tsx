@@ -884,7 +884,7 @@ function HandoverCard({
           <span className="whitespace-nowrap">মোট {visibleReceipts.length} আইটেম থেকে আয়</span>
           <span className="tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ {fmt(cashReceipts)}</span>
           {mdReceipts > 0 && (
-            <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)} (ক্যাশে নয়)</span>
+            <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)}</span>
           )}
           {totalExpenses > 0 && (
             <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>
