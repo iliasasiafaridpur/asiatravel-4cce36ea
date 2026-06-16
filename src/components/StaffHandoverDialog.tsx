@@ -514,14 +514,14 @@ export function StaffHandoverDialog({
           {/* Email report */}
           <div className="rounded-lg border p-3 space-y-2">
             <Label className="text-xs flex items-center gap-1">
-              <Mail className="h-3.5 w-3.5" /> ইমেইলে রিপোর্ট পাঠান (Gmail)
+              <Mail className="h-3.5 w-3.5" /> MD-এর ইমেইল (Submit to MD দিলে এখানে রিপোর্ট যাবে)
             </Label>
             <div className="flex gap-2">
               <Input
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="recipient@gmail.com"
+                placeholder="md@gmail.com"
               />
               <Button
                 type="button"
@@ -531,10 +531,16 @@ export function StaffHandoverDialog({
                 className="shrink-0 gap-1"
               >
                 <Mail className="h-4 w-4" />
-                {sendingEmail ? "পাঠানো হচ্ছে…" : "পাঠান"}
+                {sendingEmail ? "পাঠানো হচ্ছে…" : "এখনই পাঠান"}
               </Button>
             </div>
+            {!mdEmail && (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                ⚠️ MD এখনো Settings-এ ইমেইল সেট করেননি। অটো-ইমেইল পেতে MD-কে Settings → ইমেইল ঠিকানা সেট করতে বলুন।
+              </p>
+            )}
           </div>
+
         </div>
 
 
