@@ -681,7 +681,7 @@ function HandoverCard({
                       <div className="text-sm text-muted-foreground font-mono leading-tight">{r.ref_id}</div>
                     )}
                     {r.received_by_name && (
-                      <div className="text-sm text-muted-foreground leading-tight">Rec:By {r.received_by_name}</div>
+                      <div className="text-sm text-muted-foreground leading-tight">Rec:By {r.received_by_name.split(" ")[0]}</div>
                     )}
                   </td>
                   {/* কাস্টমার */}
