@@ -443,7 +443,7 @@ export default function DashboardCharts({
         <ChartCard title="কে কত টাকা রিসিভ করেছে" subtitle="ক্যাশ — ইউজার অনুযায়ী · অন্যান্য মাধ্যম — MD" tint={CARD_TINTS[2]} className="h-64">
           {userReceived.length === 0 ? <Empty loading={isLoading} text="এখনো কেউ টাকা রিসিভ করেনি" /> : (
             <RankList
-              items={userReceived.slice(0, 8).map((u) => ({ label: u.name, value: u.amount, sub: `${u.count} টি` }))}
+              items={userReceived.map((u) => ({ label: u.name, value: u.amount, sub: `${u.count} টি` }))}
               format={bdt}
               accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
             />
