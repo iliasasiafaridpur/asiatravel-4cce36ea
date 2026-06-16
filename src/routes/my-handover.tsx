@@ -245,39 +245,73 @@ function MyHandoverPage() {
   );
 
   const buildReportHtml = () => {
-    const row = (label: string, value: string, color: string) =>
-      `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee;color:#555;">${label}</td><td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:${color};">${value}</td></tr>`;
+    const money = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
     const incomeRows = visibleReceipts
-      .map((r) => {
+      .map((r, i) => {
         const evt = isStatusEvent(r);
-        const amt = evt ? "📦 Delivery" : `৳ ${Number(r.amount || 0).toLocaleString()}`;
-        return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${r.passenger_name || "—"}<br><span style="color:#999;font-size:11px;">${svcLine(r) || (r.receipt_id || "")}</span></td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:#059669;">${amt}</td></tr>`;
+        const amt = evt
+          ? `<span class="hand">📦 Delivery</span>`
+          : `<span class="in">${money(r.amount || 0)}</span>`;
+        const disc = Number(r.discount || 0) > 0 ? `<span class="due">− ${money(r.discount || 0)}</span>` : "";
+        return `<tr>
+  <td class="num">${i + 1}</td>
+  <td class="wrap">${r.passenger_name || "—"}</td>
+  <td class="wrap">${svcLine(r) || r.receipt_id || ""}</td>
+  <td class="num">${amt}</td>
+  <td class="num">${disc}</td>
+</tr>`;
       })
       .join("");
     const expenseRows = expenses
-      .map((e) => `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${e.category}${e.purpose ? ` — ${e.purpose}` : ""}</td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:#dc2626;">− ৳ ${Number(e.amount || 0).toLocaleString()}</td></tr>`)
+      .map((e, i) => `<tr>
+  <td class="num">${i + 1}</td>
+  <td class="wrap">${e.category}${e.purpose ? ` — ${e.purpose}` : ""}</td>
+  <td class="num out">− ${money(e.amount || 0)}</td>
+</tr>`)
       .join("");
-    return `
-<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
-  <div style="background:#0f172a;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;">
-    <h2 style="margin:0;font-size:18px;">Cash Handover Report</h2>
-    <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Asia Travel — Closing Date: ${formatDate(closingDate)}</p>
+    return `<!doctype html><html lang="bn"><head><meta charset="utf-8">
+<title>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
+<style>
+  body{font-family:'Noto Sans Bengali',Arial,system-ui,sans-serif;padding:8px;color:#111;margin:0;background:#ffffff}
+  .sheet{max-width:640px;margin:0 auto}
+  h1{margin:0 0 2px;font-size:16px}
+  .meta{color:#555;font-size:11px;margin-bottom:8px}
+  .summary{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;font-size:11px;font-weight:700}
+  .summary div{padding:4px 7px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:120px}
+  h2{font-size:12.5px;margin:12px 0 4px}
+  table{width:100%;border-collapse:collapse;font-size:11px;table-layout:auto;margin-bottom:6px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:3px 5px;text-align:left;vertical-align:top;line-height:1.3}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word}
+  th{background:#f5f5f5;font-weight:600}
+  th.num{text-align:right}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
+  tfoot td{font-weight:700;background:#fafafa}
+</style></head><body>
+<div class="sheet">
+  <h1>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
+  <div class="meta">${displayName(profile, user)} · ক্লোজিং তারিখ: ${formatDate(closingDate)}</div>
+  <div class="summary">
+    <div class="in">নগদ আয়: <b>+ ${money(totalReceived)}</b></div>
+    <div class="out">ব্যয়: <b>− ${money(totalExpense)}</b></div>
+    <div class="due">ডিসকাউন্ট: <b>${money(totalDiscount)}</b></div>
+    <div>Net Cash: <b>${money(netCash)}</b></div>
+    <div>গণনাকৃত নগদ: <b>${money(declared)}</b></div>
+    <div class="${variance >= 0 ? "in" : "out"}">Variance: <b>${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
   </div>
-  <div style="border:1px solid #e5e7eb;border-top:none;padding:16px 8px;border-radius:0 0 8px 8px;">
-    <p style="padding:0 12px;font-size:13px;color:#555;">Staff: <b>${user?.email || user?.id || "—"}</b></p>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      ${row("নগদ আয় (Cash Received)", `৳ ${totalReceived.toLocaleString()}`, "#059669")}
-      ${row("ব্যয় (Expense)", `− ৳ ${totalExpense.toLocaleString()}`, "#dc2626")}
-      ${row("ডিসকাউন্ট (Discount)", `৳ ${totalDiscount.toLocaleString()}`, "#d97706")}
-      ${row("Net Cash", `৳ ${netCash.toLocaleString()}`, "#0f172a")}
-      ${row("Physical Cash Counted", `৳ ${declared.toLocaleString()}`, "#0f172a")}
-      ${row("Variance", `${variance >= 0 ? "+" : ""}৳ ${variance.toLocaleString()}`, variance >= 0 ? "#059669" : "#d97706")}
-    </table>
-    ${incomeRows ? `<h3 style="margin:16px 12px 4px;font-size:14px;">আয়/ডেলিভারি বিবরণ</h3><table style="width:100%;border-collapse:collapse;font-size:12px;">${incomeRows}</table>` : ""}
-    ${expenseRows ? `<h3 style="margin:16px 12px 4px;font-size:14px;">ব্যয় বিবরণ</h3><table style="width:100%;border-collapse:collapse;font-size:12px;">${expenseRows}</table>` : ""}
-    ${remarks ? `<p style="padding:12px;font-size:13px;color:#555;"><b>Remarks:</b> ${remarks}</p>` : ""}
-  </div>
-</div>`;
+  ${incomeRows ? `<h2>আয়/ডেলিভারি বিবরণ</h2>
+  <table>
+    <thead><tr><th class="num">#</th><th class="wrap">নাম</th><th class="wrap">সার্ভিস</th><th class="num">আয়</th><th class="num">ডিসকাউন্ট</th></tr></thead>
+    <tbody>${incomeRows}</tbody>
+  </table>` : ""}
+  ${expenseRows ? `<h2>ব্যয় বিবরণ</h2>
+  <table>
+    <thead><tr><th class="num">#</th><th class="wrap">খাত / উদ্দেশ্য</th><th class="num">পরিমাণ</th></tr></thead>
+    <tbody>${expenseRows}</tbody>
+  </table>` : ""}
+  ${remarks ? `<p style="font-size:11px;color:#555;"><b>মন্তব্য:</b> ${remarks}</p>` : ""}
+</div>
+</body></html>`;
   };
 
   const sendToMd = async (): Promise<boolean> => {
