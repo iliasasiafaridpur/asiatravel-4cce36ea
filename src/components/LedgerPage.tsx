@@ -2795,13 +2795,24 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             </div>
           </div>
+          {/* Vendor bulk payment: force an explicit classification so staff can't
+              accidentally mis-book a payment. One of the three "mark as" options
+              must be chosen before saving. */}
+          {!isAgency && !payRow && payTarget && !(payAsAdvance || payAsMdDeposit || payAsAdjust) && (
+            <p className="text-[12px] text-amber-600 font-medium px-1 -mt-1">
+              ⚠️ সংরক্ষণের আগে উপরের তিনটি অপশনের যেকোনো একটি অবশ্যই নির্বাচন করুন (User Balance / MD Deposit / Manual Adjustment)।
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayOpen(false)}>
               বাতিল
             </Button>
             <Button
               onClick={submitPayment}
-              disabled={paySaving}
+              disabled={
+                paySaving ||
+                (!isAgency && !payRow && !!payTarget && !(payAsAdvance || payAsMdDeposit || payAsAdjust))
+              }
               className="bg-emerald-600 hover:bg-emerald-700 gap-2"
             >
               <Wallet className="h-4 w-4" />{" "}
