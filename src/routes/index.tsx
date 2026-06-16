@@ -489,21 +489,51 @@ function DashboardPage() {
       .sort((a, b) => b.count - a.count);
   }, [filtered]);
 
-  // === Top countries / airlines (count + sold) ===
-  const topGroup = useMemo(() => {
-    const map = new Map<string, { count: number; sold: number }>();
-    filtered.forEach((r) => {
-      const k = r.module === "bmet" ? r.country_name : r.airline;
+  // === Generic grouping helper for service-level breakdowns ===
+  const groupByKey = (rows: Row[], keyFn: (r: Row) => string | undefined | null) => {
+    const map = new Map<string, { count: number; sold: number; received: number }>();
+    rows.forEach((r) => {
+      const k = keyFn(r);
       if (!k) return;
-      const prev = map.get(k) ?? { count: 0, sold: 0 };
+      const prev = map.get(k) ?? { count: 0, sold: 0, received: 0 };
       prev.count += 1;
       prev.sold += r.sold_price ?? 0;
+      prev.received += r.received ?? 0;
       map.set(k, prev);
     });
     return Array.from(map.entries())
-      .map(([name, v]) => ({ name, count: v.count, sold: v.sold }))
-      .sort((a, b) => b.count - a.count).slice(0, 6);
-  }, [filtered]);
+      .map(([name, v]) => ({ name, count: v.count, sold: v.sold, received: v.received }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  // === Service-based breakdown (adapts to the selected module) ===
+  const serviceBreakdown = useMemo<import("@/components/DashboardCharts").ServiceBreakdown>(() => {
+    if (moduleFilter === "tickets") {
+      return {
+        mode: "tickets",
+        tripRoad: groupByKey(filtered, (r) => r.trip_road).slice(0, 8),
+        airline: groupByKey(filtered, (r) => r.airline).slice(0, 8),
+      };
+    }
+    if (moduleFilter === "bmet") {
+      return { mode: "bmet", country: groupByKey(filtered, (r) => r.country_name).slice(0, 12) };
+    }
+    if (moduleFilter === "saudi-visa" || moduleFilter === "kuwait-visa") {
+      const label = TARGET_MODULES.find((m) => m.key === moduleFilter)?.label ?? moduleFilter;
+      const count = filtered.length;
+      const sold = filtered.reduce((s, r) => s + (r.sold_price ?? 0), 0);
+      const received = filtered.reduce((s, r) => s + (r.received ?? 0), 0);
+      const due = Math.max(0, sold - received - filtered.reduce((s, r) => s + (r.discount ?? 0), 0));
+      return { mode: "single", label, count, sold, received, due, collection: sold > 0 ? Math.round((received / sold) * 100) : 0 };
+    }
+    return { mode: "all", modules: moduleBreakdown };
+  }, [filtered, moduleFilter, moduleBreakdown]);
+
+  // === Top countries (BMET) + airlines (tickets) ===
+  const topGroup = useMemo(() => ({
+    airlines: groupByKey(filtered.filter((r) => r.module === "tickets"), (r) => r.airline).slice(0, 6),
+    countries: groupByKey(filtered.filter((r) => r.module === "bmet"), (r) => r.country_name).slice(0, 6),
+  }), [filtered]);
 
   // === Cash transfer summary (within date range) ===
   const cashSummary = useMemo(() => {
