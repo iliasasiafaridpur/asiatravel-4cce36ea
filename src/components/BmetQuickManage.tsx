@@ -94,7 +94,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     setSelected(next);
   };
 
-  const reset = () => { setSelected(new Set()); setVendor(""); setCostPrices({}); };
+  const reset = () => { setSelected(new Set()); setVendor(""); setCostPrices({}); setNameQuery(""); setDateQuery(""); };
 
   const handleModeChange = (m: Mode) => { setMode(m); reset(); };
 
