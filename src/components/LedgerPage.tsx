@@ -595,6 +595,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
+    const searching = search.trim().length > 0;
+    // বাতিল করা (soft-cancel) কাজ থেকে আসা row সাধারণত লুকানো থাকে;
+    // তবে সার্চ করলে ধূসর রঙে ও বিশেষ চিহ্নসহ দেখা যাবে।
+    if (!searching) xs = xs.filter((r) => !isCancelledRow(r));
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
     if (serviceFilter !== "all") xs = xs.filter((r) => String(r.service_type ?? "") === serviceFilter);
     // "শুধু Due" — show only the individual files that are received from the
