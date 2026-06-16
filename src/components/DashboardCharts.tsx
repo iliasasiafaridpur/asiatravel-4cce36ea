@@ -61,7 +61,7 @@ const compact = (n: number) =>
 
 const TREND_LABELS: Record<string, string> = { sold: "বিক্রি", received: "রিসিভ", due: "বকেয়া" };
 
-function TrendTooltip({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; value: number; color: string }[]; label?: string }) {
+function TrendTooltip({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; value: number; color: string; payload?: { collection?: number } }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload as { collection?: number } | undefined;
   return (
