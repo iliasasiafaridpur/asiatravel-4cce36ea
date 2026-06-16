@@ -221,6 +221,24 @@ function DashboardPage() {
     },
   });
 
+  // Payment receipts — used for "who received how much" (cash per user vs MD other-method)
+  // and for the Accounts Methods split (hand cash vs bank/bKash/etc).
+  const { data: receipts = [] } = useQuery({
+    queryKey: ["dashboard", "receipts"],
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data } = await supabase.from("payment_receipts")
+        .select("amount,method,source,received_by,received_by_name,entry_date")
+        .order("entry_date", { ascending: false })
+        .limit(3000);
+      return (data ?? []) as Array<{
+        amount: number; method: string | null; source: string | null;
+        received_by: string | null; received_by_name: string | null; entry_date: string;
+      }>;
+    },
+  });
+
+
   // Robust per-user balance: query receipts/expenses/handovers directly.
   // Works even if RPC permissions/cache hiccup.
   const { data: myBalance } = useQuery({
