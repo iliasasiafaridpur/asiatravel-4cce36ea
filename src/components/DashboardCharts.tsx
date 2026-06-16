@@ -246,6 +246,7 @@ function ServiceCard({ sb, isLoading }: { sb: ServiceBreakdown; isLoading: boole
   const subtitle =
     sb.mode === "tickets" ? "ট্রিপ রোড ও এয়ারলাইন্স অনুযায়ী"
     : sb.mode === "bmet" ? "দেশ অনুযায়ী এন্ট্রি ও বিক্রি"
+    : sb.mode === "service" ? "সার্ভিসের ধরন অনুযায়ী এন্ট্রি"
     : sb.mode === "single" ? "এই সার্ভিসের সারসংক্ষেপ"
     : "এন্ট্রি · বিক্রি · কালেকশন রেট";
 
