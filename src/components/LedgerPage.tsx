@@ -391,6 +391,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         received_date: string | null;
         delivery_date: string | null;
         discount_amount: number | null;
+        cancelled: boolean | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
         if (b.country_name) cm.set(b.id, b.country_name);
@@ -408,6 +409,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor: !!b.received_date,
           delivery_date: b.delivery_date ?? undefined,
           has_delivery: true,
+          cancelled: !!b.cancelled,
         });
       }
       const vm = new Map<string, string>();
