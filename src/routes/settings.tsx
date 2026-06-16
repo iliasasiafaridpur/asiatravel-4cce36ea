@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { User, KeyRound, Trash2, RefreshCw, Phone, Briefcase, AlertTriangle } from "lucide-react";
+import { User, KeyRound, Trash2, RefreshCw, Phone, Briefcase, AlertTriangle, Mail } from "lucide-react";
 
 // Data-reset groups. Each "module" maps to one or more tables that must be wiped together
 // to keep ledgers/receipts in sync (services + their auto-generated ledger/receipt rows).
