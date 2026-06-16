@@ -19,6 +19,7 @@ interface Hand {
   amount: number;
   status: string | null;
   remarks: string | null;
+  from_name: string | null;
   to_name: string | null;
   created_at: string;
 }
@@ -41,7 +42,7 @@ export function StaffHandoverHistoryDialog({
       setLoading(true);
       const { data } = await supabase
         .from("cash_handovers")
-        .select("id,handover_id,entry_date,closing_date,submitted_amount,confirmed_amount,amount,status,remarks,to_name,created_at")
+        .select("id,handover_id,entry_date,closing_date,submitted_amount,confirmed_amount,amount,status,remarks,from_name,to_name,created_at")
         .eq("from_user", user.id)
         .order("created_at", { ascending: false })
         .limit(200);
@@ -134,7 +135,8 @@ function HandList({ rows, loading, emptyText }: { rows: Hand[]; loading: boolean
             <div className="mt-1 text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
               <span>📅 Submitted: {formatDateTime(h.created_at)}</span>
               <span>Closing: {formatDate(h.closing_date || h.entry_date)}</span>
-              {h.to_name && <span>→ {h.to_name}</span>}
+              <span>প্রেরক: {h.from_name ?? "—"}</span>
+              {h.to_name && <span>→ গ্রহীতা: {h.to_name}</span>}
               {conf > 0 && <span>Confirmed: <span className="font-semibold text-foreground">{fmt(conf)}</span></span>}
               {variance !== 0 && (
                 <span className={variance > 0 ? "text-emerald-500" : "text-rose-500"}>

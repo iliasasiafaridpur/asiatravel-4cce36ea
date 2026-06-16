@@ -49,7 +49,7 @@ const cleanStatusText = (text?: string | null) => {
 };
 
 
-interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; approved_at?: string | null; approved_by?: string | null; }
+interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; from_name: string | null; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; approved_at?: string | null; approved_by?: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; handover_id?: string | null; }
 
@@ -115,7 +115,7 @@ function AccountsPage() {
 
     const parsedLimit = /^\d+$/.test(latestInput.trim()) ? Math.max(parseInt(latestInput.trim(), 10), 1) : 1000;
     let recvQuery = supabase.from("payment_receipts").select("id,receipt_id,entry_date,created_at,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by,handover_id").not("source", "eq", "discount").not("method", "ilike", "discount").order("created_at", { ascending: false });
-    let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date,approved_at,approved_by").order("created_at", { ascending: false });
+    let handQuery = supabase.from("cash_handovers").select("id,handover_id,entry_date,created_at,to_name,from_name,amount,method,remarks,from_user,status,submitted_amount,confirmed_amount,closing_date,approved_at,approved_by").order("created_at", { ascending: false });
     let expQuery  = supabase.from("cash_expenses").select("id,expense_id,entry_date,created_at,category,purpose,amount,remarks,spent_by,handover_id,linked_source_table,linked_source_id").order("created_at", { ascending: false });
 
     // Load the opening history too. The visible list is still filtered below,
@@ -788,7 +788,7 @@ ${node.innerHTML.replace(
                   const name = isIn
                     ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
                     : isHand
-                    ? (h.to_name || "প্রাপক")
+                    ? (`${h.from_name ?? "প্রেরক"} → ${h.to_name || "প্রাপক"}`)
                     : (e.category || "খরচ");
 
                   // Col 2: উদ্দেশ্য (purpose) — primary line
@@ -953,7 +953,7 @@ ${node.innerHTML.replace(
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
-                  const name = isIn ? r.passenger_name : isHand ? `জমা → ${h.to_name}` : (e.purpose || e.category);
+                  const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
                   let region = "";
@@ -1149,7 +1149,7 @@ ${node.innerHTML.replace(
                       title="এই হিসাবটি আমার ক্যাশ হিস্টোরিতে দেখুন"
                     >
                       <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold text-sm truncate">{h.to_name}</p>
+                        <p className="font-semibold text-sm truncate">{h.from_name ?? "প্রেরক"} → {h.to_name}</p>
                         <p className="font-bold text-sky-600 tabular-nums text-sm whitespace-nowrap">− {fmt(Number(h.amount))}</p>
                       </div>
                       <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
