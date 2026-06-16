@@ -180,6 +180,21 @@ body { font-size: 1rem !important; }
   box-shadow: none !important;
 }
 
+/* বাতিল / ফেরত করা এন্ট্রি — সার্চে এলে ধূসর রঙে ও বিশেষ চিহ্নসহ দেখানো হয় */
+tr.cancelled-row.row-tint-0, tr.cancelled-row.row-tint-1,
+tr.cancelled-row.row-tint-2, tr.cancelled-row.row-tint-3 {
+  background-color: #e7e7e9 !important;
+  color: #6b7280 !important;
+  box-shadow: inset 4px 0 0 0 #f43f5e !important;
+}
+.dark tr.cancelled-row.row-tint-0, .dark tr.cancelled-row.row-tint-1,
+.dark tr.cancelled-row.row-tint-2, .dark tr.cancelled-row.row-tint-3 {
+  background-color: #2a2d33 !important;
+  color: #9ca3af !important;
+  box-shadow: inset 4px 0 0 0 #f43f5e !important;
+}
+tr.cancelled-row .font-mono { text-decoration: line-through; text-decoration-color: rgba(244, 63, 94, 0.7); }
+
 /* Generic table rows (no tint class): darken on hover */
 table tbody tr { transition: filter 0.15s ease, background-color 0.15s ease; }
 table tbody tr:not([class*="row-tint-"]):hover {
