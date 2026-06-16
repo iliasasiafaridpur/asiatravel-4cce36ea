@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { User, KeyRound, Trash2, RefreshCw, Phone, Briefcase, AlertTriangle } from "lucide-react";
+import { User, KeyRound, Trash2, RefreshCw, Phone, Briefcase, AlertTriangle, Mail } from "lucide-react";
 
 // Data-reset groups. Each "module" maps to one or more tables that must be wiped together
 // to keep ledgers/receipts in sync (services + their auto-generated ledger/receipt rows).
@@ -39,6 +39,7 @@ function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
   const [designation, setDesignation] = useState("");
+  const [notifyEmail, setNotifyEmail] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
@@ -51,12 +52,13 @@ function SettingsPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id;
       if (!uid) return;
-      supabase.from("profiles").select("full_name,mobile,designation,role").eq("user_id", uid).maybeSingle()
+      supabase.from("profiles").select("full_name,mobile,designation,role,notify_email").eq("user_id", uid).maybeSingle()
         .then(({ data }) => {
-          const p = (data ?? {}) as { full_name?: string; mobile?: string; designation?: string; role?: string };
+          const p = (data ?? {}) as { full_name?: string; mobile?: string; designation?: string; role?: string; notify_email?: string };
           setFullName(p.full_name ?? "");
           setMobile(p.mobile ?? "");
           setDesignation(p.designation ?? "");
+          setNotifyEmail(p.notify_email ?? "");
           setIsAdmin((p.role ?? "") === "admin");
         });
     });
@@ -68,8 +70,14 @@ function SettingsPage() {
     const { data: { session } } = await supabase.auth.getSession();
     const uid = session?.user?.id;
     if (!uid) { setSavingProfile(false); return; }
+    const email = notifyEmail.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setSavingProfile(false);
+      toast.error("সঠিক ইমেইল ঠিকানা দিন");
+      return;
+    }
     const { error } = await supabase.from("profiles")
-      .update({ full_name: fullName, mobile, designation }).eq("user_id", uid);
+      .update({ full_name: fullName, mobile, designation, notify_email: email || null }).eq("user_id", uid);
     setSavingProfile(false);
     if (error) toast.error("সেইভ ব্যর্থ"); else toast.success("প্রোফাইল আপডেটেড");
   };
@@ -147,6 +155,18 @@ function SettingsPage() {
             <div className="space-y-1 sm:col-span-2">
               <Label className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" /> পদবি</Label>
               <Input value={designation} onChange={(e) => setDesignation(e.target.value)} />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> ইমেইল ঠিকানা (Gmail)</Label>
+              <Input
+                type="email"
+                value={notifyEmail}
+                onChange={(e) => setNotifyEmail(e.target.value)}
+                placeholder="example@gmail.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Cash handover ও নোটিফিকেশন এই ইমেইলে পাঠানো হবে।
+              </p>
             </div>
             <div className="sm:col-span-2 flex justify-end">
               <Button type="submit" disabled={savingProfile}>{savingProfile ? "Saving…" : "Save Profile"}</Button>
