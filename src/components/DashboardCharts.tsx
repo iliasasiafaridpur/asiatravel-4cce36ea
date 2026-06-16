@@ -288,6 +288,28 @@ function ServiceCard({ sb, isLoading }: { sb: ServiceBreakdown; isLoading: boole
           </div>
         )}
 
+        {sb.mode === "service" && (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {sb.service.slice(0, 10).length === 0 ? <Empty loading={isLoading} text="সার্ভিস ডাটা নেই" /> : (
+              (() => {
+                const top = sb.service.slice(0, 10);
+                const max = Math.max(1, ...top.map((x) => x.count));
+                return top.map((g, i) => (
+                  <div key={g.name + i} className="space-y-0.5">
+                    <div className="flex items-center justify-between gap-2 text-[11px]">
+                      <span className="truncate font-medium">{g.name}</span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">{g.count} টি · {compact(g.sold)}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${(g.count / max) * 100}%`, background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    </div>
+                  </div>
+                ));
+              })()
+            )}
+          </div>
+        )}
+
         {sb.mode === "single" && (
           <div className="flex flex-col items-center justify-center text-center py-4 gap-3">
             <div>
