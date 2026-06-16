@@ -834,11 +834,10 @@ ${node.innerHTML.replace(
                   const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
-                      {/* Col 1: Name */}
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[0.7fr_1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
+                      {/* Col 1: Type + date */}
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm leading-tight break-words">{name}</p>
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-0.5">
@@ -846,6 +845,15 @@ ${node.innerHTML.replace(
                         </p>
                         {isIn && r.ref_id && <p className="text-xs text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
+
+                      {/* Col 2 (NEW): Name + Passport */}
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm leading-tight break-words">{name}</p>
+                        {isIn && svc?.passport && (
+                          <p className="text-xs text-muted-foreground mt-0.5 font-mono break-words">{svc.passport}</p>
+                        )}
+                      </div>
+
 
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
