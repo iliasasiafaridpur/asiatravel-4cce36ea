@@ -962,6 +962,7 @@ export type Database = {
           full_name: string
           is_active: boolean
           mobile: string | null
+          notify_email: string | null
           role: string
           updated_at: string
           user_id: string
@@ -972,6 +973,7 @@ export type Database = {
           full_name?: string
           is_active?: boolean
           mobile?: string | null
+          notify_email?: string | null
           role?: string
           updated_at?: string
           user_id: string
@@ -982,6 +984,7 @@ export type Database = {
           full_name?: string
           is_active?: boolean
           mobile?: string | null
+          notify_email?: string | null
           role?: string
           updated_at?: string
           user_id?: string
