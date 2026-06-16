@@ -210,23 +210,33 @@ function DonutCard({
 
 /* --------------------------- service breakdown --------------------------- */
 
-function GroupSection({ icon: Icon, title, items, isLoading, emptyText }: {
-  icon: React.ElementType; title: string; items: GroupItem[]; isLoading: boolean; emptyText?: string;
+function CompactGroup({ icon: Icon, title, items, isLoading, emptyText, limit = 5 }: {
+  icon: React.ElementType; title: string; items: GroupItem[]; isLoading: boolean; emptyText?: string; limit?: number;
 }) {
+  const top = items.slice(0, limit);
+  const max = Math.max(1, ...top.map((x) => x.count));
   return (
     <div className="flex flex-col min-h-0">
-      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-muted-foreground">
+      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-muted-foreground">
         <Icon className="h-3.5 w-3.5" /> {title}
       </div>
-      <div className="flex-1 min-h-[110px] max-h-44">
-        {items.length === 0 ? <Empty loading={isLoading} text={emptyText} /> : (
-          <RankList
-            items={items.map((g) => ({ label: g.name, value: g.count, sub: bdt(g.sold) }))}
-            format={(n) => `${n} টি`}
-            accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
-          />
-        )}
-      </div>
+      {top.length === 0 ? (
+        <Empty loading={isLoading} text={emptyText} />
+      ) : (
+        <div className="space-y-1.5">
+          {top.map((g, i) => (
+            <div key={g.name + i} className="space-y-0.5">
+              <div className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="truncate font-medium">{g.name}</span>
+                <span className="shrink-0 tabular-nums text-muted-foreground">{g.count} টি · {compact(g.sold)}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${(g.count / max) * 100}%`, background: PIE_COLORS[i % PIE_COLORS.length] }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -239,37 +249,45 @@ function ServiceCard({ sb, isLoading }: { sb: ServiceBreakdown; isLoading: boole
     : "এন্ট্রি · বিক্রি · কালেকশন রেট";
 
   return (
-    <div className={cn("rounded-xl border shadow-sm", CARD_TINTS[1])}>
+    <div className={cn("rounded-xl border shadow-sm flex flex-col", CARD_TINTS[1])}>
       <div className="p-4 pb-2">
         <h3 className="text-sm font-semibold leading-tight">সার্ভিস অনুযায়ী এন্ট্রি</h3>
         <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>
       </div>
-      <div className="px-4 pb-4">
-        {sb.mode === "all" && (
-          moduleAll(sb.modules, isLoading)
-        )}
+      <div className="px-4 pb-4 flex-1 min-h-0">
+        {sb.mode === "all" && moduleAll(sb.modules, isLoading)}
 
         {sb.mode === "tickets" && (
-          <div className="grid grid-cols-1 gap-3">
-            <GroupSection icon={RouteIcon} title="ট্রিপ রোড" items={sb.tripRoad} isLoading={isLoading} emptyText="ট্রিপ রোড ডাটা নেই" />
-            <GroupSection icon={Plane} title="এয়ারলাইন্স" items={sb.airline} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" />
+          <div className="grid grid-cols-2 gap-3">
+            <CompactGroup icon={RouteIcon} title="ট্রিপ রোড" items={sb.tripRoad} isLoading={isLoading} emptyText="ডাটা নেই" />
+            <CompactGroup icon={Plane} title="এয়ারলাইন্স" items={sb.airline} isLoading={isLoading} emptyText="ডাটা নেই" />
           </div>
         )}
 
         {sb.mode === "bmet" && (
-          <div className="min-h-[200px] max-h-[230px]">
-            {sb.country.length === 0 ? <Empty loading={isLoading} text="দেশ ডাটা নেই" /> : (
-              <RankList
-                items={sb.country.map((g) => ({ label: g.name, value: g.count, sub: bdt(g.sold) }))}
-                format={(n) => `${n} টি`}
-                accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
-              />
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {sb.country.slice(0, 10).length === 0 ? <Empty loading={isLoading} text="দেশ ডাটা নেই" /> : (
+              (() => {
+                const top = sb.country.slice(0, 10);
+                const max = Math.max(1, ...top.map((x) => x.count));
+                return top.map((g, i) => (
+                  <div key={g.name + i} className="space-y-0.5">
+                    <div className="flex items-center justify-between gap-2 text-[11px]">
+                      <span className="truncate font-medium">{g.name}</span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">{g.count}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${(g.count / max) * 100}%`, background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    </div>
+                  </div>
+                ));
+              })()
             )}
           </div>
         )}
 
         {sb.mode === "single" && (
-          <div className="flex flex-col items-center justify-center text-center py-6 gap-3 min-h-[200px]">
+          <div className="flex flex-col items-center justify-center text-center py-4 gap-3">
             <div>
               <p className="text-[11px] text-muted-foreground">মোট {sb.label} এন্ট্রি</p>
               <p className="text-4xl font-bold tabular-nums">{sb.count}</p>
