@@ -91,6 +91,13 @@ export function PasswordConfirmDialog({
             onChange={(e) => setPw(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") verify(); }}
             placeholder="••••••••"
+            name="delete-confirm-password"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-1p-ignore
+            data-lpignore="true"
           />
         </div>
         <DialogFooter>
