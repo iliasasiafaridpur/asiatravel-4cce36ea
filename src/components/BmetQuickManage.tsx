@@ -53,19 +53,30 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [vendor, setVendor] = useState<string>("");
   const [costPrices, setCostPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [nameQuery, setNameQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState("");
 
   const list = useMemo(() => {
     // বাতিল করা কার্ড চলমান কাজের তালিকায় আসবে না।
     const active = rows.filter((r) => !r.cancelled);
+    let base: Row[];
     if (mode === "send") {
-      return active.filter((r) => !r.vendor_sent_date);
+      base = active.filter((r) => !r.vendor_sent_date);
+    } else if (mode === "ready") {
+      base = active.filter((r) => r.status === "File Process");
+    } else {
+      // receive
+      base = active.filter((r) => r.status === "Card Ready" && !r.received_date);
     }
-    if (mode === "ready") {
-      return active.filter((r) => r.status === "File Process");
-    }
-    // receive
-    return active.filter((r) => r.status === "Card Ready" && !r.received_date);
-  }, [rows, mode]);
+
+    const name = nameQuery.trim().toLowerCase();
+    const date = dateQuery.trim();
+    return base.filter((r) => {
+      if (name && !String(r.passenger_name ?? "").toLowerCase().includes(name)) return false;
+      if (date && !String(r.entry_date ?? "").includes(date)) return false;
+      return true;
+    });
+  }, [rows, mode, nameQuery, dateQuery]);
 
   const allChecked = list.length > 0 && list.every((r) => selected.has(r.id));
   const someChecked = list.some((r) => selected.has(r.id));
