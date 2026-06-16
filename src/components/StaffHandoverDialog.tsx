@@ -120,7 +120,7 @@ export function StaffHandoverDialog({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [r, e] = await Promise.all([
+      const [r, e, md] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -139,10 +139,20 @@ export function StaffHandoverDialog({
           .is("handover_id", null)
           .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("notify_email")
+          .eq("role", "admin")
+          .not("notify_email", "is", null)
+          .limit(1)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
+      const foundMdEmail = ((md?.data as { notify_email?: string } | null)?.notify_email ?? "").trim();
+      setMdEmail(foundMdEmail);
+      setRecipientEmail((prev) => prev || foundMdEmail);
       const recs = ((r.data ?? []) as unknown) as Receipt[];
 
       // Enrich each receipt with the discount stored on its underlying service row.
