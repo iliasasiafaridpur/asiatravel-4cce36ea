@@ -649,7 +649,7 @@ function DashboardPage() {
           isLoading={isLoading}
           moduleFilter={moduleFilter}
           monthlyTrend={monthlyTrend}
-          pieModule={pieModule}
+          moduleBreakdown={moduleBreakdown}
           userReceived={userReceived}
           userEntries={userEntries}
           topGroup={topGroup}
