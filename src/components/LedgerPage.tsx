@@ -142,6 +142,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         received_from_vendor?: boolean;
         delivery_date?: string | null;
         has_delivery?: boolean;
+        cancelled?: boolean;
       }
     >
   >(new Map());
@@ -305,15 +306,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           .limit(2000),
         supabase
           .from("bmet_cards")
-          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .select("id,country_name,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date,cancelled")
           .limit(2000),
         supabase
           .from("kuwait_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date,cancelled")
           .limit(2000),
         supabase
           .from("saudi_visas")
-          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date")
+          .select("id,passport,mobile,vendor_bought,agency_sold,sold_price,cost_price,discount_amount,status,received_date,delivery_date,cancelled")
           .limit(2000),
         supabase
           .from("others")
@@ -338,6 +339,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor?: boolean;
           delivery_date?: string | null;
           has_delivery?: boolean;
+          cancelled?: boolean;
         }
       >();
 
@@ -389,6 +391,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         received_date: string | null;
         delivery_date: string | null;
         discount_amount: number | null;
+        cancelled: boolean | null;
       };
       for (const b of (bm.data as unknown as B[]) ?? []) {
         if (b.country_name) cm.set(b.id, b.country_name);
@@ -406,6 +409,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor: !!b.received_date,
           delivery_date: b.delivery_date ?? undefined,
           has_delivery: true,
+          cancelled: !!b.cancelled,
         });
       }
       const vm = new Map<string, string>();
@@ -421,6 +425,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         status: string | null;
         received_date: string | null;
         delivery_date: string | null;
+        cancelled: boolean | null;
       };
       for (const v of (kv.data as unknown as V[]) ?? []) {
         vm.set(v.id, "Kuwait");
@@ -436,6 +441,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor: !!v.received_date,
           delivery_date: v.delivery_date ?? undefined,
           has_delivery: true,
+          cancelled: !!v.cancelled,
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -452,6 +458,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor: !!v.received_date,
           delivery_date: v.delivery_date ?? undefined,
           has_delivery: true,
+          cancelled: !!v.cancelled,
         });
       }
       type O = {
@@ -533,6 +540,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     [isAgency, sourceInfoMap],
   );
 
+  // একটি ledger row যদি বাতিল করা (soft-cancel) BMET/Saudi/Kuwait কাজ থেকে আসে কিনা
+  const isCancelledRow = useCallback(
+    (r: Row) => {
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return false;
+      return !!sourceInfoMap.get(String(r.source_id ?? ""))?.cancelled;
+    },
+    [sourceInfoMap],
+  );
+
   const advanceAdjustedRows = useMemo(() => {
     const adjusted = new Map<string, { applied: number; displayPaid: number; displayDue: number }>();
     for (const r of rows) {
@@ -578,6 +595,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
+    const searching = search.trim().length > 0;
+    // বাতিল করা (soft-cancel) কাজ থেকে আসা row সাধারণত লুকানো থাকে;
+    // তবে সার্চ করলে ধূসর রঙে ও বিশেষ চিহ্নসহ দেখা যাবে।
+    if (!searching) xs = xs.filter((r) => !isCancelledRow(r));
     if (groupFilter !== "all") xs = xs.filter((r) => String(r[groupField] ?? "") === groupFilter);
     if (serviceFilter !== "all") xs = xs.filter((r) => String(r.service_type ?? "") === serviceFilter);
     // "শুধু Due" — show only the individual files that are received from the
@@ -602,7 +623,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     }
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup, advanceAdjustedRows]);
+  }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup, advanceAdjustedRows, isCancelledRow]);
 
   const totals = useMemo(() => {
     let bill = 0,
@@ -1886,6 +1907,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         ? info.sold - Number(info.discount ?? 0) - info.cost
                         : 0;
                   const status = info?.status ?? "";
+                  const rowCancelled = !!info?.cancelled;
                   return (
                     <div
                       key={r.id}
@@ -1898,9 +1920,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           void openProfileFor(r);
                         }
                       }}
-                      className={`row-tint-${idx % 4} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
-                      title={isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
+                      className={`relative row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
+                      title={rowCancelled ? "বাতিল করা কাজ — " + (isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন") : isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
                     >
+                      {rowCancelled && (
+                        <span className="absolute right-3 top-3 rounded-full bg-rose-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          বাতিল
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Date / ID
