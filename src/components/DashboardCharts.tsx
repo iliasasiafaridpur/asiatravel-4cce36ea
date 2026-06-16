@@ -2,7 +2,7 @@ import {
   ResponsiveContainer, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, ComposedChart, Area, Line, XAxis, YAxis, Legend,
 } from "recharts";
-import { TrendingUp, TrendingDown, Percent, Medal, Award, Crown } from "lucide-react";
+import { TrendingUp, TrendingDown, Percent, Medal, Award, Crown, Plane, Route as RouteIcon, Globe2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PIE_COLORS = [
@@ -26,16 +26,23 @@ const CARD_TINTS = [
 ];
 
 type NameValue = { name: string; value: number };
+export type GroupItem = { name: string; count: number; sold: number; received?: number };
+
+export type ServiceBreakdown =
+  | { mode: "all"; modules: { name: string; key: string; count: number; sold: number; received: number; due: number; collection: number; color: string }[] }
+  | { mode: "tickets"; tripRoad: GroupItem[]; airline: GroupItem[] }
+  | { mode: "bmet"; country: GroupItem[] }
+  | { mode: "single"; label: string; count: number; sold: number; received: number; due: number; collection: number };
 
 export interface DashboardChartsProps {
   isLoading: boolean;
   moduleFilter: string;
   monthlyTrend: { month: string; sold: number; received: number; due: number; collection: number }[];
-  moduleBreakdown: { name: string; key: string; count: number; sold: number; received: number; due: number; collection: number; color: string }[];
+  serviceBreakdown: ServiceBreakdown;
   userReceived: { name: string; amount: number; count: number }[];
   userEntries: NameValue[];
-  topGroup: { name: string; count: number; sold: number }[];
-  cashByMethod: NameValue[];
+  topGroup: { airlines: GroupItem[]; countries: GroupItem[] };
+  accountsMethods: NameValue[];
 }
 
 const bdt = (n: number) => "৳ " + Math.round(n).toLocaleString();
@@ -58,7 +65,7 @@ function ChartCard({ title, subtitle, children, className, tint }: { title: stri
 
 function Empty({ loading, text }: { loading: boolean; text?: string }) {
   return (
-    <div className="h-full min-h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+    <div className="h-full min-h-[120px] flex items-center justify-center text-sm text-muted-foreground text-center px-3">
       {loading ? "লোড হচ্ছে..." : (text ?? "কোনো ডাটা নেই")}
     </div>
   );
@@ -159,11 +166,11 @@ function TrendSummary({ data }: { data: DashboardChartsProps["monthlyTrend"] }) 
 /* --------------------------- donut with center --------------------------- */
 
 function DonutCard({
-  title, subtitle, tint, data, isLoading, emptyText, colorAt,
+  title, subtitle, tint, data, isLoading, emptyText, colorAt, money = true,
 }: {
   title: string; subtitle?: string; tint: string;
   data: { name: string; value: number }[]; isLoading: boolean; emptyText?: string;
-  colorAt: (i: number) => string;
+  colorAt: (i: number) => string; money?: boolean;
 }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
@@ -176,7 +183,7 @@ function DonutCard({
                 <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={70} paddingAngle={2} stroke="none">
                   {data.map((_, i) => <Cell key={i} fill={colorAt(i)} />)}
                 </Pie>
-                <Tooltip formatter={(v: number, n: string) => [bdt(Number(v)), n]} />
+                <Tooltip formatter={(v: number, n: string) => [money ? bdt(Number(v)) : String(v), n]} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -201,15 +208,179 @@ function DonutCard({
   );
 }
 
+/* --------------------------- service breakdown --------------------------- */
+
+function GroupSection({ icon: Icon, title, items, isLoading, emptyText }: {
+  icon: React.ElementType; title: string; items: GroupItem[]; isLoading: boolean; emptyText?: string;
+}) {
+  return (
+    <div className="flex flex-col min-h-0">
+      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {title}
+      </div>
+      <div className="flex-1 min-h-[110px] max-h-44">
+        {items.length === 0 ? <Empty loading={isLoading} text={emptyText} /> : (
+          <RankList
+            items={items.map((g) => ({ label: g.name, value: g.count, sub: bdt(g.sold) }))}
+            format={(n) => `${n} টি`}
+            accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ServiceCard({ sb, isLoading }: { sb: ServiceBreakdown; isLoading: boolean }) {
+  const subtitle =
+    sb.mode === "tickets" ? "ট্রিপ রোড ও এয়ারলাইন্স অনুযায়ী"
+    : sb.mode === "bmet" ? "দেশ অনুযায়ী এন্ট্রি ও বিক্রি"
+    : sb.mode === "single" ? "এই সার্ভিসের সারসংক্ষেপ"
+    : "এন্ট্রি · বিক্রি · কালেকশন রেট";
+
+  return (
+    <div className={cn("rounded-xl border shadow-sm", CARD_TINTS[1])}>
+      <div className="p-4 pb-2">
+        <h3 className="text-sm font-semibold leading-tight">সার্ভিস অনুযায়ী এন্ট্রি</h3>
+        <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>
+      </div>
+      <div className="px-4 pb-4">
+        {sb.mode === "all" && (
+          moduleAll(sb.modules, isLoading)
+        )}
+
+        {sb.mode === "tickets" && (
+          <div className="grid grid-cols-1 gap-3">
+            <GroupSection icon={RouteIcon} title="ট্রিপ রোড" items={sb.tripRoad} isLoading={isLoading} emptyText="ট্রিপ রোড ডাটা নেই" />
+            <GroupSection icon={Plane} title="এয়ারলাইন্স" items={sb.airline} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" />
+          </div>
+        )}
+
+        {sb.mode === "bmet" && (
+          <div className="min-h-[200px] max-h-[230px]">
+            {sb.country.length === 0 ? <Empty loading={isLoading} text="দেশ ডাটা নেই" /> : (
+              <RankList
+                items={sb.country.map((g) => ({ label: g.name, value: g.count, sub: bdt(g.sold) }))}
+                format={(n) => `${n} টি`}
+                accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
+              />
+            )}
+          </div>
+        )}
+
+        {sb.mode === "single" && (
+          <div className="flex flex-col items-center justify-center text-center py-6 gap-3 min-h-[200px]">
+            <div>
+              <p className="text-[11px] text-muted-foreground">মোট {sb.label} এন্ট্রি</p>
+              <p className="text-4xl font-bold tabular-nums">{sb.count}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 w-full text-center">
+              <div className="rounded-lg bg-emerald-500/15 py-2">
+                <p className="text-[10px] text-muted-foreground">বিক্রি</p>
+                <p className="text-xs font-semibold tabular-nums">{compact(sb.sold)}</p>
+              </div>
+              <div className="rounded-lg bg-cyan-500/15 py-2">
+                <p className="text-[10px] text-muted-foreground">রিসিভ</p>
+                <p className="text-xs font-semibold tabular-nums">{compact(sb.received)}</p>
+              </div>
+              <div className="rounded-lg bg-rose-500/15 py-2">
+                <p className="text-[10px] text-muted-foreground">বকেয়া</p>
+                <p className="text-xs font-semibold tabular-nums">{compact(sb.due)}</p>
+              </div>
+            </div>
+            <div className="w-full">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                <span>কালেকশন রেট</span><span>{sb.collection}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                <div className="h-full rounded-full bg-violet-400" style={{ width: `${sb.collection}%` }} />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function moduleAll(modules: Extract<ServiceBreakdown, { mode: "all" }>["modules"], isLoading: boolean) {
+  if (modules.length === 0) return <div className="h-56"><Empty loading={isLoading} /></div>;
+  return (
+    <>
+      <div className="relative h-28">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={modules} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={36} outerRadius={54} paddingAngle={2} stroke="none">
+              {modules.map((m, i) => <Cell key={i} fill={m.color} />)}
+            </Pie>
+            <Tooltip formatter={(v: number, n: string) => [`${v} এন্ট্রি`, n]} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <span className="text-[10px] text-muted-foreground">মোট</span>
+          <span className="text-base font-bold tabular-nums">{modules.reduce((s, m) => s + m.count, 0)}</span>
+        </div>
+      </div>
+      <div className="mt-2 space-y-2">
+        {modules.map((m) => (
+          <div key={m.key} className="space-y-1">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex items-center gap-1.5 min-w-0">
+                <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: m.color }} />
+                <span className="truncate font-medium">{m.name}</span>
+                <span className="text-[10px] text-muted-foreground shrink-0">· {m.count}</span>
+              </span>
+              <span className="font-semibold tabular-nums shrink-0">{compact(m.sold)}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 flex-1 rounded-full bg-foreground/10 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${m.collection}%`, background: m.color }} />
+              </div>
+              <span className="text-[10px] tabular-nums text-muted-foreground w-9 text-right">{m.collection}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* --------------------------- top group (3) ------------------------------- */
+
+function TopGroupCard({ moduleFilter, topGroup, isLoading }: {
+  moduleFilter: string; topGroup: DashboardChartsProps["topGroup"]; isLoading: boolean;
+}) {
+  const showAirlines = moduleFilter === "tickets" || moduleFilter === "all";
+  const showCountries = moduleFilter === "bmet" || moduleFilter === "all";
+  const noGroup = !showAirlines && !showCountries;
+
+  return (
+    <ChartCard title="টপ দেশ ও এয়ারলাইন্স" subtitle="এন্ট্রি ও বিক্রি অনুযায়ী র‍্যাংকিং" tint={CARD_TINTS[4]} className="h-64">
+      {noGroup ? (
+        <Empty loading={isLoading} text="এই সার্ভিসে দেশ / এয়ারলাইন্স প্রযোজ্য নয়" />
+      ) : (
+        <div className={cn("h-full gap-3", showAirlines && showCountries ? "grid grid-cols-1" : "")}>
+          {showAirlines && (
+            <GroupSection icon={Plane} title="টপ এয়ারলাইন্স" items={topGroup.airlines} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" />
+          )}
+          {showCountries && (
+            <GroupSection icon={Globe2} title="টপ দেশ" items={topGroup.countries} isLoading={isLoading} emptyText="দেশ ডাটা নেই" />
+          )}
+        </div>
+      )}
+    </ChartCard>
+  );
+}
+
 /* ------------------------------- main view ------------------------------- */
 
 export default function DashboardCharts({
-  isLoading, moduleFilter, monthlyTrend, moduleBreakdown, userReceived, userEntries, topGroup, cashByMethod,
+  isLoading, moduleFilter, monthlyTrend, serviceBreakdown, userReceived, userEntries, topGroup, accountsMethods,
 }: DashboardChartsProps) {
   const topEntries = userEntries.slice(0, 8);
   return (
     <>
-      {/* Trend + Smart module breakdown */}
+      {/* Trend + Service breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className={cn("rounded-xl border shadow-sm lg:col-span-2", CARD_TINTS[0])}>
           <div className="p-4 pb-1"><h3 className="text-sm font-semibold">মাসিক বিক্রি · রিসিভ · বকেয়া</h3></div>
@@ -246,58 +417,12 @@ export default function DashboardCharts({
           )}
         </div>
 
-        {/* Smart module breakdown: donut + per-module money & collection */}
-        <div className={cn("rounded-xl border shadow-sm", CARD_TINTS[1])}>
-          <div className="p-4 pb-2">
-            <h3 className="text-sm font-semibold leading-tight">মডিউল অনুযায়ী এন্ট্রি</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">এন্ট্রি · বিক্রি · কালেকশন রেট</p>
-          </div>
-          <div className="px-4 pb-4">
-            {moduleBreakdown.length === 0 ? <div className="h-56"><Empty loading={isLoading} /></div> : (
-              <>
-                <div className="relative h-28">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={moduleBreakdown} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={36} outerRadius={54} paddingAngle={2} stroke="none">
-                        {moduleBreakdown.map((m, i) => <Cell key={i} fill={m.color} />)}
-                      </Pie>
-                      <Tooltip formatter={(v: number, n: string) => [`${v} এন্ট্রি`, n]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-[10px] text-muted-foreground">মোট</span>
-                    <span className="text-base font-bold tabular-nums">{moduleBreakdown.reduce((s, m) => s + m.count, 0)}</span>
-                  </div>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {moduleBreakdown.map((m) => (
-                    <div key={m.key} className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: m.color }} />
-                          <span className="truncate font-medium">{m.name}</span>
-                          <span className="text-[10px] text-muted-foreground shrink-0">· {m.count}</span>
-                        </span>
-                        <span className="font-semibold tabular-nums shrink-0">{compact(m.sold)}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-1.5 flex-1 rounded-full bg-foreground/10 overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${m.collection}%`, background: m.color }} />
-                        </div>
-                        <span className="text-[10px] tabular-nums text-muted-foreground w-9 text-right">{m.collection}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <ServiceCard sb={serviceBreakdown} isLoading={isLoading} />
       </div>
 
-      {/* Per-user received + Per-user entries + Top groups + Cash methods */}
+      {/* Per-user received + Per-user entries + Top groups + Accounts methods */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="কে কত টাকা রিসিভ করেছে" subtitle="পরিমাণ অনুযায়ী র‍্যাংকিং" tint={CARD_TINTS[2]} className="h-64">
+        <ChartCard title="কে কত টাকা রিসিভ করেছে" subtitle="ক্যাশ — ইউজার অনুযায়ী · অন্যান্য মাধ্যম — MD" tint={CARD_TINTS[2]} className="h-64">
           {userReceived.length === 0 ? <Empty loading={isLoading} text="এখনো কেউ টাকা রিসিভ করেনি" /> : (
             <RankList
               items={userReceived.slice(0, 8).map((u) => ({ label: u.name, value: u.amount, sub: `${u.count} টি` }))}
@@ -317,28 +442,15 @@ export default function DashboardCharts({
           )}
         </ChartCard>
 
-        <ChartCard
-          title={moduleFilter === "tickets" ? "টপ এয়ারলাইন্স" : "টপ দেশ / এয়ারলাইন্স"}
-          subtitle="এন্ট্রি ও বিক্রি অনুযায়ী"
-          tint={CARD_TINTS[4]}
-          className="h-64"
-        >
-          {topGroup.length === 0 ? <Empty loading={isLoading} /> : (
-            <RankList
-              items={topGroup.map((g) => ({ label: g.name, value: g.count, sub: bdt(g.sold) }))}
-              format={(n) => `${n} টি`}
-              accent={(i) => PIE_COLORS[i % PIE_COLORS.length]}
-            />
-          )}
-        </ChartCard>
+        <TopGroupCard moduleFilter={moduleFilter} topGroup={topGroup} isLoading={isLoading} />
 
         <DonutCard
           title="Accounts Methods"
-          subtitle="মাধ্যম অনুযায়ী হস্তান্তর"
+          subtitle="হ্যান্ড ক্যাশ ও অন্যান্য মাধ্যম (ব্যাংক/বিকাশ)"
           tint={CARD_TINTS[5]}
-          data={cashByMethod}
+          data={accountsMethods}
           isLoading={isLoading}
-          emptyText="কোনো Accounts নেই"
+          emptyText="কোনো রিসিভ নেই"
           colorAt={(i) => PIE_COLORS[i % PIE_COLORS.length]}
         />
       </div>
