@@ -258,6 +258,23 @@ export function StatusChangeDrawer({
 
       await resilientUpdate(request.table, { id: request.row.id }, patch);
 
+      // Backward to a pre-delivery status → wipe every receipt tied to this row
+      // (cash dues, MD-received, status events, service form) so accounts and
+      // MD notifications return to the earlier state.
+      if (revertFinancials) {
+        try {
+          await supabase
+            .from("payment_receipts")
+            .delete()
+            .eq("service_table", request.table)
+            .eq("service_row_id", request.row.id);
+        } catch (re) {
+          if (!isNetworkError(re)) toast.warning("রসিদ revert failed: " + errMsg(re));
+        }
+      }
+
+
+
       let firstReceiptId = "";
       const me = displayName(profile, user);
       const mkReceiptId = async (): Promise<string> => {
