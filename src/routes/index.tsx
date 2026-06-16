@@ -377,19 +377,27 @@ function DashboardPage() {
     return Array.from(m.entries()).map(([name, value]) => ({ name, value }));
   }, [filtered, profiles]);
 
-  // === Sold vs Received by month (Area chart) ===
+  // === Sold vs Received vs Due by month (smart trend) ===
   const monthlyTrend = useMemo(() => {
-    const map = new Map<string, { month: string; sold: number; received: number }>();
+    const map = new Map<string, { month: string; sort: number; sold: number; received: number; due: number; collection: number }>();
     filtered.forEach((r) => {
       const d = new Date(r.entry_date || r.created_at);
       if (isNaN(d.getTime())) return;
       const k = format(d, "MMM-yy");
-      const prev = map.get(k) ?? { month: k, sold: 0, received: 0 };
-      prev.sold += r.sold_price ?? 0;
-      prev.received += r.received ?? 0;
+      const sort = d.getFullYear() * 12 + d.getMonth();
+      const prev = map.get(k) ?? { month: k, sort, sold: 0, received: 0, due: 0, collection: 0 };
+      const sold = r.sold_price ?? 0;
+      const recv = r.received ?? 0;
+      const disc = r.discount ?? 0;
+      prev.sold += sold;
+      prev.received += recv;
+      prev.due += Math.max(0, sold - recv - disc);
       map.set(k, prev);
     });
-    return Array.from(map.values()).slice(-12);
+    return Array.from(map.values())
+      .sort((a, b) => a.sort - b.sort)
+      .slice(-12)
+      .map((m) => ({ ...m, collection: m.sold > 0 ? Math.round((m.received / m.sold) * 100) : 0 }));
   }, [filtered]);
 
   // === Pie: module-wise count ===
