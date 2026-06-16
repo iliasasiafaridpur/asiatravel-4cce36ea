@@ -355,18 +355,23 @@ function DashboardPage() {
     return { total, sold, received, due, profit, realizedProfit };
   }, [filtered]);
 
-  // === Per-user received ===
+  // === Per-user received (amount + receipt count, ranked) ===
   const userReceived = useMemo(() => {
-    const m = new Map<string, number>();
+    const m = new Map<string, { amount: number; count: number }>();
     filtered.forEach((r) => {
       if (!r.received_by || !r.received) return;
       const name = profileName(r.received_by) ?? "Unknown";
-      m.set(name, (m.get(name) ?? 0) + (r.received ?? 0));
+      const prev = m.get(name) ?? { amount: 0, count: 0 };
+      prev.amount += r.received ?? 0;
+      prev.count += 1;
+      m.set(name, prev);
     });
-    return Array.from(m.entries()).map(([name, amount]) => ({ name, amount }));
+    return Array.from(m.entries())
+      .map(([name, v]) => ({ name, amount: v.amount, count: v.count }))
+      .sort((a, b) => b.amount - a.amount);
   }, [filtered, profiles]);
 
-  // === Per-user entries ===
+  // === Per-user entries (ranked) ===
   const userEntries = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((r) => {
@@ -374,7 +379,9 @@ function DashboardPage() {
       const name = profileName(r.created_by) ?? "Unknown";
       m.set(name, (m.get(name) ?? 0) + 1);
     });
-    return Array.from(m.entries()).map(([name, value]) => ({ name, value }));
+    return Array.from(m.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [filtered, profiles]);
 
   // === Sold vs Received vs Due by month (smart trend) ===
