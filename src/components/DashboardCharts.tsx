@@ -381,15 +381,15 @@ export default function DashboardCharts({
   return (
     <>
       {/* Trend + Service breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className={cn("rounded-xl border shadow-sm lg:col-span-2", CARD_TINTS[0])}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div className={cn("rounded-xl border shadow-sm flex flex-col", CARD_TINTS[0])}>
           <div className="p-4 pb-1"><h3 className="text-sm font-semibold">মাসিক বিক্রি · রিসিভ · বকেয়া</h3></div>
           {monthlyTrend.length === 0 ? (
             <div className="px-4 pb-4 h-64"><Empty loading={isLoading} /></div>
           ) : (
             <>
               <TrendSummary data={monthlyTrend} />
-              <div className="px-2 pb-4 h-56">
+              <div className="px-2 pb-4 flex-1 min-h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={monthlyTrend} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
                     <defs>
