@@ -920,7 +920,7 @@ ${node.innerHTML.replace(
 
                       {/* Col 4: Amount + Balance */}
                       <div className="text-right shrink-0">
-                        <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${tone}`}>
+                        <p className={`font-bold tabular-nums whitespace-nowrap text-sm ${amountTone}`}>
                           {statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
