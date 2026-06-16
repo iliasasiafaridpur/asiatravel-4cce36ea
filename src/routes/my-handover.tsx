@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useServerFn } from "@tanstack/react-start";
 import { sendGmail } from "@/lib/send-email.functions";
 import { toast } from "sonner";
@@ -105,7 +105,7 @@ function svcLine(rec: Receipt): string {
 }
 
 function MyHandoverPage() {
-  const { user } = useCurrentUser();
+  const { user, profile } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
