@@ -181,6 +181,7 @@ function DashboardPage() {
             country_name: r.country_name as string | undefined,
             airline: r.airline as string | undefined,
             trip_road: r.trip_road as string | undefined,
+            service_name: r.service_name as string | undefined,
             sold_price: Number(r.sold_price ?? 0),
             received: Number((r.received ?? r.received_amount) ?? 0),
             discount: Number(r.discount_amount ?? 0),
