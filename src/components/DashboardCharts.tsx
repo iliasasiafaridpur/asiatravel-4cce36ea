@@ -55,6 +55,58 @@ function Empty({ loading, text }: { loading: boolean; text?: string }) {
   );
 }
 
+const bdt = (n: number) => "৳ " + Math.round(n).toLocaleString();
+const compact = (n: number) =>
+  n >= 1e7 ? (n / 1e7).toFixed(1) + "Cr" : n >= 1e5 ? (n / 1e5).toFixed(1) + "L" : n >= 1e3 ? (n / 1e3).toFixed(0) + "k" : String(n);
+
+const TREND_LABELS: Record<string, string> = { sold: "বিক্রি", received: "রিসিভ", due: "বকেয়া" };
+
+function TrendTooltip({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; value: number; color: string }[]; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload as { collection?: number } | undefined;
+  return (
+    <div className="rounded-lg border border-border/60 bg-popover px-3 py-2 text-xs shadow-md">
+      <p className="font-semibold mb-1">{label}</p>
+      {payload.filter((p) => p.dataKey !== "collection").map((p) => (
+        <p key={p.dataKey} className="flex items-center justify-between gap-3" style={{ color: p.color }}>
+          <span>{TREND_LABELS[p.dataKey] ?? p.dataKey}</span>
+          <span className="font-medium tabular-nums">{bdt(p.value)}</span>
+        </p>
+      ))}
+      {row?.collection != null && (
+        <p className="flex items-center justify-between gap-3 mt-1 pt-1 border-t border-border/40 text-muted-foreground">
+          <span>কালেকশন রেট</span>
+          <span className="font-medium tabular-nums">{row.collection}%</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TrendSummary({ data }: { data: DashboardChartsProps["monthlyTrend"] }) {
+  const totSold = data.reduce((s, m) => s + m.sold, 0);
+  const totRecv = data.reduce((s, m) => s + m.received, 0);
+  const totDue = data.reduce((s, m) => s + m.due, 0);
+  const rate = totSold > 0 ? Math.round((totRecv / totSold) * 100) : 0;
+  const last = data[data.length - 1]?.sold ?? 0;
+  const prev = data[data.length - 2]?.sold ?? 0;
+  const growth = prev > 0 ? Math.round(((last - prev) / prev) * 100) : last > 0 ? 100 : 0;
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-4 pb-2 text-[11px]">
+      <span className="rounded-md bg-emerald-500/15 text-emerald-400 px-2 py-0.5">বিক্রি {bdt(totSold)}</span>
+      <span className="rounded-md bg-cyan-500/15 text-cyan-300 px-2 py-0.5">রিসিভ {bdt(totRecv)}</span>
+      <span className="rounded-md bg-rose-500/15 text-rose-300 px-2 py-0.5">বকেয়া {bdt(totDue)}</span>
+      <span className="rounded-md bg-violet-500/15 text-violet-300 px-2 py-0.5 inline-flex items-center gap-1">
+        <Percent className="h-3 w-3" /> কালেকশন {rate}%
+      </span>
+      <span className={cn("rounded-md px-2 py-0.5 inline-flex items-center gap-1", growth >= 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-300")}>
+        {growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+        {growth >= 0 ? "+" : ""}{growth}% MoM
+      </span>
+    </div>
+  );
+}
+
 export default function DashboardCharts({
   isLoading, moduleFilter, monthlyTrend, pieModule, userReceived, userEntries, topGroup, cashByMethod,
 }: DashboardChartsProps) {
@@ -62,31 +114,40 @@ export default function DashboardCharts({
     <>
       {/* Trend + Pie */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ChartCard title="মাসিক বিক্রি ও রিসিভ (Trend)" className="lg:col-span-2" tint={CARD_TINTS[0]}>
-          {monthlyTrend.length === 0 ? <Empty loading={isLoading} /> : (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyTrend}>
-                <defs>
-                  <linearGradient id="g-sold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6ee7b7" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="g-recv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#67e8f9" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="#67e8f9" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="sold" stroke="#6ee7b7" fill="url(#g-sold)" name="Sold" />
-                <Area type="monotone" dataKey="received" stroke="#67e8f9" fill="url(#g-recv)" name="Received" />
-              </AreaChart>
-            </ResponsiveContainer>
+        <div className={cn("rounded-xl border shadow-sm lg:col-span-2", CARD_TINTS[0])}>
+          <div className="p-4 pb-1"><h3 className="text-sm font-semibold">মাসিক বিক্রি · রিসিভ · বকেয়া</h3></div>
+          {monthlyTrend.length === 0 ? (
+            <div className="px-4 pb-4 h-64"><Empty loading={isLoading} /></div>
+          ) : (
+            <>
+              <TrendSummary data={monthlyTrend} />
+              <div className="px-2 pb-4 h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={monthlyTrend} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="g-sold" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6ee7b7" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="g-recv" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#67e8f9" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="#67e8f9" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={compact} width={44} />
+                    <Tooltip content={<TrendTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v: string) => TREND_LABELS[v] ?? v} />
+                    <Area type="monotone" dataKey="sold" stroke="#6ee7b7" strokeWidth={2} fill="url(#g-sold)" name="sold" />
+                    <Area type="monotone" dataKey="received" stroke="#67e8f9" strokeWidth={2} fill="url(#g-recv)" name="received" />
+                    <Line type="monotone" dataKey="due" stroke="#fb7185" strokeWidth={2} dot={false} name="due" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </>
           )}
-        </ChartCard>
+        </div>
 
         <ChartCard title="মডিউল অনুযায়ী এন্ট্রি" tint={CARD_TINTS[1]}>
           {pieModule.length === 0 ? <Empty loading={isLoading} /> : (
