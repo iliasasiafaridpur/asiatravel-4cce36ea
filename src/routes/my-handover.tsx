@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useServerFn } from "@tanstack/react-start";
+import { sendGmail } from "@/lib/send-email.functions";
 import { toast } from "sonner";
 import {
-  Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen,
+  Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen, Mail,
 } from "lucide-react";
 import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
@@ -112,6 +114,9 @@ function MyHandoverPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
+  const [mdEmail, setMdEmail] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const sendEmailFn = useServerFn(sendGmail);
 
   // When navigated from "MD-কে পাঠানো" list, highlight the target handover card.
   useEffect(() => {
@@ -135,7 +140,7 @@ function MyHandoverPage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [r, e] = await Promise.all([
+      const [r, e, md] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -154,10 +159,18 @@ function MyHandoverPage() {
           .is("handover_id", null)
           .order("entry_date", { ascending: false })
           .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("notify_email,role")
+          .in("role", ["md", "admin"])
+          .not("notify_email", "is", null),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
       if (e.error) toast.error(e.error.message);
+      const mdRows = ((md?.data ?? []) as Array<{ notify_email?: string | null; role?: string | null }>);
+      const pick = mdRows.find((p) => p.role === "md") ?? mdRows[0];
+      setMdEmail((pick?.notify_email ?? "").trim());
       const recs = ((r.data ?? []) as unknown) as Receipt[];
 
       const byTable: Record<string, Set<string>> = {};
