@@ -316,7 +316,10 @@ function MyHandoverPage() {
       _closing_date: closingDate,
       _remarks: remarks || null,
     } as never);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
     toast.success("Handover submitted. Awaiting MD approval.");
     await sendToMd();
     setSaving(false);
@@ -502,10 +505,15 @@ function MyHandoverPage() {
             />
           </div>
 
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <Mail className="h-3.5 w-3.5" />
+            MD email: {mdEmail || "সেট করা নেই"}
+          </div>
+
           <div className="flex justify-end">
-            <Button onClick={submit} disabled={saving || cash.trim() === "" || receipts.length + expenses.length === 0} className="gap-1.5">
+            <Button onClick={submit} disabled={saving || sendingEmail || cash.trim() === "" || receipts.length + expenses.length === 0} className="gap-1.5">
               <Lock className="h-4 w-4" />
-              {saving ? "Submitting…" : "Submit to MD"}
+              {saving || sendingEmail ? "Submitting…" : "Submit to MD"}
             </Button>
           </div>
         </CardContent>
