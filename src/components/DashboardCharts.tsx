@@ -377,12 +377,12 @@ function TopGroupCard({ moduleFilter, topGroup, isLoading }: {
       {noGroup ? (
         <Empty loading={isLoading} text="এই সার্ভিসে দেশ / এয়ারলাইন্স প্রযোজ্য নয়" />
       ) : (
-        <div className={cn("h-full gap-3", showAirlines && showCountries ? "grid grid-cols-1" : "")}>
+        <div className={cn("h-full overflow-y-auto pr-1", showAirlines && showCountries ? "grid grid-cols-1 gap-3" : "")}>
           {showAirlines && (
-            <GroupSection icon={Plane} title="টপ এয়ারলাইন্স" items={topGroup.airlines} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" />
+            <CompactGroup icon={Plane} title="টপ এয়ারলাইন্স" items={topGroup.airlines} isLoading={isLoading} emptyText="এয়ারলাইন্স ডাটা নেই" limit={6} />
           )}
           {showCountries && (
-            <GroupSection icon={Globe2} title="টপ দেশ" items={topGroup.countries} isLoading={isLoading} emptyText="দেশ ডাটা নেই" />
+            <CompactGroup icon={Globe2} title="টপ দেশ" items={topGroup.countries} isLoading={isLoading} emptyText="দেশ ডাটা নেই" limit={6} />
           )}
         </div>
       )}
