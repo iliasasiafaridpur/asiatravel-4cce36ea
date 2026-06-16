@@ -571,11 +571,8 @@ function HandoverCard({
           ) : (
             <span>📅 {formatDateTime(handover.created_at)}</span>
           )}
-          {mode === "to-me" ? (
-            <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> স্টাফ: <b className="text-foreground">{handover.from_name ?? "—"}</b></span>
-          ) : (
-            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> cash handover গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></span>
-          )}
+          <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> প্রেরক: <b className="text-foreground">{handover.from_name ?? "—"}</b></span>
+          <span className="flex items-center gap-1"><Users className="h-3 w-3" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></span>
         </div>
         <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
         {allowCancel && isPending && (
@@ -898,12 +895,9 @@ function HandoverCard({
             <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>
           )}
           <span className="flex items-center gap-1 whitespace-nowrap">
-            {mode === "to-me" ? (
-              <><User2 className="h-4 w-4" /> স্টাফ: <b className="text-foreground">{handover.from_name ?? "—"}</b></>
-            ) : (
-              <><Users className="h-4 w-4" /> cash handover গ্রহীতা <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></>
-            )}
-            <b className="text-primary tabular-nums">{fmt(submitted)}</b>
+            <User2 className="h-4 w-4" /> প্রেরক: <b className="text-foreground">{handover.from_name ?? "—"}</b>
+            <Users className="h-4 w-4 ml-1" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b>
+            <b className="text-primary tabular-nums ml-1">{fmt(submitted)}</b>
           </span>
         </div>
         {approveAction && isPending && firstPendingReceipt && (
