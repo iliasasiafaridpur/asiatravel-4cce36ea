@@ -222,7 +222,13 @@ export function StatusChangeDrawer({
         if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) patch.vendor_sent_date = null;
         if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) patch.received_date = null;
         if (dlIdx >= 0 && targetIdx < dlIdx && request.hasDeliveryDate) patch.delivery_date = null;
+        if (revertFinancials) {
+          // Reset money so the row matches the earlier (pre-delivery) status.
+          patch[request.recvCol] = 0;
+          if (request.row.discount_amount != null) patch.discount_amount = 0;
+        }
       }
+
 
       let paid = 0;
       let discAmt = 0;
