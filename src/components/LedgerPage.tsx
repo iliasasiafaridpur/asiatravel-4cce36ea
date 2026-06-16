@@ -425,6 +425,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         status: string | null;
         received_date: string | null;
         delivery_date: string | null;
+        cancelled: boolean | null;
       };
       for (const v of (kv.data as unknown as V[]) ?? []) {
         vm.set(v.id, "Kuwait");
@@ -440,6 +441,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor: !!v.received_date,
           delivery_date: v.delivery_date ?? undefined,
           has_delivery: true,
+          cancelled: !!v.cancelled,
         });
       }
       for (const v of (sv.data as unknown as V[]) ?? []) {
@@ -456,6 +458,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           received_from_vendor: !!v.received_date,
           delivery_date: v.delivery_date ?? undefined,
           has_delivery: true,
+          cancelled: !!v.cancelled,
         });
       }
       type O = {
