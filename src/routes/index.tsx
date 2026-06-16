@@ -417,7 +417,7 @@ function DashboardPage() {
       }
     });
     const list = Array.from(m.entries()).map(([name, v]) => ({ name, amount: v.amount, count: v.count }));
-    if (mdAmount > 0) list.push({ name: "MD (অন্যান্য মাধ্যম)", amount: mdAmount, count: mdCount });
+    if (mdAmount > 0) list.push({ name: "MD ( Bank, Bkash, etc)", amount: mdAmount, count: mdCount });
     return list.sort((a, b) => b.amount - a.amount);
   }, [filteredReceipts, profiles]);
 
