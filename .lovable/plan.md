@@ -1,41 +1,42 @@
-## লক্ষ্য
+# Plan: Delete rules, notifications, offline, bug sweep
 
-1. প্রতিটি সার্ভিস মডিউলের (Air Ticket, BMET, Saudi Visa, Kuwait Visa) এডিট/এন্ট্রি ফর্মে একটি **Extra Service** বাটন যোগ করা। ক্লিক করলে ঐ passenger-এর জন্য বাড়তি সার্ভিস যোগ করার ঘর খুলবে — প্রতিটিতে: service name (ড্রপডাউন, `+` দিয়ে নতুন যোগ ও Manage দিয়ে rename/delete), service price, ও service vendor cost। vendor cost ঐ row-এ আগে থেকে সিলেক্ট করা vendor-এর হিসাবেই যুক্ত হবে। data পেইজে `+` চিহ্ন দিয়ে দেখানো হবে।
-2. নতুন **Other** মডিউল তৈরি করা — service name ড্রপডাউন (`+`/Manage সহ), service price, service vendor cost, এবং বাকি সব অন্য মডিউলের মতই (passenger, agency, received, vendor ইত্যাদি)।
+## 1. Data Reset সরানো + "নিজের এন্ট্রি" ভিত্তিক ডিলিট
 
-## যা তৈরি হবে / বদলাবে
+### Data Reset (Admin) সম্পূর্ণ রিমুভ
+- `src/routes/settings.tsx` থেকে পুরো "Data Reset (Admin)" কার্ড, `RESET_GROUPS`, এবং সংশ্লিষ্ট state/ফাংশন মুছে ফেলা হবে। Profile, Password, Maintenance কার্ড থাকবে।
 
-### ১. ডাটাবেস — `extra_services` টেবিল (Extra Service-এর জন্য)
-নতুন টেবিল যা প্রতিটি extra সার্ভিসকে তার মূল entry-র সাথে যুক্ত রাখে:
-- `source_table` + `source_id` (মূল row), `entry_date`
-- `service_name`, `service_price` (কাস্টমার বিল), `vendor_cost`
-- `vendor_name`, `agency_sold`, `passenger_name`, `passport`, `mobile` (ledger sync-এর জন্য denormalized — সেভ করার সময় মূল row থেকে কপি হবে)
+### নতুন ডিলিট নিয়ম (সব মডিউলে)
+নিয়ম: যেকোনো লগইন করা user ডিলিট করতে পারবে, **কিন্তু কেবল নিজের তৈরি করা এন্ট্রি** (entry / payment receive / delivery / status — যা নিজে করেছে)। অন্য user-এর এন্ট্রি কেউ ডিলিট করতে পারবে না। প্রতিটি ডিলিট নিজের **login পাসওয়ার্ড** দিয়ে নিশ্চিত করতে হবে।
 
-এই টেবিলে trigger বসবে যা প্রতিটি extra সার্ভিসকে স্বয়ংক্রিয়ভাবে mirror করবে:
-- **Vendor Data**-তে → `vendor_cost` ঐ সিলেক্ট করা vendor-এর payable হিসেবে যুক্ত হবে (বিদ্যমান নিয়ম অনুযায়ী)।
-- **Customers Data**-তে → agency/reference থাকলে `service_price` কাস্টমারের বিল হিসেবে আলাদা লাইনে যুক্ত হবে (যাতে customer profile-এ দেখা যায়)।
-মূল row delete হলে তার extra সার্ভিস ও তাদের mirror লাইনও মুছে যাবে।
+**Database (migration):**
+- প্রতিটি অপারেশনাল টেবিলের DELETE policy বদলে হবে: `created_by = auth.uid() OR created_by IS NULL`
+  (পুরোনো owner-হীন রো গুলো আটকে না যাওয়ার জন্য `IS NULL` ফলব্যাক)।
+  টেবিল: tickets, bmet_cards, saudi_visas, kuwait_visas, others, extra_services, payment_receipts, cash_handovers, cash_expenses, fund_transfers, agency_ledger, vendor_ledger।
+- `passengers` (Action Board) টেবিলে `created_by uuid` যোগ হবে; DELETE policy owner-ভিত্তিক হবে।
+- `delete_payment_receipt_and_revert` RPC এখন admin/md-কেও অন্যের রসিদ মুছতে দেয় — এটি **owner-only** করা হবে (নিয়ম অনুযায়ী কেউ অন্যের এন্ট্রি মুছতে পারবে না)।
+- শেয়ার্ড রেফারেন্স টেবিল (agents, vendors, accounts, lookups, daily_cash_closings) — এগুলো ব্যক্তিগত "এন্ট্রি" নয়, তাই এগুলোর ডিলিট আগের মতোই admin-only থাকবে।
 
-### ২. শেয়ারড ফর্ম (`ModulePage.tsx`) — Extra Service UI
-- হেডারে **Extra Service** বাটন যোগ হবে (বর্তমান close বাটনের সাথে সংঘর্ষ এড়িয়ে)।
-- ক্লিক করলে একটি সেকশন খুলবে: প্রতিটি সারিতে `service name` (LookupSelect — `+`/Manage সহ), `service price`, `vendor cost`, ও remove বাটন; নিচে "আরও যোগ করুন" বাটন।
-- vendor cost-এর জন্য আলাদা vendor নির্বাচন নেই — এটি ঐ row-এ ইতিমধ্যে সিলেক্ট করা vendor-এর হিসাবেই যাবে (আপনার নির্দেশ অনুযায়ী)।
-- এডিট খুললে ঐ row-এর বিদ্যমান extra সার্ভিস লোড হবে; সেভ করলে নতুন/পরিবর্তিত/মুছে ফেলা extra সার্ভিস upsert/delete হবে (মূল row সেভ হওয়ার পরে, তার vendor/agency/passenger তথ্য কপি করে)।
+**Frontend:**
+- `ConfirmDeleteButton` — `isAdmin` চেক বাদ দিয়ে owner চেক (`ownerId` prop) + পাসওয়ার্ড নিশ্চিতকরণ ধাপ যুক্ত হবে।
+- `ActionBoard` ইনলাইন ডিলিট — `created_by` মালিকানা চেক + পাসওয়ার্ড।
+- `ModulePage` (Ticket/BMET/Visa/Other) — ইতিমধ্যে পাসওয়ার্ড নিশ্চিতকরণ আছে; শুধু owner চেক যোগ হবে (অন্যের রো হলে বার্তা: "অন্য ইউজারের এন্ট্রি ডিলিট করা যাবে না")।
+- `LedgerPage`, `StatusChangeDrawer`, `BmetQuickManage` — যেখানে ডিলিট আছে সেখানে একই owner + পাসওয়ার্ড নিয়ম।
+- নতুন এন্ট্রিতে `created_by`/`passengers.created_by` সঠিকভাবে সেট হচ্ছে কিনা নিশ্চিত করা হবে।
 
-### ৩. ডাটা পেইজে `+` চিহ্ন
-- প্রতিটি মডিউল লিস্টে কোন row-এর extra সার্ভিস আছে তা গুনে passenger নামের পাশে ছোট `+N` ব্যাজ দেখানো হবে।
+## 2. অপ্রয়োজনীয় নোটিফিকেশন বন্ধ
+- বর্তমানে প্রতিটি toast (saved/updated/deleted সহ) নোটিফিকেশন বেলে জমা হয় — খুব noisy।
+- `toast-interceptor.ts` শুধু **error** ও **warning** বেলে রাখবে; রুটিন success/info আর জমবে না।
+- alert-scanner-এর গুরুত্বপূর্ণ সতর্কতা (বকেয়া / ডেলিভারি বিলম্ব) থাকবে।
 
-### ৪. নতুন **Other** মডিউল
-- নতুন টেবিল `others` (অন্য সার্ভিস টেবিলের মতই কলাম: passenger, passport, mobile, `service_name` (lookup), sold_price, agency_sold, received_amount, discount, vendor_bought, cost_price, status, entry_by, notes ইত্যাদি) — GRANT + RLS (শুধু authenticated, পূর্ণ CRUD) সহ।
-- বিদ্যমান sync trigger (vendor ledger, customer ledger, receipt) `others` টেবিলের জন্যও কাজ করবে।
-- `modules.ts`-এ নতুন স্কিমা (key `other`, prefix `OTH`), route `src/routes/other.tsx`, এবং সাইডবারে "Other" আইটেম যোগ হবে।
-- Other মডিউলেও উপরের Extra Service সুবিধা থাকবে।
+## 3. অফলাইন: পড়া, এন্ট্রি ও ১-মাসের প্রি-লোড বাটন
+- **যাচাই:** অফলাইন এন্ট্রি (resilientInsert/Update + global-fetch-interceptor + auto-sync) ও পঠন (localStorage + react-query persist) ঠিক আছে কিনা পরীক্ষা করে নিশ্চিত করা হবে।
+- **নতুন বাটন (নোটিফিকেশন বেলের ভিতরে):** "একমাসের ডাটা সেভ করুন (অফলাইন)" — ক্লিক করলে সব মডিউল (Ticket/BMET/Saudi/Kuwait/Other), ledger, receipts, passengers ও dashboard-এর সর্বশেষ ~১ মাসের ডাটা একবারে এনে প্রতিটি মডিউলের `cache_v2_*` localStorage cache-এ সেভ করবে — ফলে যে পেইজে আগে ঢুকিনি সেটিও নেট ছাড়া পড়া যাবে। প্রগ্রেস ও সফল/ব্যর্থ টোস্ট দেখানো হবে।
 
-## টেকনিক্যাল বিবরণ
-- **Migration**: `extra_services` ও `others` টেবিল (GRANT → RLS → policy ক্রমে); `extra_services`-এর জন্য নতুন sync trigger function; বিদ্যমান `sync_vendor_ledger` / `sync_agency_ledger` / `sync_service_receipt` ও cleanup function-এ `others` ব্রাঞ্চ যোগ; `others`-এ একই trigger সংযুক্তি।
-- **নতুন entry-তে extra সার্ভিস**: parent insert-এর পরে generated id দিয়ে extra rows যুক্ত হবে (insert-এর পর id রিড করে)।
-- **Lookup kinds**: `extra_service` ও `other_service` (LookupSelect বিদ্যমান `+`/Manage সাপোর্ট ব্যবহার করবে); `LABELS`-এ যুক্ত হবে।
-- **প্রভাবিত ফাইল**: `src/lib/modules.ts`, `src/components/ModulePage.tsx`, `src/components/LookupSelect.tsx` (শুধু label), `src/components/AppSidebar.tsx`, নতুন `src/routes/other.tsx`, এবং DB migration।
-- বিদ্যমান কোনো accounting/সিঙ্ক ভাঙবে না — সব নতুন লাইন আলাদা `source_table='extra_services'`/`'others'` দিয়ে আইসোলেটেড থাকবে।
+## 4. সম্পূর্ণ চেক ও বাগ ফিক্স
+- বিল্ড/টাইপচেক চালিয়ে error ঠিক করা।
+- নতুন owner-RLS-এ কোনো বৈধ ডিলিট আটকে যাচ্ছে কিনা পরীক্ষা।
+- preview-তে delete + password flow, নোটিফিকেশন ফিল্টার, ও অফলাইন প্রি-লোড বাটন যাচাই।
+- security scanner চালিয়ে নতুন RLS নিরাপদ কিনা নিশ্চিত করা।
 
-অনুমোদন দিলে আমি ধাপে ধাপে সাবধানে বাস্তবায়ন করব।
+## প্রশ্ন
+- Admin-রাও অন্যের এন্ট্রি মুছতে পারবে না — কঠোরভাবে owner-only ধরে এগোচ্ছি (আপনার নির্দেশ অনুযায়ী)। ঠিক আছে তো?
