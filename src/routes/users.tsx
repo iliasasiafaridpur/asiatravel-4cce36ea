@@ -40,6 +40,11 @@ function UsersPage() {
   const { profile, loading } = useCurrentUser();
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const resetPasswordFn = useServerFn(adminResetUserPassword);
+  const [resetTarget, setResetTarget] = useState<ProfileRow | null>(null);
+  const [tempResult, setTempResult] = useState<{ name: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
 
   const isAdmin = profile?.role === "admin";
 
