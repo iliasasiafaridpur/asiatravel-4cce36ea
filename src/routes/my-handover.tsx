@@ -30,7 +30,7 @@ const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
   service_name?: string | null; flight_date?: string | null;
-  bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null;
+  bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null; discount?: number;
   vendor_price?: number; tracks_cost?: boolean;
   delivery_date?: string | null; has_delivery?: boolean;
 };
