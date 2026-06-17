@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate } from "@/lib/modules";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, Plus, Plane, User, IdCard } from "lucide-react";
+import { Printer, Search, Plane, User, IdCard, ReceiptText, WalletCards } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -52,12 +52,12 @@ interface InvoiceItem {
 }
 
 const ITEM_TYPES = [
-  { key: "manual", label: "Manual / Custom" },
-  { key: "tickets", label: "Air Ticket" },
-  { key: "bmet", label: "BMET Card" },
-  { key: "saudi-visa", label: "Saudi Visa" },
-  { key: "kuwait-visa", label: "Kuwait Visa" },
-  { key: "other", label: "Other Service" },
+  { key: "tickets", label: "AIR TICKET" },
+  { key: "bmet", label: "BMET CARD" },
+  { key: "saudi-visa", label: "SAUDI VISA" },
+  { key: "kuwait-visa", label: "KUWAIT VISA" },
+  { key: "other", label: "OTHER SERVICE" },
+  { key: "manual", label: "CUSTOM / MANUAL" },
 ];
 
 const AGENCY = {
@@ -69,6 +69,14 @@ const AGENCY = {
 
 const genUid = () => Math.random().toString(36).slice(2, 10);
 const str = (v: unknown) => (v == null ? "" : String(v));
+const serviceLabelFor = (type: string) => ITEM_TYPES.find((t) => t.key === type)?.label ?? "";
+const blankItem = (type = "tickets"): InvoiceItem => ({
+  uid: genUid(),
+  type,
+  serviceLabel: type === "manual" ? "" : serviceLabelFor(type),
+  qty: 1,
+  rate: 0,
+});
 
 function splitRoute(s: string): { from: string; to: string } {
   if (!s) return { from: "", to: "" };
@@ -163,9 +171,7 @@ function InvoicePage() {
   const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   const [bill, setBill] = useState({ name: "", passport: "", nationality: "Bangladeshi", mobile: "" });
-  const [items, setItems] = useState<InvoiceItem[]>(() => [
-    { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 },
-  ]);
+  const [items, setItems] = useState<InvoiceItem[]>(() => [blankItem("tickets")]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
 
@@ -199,18 +205,24 @@ function InvoicePage() {
     })();
   }, [serviceModules]);
 
-  const item: InvoiceItem = items[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+  const item: InvoiceItem = items[0] ?? blankItem("tickets");
   const setItem = (patch: Partial<InvoiceItem>) =>
     setItems((p) => {
-      const cur = p[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+      const cur = p[0] ?? blankItem("tickets");
       return [{ ...cur, ...patch }];
     });
+
+  const changeService = (type: string) => {
+    setItems([blankItem(type)]);
+    setSearch("");
+  };
 
   const filtered = useMemo(() => {
     if (item.type === "manual") return [];
     const q = search.trim().toLowerCase();
+    if (!q) return [];
     let list = allEntries.filter((e) => e.moduleKey === item.type);
-    if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
+    list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
     return list.slice(0, 30);
   }, [allEntries, search, item.type]);
 
@@ -242,99 +254,95 @@ function InvoicePage() {
         </Button>
       </div>
 
-      <Card className="print:hidden">
-        <CardContent className="p-3 sm:p-4 space-y-4">
-          {/* row 1 — invoice meta (left) + service & search (right) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-3">
-              <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
-              <div><Label>Invoice Date</Label><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
-            </div>
-            <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-3">
-              <div>
-                <Label className="flex items-center gap-1"><IdCard className="h-3.5 w-3.5" /> Service</Label>
-                <Select value={item.type} onValueChange={(v) => { setItem({ type: v }); setSearch(""); }}>
-                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="সার্ভিস বাছাই করুন" /></SelectTrigger>
-                  <SelectContent>
-                    {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+      <Card className="print:hidden overflow-hidden border-primary/20">
+        <CardContent className="p-0">
+          <div className="border-b bg-muted/25 px-4 py-3 sm:px-5">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.25fr] gap-3">
+              <div className="rounded-md border bg-card/70 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+                  <ReceiptText className="h-3.5 w-3.5" /> Invoice Info
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Field label="Invoice No"><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} /></Field>
+                  <Field label="Invoice Date"><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} /></Field>
+                </div>
               </div>
-              <div>
-                <Label className="flex items-center gap-1"><Search className="h-3.5 w-3.5" /> Search</Label>
-                <div className="relative mt-1.5">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                    disabled={item.type === "manual"}
-                    placeholder={item.type === "manual" ? "ম্যানুয়াল এন্ট্রি" : "ID / নাম / পাসপোর্ট / মোবাইল..."}
-                    className="pl-8" />
+
+              <div className="rounded-md border bg-card/70 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+                  <IdCard className="h-3.5 w-3.5" /> Service & Search
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-2">
+                  <Field label="Service">
+                    <Select value={item.type} onValueChange={changeService}>
+                      <SelectTrigger><SelectValue placeholder="সার্ভিস বাছাই করুন" /></SelectTrigger>
+                      <SelectContent>
+                        {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Search Existing Entry">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input value={search} onChange={(e) => setSearch(e.target.value)}
+                        disabled={item.type === "manual"}
+                        placeholder={item.type === "manual" ? "Manual entry selected" : "ID / নাম / পাসপোর্ট / মোবাইল"}
+                        className="pl-8" />
+                    </div>
+                  </Field>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* existing-entry results — load full info with one click */}
           {item.type !== "manual" && search.trim() && filtered.length === 0 && (
-            <p className="text-xs text-muted-foreground">কোনো এন্ট্রি পাওয়া যায়নি</p>
+            <div className="mx-4 mt-4 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground sm:mx-5">কোনো এন্ট্রি পাওয়া যায়নি</div>
           )}
-          {filtered.length > 0 && (
-            <ul className="max-h-64 overflow-auto rounded-md border divide-y divide-border">
+          {search.trim() && filtered.length > 0 && (
+            <div className="mx-4 mt-4 max-h-64 overflow-auto rounded-md border sm:mx-5">
               {filtered.map((e) => (
-                <li key={e.moduleKey + e.id} className="flex items-center justify-between gap-2 p-2.5 hover:bg-accent">
-                  <div className="text-sm min-w-0 flex-1">
-                    <div className="font-medium truncate flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      {e.passenger}
+                <button key={e.moduleKey + e.id} type="button" onClick={() => loadEntry(e)} className="flex w-full items-center justify-between gap-3 border-b p-3 text-left transition-colors last:border-b-0 hover:bg-accent/70">
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="flex items-center gap-1.5 truncate font-medium">
+                      <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />{e.passenger}
                       {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate mt-0.5">
-                      <span className="font-mono">{e.id}</span> · {e.module}
-                      {e.mobile ? ` · ${e.mobile}` : ""}
-                      {e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={() => loadEntry(e)}>
-                    <Plus className="h-3.5 w-3.5" /> Add
-                  </Button>
-                </li>
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      <span className="font-mono">{e.id}</span> · {e.module}{e.mobile ? ` · ${e.mobile}` : ""}{e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
+                    </span>
+                  </span>
+                  <span className="shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold text-primary">Use</span>
+                </button>
               ))}
-            </ul>
+            </div>
           )}
 
-          {/* passenger info — common for every service */}
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><User className="h-3.5 w-3.5" /> Passenger Information</div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
-              <Input placeholder="Passport No" value={bill.passport} onChange={(e) => setBill({ ...bill, passport: e.target.value })} />
-              <Input placeholder="Mobile" value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} />
-            </div>
-          </div>
+          <div className="grid grid-cols-1 gap-4 p-4 sm:p-5 xl:grid-cols-[1.25fr_1fr]">
+            <section className="space-y-3">
+              <SectionTitle icon={<User className="h-4 w-4" />} title="Passenger Information" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Field label="Passenger Name"><Input value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} /></Field>
+                <Field label="Passport No"><Input value={bill.passport} onChange={(e) => setBill({ ...bill, passport: e.target.value })} /></Field>
+                <Field label="Mobile"><Input value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} /></Field>
+              </div>
 
-          {/* service details — fields adapt to the selected service */}
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><IdCard className="h-3.5 w-3.5" /> Service Details</div>
-            <ItemFields it={item} onChange={setItem} />
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <div>
-                <Label className="text-xs">Date</Label>
-                <DateInput value={item.date ?? ""} onChange={(e) => setItem({ date: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs">Qty</Label>
-                <Input type="number" value={item.qty || ""} placeholder="0" onChange={(e) => setItem({ qty: Number(e.target.value) || 0 })} />
-              </div>
-              <div>
-                <Label className="text-xs">Rate</Label>
-                <Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} />
-              </div>
-            </div>
-          </div>
+              <SectionTitle icon={<IdCard className="h-4 w-4" />} title="Service Information" />
+              <ItemFields it={item} onChange={setItem} />
+            </section>
 
-          {/* payment */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div><Label>Discount</Label><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} className="mt-1.5" /></div>
-            <div><Label>Received</Label><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} className="mt-1.5" /></div>
+            <section className="space-y-3">
+              <SectionTitle icon={<WalletCards className="h-4 w-4" />} title="Amount" />
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Quantity"><Input type="number" value={item.qty || ""} placeholder="0" onChange={(e) => setItem({ qty: Number(e.target.value) || 0 })} /></Field>
+                <Field label="Rate"><Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} /></Field>
+                <Field label="Discount"><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} /></Field>
+                <Field label="Received"><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} /></Field>
+              </div>
+              <div className="rounded-md border bg-muted/25 p-3 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Total</span><span className="font-semibold tabular-nums">{grandTotal.toLocaleString()}৳</span></div>
+                <div className="mt-1 flex justify-between"><span className="text-muted-foreground">Due</span><span className="font-bold tabular-nums text-destructive">{due.toLocaleString()}৳</span></div>
+              </div>
+            </section>
           </div>
         </CardContent>
       </Card>
@@ -487,25 +495,41 @@ function InvoicePage() {
   );
 }
 
+/* ----------------------------- form helpers ----------------------------- */
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b pb-2 text-sm font-bold uppercase tracking-wide text-foreground">
+      <span className="text-primary">{icon}</span>
+      {title}
+    </div>
+  );
+}
+
 /* --------------------- module-specific item edit fields ------------------- */
 
 function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Partial<InvoiceItem>) => void }) {
-  const Headline = (
+  const CustomServiceName = it.type === "manual" || it.type === "other" ? (
     <div className="sm:col-span-2">
-      <Label className="text-xs flex items-center gap-1"><IdCard className="h-3 w-3" /> Service Name</Label>
-      {it.type === "manual" || it.type === "other" ? (
-        <LookupSelect kind={it.type === "other" ? "other_service" : "invoice_service_item"} value={it.serviceLabel}
-          onChange={(v) => onChange({ serviceLabel: v })} />
-      ) : (
-        <Input value={it.serviceLabel} onChange={(e) => onChange({ serviceLabel: e.target.value })} />
-      )}
+      <Label className="text-xs">Service Name</Label>
+      <LookupSelect kind={it.type === "other" ? "other_service" : "invoice_service_item"} value={it.serviceLabel}
+        onChange={(v) => onChange({ serviceLabel: v })} />
     </div>
-  );
+  ) : null;
 
   if (it.type === "tickets" || (it.type === "other")) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
+        {CustomServiceName}
         <div>
           <Label className="text-xs">Trip Road</Label>
           <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v, toRoute: "" })} />
@@ -525,7 +549,6 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   if (it.type === "bmet") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
         <div>
           <Label className="text-xs">Country</Label>
           <LookupSelect kind="country" value={it.country ?? ""} onChange={(v) => onChange({ country: v })} />
@@ -537,7 +560,6 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   if (it.type === "saudi-visa") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
         <div>
           <Label className="text-xs">Visa Type</Label>
           <Input value={it.visaType ?? ""} onChange={(e) => onChange({ visaType: e.target.value })} />
@@ -557,7 +579,6 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   if (it.type === "kuwait-visa") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
         <div>
           <Label className="text-xs">Visa No</Label>
           <Input value={it.refNo ?? ""} onChange={(e) => onChange({ refNo: e.target.value })} />
@@ -571,5 +592,5 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   }
 
   // manual
-  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{Headline}</div>;
+  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{CustomServiceName}</div>;
 }
