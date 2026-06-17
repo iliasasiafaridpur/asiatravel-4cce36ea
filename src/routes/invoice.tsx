@@ -113,13 +113,14 @@ function buildItemFromEntry(e: ServiceEntry): InvoiceItem {
 
 function ItemDetail({ it }: { it: InvoiceItem }) {
   const rows: { label: string; value: string }[] = [];
-  const route = (it.fromRoute || it.toRoute) ? `${it.fromRoute || "?"} → ${it.toRoute || "?"}` : "";
+  const route = (it.fromRoute && it.toRoute)
+    ? `${it.fromRoute} → ${it.toRoute}`
+    : (it.fromRoute || it.toRoute || "");
 
   if (it.type === "tickets") {
-    if (it.airline) rows.push({ label: "Airline", value: it.airline });
-    if (route) rows.push({ label: "Route", value: route });
+    if (route) rows.push({ label: "Trip Road", value: route });
+    if (it.airline) rows.push({ label: "Airlines", value: it.airline });
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
-    if (it.pnr) rows.push({ label: "PNR", value: it.pnr });
   } else if (it.type === "bmet") {
     if (it.country) rows.push({ label: "Country", value: it.country });
     if (it.date) rows.push({ label: "Date", value: formatDate(it.date) });
@@ -131,8 +132,8 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
     if (it.refNo) rows.push({ label: "Visa No", value: it.refNo });
     if (it.sponsor) rows.push({ label: "Sponsor", value: it.sponsor });
   } else if (it.type === "other") {
-    if (it.airline) rows.push({ label: "Airline", value: it.airline });
-    if (route) rows.push({ label: "Route", value: route });
+    if (route) rows.push({ label: "Trip Road", value: route });
+    if (it.airline) rows.push({ label: "Airlines", value: it.airline });
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
   }
   if (it.detail) rows.push({ label: "Ref", value: it.detail });
