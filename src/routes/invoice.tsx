@@ -340,6 +340,11 @@ function InvoicePage() {
       </Card>
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
+      <div className="flex justify-end print:hidden">
+        <Button onClick={() => window.print()} className="gap-2">
+          <Printer className="h-4 w-4" /> Print / PDF
+        </Button>
+      </div>
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
         {/* top banner */}
         <div className="inv-banner relative bg-gradient-to-br from-[#3f5f92] via-[#496a9d] to-[#5274a8] text-white px-8 sm:px-10 py-7 overflow-hidden">
