@@ -326,13 +326,7 @@ function MyHandoverPage() {
           info.route || "",
         ].filter(Boolean);
         const svcMeta = svcMetaBits.join(" · ");
-        const svcBox = `<div class="svcbox">
-    <span class="svcicon">${svcIcon}</span>
-    <div class="svcinfo">
-      <div class="svctitle">${svcTitle}</div>
-      ${svcMeta ? `<div class="svcmeta">${svcMeta}</div>` : ""}
-    </div>
-  </div>`;
+        const svcBox = `<div class="svcbox"><span class="svcicon">${svcIcon}</span><span class="svctitle">${svcTitle}</span>${svcMeta ? `<span class="svcmeta">${svcMeta}</span>` : ""}</div>`;
 
         // key-value rows (label : value) — each on its own line, full width
         const rows: string[] = [];
