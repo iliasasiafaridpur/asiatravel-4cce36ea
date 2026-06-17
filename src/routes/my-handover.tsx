@@ -357,7 +357,7 @@ function MyHandoverPage() {
     <span class="iname">${r.passenger_name || "—"}</span>
     <span class="idate">${formatDate(r.entry_date)}${r.receipt_id ? ` · <span class="mono">${r.receipt_id}</span>` : ""}</span>
   </div>
-  <div class="isub">👤 এজেন্ট: ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div>
+  <div class="isub">👤 ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div>
   ${svcBox}
   <table class="kv"><tbody>${rows.join("")}</tbody></table>
 </div>`;
