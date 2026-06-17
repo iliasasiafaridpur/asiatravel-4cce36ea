@@ -433,7 +433,7 @@ function InvoicePage() {
             <div className="w-full sm:w-80 rounded-xl border border-slate-200 p-4 space-y-2.5 bg-white">
               <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="tabular-nums font-medium">{subtotal.toLocaleString()}৳</span></div>
               {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-500">Discount</span><span className="tabular-nums text-[#b91c1c] font-medium">- {discount.toLocaleString()}৳</span></div>)}
-              <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#1d3b6b] text-white px-4 py-3 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center bg-gradient-to-r from-[#496a9d] to-[#5274a8] text-white px-4 py-3 rounded-lg shadow-sm">
                 <span className="text-[11px] uppercase tracking-widest font-semibold">Grand Total</span>
                 <span className="text-xl font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
               </div>
