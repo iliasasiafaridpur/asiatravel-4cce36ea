@@ -400,14 +400,12 @@ function InvoicePage() {
                 <tr className="bg-[#0b2545] text-white">
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider w-8">#</th>
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider">Service Details</th>
-                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Qty</th>
-                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Rate</th>
-                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Amount</th>
+                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Price</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs">No items added yet</td></tr>
+                  <tr><td colSpan={3} className="p-8 text-center text-slate-400 text-xs">No items added yet</td></tr>
                 )}
                 {items.map((it, idx) => (
                   <tr key={it.uid} className="border-t border-slate-100 align-top odd:bg-white even:bg-slate-50/60">
@@ -418,9 +416,7 @@ function InvoicePage() {
                       </div>
                       <ItemDetail it={it} />
                     </td>
-                    <td className="p-3 text-right tabular-nums">{it.qty}</td>
-                    <td className="p-3 text-right tabular-nums">{it.rate.toLocaleString()}</td>
-                    <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{(it.qty * it.rate).toLocaleString()}</td>
+                    <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{it.rate.toLocaleString()}৳</td>
                   </tr>
                 ))}
               </tbody>
