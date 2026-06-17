@@ -17,8 +17,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 
 export function ActionBoard() {
   const qc = useQueryClient();
-  const { profile } = useCurrentUser();
-  const isAdmin = profile?.role === "admin";
+  const { user } = useCurrentUser();
   const [tab, setTab] = useState<"all" | Status>("all");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -34,7 +33,7 @@ export function ActionBoard() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as (PassengerRow & { created_at: string })[];
+      return data as (PassengerRow & { created_at: string; created_by: string | null })[];
     },
   });
 
@@ -156,8 +155,9 @@ export function ActionBoard() {
                   <Pencil className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">এডিট</span>
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-destructive hover:text-destructive" onClick={() => {
-                  if (!isAdmin) {
-                    toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+                  const owner = (r as { created_by?: string | null }).created_by;
+                  if (owner && user?.id && owner !== user.id) {
+                    toast.error("এটি অন্য ইউজারের এন্ট্রি — আপনি ডিলিট করতে পারবেন না।");
                     return;
                   }
                   setDeleteId(r.id);
@@ -172,20 +172,15 @@ export function ActionBoard() {
 
       <PassengerDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} />
 
-      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>নিশ্চিতভাবে ডিলিট?</AlertDialogTitle>
-            <AlertDialogDescription>এই এন্ট্রি স্থায়ীভাবে মুছে যাবে।</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && del.mutate(deleteId)} className="bg-destructive text-destructive-foreground">
-              ডিলিট
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <PasswordConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => { if (!o) setDeleteId(null); }}
+        title="নিশ্চিতভাবে ডিলিট?"
+        description="এই এন্ট্রি স্থায়ীভাবে মুছে যাবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+        confirmLabel="হ্যাঁ, ডিলেট"
+        confirmClassName="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        onConfirmed={async () => { if (deleteId) await del.mutateAsync(deleteId); }}
+      />
     </div>
   );
 }
