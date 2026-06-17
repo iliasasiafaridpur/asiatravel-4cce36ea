@@ -96,6 +96,30 @@ function UsersPage() {
     setBusy(false);
   };
 
+  const doReset = async () => {
+    if (!resetTarget) return;
+    setBusy(true);
+    try {
+      const res = await resetPasswordFn({ data: { userId: resetTarget.user_id } });
+      setTempResult({ name: resetTarget.full_name, password: res.tempPassword });
+      setResetTarget(null);
+      toast.success("পাসওয়ার্ড রিসেট হয়েছে");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "রিসেট ব্যর্থ");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyTemp = async () => {
+    if (!tempResult) return;
+    try {
+      await navigator.clipboard.writeText(tempResult.password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto">
       <div className="flex items-center gap-2">
