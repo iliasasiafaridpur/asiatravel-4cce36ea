@@ -217,18 +217,18 @@ function InvoicePage() {
       nationality: bill.nationality || "Bangladeshi",
       mobile: e.mobile || "",
     });
-    setItems((prev) => [...prev, buildItemFromEntry(e)]);
-    setReceived((r) => r + (e.received || 0));
+    setItems([buildItemFromEntry(e)]);
+    setReceived(e.received || 0);
     setSearch("");
     setModuleFilter("all");
   };
 
-  const addBlankItem = () => setItems((p) => [...p, {
-    uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0,
-  }]);
-  const removeItem = (uid: string) => setItems((p) => p.filter((i) => i.uid !== uid));
-  const updateItem = (uid: string, patch: Partial<InvoiceItem>) =>
-    setItems((p) => p.map((i) => (i.uid === uid ? { ...i, ...patch } : i)));
+  const item: InvoiceItem = items[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+  const setItem = (patch: Partial<InvoiceItem>) =>
+    setItems((p) => {
+      const cur = p[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+      return [{ ...cur, ...patch }];
+    });
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
   const grandTotal = Math.max(0, subtotal - discount);
