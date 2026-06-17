@@ -170,11 +170,18 @@ function UsersPage() {
                       ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Active</Badge>
                       : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">Pending</Badge>}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     <Switch checked={r.is_active} disabled={busy}
                       onCheckedChange={(v) => toggleActive(r, v)} />
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm" className="h-8"
+                      disabled={busy} onClick={() => setResetTarget(r)}>
+                      <KeyRound className="h-3.5 w-3.5 mr-1" /> রিসেট
+                    </Button>
+                  </TableCell>
                 </TableRow>
+
               ))}
             </TableBody>
           </Table>
