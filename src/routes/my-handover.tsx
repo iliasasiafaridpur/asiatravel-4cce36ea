@@ -281,8 +281,11 @@ function MyHandoverPage() {
     [receipts, moneyServiceKeys]
   );
 
-  const buildReportHtml = () => {
+  const buildReportHtml = (acceptToken?: string) => {
     const money = (n: number) => `৳&nbsp;${(Number(n) || 0).toLocaleString()}`;
+    const acceptUrl = acceptToken
+      ? `https://asiatravel.lovable.app/api/public/handover-accept?t=${encodeURIComponent(acceptToken)}`
+      : "";
     const now = Date.now();
     const batchIds = new Set(receipts.map((r) => r.id));
     const cashReceipts = totalReceived;
@@ -431,6 +434,10 @@ function MyHandoverPage() {
     <div class="totalrow big"><span>জমা (Declared)</span><b>${money(declared)}</b></div>
     <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
     ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
+    ${acceptUrl ? `<div style="text-align:right;margin-top:14px">
+      <a href="${acceptUrl}" target="_blank" rel="noopener" style="display:inline-block;background:#059669;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:8px;box-shadow:0 2px 6px rgba(5,150,105,.3)">✅ টাকা পেলাম — ${money(declared)}</a>
+      <div style="color:#777;font-size:10.5px;margin-top:6px">এই বাটনে ক্লিক করলে সফটওয়্যারে রিকোয়েস্টটি গ্রহণ (approved) হয়ে যাবে</div>
+    </div>` : ""}
   </div>
 </div>
 </body></html>`;
@@ -438,7 +445,7 @@ function MyHandoverPage() {
 
 
 
-  const sendToMd = async (): Promise<boolean> => {
+  const sendToMd = async (acceptToken?: string): Promise<boolean> => {
     const target = mdEmail.trim();
     if (!target) {
       toast.warning("MD এখনো নোটিফিকেশন ইমেইল সেট করেননি — শুধু MD panel-এ গেছে, ইমেইল যায়নি।");
@@ -450,7 +457,7 @@ function MyHandoverPage() {
         data: {
           to: target,
           subject: `Cash Handover Report — ${formatDate(closingDate)}`,
-          html: buildReportHtml(),
+          html: buildReportHtml(acceptToken),
         },
       });
       toast.success(`📧 রিপোর্ট MD-কে ইমেইলে পাঠানো হয়েছে: ${target}`);
@@ -469,7 +476,7 @@ function MyHandoverPage() {
     if (cashText === "" || !Number.isFinite(amt) || amt < 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
     if (receipts.length + expenses.length === 0) return toast.error("এই closing date পর্যন্ত handover করার মতো কোনো pending আয়/খরচ নেই");
     setSaving(true);
-    const { error } = await supabase.rpc("submit_handover" as never, {
+    const { data: newId, error } = await supabase.rpc("submit_handover" as never, {
       _submitted_amount: amt,
       _closing_date: closingDate,
       _remarks: remarks || null,
@@ -479,7 +486,17 @@ function MyHandoverPage() {
       return toast.error(error.message);
     }
     toast.success("Handover submitted. Awaiting MD approval.");
-    await sendToMd();
+    // Fetch the one-click accept token so MD can approve straight from the email.
+    let acceptToken: string | undefined;
+    if (newId) {
+      const { data: row } = await supabase
+        .from("cash_handovers")
+        .select("accept_token")
+        .eq("id", newId as never)
+        .maybeSingle();
+      acceptToken = (row as { accept_token?: string } | null)?.accept_token ?? undefined;
+    }
+    await sendToMd(acceptToken);
     setSaving(false);
     setCash("");
     setRemarks("");
