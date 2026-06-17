@@ -220,8 +220,9 @@ function InvoicePage() {
   const filtered = useMemo(() => {
     if (item.type === "manual") return [];
     const q = search.trim().toLowerCase();
+    if (!q) return [];
     let list = allEntries.filter((e) => e.moduleKey === item.type);
-    if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
+    list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
     return list.slice(0, 30);
   }, [allEntries, search, item.type]);
 
@@ -297,7 +298,7 @@ function InvoicePage() {
           {item.type !== "manual" && search.trim() && filtered.length === 0 && (
             <div className="mx-4 mt-4 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground sm:mx-5">কোনো এন্ট্রি পাওয়া যায়নি</div>
           )}
-          {filtered.length > 0 && (
+          {search.trim() && filtered.length > 0 && (
             <div className="mx-4 mt-4 max-h-64 overflow-auto rounded-md border sm:mx-5">
               {filtered.map((e) => (
                 <button key={e.moduleKey + e.id} type="button" onClick={() => loadEntry(e)} className="flex w-full items-center justify-between gap-3 border-b p-3 text-left transition-colors last:border-b-0 hover:bg-accent/70">
