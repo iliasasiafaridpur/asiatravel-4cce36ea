@@ -248,28 +248,32 @@ function InvoicePage() {
 
       <Card className="print:hidden">
         <CardContent className="p-3 sm:p-4 space-y-3">
-          {/* top row: invoice no, date, module, search */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
-            <div><Label>Invoice Date</Label><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
-            <div>
-              <Label className="flex items-center gap-1"><Search className="h-3.5 w-3.5" /> Module</Label>
-              <Select value={moduleFilter} onValueChange={setModuleFilter}>
-                <SelectTrigger className="mt-1.5"><SelectValue placeholder="সব মডিউল" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সব মডিউল</SelectItem>
-                  {serviceModules.map((m) => (
-                    <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* top row: two bordered boxes — left: invoice no/date, right: module/search */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-3">
+              <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
+              <div><Label>Invoice Date</Label><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
             </div>
-            <div>
-              <Label>Search</Label>
-              <div className="relative mt-1.5">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                  placeholder="ID / নাম / পাসপোর্ট / মোবাইল..." className="pl-8" />
+            <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-3">
+              <div>
+                <Label className="flex items-center gap-1"><Search className="h-3.5 w-3.5" /> Module</Label>
+                <Select value={moduleFilter} onValueChange={setModuleFilter}>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="সব মডিউল" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব মডিউল</SelectItem>
+                    {serviceModules.map((m) => (
+                      <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Search</Label>
+                <div className="relative mt-1.5">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input value={search} onChange={(e) => setSearch(e.target.value)}
+                    placeholder="ID / নাম / পাসপোর্ট / মোবাইল..." className="pl-8" />
+                </div>
               </div>
             </div>
           </div>
@@ -304,9 +308,20 @@ function InvoicePage() {
             )}
           </div>
 
+          {/* service select — all module names */}
+          <div>
+            <Label className="flex items-center gap-1"><IdCard className="h-3.5 w-3.5" /> Service Select</Label>
+            <Select value={item.type} onValueChange={(v) => setItem({ type: v })}>
+              <SelectTrigger className="mt-1.5"><SelectValue placeholder="-- সার্ভিস বাছাই করুন --" /></SelectTrigger>
+              <SelectContent>
+                {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* passenger info — common for all services */}
-          <div className="space-y-2 pt-2">
-            <div className="text-xs font-semibold text-muted-foreground">Passenger Info (সকল সার্ভিসে কমন)</div>
+          <div className="space-y-2 pt-1">
+            <div className="text-xs font-semibold text-muted-foreground">Passenger Information (সকল সার্ভিসে কমন)</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
               <Input placeholder="Passport No" value={bill.passport} onChange={(e) => setBill({ ...bill, passport: e.target.value })} />
@@ -314,65 +329,29 @@ function InvoicePage() {
             </div>
           </div>
 
-
-          {/* items */}
-          <div className="pt-2">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs font-semibold text-muted-foreground">Invoice Items</div>
-              <Button size="sm" variant="outline" className="gap-1" onClick={addBlankItem}>
-                <Plus className="h-3.5 w-3.5" /> Add Item
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {items.length === 0 && (
-                <p className="text-xs text-muted-foreground p-2 border border-dashed rounded">
-                  কোনো আইটেম নেই — উপরের লিস্ট থেকে Add করুন বা "Add Item" দিন
-                </p>
-              )}
-              {items.map((it, idx) => (
-                <div key={it.uid} className="rounded-md border p-2.5 space-y-2 bg-muted/30">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground">#{idx + 1}</span>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(it.uid)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* dedicated Service Select dropdown — drives which option fields show */}
-                  <div>
-                    <Label className="text-xs flex items-center gap-1"><IdCard className="h-3 w-3" /> Service Select</Label>
-                    <Select value={it.type} onValueChange={(v) => updateItem(it.uid, { type: v })}>
-                      <SelectTrigger className="mt-1.5"><SelectValue placeholder="-- সার্ভিস বাছাই করুন --" /></SelectTrigger>
-                      <SelectContent>
-                        {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <ItemFields it={it} onChange={(patch) => updateItem(it.uid, patch)} />
-
-                  <div className="grid grid-cols-12 gap-2 items-end pt-1">
-                    <div className="col-span-6 sm:col-span-3">
-                      <Label className="text-xs">Date</Label>
-                      <DateInput value={it.date ?? ""} onChange={(e) => updateItem(it.uid, { date: e.target.value })} />
-                    </div>
-                    <div className="col-span-3 sm:col-span-2">
-                      <Label className="text-xs">Qty</Label>
-                      <Input type="number" value={it.qty || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { qty: Number(e.target.value) || 0 })} />
-                    </div>
-                    <div className="col-span-3 sm:col-span-2">
-                      <Label className="text-xs">Rate</Label>
-                      <Input type="number" value={it.rate || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { rate: Number(e.target.value) || 0 })} />
-                    </div>
-                    <div className="col-span-12 sm:col-span-5">
-                      <Label className="text-xs">Note (optional)</Label>
-                      <Input value={it.detail ?? ""} onChange={(e) => updateItem(it.uid, { detail: e.target.value })} placeholder="optional" />
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {/* service-specific fields (e.g. Air Ticket → Trip Road, Airlines, Flight Date) */}
+          <div className="pt-1">
+            <ItemFields it={item} onChange={setItem} />
+            <div className="grid grid-cols-12 gap-2 items-end pt-2">
+              <div className="col-span-6 sm:col-span-3">
+                <Label className="text-xs">Date</Label>
+                <DateInput value={item.date ?? ""} onChange={(e) => setItem({ date: e.target.value })} />
+              </div>
+              <div className="col-span-3 sm:col-span-2">
+                <Label className="text-xs">Qty</Label>
+                <Input type="number" value={item.qty || ""} placeholder="0" onChange={(e) => setItem({ qty: Number(e.target.value) || 0 })} />
+              </div>
+              <div className="col-span-3 sm:col-span-2">
+                <Label className="text-xs">Rate</Label>
+                <Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} />
+              </div>
+              <div className="col-span-12 sm:col-span-5">
+                <Label className="text-xs">Note (optional)</Label>
+                <Input value={item.detail ?? ""} onChange={(e) => setItem({ detail: e.target.value })} placeholder="optional" />
+              </div>
             </div>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div><Label>Discount</Label><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} className="mt-1.5" /></div>
