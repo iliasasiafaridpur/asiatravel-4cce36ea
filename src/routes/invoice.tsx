@@ -331,17 +331,20 @@ function InvoicePage() {
                 <div key={it.uid} className="rounded-md border p-2.5 space-y-2 bg-muted/30">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-muted-foreground">#{idx + 1}</span>
-                    <div className="flex items-center gap-2">
-                      <Select value={it.type} onValueChange={(v) => updateItem(it.uid, { type: v })}>
-                        <SelectTrigger className="h-8 w-[160px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(it.uid)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(it.uid)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* dedicated Service Select dropdown — drives which option fields show */}
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><IdCard className="h-3 w-3" /> Service Select</Label>
+                    <Select value={it.type} onValueChange={(v) => updateItem(it.uid, { type: v })}>
+                      <SelectTrigger className="mt-1.5"><SelectValue placeholder="-- সার্ভিস বাছাই করুন --" /></SelectTrigger>
+                      <SelectContent>
+                        {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <ItemFields it={it} onChange={(patch) => updateItem(it.uid, patch)} />
