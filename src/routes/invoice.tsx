@@ -73,7 +73,6 @@ const blankItem = (type = "tickets"): InvoiceItem => ({
   uid: genUid(),
   type,
   serviceLabel: type === "manual" ? "" : serviceLabelFor(type),
-  qty: 1,
   rate: 0,
 });
 
