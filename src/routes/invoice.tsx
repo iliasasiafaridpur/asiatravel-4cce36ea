@@ -410,9 +410,15 @@ function InvoicePage() {
                   <tr key={it.uid} className="border-t border-slate-100 align-top odd:bg-white even:bg-slate-50/60">
                     <td className="p-3 text-slate-400 tabular-nums">{idx + 1}</td>
                     <td className="p-3">
-                      <div className="font-bold text-[#0b2545] uppercase tracking-wide text-sm">
+                      <div className="font-bold text-[#1d3b6b] uppercase tracking-wide text-sm">
                         {(it.serviceLabel || "—").toUpperCase()}
                       </div>
+                      {it.detail && (
+                        <div className="mt-0.5 text-xs text-slate-600">
+                          <span className="text-slate-400">Ref:</span>{" "}
+                          <span className="font-medium text-slate-700">{it.detail}</span>
+                        </div>
+                      )}
                       <ItemDetail it={it} />
                     </td>
                     <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{it.rate.toLocaleString()}৳</td>
