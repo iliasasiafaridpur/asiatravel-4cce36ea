@@ -128,7 +128,6 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
   } else if (it.type === "bmet") {
     if (it.country) rows.push({ label: "Country", value: it.country });
-    if (it.date) rows.push({ label: "Date", value: formatDate(it.date) });
   } else if (it.type === "saudi-visa") {
     if (it.visaType) rows.push({ label: "Visa Type", value: it.visaType });
     if (it.sponsor) rows.push({ label: "Sponsor", value: it.sponsor });
