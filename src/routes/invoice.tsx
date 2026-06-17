@@ -517,22 +517,18 @@ function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
 /* --------------------- module-specific item edit fields ------------------- */
 
 function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Partial<InvoiceItem>) => void }) {
-  const Headline = (
+  const CustomServiceName = it.type === "manual" || it.type === "other" ? (
     <div className="sm:col-span-2">
-      <Label className="text-xs flex items-center gap-1"><IdCard className="h-3 w-3" /> Service Name</Label>
-      {it.type === "manual" || it.type === "other" ? (
-        <LookupSelect kind={it.type === "other" ? "other_service" : "invoice_service_item"} value={it.serviceLabel}
-          onChange={(v) => onChange({ serviceLabel: v })} />
-      ) : (
-        <Input value={it.serviceLabel} onChange={(e) => onChange({ serviceLabel: e.target.value })} />
-      )}
+      <Label className="text-xs">Service Name</Label>
+      <LookupSelect kind={it.type === "other" ? "other_service" : "invoice_service_item"} value={it.serviceLabel}
+        onChange={(v) => onChange({ serviceLabel: v })} />
     </div>
-  );
+  ) : null;
 
   if (it.type === "tickets" || (it.type === "other")) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
+        {CustomServiceName}
         <div>
           <Label className="text-xs">Trip Road</Label>
           <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v, toRoute: "" })} />
@@ -552,7 +548,6 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   if (it.type === "bmet") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
         <div>
           <Label className="text-xs">Country</Label>
           <LookupSelect kind="country" value={it.country ?? ""} onChange={(v) => onChange({ country: v })} />
@@ -564,7 +559,6 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   if (it.type === "saudi-visa") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
         <div>
           <Label className="text-xs">Visa Type</Label>
           <Input value={it.visaType ?? ""} onChange={(e) => onChange({ visaType: e.target.value })} />
@@ -584,7 +578,6 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   if (it.type === "kuwait-visa") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {Headline}
         <div>
           <Label className="text-xs">Visa No</Label>
           <Input value={it.refNo ?? ""} onChange={(e) => onChange({ refNo: e.target.value })} />
@@ -598,5 +591,5 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   }
 
   // manual
-  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{Headline}</div>;
+  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{CustomServiceName}</div>;
 }
