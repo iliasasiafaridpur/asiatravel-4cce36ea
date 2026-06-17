@@ -363,13 +363,13 @@ function InvoicePage() {
               <p className="font-mono text-xs mt-1.5 text-white/80">{invoiceNo}</p>
             </div>
           </div>
-          <div className="relative flex justify-between items-end text-[11px] text-white/70 mt-4 gap-4 border-t border-white/10 pt-3">
-            <div className="space-y-0.5">
-              <p>{AGENCY.address}</p>
+          <div className="relative flex justify-between items-end text-white/85 mt-4 gap-4 border-t border-white/10 pt-3">
+            <div className="inv-contact space-y-0.5">
+              <p>{AGENCY.address}, Bangladesh</p>
               <p>📞 {AGENCY.phone}</p>
             </div>
             <div className="text-right">
-              <p className="uppercase tracking-widest text-white/50 text-[9px]">Issue Date</p>
+              <p className="uppercase tracking-widest text-white/60 text-[9px]">Issue Date</p>
               <p className="font-semibold text-white/90 text-xs">{formatDate(invoiceDate)}</p>
             </div>
           </div>
