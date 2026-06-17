@@ -113,13 +113,14 @@ function buildItemFromEntry(e: ServiceEntry): InvoiceItem {
 
 function ItemDetail({ it }: { it: InvoiceItem }) {
   const rows: { label: string; value: string }[] = [];
-  const route = (it.fromRoute || it.toRoute) ? `${it.fromRoute || "?"} → ${it.toRoute || "?"}` : "";
+  const route = (it.fromRoute && it.toRoute)
+    ? `${it.fromRoute} → ${it.toRoute}`
+    : (it.fromRoute || it.toRoute || "");
 
   if (it.type === "tickets") {
-    if (it.airline) rows.push({ label: "Airline", value: it.airline });
-    if (route) rows.push({ label: "Route", value: route });
+    if (route) rows.push({ label: "Trip Road", value: route });
+    if (it.airline) rows.push({ label: "Airlines", value: it.airline });
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
-    if (it.pnr) rows.push({ label: "PNR", value: it.pnr });
   } else if (it.type === "bmet") {
     if (it.country) rows.push({ label: "Country", value: it.country });
     if (it.date) rows.push({ label: "Date", value: formatDate(it.date) });
@@ -131,8 +132,8 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
     if (it.refNo) rows.push({ label: "Visa No", value: it.refNo });
     if (it.sponsor) rows.push({ label: "Sponsor", value: it.sponsor });
   } else if (it.type === "other") {
-    if (it.airline) rows.push({ label: "Airline", value: it.airline });
-    if (route) rows.push({ label: "Route", value: route });
+    if (route) rows.push({ label: "Trip Road", value: route });
+    if (it.airline) rows.push({ label: "Airlines", value: it.airline });
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
   }
   if (it.detail) rows.push({ label: "Ref", value: it.detail });
@@ -245,19 +246,14 @@ function InvoicePage() {
 
       <Card className="print:hidden">
         <CardContent className="p-3 sm:p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* top row: invoice no, date, module, search */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
             <div><Label>Invoice Date</Label><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
-          </div>
-
-          {/* module search */}
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-              <Search className="h-3.5 w-3.5" /> Service Module থেকে যাত্রী খুঁজুন (অটো-ফিল)
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-2">
+            <div>
+              <Label className="flex items-center gap-1"><Search className="h-3.5 w-3.5" /> Module</Label>
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
-                <SelectTrigger><SelectValue placeholder="সব মডিউল" /></SelectTrigger>
+                <SelectTrigger className="mt-1.5"><SelectValue placeholder="সব মডিউল" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">সব মডিউল</SelectItem>
                   {serviceModules.map((m) => (
@@ -265,12 +261,19 @@ function InvoicePage() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="relative">
+            </div>
+            <div>
+              <Label>Search</Label>
+              <div className="relative mt-1.5">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="ID / নাম / পাসপোর্ট / মোবাইল..." className="pl-8" />
               </div>
             </div>
+          </div>
+
+          {/* module search results */}
+          <div className="space-y-2">
             {moduleFilter !== "all" && filtered.length === 0 && !search && (
               <p className="text-xs text-muted-foreground">এই মডিউলে কোনো এন্ট্রি নেই</p>
             )}
@@ -299,16 +302,16 @@ function InvoicePage() {
             )}
           </div>
 
-          {/* passenger info */}
+          {/* passenger info — common for all services */}
           <div className="space-y-2 pt-2">
-            <div className="text-xs font-semibold text-muted-foreground">Passenger Info</div>
-            <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="text-xs font-semibold text-muted-foreground">Passenger Info (সকল সার্ভিসে কমন)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
               <Input placeholder="Passport No" value={bill.passport} onChange={(e) => setBill({ ...bill, passport: e.target.value })} />
-              <Input placeholder="Nationality" value={bill.nationality} onChange={(e) => setBill({ ...bill, nationality: e.target.value })} />
+              <Input placeholder="Mobile" value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} />
             </div>
-            <Input placeholder="Mobile" value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} />
           </div>
+
 
           {/* items */}
           <div className="pt-2">
@@ -550,20 +553,16 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {Headline}
         <div>
-          <Label className="text-xs">Airline</Label>
+          <Label className="text-xs">Trip Road</Label>
+          <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v, toRoute: "" })} />
+        </div>
+        <div>
+          <Label className="text-xs">Airlines</Label>
           <LookupSelect kind="invoice_airline" value={it.airline ?? ""} onChange={(v) => onChange({ airline: v })} />
         </div>
         <div>
-          <Label className="text-xs">PNR</Label>
-          <Input value={it.pnr ?? ""} onChange={(e) => onChange({ pnr: e.target.value })} />
-        </div>
-        <div>
-          <Label className="text-xs">From</Label>
-          <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v })} />
-        </div>
-        <div>
-          <Label className="text-xs">To</Label>
-          <LookupSelect kind="invoice_route" value={it.toRoute ?? ""} onChange={(v) => onChange({ toRoute: v })} />
+          <Label className="text-xs">Flight Date</Label>
+          <DateInput value={it.flightDate ?? ""} onChange={(e) => onChange({ flightDate: e.target.value })} />
         </div>
       </div>
     );
