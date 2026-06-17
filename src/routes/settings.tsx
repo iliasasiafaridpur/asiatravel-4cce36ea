@@ -85,12 +85,22 @@ function SettingsPage() {
 
   const changePw = async (e: FormEvent) => {
     e.preventDefault();
-    if (newPw.length < 6) { toast.error("পাসওয়ার্ড অন্তত ৬ অক্ষর"); return; }
+    if (!oldPw) { toast.error("পুরনো পাসওয়ার্ড দিন"); return; }
+    if (newPw.length < 6) { toast.error("নতুন পাসওয়ার্ড অন্তত ৬ অক্ষর"); return; }
+    if (oldPw === newPw) { toast.error("নতুন পাসওয়ার্ড আলাদা হতে হবে"); return; }
     setPwBusy(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const email = session?.user?.email;
+    if (!email) { setPwBusy(false); toast.error("সেশন পাওয়া যায়নি"); return; }
+    // Verify old password by re-authenticating (does not disturb session).
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({ email, password: oldPw });
+    if (verifyErr) { setPwBusy(false); toast.error("পুরনো পাসওয়ার্ড ভুল"); return; }
     const { error } = await supabase.auth.updateUser({ password: newPw });
     setPwBusy(false);
-    if (error) toast.error("পরিবর্তন ব্যর্থ"); else { toast.success("পাসওয়ার্ড পরিবর্তিত"); setNewPw(""); }
+    if (error) toast.error("পরিবর্তন ব্যর্থ");
+    else { toast.success("পাসওয়ার্ড পরিবর্তিত"); setOldPw(""); setNewPw(""); }
   };
+
 
   const clearCache = () => {
     try {
