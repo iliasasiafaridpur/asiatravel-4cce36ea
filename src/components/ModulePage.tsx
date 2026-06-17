@@ -1752,8 +1752,9 @@ export function ModulePage({ module: mod }: Props) {
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="এডিট করুন" onClick={() => { selectRow(r.id); startEdit(r); }}><Pencil className="h-3 w-3" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="ডিলিট করুন" onClick={() => {
                             selectRow(r.id);
-                            if (profile?.role !== "admin") {
-                              toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+                            const owner = r.created_by as string | null | undefined;
+                            if (owner && user?.id && owner !== user.id) {
+                              toast.error("এটি অন্য ইউজারের এন্ট্রি — আপনি ডিলিট করতে পারবেন না।");
                               return;
                             }
                             requestDelete(r);
