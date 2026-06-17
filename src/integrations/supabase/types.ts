@@ -965,6 +965,7 @@ export type Database = {
           full_name: string
           is_active: boolean
           mobile: string | null
+          must_reset_password: boolean
           notify_email: string | null
           role: string
           updated_at: string
@@ -976,6 +977,7 @@ export type Database = {
           full_name?: string
           is_active?: boolean
           mobile?: string | null
+          must_reset_password?: boolean
           notify_email?: string | null
           role?: string
           updated_at?: string
@@ -987,6 +989,7 @@ export type Database = {
           full_name?: string
           is_active?: boolean
           mobile?: string | null
+          must_reset_password?: boolean
           notify_email?: string | null
           role?: string
           updated_at?: string
