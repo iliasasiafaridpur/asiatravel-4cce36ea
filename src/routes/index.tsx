@@ -138,10 +138,12 @@ function DashboardPage() {
   useEffect(() => {
     const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "payment_receipts", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
     const refresh = () => {
+      // Skip refetch while the tab is hidden — it refetches on mount anyway.
+      if (typeof document !== "undefined" && document.hidden) return;
       if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = window.setTimeout(() => {
         qc.invalidateQueries({ queryKey: ["dashboard"] });
-      }, 300);
+      }, 1200);
     };
     const channel = tables.reduce(
       (ch, t) => ch.on("postgres_changes", { event: "*", schema: "public", table: t }, refresh),
