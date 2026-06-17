@@ -235,7 +235,7 @@ function InvoicePage() {
     setSearch("");
   };
 
-  const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
+  const subtotal = items.reduce((s, i) => s + i.rate, 0);
   const grandTotal = Math.max(0, subtotal - discount);
   const due = Math.max(0, grandTotal - received);
 
