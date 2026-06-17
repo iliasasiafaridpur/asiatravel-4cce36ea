@@ -445,7 +445,7 @@ function MyHandoverPage() {
 
 
 
-  const sendToMd = async (): Promise<boolean> => {
+  const sendToMd = async (acceptToken?: string): Promise<boolean> => {
     const target = mdEmail.trim();
     if (!target) {
       toast.warning("MD এখনো নোটিফিকেশন ইমেইল সেট করেননি — শুধু MD panel-এ গেছে, ইমেইল যায়নি।");
@@ -457,7 +457,7 @@ function MyHandoverPage() {
         data: {
           to: target,
           subject: `Cash Handover Report — ${formatDate(closingDate)}`,
-          html: buildReportHtml(),
+          html: buildReportHtml(acceptToken),
         },
       });
       toast.success(`📧 রিপোর্ট MD-কে ইমেইলে পাঠানো হয়েছে: ${target}`);
@@ -476,7 +476,7 @@ function MyHandoverPage() {
     if (cashText === "" || !Number.isFinite(amt) || amt < 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
     if (receipts.length + expenses.length === 0) return toast.error("এই closing date পর্যন্ত handover করার মতো কোনো pending আয়/খরচ নেই");
     setSaving(true);
-    const { error } = await supabase.rpc("submit_handover" as never, {
+    const { data: newId, error } = await supabase.rpc("submit_handover" as never, {
       _submitted_amount: amt,
       _closing_date: closingDate,
       _remarks: remarks || null,
@@ -486,7 +486,17 @@ function MyHandoverPage() {
       return toast.error(error.message);
     }
     toast.success("Handover submitted. Awaiting MD approval.");
-    await sendToMd();
+    // Fetch the one-click accept token so MD can approve straight from the email.
+    let acceptToken: string | undefined;
+    if (newId) {
+      const { data: row } = await supabase
+        .from("cash_handovers")
+        .select("accept_token")
+        .eq("id", newId as never)
+        .maybeSingle();
+      acceptToken = (row as { accept_token?: string } | null)?.accept_token ?? undefined;
+    }
+    await sendToMd(acceptToken);
     setSaving(false);
     setCash("");
     setRemarks("");
