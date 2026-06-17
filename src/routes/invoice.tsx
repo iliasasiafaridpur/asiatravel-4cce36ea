@@ -199,14 +199,20 @@ function InvoicePage() {
     })();
   }, [serviceModules]);
 
+  const item: InvoiceItem = items[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+  const setItem = (patch: Partial<InvoiceItem>) =>
+    setItems((p) => {
+      const cur = p[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+      return [{ ...cur, ...patch }];
+    });
+
   const filtered = useMemo(() => {
+    if (item.type === "manual") return [];
     const q = search.trim().toLowerCase();
-    let list = allEntries;
-    if (moduleFilter !== "all") list = list.filter((e) => e.moduleKey === moduleFilter);
+    let list = allEntries.filter((e) => e.moduleKey === item.type);
     if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
-    else if (moduleFilter === "all") return [];
     return list.slice(0, 30);
-  }, [allEntries, search, moduleFilter]);
+  }, [allEntries, search, item.type]);
 
   const loadEntry = (e: ServiceEntry) => {
     setBill({
@@ -218,15 +224,7 @@ function InvoicePage() {
     setItems([buildItemFromEntry(e)]);
     setReceived(e.received || 0);
     setSearch("");
-    setModuleFilter("all");
   };
-
-  const item: InvoiceItem = items[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
-  const setItem = (patch: Partial<InvoiceItem>) =>
-    setItems((p) => {
-      const cur = p[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
-      return [{ ...cur, ...patch }];
-    });
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
   const grandTotal = Math.max(0, subtotal - discount);
