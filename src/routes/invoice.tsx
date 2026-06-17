@@ -171,9 +171,7 @@ function InvoicePage() {
   const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   const [bill, setBill] = useState({ name: "", passport: "", nationality: "Bangladeshi", mobile: "" });
-  const [items, setItems] = useState<InvoiceItem[]>(() => [
-    { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 },
-  ]);
+  const [items, setItems] = useState<InvoiceItem[]>(() => [blankItem("tickets")]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
 
@@ -207,12 +205,17 @@ function InvoicePage() {
     })();
   }, [serviceModules]);
 
-  const item: InvoiceItem = items[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+  const item: InvoiceItem = items[0] ?? blankItem("tickets");
   const setItem = (patch: Partial<InvoiceItem>) =>
     setItems((p) => {
-      const cur = p[0] ?? { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 };
+      const cur = p[0] ?? blankItem("tickets");
       return [{ ...cur, ...patch }];
     });
+
+  const changeService = (type: string) => {
+    setItems([blankItem(type)]);
+    setSearch("");
+  };
 
   const filtered = useMemo(() => {
     if (item.type === "manual") return [];
