@@ -41,6 +41,7 @@ function SettingsPage() {
   const [designation, setDesignation] = useState("");
   const [notifyEmail, setNotifyEmail] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
