@@ -150,6 +150,7 @@ function MyHandoverPage() {
   const [loading, setLoading] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
   const [mdEmail, setMdEmail] = useState("");
+  const [recByService, setRecByService] = useState<Record<string, Receipt[]>>({});
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmailFn = useServerFn(sendGmail);
 
