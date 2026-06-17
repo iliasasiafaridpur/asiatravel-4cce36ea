@@ -67,6 +67,16 @@ const TABLE_LABELS: Record<string, string> = {
   agency_ledger: "Agency Ledger",
 };
 
+// Emoji icon per service table for the report's service-info block.
+const SVC_ICONS: Record<string, string> = {
+  tickets: "✈️",
+  bmet_cards: "🪪",
+  saudi_visas: "🛂",
+  kuwait_visas: "🛂",
+  others: "🧾",
+  agency_ledger: "📒",
+};
+
 // Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
 const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
   tickets: {
