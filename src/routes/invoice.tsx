@@ -472,6 +472,8 @@ function InvoicePage() {
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 24pt; }
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
+        .invoice-print .inv-ico { height: 22pt; width: 22pt; }
+        .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
