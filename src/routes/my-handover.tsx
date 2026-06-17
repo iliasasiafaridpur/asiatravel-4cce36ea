@@ -67,6 +67,16 @@ const TABLE_LABELS: Record<string, string> = {
   agency_ledger: "Agency Ledger",
 };
 
+// Emoji icon per service table for the report's service-info block.
+const SVC_ICONS: Record<string, string> = {
+  tickets: "✈️",
+  bmet_cards: "🪪",
+  saudi_visas: "🛂",
+  kuwait_visas: "🛂",
+  others: "🧾",
+  agency_ledger: "📒",
+};
+
 // Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
 const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
   tickets: {
@@ -306,18 +316,26 @@ function MyHandoverPage() {
         const statusEvt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
 
-        // service description lines
-        const svcBits = [
-          info.service_name || r.service_type || "",
+        // ---- Passenger service info block (prominent, top of card) ----
+        const tbl = r.service_table ?? "";
+        const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
+        const svcIcon = SVC_ICONS[tbl] || (info.airline ? "✈️" : "🧾");
+        const svcMetaBits = [
           info.country || "",
-          info.airline ? `${info.airline}${info.flight_date ? ` · ${formatDate(info.flight_date)}` : ""}` : "",
+          info.airline ? `${info.airline}${info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}` : "",
           info.route || "",
         ].filter(Boolean);
-        const svcText = svcBits.join(" · ");
+        const svcMeta = svcMetaBits.join(" · ");
+        const svcBox = `<div class="svcbox">
+    <span class="svcicon">${svcIcon}</span>
+    <div class="svcinfo">
+      <div class="svctitle">${svcTitle}</div>
+      ${svcMeta ? `<div class="svcmeta">${svcMeta}</div>` : ""}
+    </div>
+  </div>`;
 
         // key-value rows (label : value) — each on its own line, full width
         const rows: string[] = [];
-        if (svcText) rows.push(`<tr><td class="k">সার্ভিস</td><td class="v">${svcText}</td></tr>`);
         if (bill > 0) {
           let billVal = `<b>${money(bill)}</b>`;
           if (discount > 0) billVal += ` <span class="in" style="font-size:12px">(− ${money(discount)} ডিসকাউন্ট)</span>`;
@@ -345,7 +363,8 @@ function MyHandoverPage() {
     <span class="iname">${r.passenger_name || "—"}</span>
     <span class="idate">${formatDate(r.entry_date)}${r.receipt_id ? ` · <span class="mono">${r.receipt_id}</span>` : ""}</span>
   </div>
-  <div class="isub">A: ${info.agent || "Self"}${info.passport ? ` · ${info.passport}` : ""}</div>
+  <div class="isub">👤 এজেন্ট: ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div>
+  ${svcBox}
   <table class="kv"><tbody>${rows.join("")}</tbody></table>
 </div>`;
       })
@@ -368,29 +387,36 @@ function MyHandoverPage() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:14px;background:#0a1124;color:#e2e8f0;font-size:15px;-webkit-text-size-adjust:100%}
-  .wrap{max-width:560px;margin:0 auto}
-  .brand{text-align:center;margin-bottom:14px}
-  .brand h1{margin:0;font-size:20px;font-weight:800;color:#5eead4;letter-spacing:.2px}
-  .brand p{margin:4px 0 0;font-size:13px;color:#94a3b8}
-  .card{border:1px solid #24324d;border-radius:14px;overflow:hidden;background:#0e1830;box-shadow:0 8px 26px -8px rgba(0,0,0,.6)}
-  .head{background:#16223d;padding:16px;border-bottom:1px solid #24324d}
-  .badge{display:inline-block;background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700}
-  .hamt{display:block;text-align:right;font-size:26px;font-weight:800;color:#5eead4;margin-bottom:8px}
-  .hmeta{margin-top:10px;font-size:14px;color:#cbd5e1;line-height:1.9}
+  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:24px 16px;background:#0a1124;color:#e2e8f0;font-size:15px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto}
+  .brand{text-align:center;margin-bottom:18px}
+  .brand h1{margin:0;font-size:26px;font-weight:800;color:#5eead4;letter-spacing:.2px}
+  .brand p{margin:6px 0 0;font-size:14px;color:#94a3b8}
+  .card{border:1px solid #24324d;border-radius:16px;overflow:hidden;background:#0e1830;box-shadow:0 12px 40px -12px rgba(0,0,0,.7)}
+  .head{background:#16223d;padding:22px 24px;border-bottom:1px solid #24324d}
+  .badge{display:inline-block;background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700}
+  .hamt{display:block;text-align:right;font-size:34px;font-weight:800;color:#5eead4;margin-bottom:8px}
+  .hmeta{margin-top:12px;font-size:15px;color:#cbd5e1;line-height:2}
   .hmeta b{color:#f1f5f9}
-  .sec{padding:14px 16px 4px;font-size:14px;font-weight:700;color:#cbd5e1;display:flex;justify-content:space-between;align-items:baseline}
-  .sec .amt{font-size:13px;color:#94a3b8}
-  .body{padding:6px 12px 12px}
-  .item{border:1px solid #1d2a44;border-left:5px solid #2dd4bf;border-radius:10px;background:#0f1a30;padding:12px 14px;margin:10px 0}
+  .sec{padding:18px 24px 6px;font-size:15px;font-weight:700;color:#cbd5e1;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+  .sec .amt{font-size:14px;color:#94a3b8}
+  .body{padding:8px 18px 16px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}.wrap{max-width:560px}.hamt{font-size:26px}.brand h1{font-size:21px}}
+  .item{border:1px solid #1d2a44;border-left:5px solid #2dd4bf;border-radius:12px;background:#0f1a30;padding:14px 16px}
   .out-item{border-left-color:#fbbf24}
   .ihead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
-  .iname{font-weight:800;font-size:16px;color:#f1f5f9}
+  .iname{font-weight:800;font-size:17px;color:#f1f5f9}
   .idate{font-size:12px;color:#8da2bd;white-space:nowrap}
-  .isub{font-size:13px;color:#8da2bd;margin-top:3px}
-  table.kv{width:100%;border-collapse:collapse;margin-top:10px}
-  table.kv td{padding:6px 0;border-top:1px solid #1d2a44;vertical-align:top;line-height:1.5}
-  table.kv td.k{color:#8da2bd;font-size:13px;width:38%;white-space:nowrap}
+  .isub{font-size:13px;color:#9fb3cf;margin-top:4px}
+  .svcbox{display:flex;align-items:center;gap:12px;margin-top:12px;padding:11px 13px;background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(56,189,248,.08));border:1px solid rgba(45,212,191,.28);border-radius:10px}
+  .svcicon{font-size:22px;line-height:1;flex-shrink:0}
+  .svcinfo{min-width:0}
+  .svctitle{font-weight:800;font-size:15px;color:#5eead4;letter-spacing:.2px}
+  .svcmeta{font-size:13px;color:#cbd5e1;margin-top:2px;line-height:1.5}
+  table.kv{width:100%;border-collapse:collapse;margin-top:12px}
+  table.kv td{padding:7px 0;border-top:1px solid #1d2a44;vertical-align:top;line-height:1.5}
+  table.kv td.k{color:#8da2bd;font-size:13px;width:42%;white-space:nowrap}
   table.kv td.v{text-align:right;font-size:14px}
   table.kv tr:first-child td{border-top:none}
   .mono{font-family:'Courier New',monospace}
@@ -419,10 +445,10 @@ function MyHandoverPage() {
     </div>
 
     <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}</span></div>
-    <div class="body">${incomeCards || `<div class="empty">কোনো passenger receipt নেই</div>`}</div>
+    <div class="body">${incomeCards ? `<div class="grid">${incomeCards}</div>` : `<div class="empty">কোনো passenger receipt নেই</div>`}</div>
 
     ${expenseCards ? `<div class="sec"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span class="amt">মোট: ${money(totalExpense)}</span></div>
-    <div class="body">${expenseCards}</div>` : ""}
+    <div class="body"><div class="grid">${expenseCards}</div></div>` : ""}
 
     <div class="foot">
       <div class="totalrow"><span class="muted">নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
