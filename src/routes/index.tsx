@@ -206,6 +206,9 @@ function DashboardPage() {
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["dashboard", "profiles"],
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("user_id,full_name");
       return (data ?? []) as { user_id: string; full_name: string }[];
