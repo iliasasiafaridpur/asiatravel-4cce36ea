@@ -552,20 +552,16 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {Headline}
         <div>
-          <Label className="text-xs">Airline</Label>
+          <Label className="text-xs">Trip Road</Label>
+          <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v, toRoute: "" })} />
+        </div>
+        <div>
+          <Label className="text-xs">Airlines</Label>
           <LookupSelect kind="invoice_airline" value={it.airline ?? ""} onChange={(v) => onChange({ airline: v })} />
         </div>
         <div>
-          <Label className="text-xs">PNR</Label>
-          <Input value={it.pnr ?? ""} onChange={(e) => onChange({ pnr: e.target.value })} />
-        </div>
-        <div>
-          <Label className="text-xs">From</Label>
-          <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v })} />
-        </div>
-        <div>
-          <Label className="text-xs">To</Label>
-          <LookupSelect kind="invoice_route" value={it.toRoute ?? ""} onChange={(v) => onChange({ toRoute: v })} />
+          <Label className="text-xs">Flight Date</Label>
+          <DateInput value={it.flightDate ?? ""} onChange={(e) => onChange({ flightDate: e.target.value })} />
         </div>
       </div>
     );
