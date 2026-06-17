@@ -434,6 +434,10 @@ function MyHandoverPage() {
     <div class="totalrow big"><span>জমা (Declared)</span><b>${money(declared)}</b></div>
     <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
     ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
+    ${acceptUrl ? `<div style="text-align:right;margin-top:14px">
+      <a href="${acceptUrl}" target="_blank" rel="noopener" style="display:inline-block;background:#059669;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:8px;box-shadow:0 2px 6px rgba(5,150,105,.3)">✅ টাকা পেলাম — ${money(declared)}</a>
+      <div style="color:#777;font-size:10.5px;margin-top:6px">এই বাটনে ক্লিক করলে সফটওয়্যারে রিকোয়েস্টটি গ্রহণ (approved) হয়ে যাবে</div>
+    </div>` : ""}
   </div>
 </div>
 </body></html>`;
