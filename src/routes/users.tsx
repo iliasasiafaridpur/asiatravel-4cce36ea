@@ -191,6 +191,55 @@ function UsersPage() {
       <div className="flex justify-end">
         <Button variant="outline" onClick={() => void load()}>রিফ্রেশ</Button>
       </div>
+
+      <AlertDialog open={!!resetTarget} onOpenChange={(o) => { if (!o) setResetTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" /> পাসওয়ার্ড রিসেট করবেন?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>
+                  <b>{resetTarget?.full_name}</b> এর জন্য একটি অস্থায়ী পাসওয়ার্ড তৈরি হবে।
+                </div>
+                <div className="text-amber-600">
+                  ব্যবহারকারী এই অস্থায়ী পাসওয়ার্ড দিয়ে লগইন করার পর সাথে সাথে নিজের নতুন পাসওয়ার্ড দিতে বাধ্য হবেন।
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void doReset(); }}>
+              {busy ? "রিসেট হচ্ছে…" : "রিসেট করুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!tempResult} onOpenChange={(o) => { if (!o) setTempResult(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>অস্থায়ী পাসওয়ার্ড</DialogTitle>
+            <DialogDescription>
+              এটি <b>{tempResult?.name}</b> কে দিন। তিনি লগইন করলেই নতুন পাসওয়ার্ড দিতে হবে।
+              এই পাসওয়ার্ড আর দেখা যাবে না।
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded-md border bg-muted px-3 py-2 text-lg font-bold tracking-wider text-center">
+              {tempResult?.password}
+            </code>
+            <Button variant="outline" size="icon" onClick={() => void copyTemp()} title="কপি করুন">
+              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setTempResult(null)}>বুঝেছি</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
