@@ -92,7 +92,6 @@ function buildItemFromEntry(e: ServiceEntry): InvoiceItem {
     serviceLabel: e.module,
     detail: e.id,
     date: e.date,
-    qty: 1,
     rate: e.amount || 0,
   };
   switch (e.moduleKey) {
