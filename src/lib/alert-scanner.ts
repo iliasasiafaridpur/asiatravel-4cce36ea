@@ -40,13 +40,17 @@ type Target = {
   table: "bmet_cards" | "saudi_visas" | "kuwait_visas";
   serviceLabel: string;        // human-readable module name
   idField: "bmet_id" | "saudi_id" | "kuwait_id";
+  /** The "received" column name differs per table (kuwait uses `received`). */
+  recvField: "received_amount" | "received";
+  /** Only some tables carry a country column; others fall back to a constant. */
+  countryField?: "country_name";
   countryFallback?: string;
 };
 
 const TARGETS: Target[] = [
-  { table: "bmet_cards",  serviceLabel: "BMET Card",  idField: "bmet_id" },
-  { table: "saudi_visas", serviceLabel: "Saudi Visa", idField: "saudi_id",  countryFallback: "Saudi Arabia" },
-  { table: "kuwait_visas", serviceLabel: "Kuwait Visa", idField: "kuwait_id", countryFallback: "Kuwait" },
+  { table: "bmet_cards",  serviceLabel: "BMET Card",  idField: "bmet_id",  recvField: "received_amount", countryField: "country_name" },
+  { table: "saudi_visas", serviceLabel: "Saudi Visa", idField: "saudi_id", recvField: "received_amount", countryFallback: "Saudi Arabia" },
+  { table: "kuwait_visas", serviceLabel: "Kuwait Visa", idField: "kuwait_id", recvField: "received", countryFallback: "Kuwait" },
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
