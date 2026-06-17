@@ -514,7 +514,7 @@ export default function DashboardCharts({
 
       {/* Per-user received + Per-user entries + Top groups + Accounts methods */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="কে কত টাকা রিসিভ করেছে" subtitle="ক্যাশ — ইউজার অনুযায়ী · অন্যান্য মাধ্যম — MD" tint={CARD_TINTS[2]} className="h-64">
+        <ChartCard title="কে কত টাকা রিসিভ করেছে" subtitle="ক্যাশ — ইউজার অনুযায়ী · MD Cash · MD ( Bank, Bkash, etc)" tint={CARD_TINTS[2]} className="h-64">
           {userReceived.length === 0 ? <Empty loading={isLoading} text="এখনো কেউ টাকা রিসিভ করেনি" /> : (
             <RankList
               items={userReceived.map((u) => ({ label: u.name, value: u.amount, sub: `${u.count} টি` }))}

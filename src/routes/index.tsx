@@ -420,7 +420,8 @@ function DashboardPage() {
   // aggregated under "MD (অন্যান্য মাধ্যম)".
   const userReceived = useMemo(() => {
     const m = new Map<string, { amount: number; count: number }>();
-    let mdAmount = 0, mdCount = 0;
+    let mdCashAmount = 0, mdCashCount = 0;       // method === "Md cash"
+    let mdOtherAmount = 0, mdOtherCount = 0;     // bank / bKash / Nagad / cheque …
     filteredReceipts.forEach((r) => {
       const amt = Number(r.amount || 0);
       if (!amt) return;
@@ -430,14 +431,20 @@ function DashboardPage() {
         prev.amount += amt;
         prev.count += 1;
         m.set(name, prev);
+      } else if ((r.method ?? "").trim().toLowerCase() === "md cash") {
+        mdCashAmount += amt;
+        mdCashCount += 1;
       } else {
-        mdAmount += amt;
-        mdCount += 1;
+        mdOtherAmount += amt;
+        mdOtherCount += 1;
       }
     });
     const list = Array.from(m.entries()).map(([name, v]) => ({ name, amount: v.amount, count: v.count }));
-    if (mdAmount > 0) list.push({ name: "MD ( Bank, Bkash, etc)", amount: mdAmount, count: mdCount });
-    return list.sort((a, b) => b.amount - a.amount);
+    // Sort staff (cash) first, then append the two MD buckets at the bottom.
+    list.sort((a, b) => b.amount - a.amount);
+    if (mdCashAmount > 0) list.push({ name: "MD Cash", amount: mdCashAmount, count: mdCashCount });
+    if (mdOtherAmount > 0) list.push({ name: "MD ( Bank, Bkash, etc)", amount: mdOtherAmount, count: mdOtherCount });
+    return list;
   }, [filteredReceipts, profiles]);
 
   // === Accounts methods: hand cash vs each non-cash method (bank/bKash/…) ===
