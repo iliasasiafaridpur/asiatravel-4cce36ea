@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate } from "@/lib/modules";
@@ -490,6 +490,26 @@ function InvoicePage() {
           .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\], .invoice-print .text-\\[9px\\] { font-size: 10.5pt !important; }
         }
       `}</style>
+    </div>
+  );
+}
+
+/* ----------------------------- form helpers ----------------------------- */
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b pb-2 text-sm font-bold uppercase tracking-wide text-foreground">
+      <span className="text-primary">{icon}</span>
+      {title}
     </div>
   );
 }
