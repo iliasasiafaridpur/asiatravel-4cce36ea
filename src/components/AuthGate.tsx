@@ -50,6 +50,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // the entire tree and re-render — producing the "stuck on loading" bug.
   const [authReady, setAuthReady] = useState<boolean>(false);
   const [optimisticSession, setOptimisticSession] = useState<boolean>(false);
+  const [mustReset, setMustReset] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -61,12 +62,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
       if (!s?.user) return;
       try {
         const { data } = await supabase.from("profiles")
-          .select("is_active").eq("user_id", s.user.id).maybeSingle();
+          .select("is_active,must_reset_password").eq("user_id", s.user.id).maybeSingle();
         if (!active) return;
-        if (data && data.is_active === false) {
+        const row = data as { is_active?: boolean; must_reset_password?: boolean } | null;
+        if (row && row.is_active === false) {
           toast.error("আপনার অ্যাকাউন্ট এখনো Admin দ্বারা activate হয়নি");
           await supabase.auth.signOut();
+          return;
         }
+        setMustReset(!!row?.must_reset_password);
       } catch (err) {
         console.warn("profile check failed (non-blocking)", err);
       }
@@ -84,6 +88,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       setSession(s);
       setAuthReady(true);
       if (event === "SIGNED_IN") void checkActive(s);
+      if (event === "SIGNED_OUT") setMustReset(false);
     });
 
     return () => { active = false; subscription.unsubscribe(); };
@@ -94,8 +99,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) return <LoginScreen />;
+  if (mustReset) return <ForcePasswordChange onDone={() => setMustReset(false)} />;
   return <>{children}</>;
 }
+
 
 function LoginScreen() {
   return (
