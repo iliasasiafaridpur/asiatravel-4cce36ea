@@ -281,8 +281,11 @@ function MyHandoverPage() {
     [receipts, moneyServiceKeys]
   );
 
-  const buildReportHtml = () => {
+  const buildReportHtml = (acceptToken?: string) => {
     const money = (n: number) => `৳&nbsp;${(Number(n) || 0).toLocaleString()}`;
+    const acceptUrl = acceptToken
+      ? `https://asiatravel.lovable.app/api/public/handover-accept?t=${encodeURIComponent(acceptToken)}`
+      : "";
     const now = Date.now();
     const batchIds = new Set(receipts.map((r) => r.id));
     const cashReceipts = totalReceived;
