@@ -168,7 +168,6 @@ function InvoicePage() {
   ]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
-  const [notes, setNotes] = useState<string>("");
 
   const serviceModules = useMemo(
     () => MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key)),
