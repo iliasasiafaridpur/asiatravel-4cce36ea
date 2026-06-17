@@ -140,8 +140,10 @@ function UsersPage() {
                 <TableHead>পদবি</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Active</TableHead>
+                <TableHead className="text-center">Active</TableHead>
+                <TableHead className="text-right">পাসওয়ার্ড</TableHead>
               </TableRow>
+
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
