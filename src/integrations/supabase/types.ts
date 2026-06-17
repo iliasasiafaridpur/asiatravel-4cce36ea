@@ -845,6 +845,7 @@ export type Database = {
       passengers: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           notes: string | null
           passenger_id: string
@@ -855,6 +856,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           notes?: string | null
           passenger_id: string
@@ -865,6 +867,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           notes?: string | null
           passenger_id?: string
