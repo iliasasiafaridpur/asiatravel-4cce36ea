@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, Plane, User, IdCard, ReceiptText, WalletCards } from "lucide-react";
+import { Printer, Search, Plane, User, IdCard, ReceiptText, WalletCards, MapPin, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -366,9 +366,19 @@ function InvoicePage() {
             </div>
           </div>
           <div className="relative flex justify-between items-end text-white/85 mt-4 gap-4 border-t border-white/10 pt-3">
-            <div className="inv-contact space-y-0.5">
-              <p>{AGENCY.address}, Bangladesh</p>
-              <p>📞 {AGENCY.phone}</p>
+            <div className="inv-contact space-y-1.5">
+              <p className="flex items-center gap-2">
+                <span className="inv-ico h-6 w-6 rounded-lg bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-[#e7c98a]" />
+                </span>
+                <span>{AGENCY.address}, Bangladesh</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="inv-ico h-6 w-6 rounded-lg bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0">
+                  <Phone className="h-3.5 w-3.5 text-[#e7c98a]" />
+                </span>
+                <span>{AGENCY.phone}</span>
+              </p>
             </div>
             <div className="text-right">
               <p className="uppercase tracking-widest text-white/60 text-[9px]">Issue Date</p>
@@ -462,6 +472,8 @@ function InvoicePage() {
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 24pt; }
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
+        .invoice-print .inv-ico { height: 22pt; width: 22pt; }
+        .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
