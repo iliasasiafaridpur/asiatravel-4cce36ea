@@ -138,10 +138,12 @@ function DashboardPage() {
   useEffect(() => {
     const tables = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "payment_receipts", "cash_handovers", "cash_expenses", "agency_ledger", "vendor_ledger"];
     const refresh = () => {
+      // Skip refetch while the tab is hidden — it refetches on mount anyway.
+      if (typeof document !== "undefined" && document.hidden) return;
       if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = window.setTimeout(() => {
         qc.invalidateQueries({ queryKey: ["dashboard"] });
-      }, 300);
+      }, 1200);
     };
     const channel = tables.reduce(
       (ch, t) => ch.on("postgres_changes", { event: "*", schema: "public", table: t }, refresh),
@@ -204,6 +206,9 @@ function DashboardPage() {
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["dashboard", "profiles"],
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("user_id,full_name");
       return (data ?? []) as { user_id: string; full_name: string }[];
@@ -212,6 +217,8 @@ function DashboardPage() {
 
   const { data: cashTransfers = [] } = useQuery({
     queryKey: ["dashboard", "cash_handovers"],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("cash_handovers")
@@ -229,6 +236,8 @@ function DashboardPage() {
   // and for the Accounts Methods split (hand cash vs bank/bKash/etc).
   const { data: receipts = [] } = useQuery({
     queryKey: ["dashboard", "receipts"],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("payment_receipts")
@@ -248,6 +257,8 @@ function DashboardPage() {
   const { data: myBalance } = useQuery({
     queryKey: ["dashboard", "my_balance", user?.id],
     enabled: !!user?.id,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [recv, exp, hand] = await Promise.all([
@@ -282,6 +293,8 @@ function DashboardPage() {
   const { data: pendingHandoverCount = 0 } = useQuery({
     queryKey: ["dashboard", "pending_handovers"],
     enabled: isMd,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { count } = await supabase
@@ -295,6 +308,8 @@ function DashboardPage() {
   const { data: officeCashBalance = 0 } = useQuery({
     queryKey: ["dashboard", "office_cash_balance", isAdmin],
     enabled: isAdmin,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [receipts, handovers, expenses] = await Promise.all([
