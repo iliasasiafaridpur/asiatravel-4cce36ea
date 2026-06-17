@@ -440,6 +440,18 @@ function MyHandoverPage() {
     ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
     ${acceptUrl ? `<div class="note" style="font-size:10.5px;color:#777">✅ "টাকা পেলাম" বাটনে ক্লিক করলে সফটওয়্যারে রিকোয়েস্টটি গ্রহণ (approved) হয়ে যাবে</div>` : ""}
   </div>
+
+  <div style="margin-top:16px;padding:14px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12.5px;line-height:1.85;color:#374151">
+    <div style="font-weight:800;color:#065f46;margin-bottom:6px">🙏 প্রিয় মহোদয়,</div>
+    <div style="margin-bottom:8px">এই হিসাবটি আপনার কাছে স্বচ্ছভাবে উপস্থাপন করা হলো। টাকা বুঝে পাওয়ার পর অনুগ্রহ করে নিচের যেকোনো একটি উপায়ে নিশ্চিত করুন —</div>
+    <div style="margin-bottom:6px">✅ দ্রুত অনুমোদনের জন্য উপরের <b>"টাকা পেলাম"</b> বাটনে এক ক্লিক করুন।</div>
+    <div style="margin-bottom:6px">🔐 আরও বিস্তারিত দেখতে চাইলে <b>Travel Manager</b> সফটওয়্যারে আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে <a href="https://asiatravel.lovable.app/" target="_blank" rel="noopener" style="color:#059669;font-weight:700;text-decoration:underline">লগইন</a> করুন এবং সেখান থেকেই অনুমোদন করুন।</div>
+    <div style="margin-bottom:10px">📊 সফটওয়্যারে লগইন করলে আপনি আপনার প্রতিষ্ঠানের সকল আয়-ব্যয়, কর্মীদের জমা-খরচ ও সম্পূর্ণ ব্যবস্থাপনা যেকোনো সময়, যেকোনো জায়গা থেকে দেখতে ও পরিচালনা করতে পারবেন।</div>
+    <div style="text-align:center;margin-top:12px">
+      <a href="https://asiatravel.lovable.app/" target="_blank" rel="noopener" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 22px;border-radius:8px">🔐 Travel Manager — লগইন করুন</a>
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:#6b7280;text-align:right">— বিনীত, Travel Manager টিম</div>
+  </div>
 </div>
 </body></html>`;
   };
