@@ -147,8 +147,9 @@ function UsersPage() {
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো user নেই</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো user নেই</TableCell></TableRow>
               )}
+
               {rows.map((r) => (
                 <TableRow key={r.user_id}>
                   <TableCell className="font-medium">{r.full_name}</TableCell>
