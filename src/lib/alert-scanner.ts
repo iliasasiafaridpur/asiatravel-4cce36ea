@@ -77,17 +77,28 @@ function ageDays(r: Row): number {
 }
 
 async function scanTarget(t: Target) {
+  // Build a per-table column list — column names differ between tables
+  // (e.g. only bmet_cards has country_name; kuwait_visas uses `received`).
+  const cols = [
+    "id", t.idField, "passenger_name", "status", "sold_price",
+    t.recvField, "discount_amount", "delivery_date", "updated_at",
+    "entry_date", "vendor_bought", "cancelled",
+  ];
+  if (t.countryField) cols.push(t.countryField);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const q: any = supabase.from(t.table as any);
   const { data, error } = await q
-    .select(
-      `id, ${t.idField}, passenger_name, country_name, country_route, status, sold_price, received_amount, discount_amount, delivery_date, updated_at, entry_date, vendor_bought, cancelled`,
-    )
+    .select(cols.join(","))
     .in("status", ["Card Ready", "Pending Delivery"])
     .is("delivery_date", null)
     .neq("cancelled", true)
     .limit(500);
   if (error || !data) return;
+
+  // Normalize the received amount onto received_amount so due() works uniformly.
+  for (const r of data as Record<string, unknown>[]) {
+    if (t.recvField !== "received_amount") r.received_amount = r[t.recvField];
+  }
 
   // Batch-fetch latest receipt_id per service_row_id for these rows
   const rowIds = (data as Row[]).map((r) => r.id).filter(Boolean) as string[];
