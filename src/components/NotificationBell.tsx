@@ -219,7 +219,17 @@ export function NotificationBell() {
             </ul>
           )}
         </ScrollArea>
-        <div className="border-t border-border p-2 flex items-center gap-2 bg-muted/30">
+        <div className="border-t border-border p-2 bg-muted/30">
+          <Button
+            variant="outline" size="sm"
+            className="w-full h-8 text-xs mb-2"
+            disabled={prefetching}
+            onClick={runPrefetch}
+          >
+            <CloudDownload className={`h-3.5 w-3.5 mr-1 ${prefetching ? "animate-pulse" : ""}`} />
+            {prefetching ? "ডাউনলোড হচ্ছে…" : "একমাসের ডাটা সেভ করুন (অফলাইন)"}
+          </Button>
+          <div className="flex items-center gap-2">
           <Button
             variant="outline" size="sm"
             className="flex-1 h-8 text-xs"
