@@ -209,31 +209,7 @@ function MyHandoverPage() {
       setMdEmail((pick?.notify_email ?? "").trim());
       const recs = ((r.data ?? []) as unknown) as Receipt[];
 
-      const byTable: Record<string, Set<string>> = {};
-      for (const rec of recs) {
-        if (!rec.service_table || !rec.service_row_id) continue;
-        if (!(DISCOUNT_TABLES as readonly string[]).includes(rec.service_table)) continue;
-        byTable[rec.service_table] ??= new Set();
-        byTable[rec.service_table].add(rec.service_row_id);
-      }
-      const discMap: Record<string, number> = {};
-      await Promise.all(
-        Object.entries(byTable).map(async ([tbl, ids]) => {
-          const { data } = await supabase
-            .from(tbl as never)
-            .select("id,discount_amount")
-            .in("id", Array.from(ids));
-          for (const row of (data ?? []) as Array<{ id: string; discount_amount: number | null }>) {
-            discMap[`${tbl}:${row.id}`] = Number(row.discount_amount ?? 0);
-          }
-        })
-      );
-      for (const rec of recs) {
-        const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
-        rec.discount = k ? (discMap[k] ?? 0) : 0;
-      }
-
-      // Enrich each receipt with service/route info from its underlying service row.
+      // Enrich each receipt with full service/financial info from its underlying service row.
       const svcByTable: Record<string, Set<string>> = {};
       for (const rec of recs) {
         if (!rec.service_table || !rec.service_row_id) continue;
@@ -257,7 +233,30 @@ function MyHandoverPage() {
       for (const rec of recs) {
         const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
         rec.svc = k ? svcMap[k] : undefined;
+        rec.discount = rec.svc?.discount ?? 0;
       }
+
+      // Load ALL receipts for each service row so we can show পূর্বের জমা / বাকি (paid history).
+      const byService: Record<string, Receipt[]> = {};
+      const entries = Object.entries(svcByTable);
+      if (entries.length > 0) {
+        await Promise.all(
+          entries.map(async ([tbl, ids]) => {
+            const { data } = await supabase
+              .from("payment_receipts")
+              .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
+              .eq("service_table", tbl)
+              .in("service_row_id", Array.from(ids))
+              .not("source", "eq", "discount");
+            for (const row of ((data ?? []) as unknown as Receipt[])) {
+              if (!row.service_table || !row.service_row_id) continue;
+              (byService[`${row.service_table}:${row.service_row_id}`] ??= []).push(row);
+            }
+          })
+        );
+      }
+      setRecByService(byService);
+
 
       setReceipts(recs);
       setExpenses(((e.data ?? []) as unknown) as Expense[]);
