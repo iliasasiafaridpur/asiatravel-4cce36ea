@@ -286,8 +286,10 @@ function MyHandoverPage() {
     const cashReceipts = totalReceived;
     const mdReceipts = totalMdReceived;
 
-    const incomeRows = visibleReceipts
-      .map((r, i) => {
+    // Each receipt is rendered as a STACKED CARD (mobile-safe) instead of a
+    // wide multi-column table, so nothing gets cut off on a phone screen.
+    const incomeCards = visibleReceipts
+      .map((r) => {
         const info = r.svc ?? {};
         const sk = serviceKey(r);
         const allForSvc = sk ? (recByService[sk] ?? []) : [];
@@ -303,71 +305,61 @@ function MyHandoverPage() {
         const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
         const statusEvt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
-        const tint = i % 2 === 0 ? "#0f1a30" : "#13203a";
 
-        // সার্ভিস column
-        const svcLines = [
-          `<div style="font-weight:600">${r.service_type ?? ""}</div>`,
-          info.service_name ? `<div class="muted">${info.service_name}</div>` : "",
-          info.country ? `<div class="muted">${info.country}</div>` : "",
-          info.airline ? `<div class="muted">${info.airline}${info.flight_date ? ` · ${formatDate(info.flight_date)}` : ""}</div>` : "",
-        ].join("");
+        // service description lines
+        const svcBits = [
+          info.service_name || r.service_type || "",
+          info.country || "",
+          info.airline ? `${info.airline}${info.flight_date ? ` · ${formatDate(info.flight_date)}` : ""}` : "",
+          info.route || "",
+        ].filter(Boolean);
+        const svcText = svcBits.join(" · ");
 
-        // মোট বিল column
-        let billCell = `<span class="muted">—</span>`;
+        // key-value rows (label : value) — each on its own line, full width
+        const rows: string[] = [];
+        if (svcText) rows.push(`<tr><td class="k">সার্ভিস</td><td class="v">${svcText}</td></tr>`);
         if (bill > 0) {
-          billCell = `<div style="font-weight:700">${money(bill)}</div>`;
-          if (discount > 0) billCell += `<div class="in" style="font-size:12px">${money(discount)} (ডিসকাউন্ট)</div>`;
-          billCell += due > 0.005
-            ? `<div class="due" style="font-size:12px">বাকি: ${money(due)}</div>`
-            : `<div class="in" style="font-size:12px">✓ পরিশোধিত</div>`;
+          let billVal = `<b>${money(bill)}</b>`;
+          if (discount > 0) billVal += ` <span class="in" style="font-size:12px">(− ${money(discount)} ডিসকাউন্ট)</span>`;
+          rows.push(`<tr><td class="k">মোট বিল</td><td class="v">${billVal}</td></tr>`);
         }
         if (info.vendor) {
-          billCell += `<div class="muted" style="font-size:12px">V: ${info.vendor}${Number(info.vendor_price ?? 0) > 0 ? `-${Math.round(Number(info.vendor_price)).toLocaleString()}/` : ""}</div>`;
+          rows.push(`<tr><td class="k">ভেন্ডর</td><td class="v muted">${info.vendor}${Number(info.vendor_price ?? 0) > 0 ? ` · ${Math.round(Number(info.vendor_price)).toLocaleString()}` : ""}</td></tr>`);
         }
-
-        // পূর্বের জমা
-        const prevCell = previousPaid > 0
-          ? `<div class="sky" style="font-weight:600">${money(previousPaid)}</div>${lastPast ? `<div class="sky" style="font-size:12px">${formatDate(lastPast.entry_date)}${past.length > 1 ? ` +${past.length - 1}` : ""}</div>` : ""}`
-          : `<span class="muted">— নতুন —</span>`;
-
-        // এই বারের জমা
-        const thisCell = statusEvt
-          ? `<div class="violet" style="font-weight:600">📦 ${cleanStatusText(r.remarks)}</div>`
-          : `<b class="${mdRecv ? "sky" : "in"}">${money(r.amount || 0)}</b>${mdRecv ? `<div class="sky" style="font-size:12px;font-weight:600">MD · ${r.method}</div>` : ""}`;
-
-        // বাকি (after this)
-        let dueCell = `<span class="muted">—</span>`;
+        if (previousPaid > 0) {
+          rows.push(`<tr><td class="k">পূর্বের জমা</td><td class="v"><span class="sky" style="font-weight:600">${money(previousPaid)}</span>${lastPast ? ` <span class="sky" style="font-size:12px">(${formatDate(lastPast.entry_date)}${past.length > 1 ? ` +${past.length - 1}` : ""})</span>` : ""}</td></tr>`);
+        }
+        const thisVal = statusEvt
+          ? `<span class="violet" style="font-weight:700">📦 ${cleanStatusText(r.remarks)}</span>`
+          : `<b class="${mdRecv ? "sky" : "in"}" style="font-size:16px">${money(r.amount || 0)}</b>${mdRecv ? ` <span class="sky" style="font-size:12px">(MD · ${r.method})</span>` : ""}`;
+        rows.push(`<tr><td class="k">এই বারের জমা</td><td class="v">${thisVal}</td></tr>`);
         if (bill > 0) {
-          dueCell = dueAfterThis <= 0.005
-            ? `<span class="in" style="font-size:18px">✓</span>`
+          const dueVal = dueAfterThis <= 0.005
+            ? `<span class="in" style="font-weight:700">✓ পরিশোধিত</span>`
             : `<span class="due" style="font-weight:800">${money(dueAfterThis)}</span>`;
+          rows.push(`<tr><td class="k">বাকি</td><td class="v">${dueVal}</td></tr>`);
         }
 
-        return `<tr style="background:${tint}">
-  <td>
-    <div style="font-weight:600">${formatDate(r.entry_date)}</div>
-    ${r.receipt_id ? `<div class="muted mono">${r.receipt_id}</div>` : ""}
-  </td>
-  <td>
-    <div style="font-weight:700">${r.passenger_name || "—"}</div>
-    <div class="muted">A: ${info.agent || "Self"}${info.passport ? ` · ${info.passport}` : ""}</div>
-  </td>
-  <td>${svcLines}</td>
-  <td class="r">${billCell}</td>
-  <td class="r">${prevCell}</td>
-  <td class="r">${thisCell}</td>
-  <td class="r">${dueCell}</td>
-</tr>`;
+        return `<div class="item">
+  <div class="ihead">
+    <span class="iname">${r.passenger_name || "—"}</span>
+    <span class="idate">${formatDate(r.entry_date)}${r.receipt_id ? ` · <span class="mono">${r.receipt_id}</span>` : ""}</span>
+  </div>
+  <div class="isub">A: ${info.agent || "Self"}${info.passport ? ` · ${info.passport}` : ""}</div>
+  <table class="kv"><tbody>${rows.join("")}</tbody></table>
+</div>`;
       })
       .join("");
 
-    const expenseRows = expenses
-      .map((e, i) => `<tr style="background:${i % 2 === 0 ? "#0f1a30" : "#13203a"}">
-  <td>${formatDate(e.entry_date)}</td>
-  <td><div style="font-weight:600">${e.category || "—"}</div>${e.purpose ? `<div class="muted">${e.purpose}</div>` : ""}</td>
-  <td class="r"><b class="out">− ${money(e.amount || 0)}</b></td>
-</tr>`)
+    const expenseCards = expenses
+      .map((e) => `<div class="item out-item">
+  <div class="ihead">
+    <span class="iname">${e.category || "—"}</span>
+    <span class="idate">${formatDate(e.entry_date)}</span>
+  </div>
+  ${e.purpose ? `<div class="isub">${e.purpose}</div>` : ""}
+  <table class="kv"><tbody><tr><td class="k">খরচ</td><td class="v"><b class="out" style="font-size:16px">− ${money(e.amount || 0)}</b></td></tr></tbody></table>
+</div>`)
       .join("");
 
     const headTime = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -376,29 +368,38 @@ function MyHandoverPage() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:16px;background:#0a1124;color:#e2e8f0;font-size:15px;-webkit-text-size-adjust:100%}
-  .wrap{max-width:760px;margin:0 auto}
+  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:14px;background:#0a1124;color:#e2e8f0;font-size:15px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:560px;margin:0 auto}
   .brand{text-align:center;margin-bottom:14px}
   .brand h1{margin:0;font-size:20px;font-weight:800;color:#5eead4;letter-spacing:.2px}
   .brand p{margin:4px 0 0;font-size:13px;color:#94a3b8}
-  .card{border:1px solid #24324d;border-left:6px solid #2dd4bf;border-radius:14px;overflow:hidden;background:#0e1830;box-shadow:0 8px 26px -8px rgba(0,0,0,.6)}
-  .head{background:#16223d;padding:14px 16px;border-bottom:1px solid #24324d}
-  .badge{display:inline-block;background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
-  .hmeta{margin-top:8px;font-size:13px;color:#cbd5e1;line-height:1.7}
+  .card{border:1px solid #24324d;border-radius:14px;overflow:hidden;background:#0e1830;box-shadow:0 8px 26px -8px rgba(0,0,0,.6)}
+  .head{background:#16223d;padding:16px;border-bottom:1px solid #24324d}
+  .badge{display:inline-block;background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700}
+  .hamt{display:block;text-align:right;font-size:26px;font-weight:800;color:#5eead4;margin-bottom:8px}
+  .hmeta{margin-top:10px;font-size:14px;color:#cbd5e1;line-height:1.9}
   .hmeta b{color:#f1f5f9}
-  .hamt{float:right;font-size:20px;font-weight:800;color:#5eead4}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  thead th{background:#16223d;color:#cbd5e1;text-align:left;padding:9px 10px;font-size:13px;font-weight:700;border-bottom:2px solid #24324d}
-  thead th.r{text-align:right}
-  td{padding:9px 10px;border-top:1px solid #1d2a44;vertical-align:top;line-height:1.5}
-  td.r{text-align:right;white-space:nowrap}
-  .muted{color:#8da2bd;font-size:13px}
+  .sec{padding:14px 16px 4px;font-size:14px;font-weight:700;color:#cbd5e1;display:flex;justify-content:space-between;align-items:baseline}
+  .sec .amt{font-size:13px;color:#94a3b8}
+  .body{padding:6px 12px 12px}
+  .item{border:1px solid #1d2a44;border-left:5px solid #2dd4bf;border-radius:10px;background:#0f1a30;padding:12px 14px;margin:10px 0}
+  .out-item{border-left-color:#fbbf24}
+  .ihead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .iname{font-weight:800;font-size:16px;color:#f1f5f9}
+  .idate{font-size:12px;color:#8da2bd;white-space:nowrap}
+  .isub{font-size:13px;color:#8da2bd;margin-top:3px}
+  table.kv{width:100%;border-collapse:collapse;margin-top:10px}
+  table.kv td{padding:6px 0;border-top:1px solid #1d2a44;vertical-align:top;line-height:1.5}
+  table.kv td.k{color:#8da2bd;font-size:13px;width:38%;white-space:nowrap}
+  table.kv td.v{text-align:right;font-size:14px}
+  table.kv tr:first-child td{border-top:none}
   .mono{font-family:'Courier New',monospace}
   .in{color:#34d399}.out{color:#fbbf24}.due{color:#fb7185}.sky{color:#38bdf8}.violet{color:#c4b5fd}
-  tfoot td{background:#16223d;font-weight:700;border-top:2px solid #24324d;padding:11px 10px}
-  .secbar{padding:10px 16px;background:rgba(251,113,133,.10);color:#fca5a5;font-weight:700;font-size:13px;display:flex;justify-content:space-between}
-  .foot{background:#16223d;padding:14px 16px;border-top:1px solid #24324d;font-size:14px;line-height:1.8}
+  .muted{color:#8da2bd}
+  .empty{padding:18px;text-align:center;color:#8da2bd}
+  .foot{background:#16223d;padding:16px;border-top:1px solid #24324d;font-size:14px;line-height:1.9}
   .foot b{color:#f1f5f9}
+  .totalrow{display:flex;justify-content:space-between;padding:4px 0}
   .note{margin-top:10px;font-size:13px;color:#94a3b8}
 </style></head><body>
 <div class="wrap">
@@ -412,28 +413,23 @@ function MyHandoverPage() {
       <span class="badge">⏳ এমডিকে পাঠানো হয়েছে — অপেক্ষমান</span>
       <div class="hmeta">
         📅 তারিখ: <b>${formatDate(closingDate)}</b> · সময়: <b>${headTime}</b><br>
-        👤 প্রেরক: <b>${displayName(profile, user)}</b> &nbsp;·&nbsp; 👥 গ্রহীতা: <b>Kaium Khan (MD)</b>
+        👤 প্রেরক: <b>${displayName(profile, user)}</b><br>
+        👥 গ্রহীতা: <b>Kaium Khan (MD)</b>
       </div>
     </div>
-    ${incomeRows ? `<table>
-      <thead><tr>
-        <th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
-        <th class="r">মোট বিল</th><th class="r">পূর্বের জমা</th><th class="r">এই বারের জমা</th><th class="r">বাকি</th>
-      </tr></thead>
-      <tbody>${incomeRows}</tbody>
-      <tfoot><tr>
-        <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
-        <td colspan="2" class="r"><span class="in">নগদ: ${money(cashReceipts)}</span>${mdReceipts > 0 ? `<div class="sky" style="font-size:12px">MD: ${money(mdReceipts)}</div>` : ""}</td>
-      </tr></tfoot>
-    </table>` : `<div style="padding:18px;text-align:center;color:#8da2bd">কোনো passenger receipt নেই</div>`}
-    ${expenseRows ? `<div class="secbar"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span>মোট খরচ: ${money(totalExpense)}</span></div>
-    <table>
-      <thead><tr><th>তারিখ</th><th>খাত / উদ্দেশ্য</th><th class="r">টাকা</th></tr></thead>
-      <tbody>${expenseRows}</tbody>
-    </table>` : ""}
+
+    <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}</span></div>
+    <div class="body">${incomeCards || `<div class="empty">কোনো passenger receipt নেই</div>`}</div>
+
+    ${expenseCards ? `<div class="sec"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span class="amt">মোট: ${money(totalExpense)}</span></div>
+    <div class="body">${expenseCards}</div>` : ""}
+
     <div class="foot">
-      মোট ${visibleReceipts.length} আইটেম থেকে আয় — <span class="in">নগদ ${money(cashReceipts)}</span>${mdReceipts > 0 ? ` · <span class="sky">MD ${money(mdReceipts)}</span>` : ""}${totalExpense > 0 ? ` · <span class="out">খরচ ${money(totalExpense)}</span>` : ""} · <span class="${variance >= 0 ? "in" : "out"}">Variance ${variance >= 0 ? "+" : ""}${money(variance)}</span><br>
-      👤 প্রেরক: <b>${displayName(profile, user)}</b> &nbsp;·&nbsp; 👥 গ্রহীতা: <b>Kaium Khan (MD)</b> &nbsp;·&nbsp; জমা: <b style="color:#5eead4">${money(declared)}</b>
+      <div class="totalrow"><span class="muted">নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
+      ${mdReceipts > 0 ? `<div class="totalrow"><span class="muted">MD রিসিভ</span><b class="sky">${money(mdReceipts)}</b></div>` : ""}
+      ${totalExpense > 0 ? `<div class="totalrow"><span class="muted">খরচ</span><b class="out">− ${money(totalExpense)}</b></div>` : ""}
+      <div class="totalrow"><span class="muted">জমা (Declared)</span><b style="color:#5eead4">${money(declared)}</b></div>
+      <div class="totalrow"><span class="muted">Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
       ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
     </div>
   </div>
