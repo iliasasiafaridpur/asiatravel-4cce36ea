@@ -95,8 +95,11 @@ export function useCurrentUser(): CurrentUser {
   const qc = useQueryClient();
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel(`profile-self-${user.id}`)
+    // Unique channel name per mount avoids "cannot add postgres_changes
+    // callbacks after subscribe()" when StrictMode re-runs the effect and a
+    // same-named channel instance is still being torn down.
+    const channel = supabase.channel(`profile-self-${user.id}-${Math.random().toString(36).slice(2)}`);
+    channel
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
