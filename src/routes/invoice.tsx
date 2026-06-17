@@ -47,7 +47,6 @@ interface InvoiceItem {
   refNo?: string; // MOFA / Visa No / reference
   detail?: string;
   date?: string;
-  qty: number;
   rate: number;
 }
 
@@ -74,7 +73,6 @@ const blankItem = (type = "tickets"): InvoiceItem => ({
   uid: genUid(),
   type,
   serviceLabel: type === "manual" ? "" : serviceLabelFor(type),
-  qty: 1,
   rate: 0,
 });
 
@@ -94,7 +92,6 @@ function buildItemFromEntry(e: ServiceEntry): InvoiceItem {
     serviceLabel: e.module,
     detail: e.id,
     date: e.date,
-    qty: 1,
     rate: e.amount || 0,
   };
   switch (e.moduleKey) {
@@ -238,7 +235,7 @@ function InvoicePage() {
     setSearch("");
   };
 
-  const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
+  const subtotal = items.reduce((s, i) => s + i.rate, 0);
   const grandTotal = Math.max(0, subtotal - discount);
   const due = Math.max(0, grandTotal - received);
 
@@ -333,8 +330,7 @@ function InvoicePage() {
             <section className="space-y-3">
               <SectionTitle icon={<WalletCards className="h-4 w-4" />} title="Amount" />
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Quantity"><Input type="number" value={item.qty || ""} placeholder="0" onChange={(e) => setItem({ qty: Number(e.target.value) || 0 })} /></Field>
-                <Field label="Rate"><Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} /></Field>
+                <Field label="Price"><Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} /></Field>
                 <Field label="Discount"><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} /></Field>
                 <Field label="Received"><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} /></Field>
               </div>
@@ -404,14 +400,12 @@ function InvoicePage() {
                 <tr className="bg-[#0b2545] text-white">
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider w-8">#</th>
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider">Service Details</th>
-                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Qty</th>
-                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Rate</th>
-                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Amount</th>
+                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Price</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs">No items added yet</td></tr>
+                  <tr><td colSpan={3} className="p-8 text-center text-slate-400 text-xs">No items added yet</td></tr>
                 )}
                 {items.map((it, idx) => (
                   <tr key={it.uid} className="border-t border-slate-100 align-top odd:bg-white even:bg-slate-50/60">
@@ -422,9 +416,7 @@ function InvoicePage() {
                       </div>
                       <ItemDetail it={it} />
                     </td>
-                    <td className="p-3 text-right tabular-nums">{it.qty}</td>
-                    <td className="p-3 text-right tabular-nums">{it.rate.toLocaleString()}</td>
-                    <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{(it.qty * it.rate).toLocaleString()}</td>
+                    <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{it.rate.toLocaleString()}৳</td>
                   </tr>
                 ))}
               </tbody>
