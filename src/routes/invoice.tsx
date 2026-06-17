@@ -128,7 +128,6 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
   } else if (it.type === "bmet") {
     if (it.country) rows.push({ label: "Country", value: it.country });
-    if (it.date) rows.push({ label: "Date", value: formatDate(it.date) });
   } else if (it.type === "saudi-visa") {
     if (it.visaType) rows.push({ label: "Visa Type", value: it.visaType });
     if (it.sponsor) rows.push({ label: "Sponsor", value: it.sponsor });
@@ -141,7 +140,7 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
     if (it.airline) rows.push({ label: "Airlines", value: it.airline });
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
   }
-  if (it.detail) rows.push({ label: "Ref", value: it.detail });
+  
 
   if (rows.length === 0) return null;
   return (
@@ -246,9 +245,6 @@ function InvoicePage() {
           <h1 className="text-2xl sm:text-3xl font-bold">Invoice</h1>
           <p className="text-sm text-muted-foreground">সার্ভিস বাছাই করুন — ম্যানুয়ালি লিখুন বা সার্চ করে এন্ট্রি যোগ করুন</p>
         </div>
-        <Button onClick={() => window.print()} className="gap-2">
-          <Printer className="h-4 w-4" /> Print / PDF
-        </Button>
       </div>
 
       <Card className="print:hidden overflow-hidden border-primary/20">
@@ -344,9 +340,14 @@ function InvoicePage() {
       </Card>
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
+      <div className="flex justify-end print:hidden">
+        <Button onClick={() => window.print()} className="gap-2">
+          <Printer className="h-4 w-4" /> Print / PDF
+        </Button>
+      </div>
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
         {/* top banner */}
-        <div className="inv-banner relative bg-gradient-to-br from-[#0b2545] via-[#13315c] to-[#1d3b6b] text-white px-8 sm:px-10 py-7 overflow-hidden">
+        <div className="inv-banner relative bg-gradient-to-br from-[#3f5f92] via-[#496a9d] to-[#5274a8] text-white px-8 sm:px-10 py-7 overflow-hidden">
           <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-[#c8a45c]/20 blur-2xl" />
           <div className="absolute right-24 -bottom-20 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
@@ -364,13 +365,13 @@ function InvoicePage() {
               <p className="font-mono text-xs mt-1.5 text-white/80">{invoiceNo}</p>
             </div>
           </div>
-          <div className="relative flex justify-between items-end text-[11px] text-white/70 mt-4 gap-4 border-t border-white/10 pt-3">
-            <div className="space-y-0.5">
-              <p>{AGENCY.address}</p>
+          <div className="relative flex justify-between items-end text-white/85 mt-4 gap-4 border-t border-white/10 pt-3">
+            <div className="inv-contact space-y-0.5">
+              <p>{AGENCY.address}, Bangladesh</p>
               <p>📞 {AGENCY.phone}</p>
             </div>
             <div className="text-right">
-              <p className="uppercase tracking-widest text-white/50 text-[9px]">Issue Date</p>
+              <p className="uppercase tracking-widest text-white/60 text-[9px]">Issue Date</p>
               <p className="font-semibold text-white/90 text-xs">{formatDate(invoiceDate)}</p>
             </div>
           </div>
@@ -397,7 +398,7 @@ function InvoicePage() {
           <div className="mt-6 rounded-xl overflow-hidden border border-slate-200 ring-1 ring-slate-100">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#0b2545] text-white">
+                <tr className="bg-[#496a9d] text-white">
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider w-8">#</th>
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider">Service Details</th>
                   <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Price</th>
@@ -411,9 +412,15 @@ function InvoicePage() {
                   <tr key={it.uid} className="border-t border-slate-100 align-top odd:bg-white even:bg-slate-50/60">
                     <td className="p-3 text-slate-400 tabular-nums">{idx + 1}</td>
                     <td className="p-3">
-                      <div className="font-bold text-[#0b2545] uppercase tracking-wide text-sm">
+                      <div className="font-bold text-[#1d3b6b] uppercase tracking-wide text-sm">
                         {(it.serviceLabel || "—").toUpperCase()}
                       </div>
+                      {it.detail && (
+                        <div className="mt-0.5 text-xs text-slate-600">
+                          <span className="text-slate-400">Ref:</span>{" "}
+                          <span className="font-medium text-slate-700">{it.detail}</span>
+                        </div>
+                      )}
                       <ItemDetail it={it} />
                     </td>
                     <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{it.rate.toLocaleString()}৳</td>
@@ -428,7 +435,7 @@ function InvoicePage() {
             <div className="w-full sm:w-80 rounded-xl border border-slate-200 p-4 space-y-2.5 bg-white">
               <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="tabular-nums font-medium">{subtotal.toLocaleString()}৳</span></div>
               {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-500">Discount</span><span className="tabular-nums text-[#b91c1c] font-medium">- {discount.toLocaleString()}৳</span></div>)}
-              <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#1d3b6b] text-white px-4 py-3 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center bg-gradient-to-r from-[#496a9d] to-[#5274a8] text-white px-4 py-3 rounded-lg shadow-sm">
                 <span className="text-[11px] uppercase tracking-widest font-semibold">Grand Total</span>
                 <span className="text-xl font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
               </div>
@@ -454,6 +461,7 @@ function InvoicePage() {
         .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 13pt; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 24pt; }
+        .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
