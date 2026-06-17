@@ -243,8 +243,8 @@ function InvoicePage() {
       </div>
 
       <Card className="print:hidden">
-        <CardContent className="p-3 sm:p-4 space-y-3">
-          {/* top row: two bordered boxes — left: invoice no/date, right: module/search */}
+        <CardContent className="p-3 sm:p-4 space-y-4">
+          {/* row 1 — invoice meta (left) + service & search (right) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-3">
               <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
@@ -252,72 +252,58 @@ function InvoicePage() {
             </div>
             <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-2 gap-3">
               <div>
-                <Label className="flex items-center gap-1"><Search className="h-3.5 w-3.5" /> Module</Label>
-                <Select value={moduleFilter} onValueChange={setModuleFilter}>
-                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="সব মডিউল" /></SelectTrigger>
+                <Label className="flex items-center gap-1"><IdCard className="h-3.5 w-3.5" /> Service</Label>
+                <Select value={item.type} onValueChange={(v) => { setItem({ type: v }); setSearch(""); }}>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="সার্ভিস বাছাই করুন" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">সব মডিউল</SelectItem>
-                    {serviceModules.map((m) => (
-                      <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
-                    ))}
+                    {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Search</Label>
+                <Label className="flex items-center gap-1"><Search className="h-3.5 w-3.5" /> Search</Label>
                 <div className="relative mt-1.5">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                    placeholder="ID / নাম / পাসপোর্ট / মোবাইল..." className="pl-8" />
+                    disabled={item.type === "manual"}
+                    placeholder={item.type === "manual" ? "ম্যানুয়াল এন্ট্রি" : "ID / নাম / পাসপোর্ট / মোবাইল..."}
+                    className="pl-8" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* module search results */}
-          <div className="space-y-2">
-            {moduleFilter !== "all" && filtered.length === 0 && !search && (
-              <p className="text-xs text-muted-foreground">এই মডিউলে কোনো এন্ট্রি নেই</p>
-            )}
-            {filtered.length > 0 && (
-              <ul className="max-h-64 overflow-auto rounded-md border divide-y divide-border">
-                {filtered.map((e) => (
-                  <li key={e.moduleKey + e.id} className="flex items-center justify-between gap-2 p-2.5 hover:bg-accent">
-                    <div className="text-sm min-w-0 flex-1">
-                      <div className="font-medium truncate flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        {e.passenger}
-                        {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate mt-0.5">
-                        <span className="font-mono">{e.id}</span> · {e.module}
-                        {e.mobile ? ` · ${e.mobile}` : ""}
-                        {e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
-                      </div>
+          {/* existing-entry results — load full info with one click */}
+          {item.type !== "manual" && search.trim() && filtered.length === 0 && (
+            <p className="text-xs text-muted-foreground">কোনো এন্ট্রি পাওয়া যায়নি</p>
+          )}
+          {filtered.length > 0 && (
+            <ul className="max-h-64 overflow-auto rounded-md border divide-y divide-border">
+              {filtered.map((e) => (
+                <li key={e.moduleKey + e.id} className="flex items-center justify-between gap-2 p-2.5 hover:bg-accent">
+                  <div className="text-sm min-w-0 flex-1">
+                    <div className="font-medium truncate flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {e.passenger}
+                      {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
                     </div>
-                    <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={() => loadEntry(e)}>
-                      <Plus className="h-3.5 w-3.5" /> Add
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      <span className="font-mono">{e.id}</span> · {e.module}
+                      {e.mobile ? ` · ${e.mobile}` : ""}
+                      {e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={() => loadEntry(e)}>
+                    <Plus className="h-3.5 w-3.5" /> Add
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
 
-          {/* service select — all module names */}
-          <div>
-            <Label className="flex items-center gap-1"><IdCard className="h-3.5 w-3.5" /> Service Select</Label>
-            <Select value={item.type} onValueChange={(v) => setItem({ type: v })}>
-              <SelectTrigger className="mt-1.5"><SelectValue placeholder="-- সার্ভিস বাছাই করুন --" /></SelectTrigger>
-              <SelectContent>
-                {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* passenger info — common for all services */}
-          <div className="space-y-2 pt-1">
-            <div className="text-xs font-semibold text-muted-foreground">Passenger Information (সকল সার্ভিসে কমন)</div>
+          {/* passenger info — common for every service */}
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><User className="h-3.5 w-3.5" /> Passenger Information</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
               <Input placeholder="Passport No" value={bill.passport} onChange={(e) => setBill({ ...bill, passport: e.target.value })} />
@@ -325,34 +311,30 @@ function InvoicePage() {
             </div>
           </div>
 
-          {/* service-specific fields (e.g. Air Ticket → Trip Road, Airlines, Flight Date) */}
-          <div className="pt-1">
+          {/* service details — fields adapt to the selected service */}
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><IdCard className="h-3.5 w-3.5" /> Service Details</div>
             <ItemFields it={item} onChange={setItem} />
-            <div className="grid grid-cols-12 gap-2 items-end pt-2">
-              <div className="col-span-6 sm:col-span-3">
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <div>
                 <Label className="text-xs">Date</Label>
                 <DateInput value={item.date ?? ""} onChange={(e) => setItem({ date: e.target.value })} />
               </div>
-              <div className="col-span-3 sm:col-span-2">
+              <div>
                 <Label className="text-xs">Qty</Label>
                 <Input type="number" value={item.qty || ""} placeholder="0" onChange={(e) => setItem({ qty: Number(e.target.value) || 0 })} />
               </div>
-              <div className="col-span-3 sm:col-span-2">
+              <div>
                 <Label className="text-xs">Rate</Label>
                 <Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} />
-              </div>
-              <div className="col-span-12 sm:col-span-5">
-                <Label className="text-xs">Note (optional)</Label>
-                <Input value={item.detail ?? ""} onChange={(e) => setItem({ detail: e.target.value })} placeholder="optional" />
               </div>
             </div>
           </div>
 
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          {/* payment */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
             <div><Label>Discount</Label><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} className="mt-1.5" /></div>
             <div><Label>Received</Label><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} className="mt-1.5" /></div>
-            <div><Label>Notes</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional remarks" className="mt-1.5" /></div>
           </div>
         </CardContent>
       </Card>
