@@ -308,6 +308,8 @@ function DashboardPage() {
   const { data: officeCashBalance = 0 } = useQuery({
     queryKey: ["dashboard", "office_cash_balance", isAdmin],
     enabled: isAdmin,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [receipts, handovers, expenses] = await Promise.all([
