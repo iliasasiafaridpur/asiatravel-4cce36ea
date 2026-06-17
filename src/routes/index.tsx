@@ -217,6 +217,8 @@ function DashboardPage() {
 
   const { data: cashTransfers = [] } = useQuery({
     queryKey: ["dashboard", "cash_handovers"],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("cash_handovers")
