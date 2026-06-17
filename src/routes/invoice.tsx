@@ -47,7 +47,6 @@ interface InvoiceItem {
   refNo?: string; // MOFA / Visa No / reference
   detail?: string;
   date?: string;
-  qty: number;
   rate: number;
 }
 
