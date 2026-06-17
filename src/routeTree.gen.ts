@@ -28,6 +28,7 @@ import { Route as ActionBoardRouteImport } from './routes/action-board'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as AccountingRouteImport } from './routes/accounting'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHandoverAcceptRouteImport } from './routes/api/public/handover-accept'
 
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
@@ -124,6 +125,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHandoverAcceptRoute = ApiPublicHandoverAcceptRouteImport.update({
+  id: '/api/public/handover-accept',
+  path: '/api/public/handover-accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof UsersRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
+  '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/users': typeof UsersRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
+  '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/users': typeof UsersRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
+  '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/vendor-ledger'
     | '/vendors'
+    | '/api/public/handover-accept'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/vendor-ledger'
     | '/vendors'
+    | '/api/public/handover-accept'
   id:
     | '__root__'
     | '/'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/vendor-ledger'
     | '/vendors'
+    | '/api/public/handover-accept'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   UsersRoute: typeof UsersRoute
   VendorLedgerRoute: typeof VendorLedgerRoute
   VendorsRoute: typeof VendorsRoute
+  ApiPublicHandoverAcceptRoute: typeof ApiPublicHandoverAcceptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -412,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/handover-accept': {
+      id: '/api/public/handover-accept'
+      path: '/api/public/handover-accept'
+      fullPath: '/api/public/handover-accept'
+      preLoaderRoute: typeof ApiPublicHandoverAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -435,6 +455,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsersRoute: UsersRoute,
   VendorLedgerRoute: VendorLedgerRoute,
   VendorsRoute: VendorsRoute,
+  ApiPublicHandoverAcceptRoute: ApiPublicHandoverAcceptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
