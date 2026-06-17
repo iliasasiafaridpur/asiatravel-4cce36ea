@@ -293,6 +293,8 @@ function DashboardPage() {
   const { data: pendingHandoverCount = 0 } = useQuery({
     queryKey: ["dashboard", "pending_handovers"],
     enabled: isMd,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { count } = await supabase
