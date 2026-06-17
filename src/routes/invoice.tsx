@@ -301,16 +301,16 @@ function InvoicePage() {
             )}
           </div>
 
-          {/* passenger info */}
+          {/* passenger info — common for all services */}
           <div className="space-y-2 pt-2">
-            <div className="text-xs font-semibold text-muted-foreground">Passenger Info</div>
-            <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="text-xs font-semibold text-muted-foreground">Passenger Info (সকল সার্ভিসে কমন)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
               <Input placeholder="Passport No" value={bill.passport} onChange={(e) => setBill({ ...bill, passport: e.target.value })} />
-              <Input placeholder="Nationality" value={bill.nationality} onChange={(e) => setBill({ ...bill, nationality: e.target.value })} />
+              <Input placeholder="Mobile" value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} />
             </div>
-            <Input placeholder="Mobile" value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} />
           </div>
+
 
           {/* items */}
           <div className="pt-2">
