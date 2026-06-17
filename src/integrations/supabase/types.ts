@@ -845,6 +845,7 @@ export type Database = {
       passengers: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           notes: string | null
           passenger_id: string
@@ -855,6 +856,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           notes?: string | null
           passenger_id: string
@@ -865,6 +867,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           notes?: string | null
           passenger_id?: string
@@ -1360,6 +1363,10 @@ export type Database = {
         Args: { _receipt_id: string }
         Returns: Json
       }
+      delete_vendor_ledger_by_source: {
+        Args: { _source_id: string; _source_table: string }
+        Returns: undefined
+      }
       get_accounts_overview: {
         Args: never
         Returns: {
@@ -1474,6 +1481,10 @@ export type Database = {
       }
       rename_party: {
         Args: { p_kind: string; p_new_name: string; p_old_name: string }
+        Returns: undefined
+      }
+      revert_service_receipts: {
+        Args: { _service_row_id: string; _service_table: string }
         Returns: undefined
       }
       submit_handover: {

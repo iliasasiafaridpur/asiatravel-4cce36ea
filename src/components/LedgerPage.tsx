@@ -28,16 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { PasswordConfirmDialog } from "@/components/PasswordConfirmDialog";
 import {
   Table,
   TableBody,
@@ -2140,8 +2131,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                             className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (profile?.role !== "admin") {
-                                toast.error("আপনার ডিলিট করার অনুমতি নেই। Admin-এর সাথে যোগাযোগ করুন।");
+                              const owner = r.created_by as string | null | undefined;
+                              if (owner && user?.id && owner !== user.id) {
+                                toast.error("এটি অন্য ইউজারের এন্ট্রি — আপনি ডিলিট করতে পারবেন না।");
                                 return;
                               }
                               setDeleteRow(r);
@@ -2380,24 +2372,19 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       </Dialog>
 
       {/* Delete confirm */}
-      <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>ডিলিট করবেন?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {!isAgency && deleteRow && isPaymentRow(deleteRow)
-                ? `এই পেমেন্ট এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছলে এর মাধ্যমে যেসব বিলে টাকা adjust হয়েছিল তা ফেরত গিয়ে বিলগুলো আবার Due হয়ে যাবে।`
-                : `এই এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে।`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">
-              ডিলিট
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <PasswordConfirmDialog
+        open={!!deleteRow}
+        onOpenChange={(o) => { if (!o) setDeleteRow(null); }}
+        title="ডিলিট করবেন?"
+        description={
+          !isAgency && deleteRow && isPaymentRow(deleteRow)
+            ? `এই পেমেন্ট এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছলে এর মাধ্যমে যেসব বিলে টাকা adjust হয়েছিল তা ফেরত গিয়ে বিলগুলো আবার Due হয়ে যাবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।`
+            : `এই এন্ট্রিটি (${String(deleteRow?.[mod.idColumn] ?? "")}) মুছে ফেলা হবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।`
+        }
+        confirmLabel="হ্যাঁ, ডিলেট"
+        confirmClassName="bg-rose-600 hover:bg-rose-700 text-white"
+        onConfirmed={confirmDelete}
+      />
 
       {/* Payment entry dialog (Receive / Pay) */}
       <Dialog

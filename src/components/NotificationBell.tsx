@@ -9,10 +9,12 @@ import {
   Info,
   RefreshCw,
   Download,
+  CloudDownload,
   User,
   Briefcase,
   MapPin,
 } from "lucide-react";
+import { prefetchMonthData } from "@/lib/offline-prefetch";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -110,6 +112,28 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [prefetching, setPrefetching] = useState(false);
+
+  const runPrefetch = async () => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      toast.error("ইন্টারনেট নেই — আগে কানেকশন ঠিক করে নিন");
+      return;
+    }
+    setPrefetching(true);
+    toast.info("একমাসের ডাটা ডাউনলোড হচ্ছে…");
+    try {
+      const { ok, failed, rows } = await prefetchMonthData(31);
+      if (failed > 0) {
+        toast.warning(`${ok} মডিউল সেভ হয়েছে, ${failed} টি ব্যর্থ (${rows} এন্ট্রি)`);
+      } else {
+        toast.success(`একমাসের ডাটা অফলাইনে সেভ হয়েছে (${rows} এন্ট্রি) — নেট ছাড়াও দেখা যাবে`);
+      }
+    } catch {
+      toast.error("ডাটা ডাউনলোড ব্যর্থ");
+    } finally {
+      setPrefetching(false);
+    }
+  };
 
   useEffect(() => {
     const refresh = () => {
@@ -195,7 +219,17 @@ export function NotificationBell() {
             </ul>
           )}
         </ScrollArea>
-        <div className="border-t border-border p-2 flex items-center gap-2 bg-muted/30">
+        <div className="border-t border-border p-2 bg-muted/30">
+          <Button
+            variant="outline" size="sm"
+            className="w-full h-8 text-xs mb-2"
+            disabled={prefetching}
+            onClick={runPrefetch}
+          >
+            <CloudDownload className={`h-3.5 w-3.5 mr-1 ${prefetching ? "animate-pulse" : ""}`} />
+            {prefetching ? "ডাউনলোড হচ্ছে…" : "একমাসের ডাটা সেভ করুন (অফলাইন)"}
+          </Button>
+          <div className="flex items-center gap-2">
           <Button
             variant="outline" size="sm"
             className="flex-1 h-8 text-xs"
@@ -213,6 +247,7 @@ export function NotificationBell() {
             <Download className="h-3.5 w-3.5 mr-1" />
             Backup
           </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

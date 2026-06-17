@@ -263,11 +263,13 @@ export function StatusChangeDrawer({
       // MD notifications return to the earlier state.
       if (revertFinancials) {
         try {
-          await supabase
-            .from("payment_receipts")
-            .delete()
-            .eq("service_table", request.table)
-            .eq("service_row_id", request.row.id);
+          // System cleanup via SECURITY DEFINER RPC so it works even when the
+          // file was created by another staff member (owner-only DELETE RLS).
+          const { error: revErr } = await supabase.rpc("revert_service_receipts", {
+            _service_table: request.table,
+            _service_row_id: request.row.id,
+          });
+          if (revErr) throw revErr;
         } catch (re) {
           if (!isNetworkError(re)) toast.warning("রসিদ revert failed: " + errMsg(re));
         }
@@ -395,8 +397,11 @@ export function StatusChangeDrawer({
             });
           }
         } else if (crossesOutOfLedger) {
-          await supabase.from("vendor_ledger").delete()
-            .eq("source_table", request.table).eq("source_id", request.row.id);
+          const { error: delErr } = await supabase.rpc("delete_vendor_ledger_by_source", {
+            _source_table: request.table,
+            _source_id: request.row.id,
+          });
+          if (delErr) throw delErr;
         }
       } catch (le) {
         if (!isNetworkError(le)) toast.warning("Vendor ledger update failed: " + errMsg(le));
