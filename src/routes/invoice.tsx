@@ -461,6 +461,7 @@ function InvoicePage() {
         .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 13pt; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 24pt; }
+        .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
