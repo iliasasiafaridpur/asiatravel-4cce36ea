@@ -85,9 +85,27 @@ export function useCurrentUser(): CurrentUser {
       return (data as Profile | null) ?? null;
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes — profile rarely changes
+    staleTime: 60 * 1000, // 1 minute
     gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime: if an admin changes this user's role / active status, update
+  // immediately without requiring a log out / log in.
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`profile-self-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+        () => { void qc.invalidateQueries({ queryKey: ["profile", user.id] }); },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [user, qc]);
+
   return { user, profile: profile ?? null, loading: authLoading || (!!user && profileLoading) };
 }
 
