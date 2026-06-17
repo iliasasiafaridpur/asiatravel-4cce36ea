@@ -245,9 +245,6 @@ function InvoicePage() {
           <h1 className="text-2xl sm:text-3xl font-bold">Invoice</h1>
           <p className="text-sm text-muted-foreground">সার্ভিস বাছাই করুন — ম্যানুয়ালি লিখুন বা সার্চ করে এন্ট্রি যোগ করুন</p>
         </div>
-        <Button onClick={() => window.print()} className="gap-2">
-          <Printer className="h-4 w-4" /> Print / PDF
-        </Button>
       </div>
 
       <Card className="print:hidden overflow-hidden border-primary/20">
