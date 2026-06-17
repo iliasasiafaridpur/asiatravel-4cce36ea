@@ -191,10 +191,14 @@ function SettingsPage() {
           <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Change Password</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={changePw} className="flex flex-col sm:flex-row gap-2">
-            <Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password (min 6)" />
-            <Button type="submit" disabled={pwBusy}>{pwBusy ? "Updating…" : "Update"}</Button>
+          <form onSubmit={changePw} className="space-y-2 max-w-md">
+            <Input type="password" autoComplete="current-password" value={oldPw}
+              onChange={(e) => setOldPw(e.target.value)} placeholder="পুরনো পাসওয়ার্ড" />
+            <Input type="password" autoComplete="new-password" value={newPw}
+              onChange={(e) => setNewPw(e.target.value)} placeholder="নতুন পাসওয়ার্ড (min 6)" />
+            <Button type="submit" disabled={pwBusy}>{pwBusy ? "Updating…" : "পাসওয়ার্ড পরিবর্তন"}</Button>
           </form>
+
         </CardContent>
       </Card>
 
