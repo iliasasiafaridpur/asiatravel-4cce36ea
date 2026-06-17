@@ -445,10 +445,10 @@ function MyHandoverPage() {
     </div>
 
     <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}</span></div>
-    <div class="body">${incomeCards || `<div class="empty">কোনো passenger receipt নেই</div>`}</div>
+    <div class="body">${incomeCards ? `<div class="grid">${incomeCards}</div>` : `<div class="empty">কোনো passenger receipt নেই</div>`}</div>
 
     ${expenseCards ? `<div class="sec"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span class="amt">মোট: ${money(totalExpense)}</span></div>
-    <div class="body">${expenseCards}</div>` : ""}
+    <div class="body"><div class="grid">${expenseCards}</div></div>` : ""}
 
     <div class="foot">
       <div class="totalrow"><span class="muted">নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
