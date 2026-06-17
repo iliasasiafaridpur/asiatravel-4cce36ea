@@ -345,7 +345,7 @@ function InvoicePage() {
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
         {/* top banner */}
-        <div className="inv-banner relative bg-gradient-to-br from-[#0b2545] via-[#13315c] to-[#1d3b6b] text-white px-8 sm:px-10 py-7 overflow-hidden">
+        <div className="inv-banner relative bg-gradient-to-br from-[#3f5f92] via-[#496a9d] to-[#5274a8] text-white px-8 sm:px-10 py-7 overflow-hidden">
           <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-[#c8a45c]/20 blur-2xl" />
           <div className="absolute right-24 -bottom-20 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
