@@ -333,6 +333,7 @@ export type Database = {
       }
       cash_handovers: {
         Row: {
+          accept_token: string | null
           account_id: string | null
           amount: number
           approved_at: string | null
@@ -354,6 +355,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accept_token?: string | null
           account_id?: string | null
           amount?: number
           approved_at?: string | null
@@ -375,6 +377,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accept_token?: string | null
           account_id?: string | null
           amount?: number
           approved_at?: string | null
@@ -1348,6 +1351,7 @@ export type Database = {
         Args: { _confirmed_amount: number; _handover_id: string }
         Returns: undefined
       }
+      approve_handover_by_token: { Args: { _token: string }; Returns: Json }
       cancel_handover: { Args: { _handover_id: string }; Returns: undefined }
       delete_payment_receipt_and_revert: {
         Args: { _receipt_id: string }
