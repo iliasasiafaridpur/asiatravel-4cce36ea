@@ -247,6 +247,7 @@ export function NotificationBell() {
             <Download className="h-3.5 w-3.5 mr-1" />
             Backup
           </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
