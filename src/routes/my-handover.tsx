@@ -306,18 +306,26 @@ function MyHandoverPage() {
         const statusEvt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
 
-        // service description lines
-        const svcBits = [
-          info.service_name || r.service_type || "",
+        // ---- Passenger service info block (prominent, top of card) ----
+        const tbl = r.service_table ?? "";
+        const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
+        const svcIcon = SVC_ICONS[tbl] || (info.airline ? "✈️" : "🧾");
+        const svcMetaBits = [
           info.country || "",
-          info.airline ? `${info.airline}${info.flight_date ? ` · ${formatDate(info.flight_date)}` : ""}` : "",
+          info.airline ? `${info.airline}${info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}` : "",
           info.route || "",
         ].filter(Boolean);
-        const svcText = svcBits.join(" · ");
+        const svcMeta = svcMetaBits.join(" · ");
+        const svcBox = `<div class="svcbox">
+    <span class="svcicon">${svcIcon}</span>
+    <div class="svcinfo">
+      <div class="svctitle">${svcTitle}</div>
+      ${svcMeta ? `<div class="svcmeta">${svcMeta}</div>` : ""}
+    </div>
+  </div>`;
 
         // key-value rows (label : value) — each on its own line, full width
         const rows: string[] = [];
-        if (svcText) rows.push(`<tr><td class="k">সার্ভিস</td><td class="v">${svcText}</td></tr>`);
         if (bill > 0) {
           let billVal = `<b>${money(bill)}</b>`;
           if (discount > 0) billVal += ` <span class="in" style="font-size:12px">(− ${money(discount)} ডিসকাউন্ট)</span>`;
