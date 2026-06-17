@@ -9,31 +9,56 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, Plus, Trash2, ArrowRight, Plane, User } from "lucide-react";
+import { Printer, Search, Plus, Trash2, ArrowRight, Plane, User, IdCard, StickyNote } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
   component: InvoicePage,
 });
 
+/* ---------------------------------- types --------------------------------- */
+
 interface ServiceEntry {
-  module: string; moduleKey: string; id: string; date: string;
-  passenger: string; passport: string; mobile?: string;
-  airline?: string; pnr?: string; flightDate?: string;
-  amount: number; received: number;
+  module: string;
+  moduleKey: string;
+  id: string;
+  date: string;
+  passenger: string;
+  passport: string;
+  mobile?: string;
+  amount: number;
+  received: number;
+  raw: Record<string, unknown>;
 }
 
+// One invoice line. `type` controls which detail fields show + how it prints.
 interface InvoiceItem {
   uid: string;
-  serviceItem: string;   // dropdown
-  airline: string;       // dropdown
-  fromRoute: string;     // dropdown
-  toRoute: string;       // dropdown
+  type: string; // module key or "manual"
+  serviceLabel: string; // headline shown in the print row
+  airline?: string;
+  fromRoute?: string;
+  toRoute?: string;
+  flightDate?: string;
+  pnr?: string;
+  country?: string;
+  visaType?: string;
+  sponsor?: string;
+  refNo?: string; // MOFA / Visa No / reference
   detail?: string;
   date?: string;
   qty: number;
   rate: number;
 }
+
+const ITEM_TYPES = [
+  { key: "manual", label: "Manual / Custom" },
+  { key: "tickets", label: "Air Ticket" },
+  { key: "bmet", label: "BMET Card" },
+  { key: "saudi-visa", label: "Saudi Visa" },
+  { key: "kuwait-visa", label: "Kuwait Visa" },
+  { key: "other", label: "Other Service" },
+];
 
 const AGENCY = {
   name: "ASIA TOURS AND TRAVELS",
@@ -43,6 +68,89 @@ const AGENCY = {
 };
 
 const genUid = () => Math.random().toString(36).slice(2, 10);
+const str = (v: unknown) => (v == null ? "" : String(v));
+
+function splitRoute(s: string): { from: string; to: string } {
+  if (!s) return { from: "", to: "" };
+  const parts = s.split(/\s*(?:->|→|–|—|-|\/|to)\s*/i).map((p) => p.trim()).filter(Boolean);
+  return { from: parts[0] || s.trim(), to: parts[1] || "" };
+}
+
+/* ----------------------- module → invoice item mapper --------------------- */
+
+function buildItemFromEntry(e: ServiceEntry): InvoiceItem {
+  const r = e.raw;
+  const base: InvoiceItem = {
+    uid: genUid(),
+    type: e.moduleKey,
+    serviceLabel: e.module,
+    detail: e.id,
+    date: e.date,
+    qty: 1,
+    rate: e.amount || 0,
+  };
+  switch (e.moduleKey) {
+    case "tickets": {
+      const { from, to } = splitRoute(str(r.trip_road));
+      return { ...base, serviceLabel: "AIR TICKET", airline: str(r.airline), fromRoute: from, toRoute: to, flightDate: str(r.flight_date), pnr: str(r.pnr), date: str(r.flight_date) || e.date };
+    }
+    case "bmet":
+      return { ...base, serviceLabel: "BMET CARD", country: str(r.country_name), date: str(r.attested_date) || e.date };
+    case "saudi-visa":
+      return { ...base, serviceLabel: "SAUDI VISA", visaType: str(r.visa_type), sponsor: str(r.sponsor_name), refNo: str(r.mofa_no) || str(r.visa_no) };
+    case "kuwait-visa":
+      return { ...base, serviceLabel: "KUWAIT VISA", refNo: str(r.visa_no), sponsor: str(r.sponsor_name) };
+    case "other": {
+      const { from, to } = splitRoute(str(r.trip_road));
+      return { ...base, serviceLabel: str(r.service_name) || "OTHER SERVICE", airline: str(r.airline), fromRoute: from, toRoute: to, flightDate: str(r.flight_date) };
+    }
+    default:
+      return base;
+  }
+}
+
+/* ------------------------ per-item printable detail ----------------------- */
+
+function ItemDetail({ it }: { it: InvoiceItem }) {
+  const rows: { label: string; value: string }[] = [];
+  const route = (it.fromRoute || it.toRoute) ? `${it.fromRoute || "?"} → ${it.toRoute || "?"}` : "";
+
+  if (it.type === "tickets") {
+    if (it.airline) rows.push({ label: "Airline", value: it.airline });
+    if (route) rows.push({ label: "Route", value: route });
+    if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
+    if (it.pnr) rows.push({ label: "PNR", value: it.pnr });
+  } else if (it.type === "bmet") {
+    if (it.country) rows.push({ label: "Country", value: it.country });
+    if (it.date) rows.push({ label: "Date", value: formatDate(it.date) });
+  } else if (it.type === "saudi-visa") {
+    if (it.visaType) rows.push({ label: "Visa Type", value: it.visaType });
+    if (it.sponsor) rows.push({ label: "Sponsor", value: it.sponsor });
+    if (it.refNo) rows.push({ label: "MOFA / Visa No", value: it.refNo });
+  } else if (it.type === "kuwait-visa") {
+    if (it.refNo) rows.push({ label: "Visa No", value: it.refNo });
+    if (it.sponsor) rows.push({ label: "Sponsor", value: it.sponsor });
+  } else if (it.type === "other") {
+    if (it.airline) rows.push({ label: "Airline", value: it.airline });
+    if (route) rows.push({ label: "Route", value: route });
+    if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
+  }
+  if (it.detail) rows.push({ label: "Ref", value: it.detail });
+
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600">
+      {rows.map((r, i) => (
+        <span key={i} className="inline-flex items-center gap-1">
+          <span className="text-slate-400">{r.label}:</span>
+          <span className="font-medium text-slate-700">{r.value}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------- the page --------------------------------- */
 
 function InvoicePage() {
   const [allEntries, setAllEntries] = useState<ServiceEntry[]>([]);
@@ -55,7 +163,6 @@ function InvoicePage() {
   const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   const [bill, setBill] = useState({ name: "", passport: "", nationality: "Bangladeshi", mobile: "" });
-  const [pnr, setPnr] = useState("");
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
@@ -74,17 +181,16 @@ function InvoicePage() {
           .select("*").order("created_at", { ascending: false }).limit(300);
         for (const r of ((data as unknown) as Record<string, unknown>[] | null) ?? []) {
           all.push({
-            module: m.label, moduleKey: m.key,
-            id: String(r[m.idColumn] ?? ""),
-            date: String(r.entry_date ?? r.created_at ?? ""),
-            passenger: String(r.passenger_name ?? "—"),
-            passport: String(r.passport ?? ""),
-            mobile: String(r.mobile ?? ""),
-            airline: String(r.airline ?? ""),
-            pnr: String(r.pnr ?? ""),
-            flightDate: String(r.flight_date ?? ""),
+            module: m.label,
+            moduleKey: m.key,
+            id: str(r[m.idColumn]),
+            date: str(r.entry_date ?? r.created_at),
+            passenger: str(r.passenger_name ?? "—"),
+            passport: str(r.passport),
+            mobile: str(r.mobile),
             amount: Number(r.sold_price ?? 0),
             received: Number(r.received ?? r.received_amount ?? 0),
+            raw: r,
           });
         }
       }));
@@ -96,39 +202,26 @@ function InvoicePage() {
     const q = search.trim().toLowerCase();
     let list = allEntries;
     if (moduleFilter !== "all") list = list.filter((e) => e.moduleKey === moduleFilter);
-    if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile} ${e.pnr}`.toLowerCase().includes(q));
+    if (q) list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
     else if (moduleFilter === "all") return [];
     return list.slice(0, 30);
   }, [allEntries, search, moduleFilter]);
 
   const loadEntry = (e: ServiceEntry) => {
-    // Auto-fill ALL passenger info from the service entry (overwrites)
     setBill({
       name: e.passenger || "",
       passport: e.passport || "",
       nationality: bill.nationality || "Bangladeshi",
       mobile: e.mobile || "",
     });
-    if (e.pnr) setPnr(e.pnr);
-    setItems((prev) => [...prev, {
-      uid: genUid(),
-      serviceItem: e.module,
-      airline: e.airline || "",
-      fromRoute: "",
-      toRoute: "",
-      detail: e.id,
-      date: e.flightDate || e.date,
-      qty: 1,
-      rate: e.amount || 0,
-    }]);
+    setItems((prev) => [...prev, buildItemFromEntry(e)]);
     setReceived((r) => r + (e.received || 0));
     setSearch("");
     setModuleFilter("all");
   };
 
   const addBlankItem = () => setItems((p) => [...p, {
-    uid: genUid(), serviceItem: "", airline: "", fromRoute: "", toRoute: "",
-    detail: "", date: "", qty: 1, rate: 0,
+    uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0,
   }]);
   const removeItem = (uid: string) => setItems((p) => p.filter((i) => i.uid !== uid));
   const updateItem = (uid: string, patch: Partial<InvoiceItem>) =>
@@ -143,7 +236,7 @@ function InvoicePage() {
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Invoice</h1>
-          <p className="text-sm text-muted-foreground">পেশাদার ইনভয়েচ — একাধিক সার্ভিস যোগ করুন</p>
+          <p className="text-sm text-muted-foreground">ম্যানুয়াল বা মডিউল সার্ভিস থেকে — একাধিক সার্ভিস যোগ করুন</p>
         </div>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
@@ -152,15 +245,15 @@ function InvoicePage() {
 
       <Card className="print:hidden">
         <CardContent className="p-3 sm:p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Invoice No</Label><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="mt-1.5" /></div>
             <div><Label>Invoice Date</Label><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1.5" /></div>
-            <div><Label>PNR / Booking Ref</Label><Input value={pnr} onChange={(e) => setPnr(e.target.value)} className="mt-1.5" /></div>
           </div>
 
+          {/* module search */}
           <div className="space-y-2">
             <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-              <Search className="h-3.5 w-3.5" /> Service Module থেকে যাত্রী খুঁজুন
+              <Search className="h-3.5 w-3.5" /> Service Module থেকে যাত্রী খুঁজুন (অটো-ফিল)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-2">
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
@@ -175,7 +268,7 @@ function InvoicePage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                  placeholder="ID / নাম / পাসপোর্ট / মোবাইল / PNR..." className="pl-8" />
+                  placeholder="ID / নাম / পাসপোর্ট / মোবাইল..." className="pl-8" />
               </div>
             </div>
             {moduleFilter !== "all" && filtered.length === 0 && !search && (
@@ -206,7 +299,7 @@ function InvoicePage() {
             )}
           </div>
 
-
+          {/* passenger info */}
           <div className="space-y-2 pt-2">
             <div className="text-xs font-semibold text-muted-foreground">Passenger Info</div>
             <Input placeholder="Passenger Name" value={bill.name} onChange={(e) => setBill({ ...bill, name: e.target.value })} />
@@ -217,6 +310,7 @@ function InvoicePage() {
             <Input placeholder="Mobile" value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} />
           </div>
 
+          {/* items */}
           <div className="pt-2">
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold text-muted-foreground">Invoice Items</div>
@@ -230,36 +324,26 @@ function InvoicePage() {
                   কোনো আইটেম নেই — উপরের লিস্ট থেকে Add করুন বা "Add Item" দিন
                 </p>
               )}
-              {items.map((it) => (
-                <div key={it.uid} className="rounded-md border p-2 space-y-2 bg-muted/30">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Service Item</Label>
-                      <LookupSelect kind="invoice_service_item" value={it.serviceItem}
-                        onChange={(v) => updateItem(it.uid, { serviceItem: v })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Airline</Label>
-                      <LookupSelect kind="invoice_airline" value={it.airline}
-                        onChange={(v) => updateItem(it.uid, { airline: v })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">From</Label>
-                      <LookupSelect kind="invoice_route" value={it.fromRoute}
-                        onChange={(v) => updateItem(it.uid, { fromRoute: v })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">To</Label>
-                      <LookupSelect kind="invoice_route" value={it.toRoute}
-                        onChange={(v) => updateItem(it.uid, { toRoute: v })} />
+              {items.map((it, idx) => (
+                <div key={it.uid} className="rounded-md border p-2.5 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">#{idx + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <Select value={it.type} onValueChange={(v) => updateItem(it.uid, { type: v })}>
+                        <SelectTrigger className="h-8 w-[160px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(it.uid)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-12 sm:col-span-4">
-                      <Label className="text-xs">Detail / Note</Label>
-                      <Input placeholder="optional" value={it.detail ?? ""}
-                        onChange={(e) => updateItem(it.uid, { detail: e.target.value })} />
-                    </div>
+
+                  <ItemFields it={it} onChange={(patch) => updateItem(it.uid, patch)} />
+
+                  <div className="grid grid-cols-12 gap-2 items-end pt-1">
                     <div className="col-span-6 sm:col-span-3">
                       <Label className="text-xs">Date</Label>
                       <DateInput value={it.date ?? ""} onChange={(e) => updateItem(it.uid, { date: e.target.value })} />
@@ -272,10 +356,10 @@ function InvoicePage() {
                       <Label className="text-xs">Rate</Label>
                       <Input type="number" value={it.rate || ""} placeholder="0" onChange={(e) => updateItem(it.uid, { rate: Number(e.target.value) || 0 })} />
                     </div>
-                    <Button size="icon" variant="ghost" className="col-span-12 sm:col-span-1 text-destructive"
-                      onClick={() => removeItem(it.uid)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="col-span-12 sm:col-span-5">
+                      <Label className="text-xs">Note (optional)</Label>
+                      <Input value={it.detail ?? ""} onChange={(e) => updateItem(it.uid, { detail: e.target.value })} placeholder="optional" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -290,113 +374,103 @@ function InvoicePage() {
         </CardContent>
       </Card>
 
-      {/* === PRINTABLE INVOICE === */}
+      {/* === PRINTABLE INVOICE (live preview = exact print) === */}
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0 flex">
         <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
         <div className="flex-1 p-8 sm:p-10 flex flex-col">
-            <div className="flex justify-between items-center gap-3 border-b border-slate-200 pb-4 flex-nowrap">
-              <div className="min-w-0 flex items-center gap-2 flex-1">
-                <div className="h-10 w-10 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
-                  <Plane className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="invoice-agency-name font-extrabold tracking-tight text-[#0b2545] leading-tight whitespace-nowrap">{AGENCY.name}</h2>
-                  <p className="text-[11px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
-                </div>
+          <div className="flex justify-between items-center gap-3 border-b border-slate-200 pb-4 flex-nowrap">
+            <div className="min-w-0 flex items-center gap-2 flex-1">
+              <div className="h-10 w-10 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
+                <Plane className="h-5 w-5" />
               </div>
-              <div className="text-right shrink-0">
-                <p className="invoice-title font-black tracking-widest text-[#0b2545] leading-none whitespace-nowrap">INVOICE</p>
-                <p className="font-mono text-xs mt-1">{invoiceNo}</p>
+              <div className="min-w-0">
+                <h2 className="invoice-agency-name font-extrabold tracking-tight text-[#0b2545] leading-tight whitespace-nowrap">{AGENCY.name}</h2>
+                <p className="text-[11px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
               </div>
             </div>
-            <div className="flex justify-between text-xs text-slate-600 mt-3 gap-4">
-              <div>
-                <p>{AGENCY.address}</p>
-                <p>📞 {AGENCY.phone}</p>
-              </div>
-              <div className="text-right">
-                <p>Date: {formatDate(invoiceDate)}</p>
-                {pnr && <p>PNR: <span className="font-mono">{pnr}</span></p>}
-              </div>
+            <div className="text-right shrink-0">
+              <p className="invoice-title font-black tracking-widest text-[#0b2545] leading-none whitespace-nowrap">INVOICE</p>
+              <p className="font-mono text-xs mt-1">{invoiceNo}</p>
             </div>
+          </div>
+          <div className="flex justify-between text-xs text-slate-600 mt-3 gap-4">
+            <div>
+              <p>{AGENCY.address}</p>
+              <p>📞 {AGENCY.phone}</p>
+            </div>
+            <div className="text-right">
+              <p>Date: {formatDate(invoiceDate)}</p>
+            </div>
+          </div>
 
-            <div className="rounded-lg border border-slate-200 p-4 mt-6">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Passenger Info</p>
-              <p className="text-base font-bold mt-1">{bill.name || "—"}</p>
-              <div className="text-xs text-slate-600 mt-1 space-y-0.5">
-                {bill.passport && <p>Passport: <span className="font-mono">{bill.passport}</span></p>}
-                {bill.nationality && <p>Nationality: {bill.nationality}</p>}
-                {bill.mobile && <p>Mobile: {bill.mobile}</p>}
+          <div className="rounded-lg border border-slate-200 p-4 mt-6 flex items-start gap-3">
+            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-[#0b2545] shrink-0">
+              <User className="h-4.5 w-4.5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Bill To</p>
+              <p className="text-base font-bold mt-0.5">{bill.name || "—"}</p>
+              <div className="text-xs text-slate-600 mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+                {bill.passport && <span>Passport: <span className="font-mono">{bill.passport}</span></span>}
+                {bill.nationality && <span>Nationality: {bill.nationality}</span>}
+                {bill.mobile && <span>Mobile: {bill.mobile}</span>}
               </div>
             </div>
+          </div>
 
-            <div className="mt-6 rounded-lg overflow-hidden border border-slate-200">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-[#0b2545] text-white">
-                    <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Service</th>
-                    <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Qty</th>
-                    <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Rate</th>
-                    <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Amount</th>
+          <div className="mt-6 rounded-lg overflow-hidden border border-slate-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#0b2545] text-white">
+                  <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider w-8">#</th>
+                  <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Service</th>
+                  <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Qty</th>
+                  <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Rate</th>
+                  <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 && (
+                  <tr><td colSpan={5} className="p-6 text-center text-slate-400 text-xs">No items</td></tr>
+                )}
+                {items.map((it, idx) => (
+                  <tr key={it.uid} className="border-t border-slate-200 align-top">
+                    <td className="p-2.5 text-slate-400 tabular-nums">{idx + 1}</td>
+                    <td className="p-2.5">
+                      <div className="font-bold text-[#0b2545] uppercase tracking-wide text-sm">
+                        {(it.serviceLabel || "—").toUpperCase()}
+                      </div>
+                      <ItemDetail it={it} />
+                    </td>
+                    <td className="p-2.5 text-right tabular-nums">{it.qty}</td>
+                    <td className="p-2.5 text-right tabular-nums">{it.rate.toLocaleString()}</td>
+                    <td className="p-2.5 text-right tabular-nums font-semibold">{(it.qty * it.rate).toLocaleString()}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {items.length === 0 && (
-                    <tr><td colSpan={4} className="p-6 text-center text-slate-400 text-xs">No items</td></tr>
-                  )}
-                  {items.map((it) => (
-                    <tr key={it.uid} className="border-t border-slate-200 align-top">
-                      <td className="p-2.5">
-                        <div className="font-bold text-[#0b2545] uppercase tracking-wide text-sm">
-                          {(it.serviceItem || "—").toUpperCase()}
-                        </div>
-                        <div className="text-xs text-slate-600 mt-0.5">
-                          {(it.fromRoute || it.toRoute) ? (
-                            <span className="inline-flex items-center gap-1">
-                              ROUTE: {it.fromRoute || "?"}
-                              <ArrowRight className="h-3 w-3 text-[#c8a45c]" />
-                              {it.toRoute || "?"}
-                            </span>
-                          ) : it.detail ? `Ref: ${it.detail}` : null}
-                        </div>
-                        {it.date && (
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            Flight date: {formatDate(it.date)}
-                          </div>
-                        )}
-                        {it.airline && (
-                          <div className="text-[11px] text-slate-500">Airline: {it.airline}</div>
-                        )}
-                      </td>
-                      <td className="p-2.5 text-right tabular-nums">{it.qty}</td>
-                      <td className="p-2.5 text-right tabular-nums">{it.rate.toLocaleString()}</td>
-                      <td className="p-2.5 text-right tabular-nums font-semibold">{(it.qty * it.rate).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row justify-between gap-6">
-              <div className="flex-1 text-xs text-slate-600 space-y-1">
-                {notes && (<><p className="font-semibold text-slate-700">Notes:</p><p>{notes}</p></>)}
-              </div>
-              <div className="sm:w-72 space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Subtotal</span><span className="tabular-nums">{subtotal.toLocaleString()}৳</span></div>
-                {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-600">Discount</span><span className="tabular-nums">- {discount.toLocaleString()}৳</span></div>)}
-                <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#13315c] text-white px-3 py-2.5 rounded-md">
-                  <span className="text-xs uppercase tracking-wider font-semibold">Grand Total (Net)</span>
-                  <span className="text-lg font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
-                </div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Received</span><span className="tabular-nums">{received.toLocaleString()}৳</span></div>
-                <div className="flex justify-between text-sm font-semibold"><span className="text-slate-700">Due</span><span className="tabular-nums">{due.toLocaleString()}৳</span></div>
-              </div>
+          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-6">
+            <div className="flex-1 text-xs text-slate-600 space-y-1">
+              {notes && (<><p className="font-semibold text-slate-700 flex items-center gap-1"><StickyNote className="h-3.5 w-3.5" /> Notes:</p><p>{notes}</p></>)}
             </div>
+            <div className="sm:w-72 space-y-2">
+              <div className="flex justify-between text-sm"><span className="text-slate-600">Subtotal</span><span className="tabular-nums">{subtotal.toLocaleString()}৳</span></div>
+              {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-600">Discount</span><span className="tabular-nums">- {discount.toLocaleString()}৳</span></div>)}
+              <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#13315c] text-white px-3 py-2.5 rounded-md">
+                <span className="text-xs uppercase tracking-wider font-semibold">Grand Total</span>
+                <span className="text-lg font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
+              </div>
+              <div className="flex justify-between text-sm"><span className="text-slate-600">Received</span><span className="tabular-nums">{received.toLocaleString()}৳</span></div>
+              <div className="flex justify-between text-sm font-semibold"><span className="text-slate-700">Due</span><span className="tabular-nums text-[#b91c1c]">{due.toLocaleString()}৳</span></div>
+            </div>
+          </div>
 
-            <div className="mt-auto pt-6 border-t border-slate-200 text-center">
-              <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
-              <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
-            </div>
+          <div className="mt-auto pt-6 border-t border-slate-200 text-center">
+            <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
+          </div>
         </div>
       </div>
 
@@ -429,8 +503,100 @@ function InvoicePage() {
           .invoice-print .invoice-agency-name { font-size: 24pt !important; }
           .invoice-print .invoice-title { font-size: 28pt !important; }
           .invoice-print th { font-size: 13pt !important; }
+          .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\] { font-size: 11pt !important; }
         }
       `}</style>
     </div>
   );
+}
+
+/* --------------------- module-specific item edit fields ------------------- */
+
+function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Partial<InvoiceItem>) => void }) {
+  const Headline = (
+    <div className="sm:col-span-2">
+      <Label className="text-xs flex items-center gap-1"><IdCard className="h-3 w-3" /> Service Name</Label>
+      {it.type === "manual" || it.type === "other" ? (
+        <LookupSelect kind={it.type === "other" ? "other_service" : "invoice_service_item"} value={it.serviceLabel}
+          onChange={(v) => onChange({ serviceLabel: v })} />
+      ) : (
+        <Input value={it.serviceLabel} onChange={(e) => onChange({ serviceLabel: e.target.value })} />
+      )}
+    </div>
+  );
+
+  if (it.type === "tickets" || (it.type === "other")) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {Headline}
+        <div>
+          <Label className="text-xs">Airline</Label>
+          <LookupSelect kind="invoice_airline" value={it.airline ?? ""} onChange={(v) => onChange({ airline: v })} />
+        </div>
+        <div>
+          <Label className="text-xs">PNR</Label>
+          <Input value={it.pnr ?? ""} onChange={(e) => onChange({ pnr: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">From</Label>
+          <LookupSelect kind="invoice_route" value={it.fromRoute ?? ""} onChange={(v) => onChange({ fromRoute: v })} />
+        </div>
+        <div>
+          <Label className="text-xs">To</Label>
+          <LookupSelect kind="invoice_route" value={it.toRoute ?? ""} onChange={(v) => onChange({ toRoute: v })} />
+        </div>
+      </div>
+    );
+  }
+
+  if (it.type === "bmet") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {Headline}
+        <div>
+          <Label className="text-xs">Country</Label>
+          <LookupSelect kind="country" value={it.country ?? ""} onChange={(v) => onChange({ country: v })} />
+        </div>
+      </div>
+    );
+  }
+
+  if (it.type === "saudi-visa") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {Headline}
+        <div>
+          <Label className="text-xs">Visa Type</Label>
+          <Input value={it.visaType ?? ""} onChange={(e) => onChange({ visaType: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">Sponsor</Label>
+          <Input value={it.sponsor ?? ""} onChange={(e) => onChange({ sponsor: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">MOFA / Visa No</Label>
+          <Input value={it.refNo ?? ""} onChange={(e) => onChange({ refNo: e.target.value })} />
+        </div>
+      </div>
+    );
+  }
+
+  if (it.type === "kuwait-visa") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {Headline}
+        <div>
+          <Label className="text-xs">Visa No</Label>
+          <Input value={it.refNo ?? ""} onChange={(e) => onChange({ refNo: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">Sponsor</Label>
+          <Input value={it.sponsor ?? ""} onChange={(e) => onChange({ sponsor: e.target.value })} />
+        </div>
+      </div>
+    );
+  }
+
+  // manual
+  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{Headline}</div>;
 }
