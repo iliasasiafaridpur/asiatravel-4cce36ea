@@ -140,7 +140,7 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
     if (it.airline) rows.push({ label: "Airlines", value: it.airline });
     if (it.flightDate) rows.push({ label: "Flight Date", value: formatDate(it.flightDate) });
   }
-  if (it.detail) rows.push({ label: "Ref", value: it.detail });
+  
 
   if (rows.length === 0) return null;
   return (
