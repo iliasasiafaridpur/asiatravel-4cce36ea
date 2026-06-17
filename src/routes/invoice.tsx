@@ -156,7 +156,6 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
 function InvoicePage() {
   const [allEntries, setAllEntries] = useState<ServiceEntry[]>([]);
   const [search, setSearch] = useState("");
-  const [moduleFilter, setModuleFilter] = useState<string>("all");
 
   const [invoiceNo, setInvoiceNo] = useState<string>(
     "INV-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(Math.random() * 900 + 100),
