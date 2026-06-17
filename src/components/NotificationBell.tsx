@@ -9,10 +9,12 @@ import {
   Info,
   RefreshCw,
   Download,
+  CloudDownload,
   User,
   Briefcase,
   MapPin,
 } from "lucide-react";
+import { prefetchMonthData } from "@/lib/offline-prefetch";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -110,6 +112,28 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [prefetching, setPrefetching] = useState(false);
+
+  const runPrefetch = async () => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      toast.error("ইন্টারনেট নেই — আগে কানেকশন ঠিক করে নিন");
+      return;
+    }
+    setPrefetching(true);
+    toast.info("একমাসের ডাটা ডাউনলোড হচ্ছে…");
+    try {
+      const { ok, failed, rows } = await prefetchMonthData(31);
+      if (failed > 0) {
+        toast.warning(`${ok} মডিউল সেভ হয়েছে, ${failed} টি ব্যর্থ (${rows} এন্ট্রি)`);
+      } else {
+        toast.success(`একমাসের ডাটা অফলাইনে সেভ হয়েছে (${rows} এন্ট্রি) — নেট ছাড়াও দেখা যাবে`);
+      }
+    } catch {
+      toast.error("ডাটা ডাউনলোড ব্যর্থ");
+    } finally {
+      setPrefetching(false);
+    }
+  };
 
   useEffect(() => {
     const refresh = () => {
