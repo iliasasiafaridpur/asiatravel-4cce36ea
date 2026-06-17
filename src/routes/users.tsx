@@ -1,15 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { adminResetUserPassword } from "@/lib/admin-users.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldCheck, ShieldOff } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { ShieldCheck, ShieldOff, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/users")({
   head: () => ({ meta: [{ title: "User Management — Asia Travel" }] }),
@@ -30,6 +40,11 @@ function UsersPage() {
   const { profile, loading } = useCurrentUser();
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const resetPasswordFn = useServerFn(adminResetUserPassword);
+  const [resetTarget, setResetTarget] = useState<ProfileRow | null>(null);
+  const [tempResult, setTempResult] = useState<{ name: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
 
   const isAdmin = profile?.role === "admin";
 
@@ -81,6 +96,30 @@ function UsersPage() {
     setBusy(false);
   };
 
+  const doReset = async () => {
+    if (!resetTarget) return;
+    setBusy(true);
+    try {
+      const res = await resetPasswordFn({ data: { userId: resetTarget.user_id } });
+      setTempResult({ name: resetTarget.full_name, password: res.tempPassword });
+      setResetTarget(null);
+      toast.success("পাসওয়ার্ড রিসেট হয়েছে");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "রিসেট ব্যর্থ");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyTemp = async () => {
+    if (!tempResult) return;
+    try {
+      await navigator.clipboard.writeText(tempResult.password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto">
       <div className="flex items-center gap-2">
@@ -101,13 +140,16 @@ function UsersPage() {
                 <TableHead>পদবি</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Active</TableHead>
+                <TableHead className="text-center">Active</TableHead>
+                <TableHead className="text-right">পাসওয়ার্ড</TableHead>
               </TableRow>
+
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো user নেই</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো user নেই</TableCell></TableRow>
               )}
+
               {rows.map((r) => (
                 <TableRow key={r.user_id}>
                   <TableCell className="font-medium">{r.full_name}</TableCell>
@@ -128,11 +170,18 @@ function UsersPage() {
                       ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Active</Badge>
                       : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">Pending</Badge>}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     <Switch checked={r.is_active} disabled={busy}
                       onCheckedChange={(v) => toggleActive(r, v)} />
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm" className="h-8"
+                      disabled={busy} onClick={() => setResetTarget(r)}>
+                      <KeyRound className="h-3.5 w-3.5 mr-1" /> রিসেট
+                    </Button>
+                  </TableCell>
                 </TableRow>
+
               ))}
             </TableBody>
           </Table>
@@ -142,6 +191,55 @@ function UsersPage() {
       <div className="flex justify-end">
         <Button variant="outline" onClick={() => void load()}>রিফ্রেশ</Button>
       </div>
+
+      <AlertDialog open={!!resetTarget} onOpenChange={(o) => { if (!o) setResetTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" /> পাসওয়ার্ড রিসেট করবেন?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>
+                  <b>{resetTarget?.full_name}</b> এর জন্য একটি অস্থায়ী পাসওয়ার্ড তৈরি হবে।
+                </div>
+                <div className="text-amber-600">
+                  ব্যবহারকারী এই অস্থায়ী পাসওয়ার্ড দিয়ে লগইন করার পর সাথে সাথে নিজের নতুন পাসওয়ার্ড দিতে বাধ্য হবেন।
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void doReset(); }}>
+              {busy ? "রিসেট হচ্ছে…" : "রিসেট করুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!tempResult} onOpenChange={(o) => { if (!o) setTempResult(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>অস্থায়ী পাসওয়ার্ড</DialogTitle>
+            <DialogDescription>
+              এটি <b>{tempResult?.name}</b> কে দিন। তিনি লগইন করলেই নতুন পাসওয়ার্ড দিতে হবে।
+              এই পাসওয়ার্ড আর দেখা যাবে না।
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded-md border bg-muted px-3 py-2 text-lg font-bold tracking-wider text-center">
+              {tempResult?.password}
+            </code>
+            <Button variant="outline" size="icon" onClick={() => void copyTemp()} title="কপি করুন">
+              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setTempResult(null)}>বুঝেছি</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

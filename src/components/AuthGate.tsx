@@ -50,6 +50,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // the entire tree and re-render — producing the "stuck on loading" bug.
   const [authReady, setAuthReady] = useState<boolean>(false);
   const [optimisticSession, setOptimisticSession] = useState<boolean>(false);
+  const [mustReset, setMustReset] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -61,12 +62,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
       if (!s?.user) return;
       try {
         const { data } = await supabase.from("profiles")
-          .select("is_active").eq("user_id", s.user.id).maybeSingle();
+          .select("is_active,must_reset_password").eq("user_id", s.user.id).maybeSingle();
         if (!active) return;
-        if (data && data.is_active === false) {
+        const row = data as { is_active?: boolean; must_reset_password?: boolean } | null;
+        if (row && row.is_active === false) {
           toast.error("আপনার অ্যাকাউন্ট এখনো Admin দ্বারা activate হয়নি");
           await supabase.auth.signOut();
+          return;
         }
+        setMustReset(!!row?.must_reset_password);
       } catch (err) {
         console.warn("profile check failed (non-blocking)", err);
       }
@@ -84,6 +88,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       setSession(s);
       setAuthReady(true);
       if (event === "SIGNED_IN") void checkActive(s);
+      if (event === "SIGNED_OUT") setMustReset(false);
     });
 
     return () => { active = false; subscription.unsubscribe(); };
@@ -94,8 +99,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) return <LoginScreen />;
+  if (mustReset) return <ForcePasswordChange onDone={() => setMustReset(false)} />;
   return <>{children}</>;
 }
+
 
 function LoginScreen() {
   return (
@@ -119,6 +126,78 @@ function LoginScreen() {
             <TabsContent value="login"><LoginForm /></TabsContent>
             <TabsContent value="signup"><SignUpForm /></TabsContent>
           </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ForcePasswordChange({ onDone }: { onDone: () => void }) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pw.length < 6) return toast.error("পাসওয়ার্ড অন্তত ৬ অক্ষর");
+    if (pw !== pw2) return toast.error("দুটি পাসওয়ার্ড মিলছে না");
+    setBusy(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    if (error) { setBusy(false); return toast.error("পরিবর্তন ব্যর্থ: " + error.message); }
+    if (uid) {
+      await supabase.from("profiles")
+        .update({ must_reset_password: false } as never).eq("user_id", uid);
+    }
+    setBusy(false);
+    toast.success("নতুন পাসওয়ার্ড সেট হয়েছে");
+    onDone();
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center space-y-2">
+          <div
+            className="mx-auto h-12 w-12 rounded-lg flex items-center justify-center text-primary-foreground"
+            style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}
+          >
+            <Plane className="h-6 w-6" />
+          </div>
+          <CardTitle>নতুন পাসওয়ার্ড দিন</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            নিরাপত্তার জন্য চালিয়ে যাওয়ার আগে নতুন পাসওয়ার্ড সেট করুন।
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-3">
+            <div className="space-y-1">
+              <Label>নতুন পাসওয়ার্ড</Label>
+              <div className="relative">
+                <Input type={showPw ? "text" : "password"} required value={pw}
+                  className="pr-10" onChange={(e) => setPw(e.target.value)} />
+                <button type="button" onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1} aria-label={showPw ? "Hide password" : "Show password"}>
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>নতুন পাসওয়ার্ড (আবার)</Label>
+              <Input type={showPw ? "text" : "password"} required value={pw2}
+                onChange={(e) => setPw2(e.target.value)} />
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "সেট হচ্ছে…" : "পাসওয়ার্ড সেট করুন"}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full"
+              onClick={async () => { await supabase.auth.signOut(); }}>
+              লগআউট
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
