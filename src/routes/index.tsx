@@ -236,6 +236,8 @@ function DashboardPage() {
   // and for the Accounts Methods split (hand cash vs bank/bKash/etc).
   const { data: receipts = [] } = useQuery({
     queryKey: ["dashboard", "receipts"],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("payment_receipts")
