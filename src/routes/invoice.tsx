@@ -375,99 +375,118 @@ function InvoicePage() {
       </Card>
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
-      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-lg print:shadow-none print:rounded-none rounded-lg overflow-hidden border border-slate-200 print:border-0 flex">
-        <div className="w-2 shrink-0 bg-gradient-to-b from-[#0b2545] via-[#13315c] to-[#c8a45c]" />
-        <div className="flex-1 p-8 sm:p-10 flex flex-col">
-          <div className="flex justify-between items-center gap-3 border-b border-slate-200 pb-4 flex-nowrap">
-            <div className="min-w-0 flex items-center gap-2 flex-1">
-              <div className="h-10 w-10 rounded-md bg-gradient-to-br from-[#0b2545] to-[#c8a45c] flex items-center justify-center text-white shrink-0">
-                <Plane className="h-5 w-5" />
+      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
+        {/* top banner */}
+        <div className="inv-banner relative bg-gradient-to-br from-[#0b2545] via-[#13315c] to-[#1d3b6b] text-white px-8 sm:px-10 py-7 overflow-hidden">
+          <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-[#c8a45c]/20 blur-2xl" />
+          <div className="absolute right-24 -bottom-20 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
+          <div className="relative flex justify-between items-start gap-4 flex-nowrap">
+            <div className="min-w-0 flex items-center gap-3 flex-1">
+              <div className="h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/25 flex items-center justify-center shrink-0 backdrop-blur">
+                <Plane className="h-6 w-6 text-[#e7c98a]" />
               </div>
               <div className="min-w-0">
-                <h2 className="invoice-agency-name font-extrabold tracking-tight text-[#0b2545] leading-tight whitespace-nowrap">{AGENCY.name}</h2>
-                <p className="text-[11px] italic text-[#c8a45c] font-semibold leading-tight">"{AGENCY.slogan}"</p>
+                <h2 className="invoice-agency-name font-extrabold tracking-tight leading-tight whitespace-nowrap">{AGENCY.name}</h2>
+                <p className="text-[11px] italic text-[#e7c98a] font-medium leading-tight mt-0.5">"{AGENCY.slogan}"</p>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="invoice-title font-black tracking-widest text-[#0b2545] leading-none whitespace-nowrap">INVOICE</p>
-              <p className="font-mono text-xs mt-1">{invoiceNo}</p>
+              <p className="invoice-title font-black tracking-[0.25em] leading-none whitespace-nowrap text-[#e7c98a]">INVOICE</p>
+              <p className="font-mono text-xs mt-1.5 text-white/80">{invoiceNo}</p>
             </div>
           </div>
-          <div className="flex justify-between text-xs text-slate-600 mt-3 gap-4">
-            <div>
+          <div className="relative flex justify-between items-end text-[11px] text-white/70 mt-4 gap-4 border-t border-white/10 pt-3">
+            <div className="space-y-0.5">
               <p>{AGENCY.address}</p>
               <p>📞 {AGENCY.phone}</p>
             </div>
             <div className="text-right">
-              <p>Date: {formatDate(invoiceDate)}</p>
+              <p className="uppercase tracking-widest text-white/50 text-[9px]">Issue Date</p>
+              <p className="font-semibold text-white/90 text-xs">{formatDate(invoiceDate)}</p>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-lg border border-slate-200 p-4 mt-6 flex items-start gap-3">
-            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-[#0b2545] shrink-0">
-              <User className="h-4.5 w-4.5" />
+        <div className="px-8 sm:px-10 pt-7 pb-8 flex flex-col">
+          {/* bill to */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-[#0b2545] flex items-center justify-center text-white shrink-0">
+              <User className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Bill To</p>
-              <p className="text-base font-bold mt-0.5">{bill.name || "—"}</p>
-              <div className="text-xs text-slate-600 mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-                {bill.passport && <span>Passport: <span className="font-mono">{bill.passport}</span></span>}
-                {bill.nationality && <span>Nationality: {bill.nationality}</span>}
-                {bill.mobile && <span>Mobile: {bill.mobile}</span>}
+              <p className="text-lg font-bold mt-0.5 text-[#0b2545]">{bill.name || "—"}</p>
+              <div className="text-xs text-slate-600 mt-1.5 flex flex-wrap gap-x-5 gap-y-1">
+                {bill.passport && <span>Passport: <span className="font-mono font-semibold text-slate-700">{bill.passport}</span></span>}
+                {bill.nationality && <span>Nationality: <span className="font-semibold text-slate-700">{bill.nationality}</span></span>}
+                {bill.mobile && <span>Mobile: <span className="font-semibold text-slate-700">{bill.mobile}</span></span>}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 rounded-lg overflow-hidden border border-slate-200">
+          {/* items */}
+          <div className="mt-6 rounded-xl overflow-hidden border border-slate-200 ring-1 ring-slate-100">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#0b2545] text-white">
-                  <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider w-8">#</th>
-                  <th className="text-left p-2.5 text-xs font-semibold uppercase tracking-wider">Service</th>
-                  <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Qty</th>
-                  <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Rate</th>
-                  <th className="text-right p-2.5 text-xs font-semibold uppercase tracking-wider">Amount</th>
+                  <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider w-8">#</th>
+                  <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider">Service Details</th>
+                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Qty</th>
+                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Rate</th>
+                  <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 && (
-                  <tr><td colSpan={5} className="p-6 text-center text-slate-400 text-xs">No items</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs">No items added yet</td></tr>
                 )}
                 {items.map((it, idx) => (
-                  <tr key={it.uid} className="border-t border-slate-200 align-top">
-                    <td className="p-2.5 text-slate-400 tabular-nums">{idx + 1}</td>
-                    <td className="p-2.5">
+                  <tr key={it.uid} className="border-t border-slate-100 align-top odd:bg-white even:bg-slate-50/60">
+                    <td className="p-3 text-slate-400 tabular-nums">{idx + 1}</td>
+                    <td className="p-3">
                       <div className="font-bold text-[#0b2545] uppercase tracking-wide text-sm">
                         {(it.serviceLabel || "—").toUpperCase()}
                       </div>
                       <ItemDetail it={it} />
                     </td>
-                    <td className="p-2.5 text-right tabular-nums">{it.qty}</td>
-                    <td className="p-2.5 text-right tabular-nums">{it.rate.toLocaleString()}</td>
-                    <td className="p-2.5 text-right tabular-nums font-semibold">{(it.qty * it.rate).toLocaleString()}</td>
+                    <td className="p-3 text-right tabular-nums">{it.qty}</td>
+                    <td className="p-3 text-right tabular-nums">{it.rate.toLocaleString()}</td>
+                    <td className="p-3 text-right tabular-nums font-semibold text-[#0b2545]">{(it.qty * it.rate).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
+          {/* notes + totals */}
           <div className="mt-6 flex flex-col sm:flex-row justify-between gap-6">
             <div className="flex-1 text-xs text-slate-600 space-y-1">
-              {notes && (<><p className="font-semibold text-slate-700 flex items-center gap-1"><StickyNote className="h-3.5 w-3.5" /> Notes:</p><p>{notes}</p></>)}
+              {notes && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="font-semibold text-slate-700 flex items-center gap-1.5 mb-1"><StickyNote className="h-3.5 w-3.5" /> Notes</p>
+                  <p className="leading-relaxed">{notes}</p>
+                </div>
+              )}
             </div>
-            <div className="sm:w-72 space-y-2">
-              <div className="flex justify-between text-sm"><span className="text-slate-600">Subtotal</span><span className="tabular-nums">{subtotal.toLocaleString()}৳</span></div>
-              {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-600">Discount</span><span className="tabular-nums">- {discount.toLocaleString()}৳</span></div>)}
-              <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#13315c] text-white px-3 py-2.5 rounded-md">
-                <span className="text-xs uppercase tracking-wider font-semibold">Grand Total</span>
-                <span className="text-lg font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
+            <div className="sm:w-80 rounded-xl border border-slate-200 p-4 space-y-2.5 bg-white">
+              <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="tabular-nums font-medium">{subtotal.toLocaleString()}৳</span></div>
+              {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-500">Discount</span><span className="tabular-nums text-[#b91c1c] font-medium">- {discount.toLocaleString()}৳</span></div>)}
+              <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#1d3b6b] text-white px-4 py-3 rounded-lg shadow-sm">
+                <span className="text-[11px] uppercase tracking-widest font-semibold">Grand Total</span>
+                <span className="text-xl font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
               </div>
-              <div className="flex justify-between text-sm"><span className="text-slate-600">Received</span><span className="tabular-nums">{received.toLocaleString()}৳</span></div>
-              <div className="flex justify-between text-sm font-semibold"><span className="text-slate-700">Due</span><span className="tabular-nums text-[#b91c1c]">{due.toLocaleString()}৳</span></div>
+              <div className="flex justify-between text-sm pt-0.5"><span className="text-slate-500">Received</span><span className="tabular-nums font-medium text-emerald-600">{received.toLocaleString()}৳</span></div>
+              <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-2.5"><span className="text-slate-700">Due Balance</span><span className="tabular-nums text-[#b91c1c]">{due.toLocaleString()}৳</span></div>
             </div>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-slate-200 text-center">
+          {/* signatures */}
+          <div className="mt-12 grid grid-cols-2 gap-10 text-center text-xs text-slate-500">
+            <div className="border-t border-slate-300 pt-2">Customer Signature</div>
+            <div className="border-t border-slate-300 pt-2">Authorized Signature</div>
+          </div>
+
+          <div className="mt-8 pt-4 border-t border-slate-200 text-center">
             <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
             <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
           </div>
@@ -475,16 +494,16 @@ function InvoicePage() {
       </div>
 
       <style>{`
-        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 14pt; }
-        .invoice-print .invoice-agency-name { font-size: 22pt; }
-        .invoice-print .invoice-title { font-size: 26pt; }
+        .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 13pt; }
+        .invoice-print .invoice-agency-name { font-size: 20pt; }
+        .invoice-print .invoice-title { font-size: 24pt; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           color-adjust: exact !important;
         }
         @media print {
-          @page { size: A4; margin: 10mm; }
+          @page { size: A4; margin: 0; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           body * { visibility: hidden !important; }
           .invoice-print, .invoice-print * { visibility: visible !important; }
@@ -492,18 +511,19 @@ function InvoicePage() {
             position: absolute !important;
             left: 0 !important; top: 0 !important;
             width: 100% !important; max-width: 100% !important;
-            min-height: calc(297mm - 20mm) !important;
+            min-height: 297mm !important;
             box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
-            font-size: 14pt !important;
+            font-size: 13pt !important;
           }
+          .invoice-print .inv-banner { border-radius: 0 !important; }
           .invoice-print p, .invoice-print td, .invoice-print th, .invoice-print div, .invoice-print span, .invoice-print li {
-            font-size: 14pt !important;
+            font-size: 13pt !important;
             line-height: 1.4 !important;
           }
-          .invoice-print .invoice-agency-name { font-size: 24pt !important; }
-          .invoice-print .invoice-title { font-size: 28pt !important; }
-          .invoice-print th { font-size: 13pt !important; }
-          .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\] { font-size: 11pt !important; }
+          .invoice-print .invoice-agency-name { font-size: 22pt !important; }
+          .invoice-print .invoice-title { font-size: 26pt !important; }
+          .invoice-print th { font-size: 12pt !important; }
+          .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\], .invoice-print .text-\\[9px\\] { font-size: 10.5pt !important; }
         }
       `}</style>
     </div>
