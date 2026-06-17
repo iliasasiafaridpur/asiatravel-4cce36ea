@@ -30,6 +30,9 @@ const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
   service_name?: string | null; flight_date?: string | null;
+  bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null; discount?: number;
+  vendor_price?: number; tracks_cost?: boolean;
+  delivery_date?: string | null; has_delivery?: boolean;
 };
 type Receipt = {
   id: string; receipt_id?: string | null; amount: number;
@@ -54,8 +57,6 @@ type Expense = {
   entry_date: string; created_at?: string | null;
 };
 
-const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
-
 // Module label per service table (matches MODULES schema).
 const TABLE_LABELS: Record<string, string> = {
   tickets: "AIR TICKET",
@@ -66,27 +67,61 @@ const TABLE_LABELS: Record<string, string> = {
   agency_ledger: "Agency Ledger",
 };
 
-// Columns + mapper to pull service/route info per table.
+// Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
 const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
   tickets: {
-    cols: "id,airline,trip_road,flight_date",
-    map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string }),
+    cols: "id,airline,trip_road,flight_date,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,status",
+    map: (r) => {
+      const isBook = String(r.status ?? "").toUpperCase() === "BOOK";
+      return {
+        airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string,
+        bill: Number(r.sold_price ?? 0), vendor: isBook ? null : (r.vendor_bought as string),
+        agent: r.agency_sold as string, passport: r.passport as string,
+        discount: Number(r.discount_amount ?? 0), vendor_price: isBook ? 0 : Number(r.cost_price ?? 0),
+        tracks_cost: !isBook, has_delivery: false,
+      };
+    },
   },
   bmet_cards: {
-    cols: "id,country_name",
-    map: (r) => ({ country: r.country_name as string }),
+    cols: "id,country_name,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      country: r.country_name as string, bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
+      agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
   },
   saudi_visas: {
-    cols: "id",
-    map: () => ({ country: "Saudi Arabia" }),
+    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      country: "Saudi Arabia", bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
+      agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
   },
   kuwait_visas: {
-    cols: "id",
-    map: () => ({ country: "Kuwait" }),
+    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      country: "Kuwait", bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
+      agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
   },
   others: {
-    cols: "id,service_name,airline,trip_road,flight_date,country_route",
-    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_route as string }),
+    cols: "id,service_name,airline,trip_road,flight_date,country_route,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string,
+      flight_date: r.flight_date as string, country: r.country_route as string, bill: Number(r.sold_price ?? 0),
+      vendor: r.vendor_bought as string, agent: r.agency_sold as string, passport: r.passport as string,
+      discount: Number(r.discount_amount ?? 0), vendor_price: Number(r.cost_price ?? 0), tracks_cost: true,
+      delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
+  },
+  agency_ledger: {
+    cols: "id,country_route,agent_name,total_bill,discount_amount",
+    map: (r) => ({
+      country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: r.agent_name as string,
+      agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), tracks_cost: false, has_delivery: false,
+    }),
   },
 };
 
@@ -115,6 +150,7 @@ function MyHandoverPage() {
   const [loading, setLoading] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
   const [mdEmail, setMdEmail] = useState("");
+  const [recByService, setRecByService] = useState<Record<string, Receipt[]>>({});
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmailFn = useServerFn(sendGmail);
 
@@ -173,31 +209,7 @@ function MyHandoverPage() {
       setMdEmail((pick?.notify_email ?? "").trim());
       const recs = ((r.data ?? []) as unknown) as Receipt[];
 
-      const byTable: Record<string, Set<string>> = {};
-      for (const rec of recs) {
-        if (!rec.service_table || !rec.service_row_id) continue;
-        if (!(DISCOUNT_TABLES as readonly string[]).includes(rec.service_table)) continue;
-        byTable[rec.service_table] ??= new Set();
-        byTable[rec.service_table].add(rec.service_row_id);
-      }
-      const discMap: Record<string, number> = {};
-      await Promise.all(
-        Object.entries(byTable).map(async ([tbl, ids]) => {
-          const { data } = await supabase
-            .from(tbl as never)
-            .select("id,discount_amount")
-            .in("id", Array.from(ids));
-          for (const row of (data ?? []) as Array<{ id: string; discount_amount: number | null }>) {
-            discMap[`${tbl}:${row.id}`] = Number(row.discount_amount ?? 0);
-          }
-        })
-      );
-      for (const rec of recs) {
-        const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
-        rec.discount = k ? (discMap[k] ?? 0) : 0;
-      }
-
-      // Enrich each receipt with service/route info from its underlying service row.
+      // Enrich each receipt with full service/financial info from its underlying service row.
       const svcByTable: Record<string, Set<string>> = {};
       for (const rec of recs) {
         if (!rec.service_table || !rec.service_row_id) continue;
@@ -221,7 +233,30 @@ function MyHandoverPage() {
       for (const rec of recs) {
         const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
         rec.svc = k ? svcMap[k] : undefined;
+        rec.discount = rec.svc?.discount ?? 0;
       }
+
+      // Load ALL receipts for each service row so we can show পূর্বের জমা / বাকি (paid history).
+      const byService: Record<string, Receipt[]> = {};
+      const entries = Object.entries(svcByTable);
+      if (entries.length > 0) {
+        await Promise.all(
+          entries.map(async ([tbl, ids]) => {
+            const { data } = await supabase
+              .from("payment_receipts")
+              .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
+              .eq("service_table", tbl)
+              .in("service_row_id", Array.from(ids))
+              .not("source", "eq", "discount");
+            for (const row of ((data ?? []) as unknown as Receipt[])) {
+              if (!row.service_table || !row.service_row_id) continue;
+              (byService[`${row.service_table}:${row.service_row_id}`] ??= []).push(row);
+            }
+          })
+        );
+      }
+      setRecByService(byService);
+
 
       setReceipts(recs);
       setExpenses(((e.data ?? []) as unknown) as Expense[]);
@@ -245,74 +280,167 @@ function MyHandoverPage() {
   );
 
   const buildReportHtml = () => {
-    const money = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
+    const money = (n: number) => `৳&nbsp;${(Number(n) || 0).toLocaleString()}`;
+    const now = Date.now();
+    const batchIds = new Set(receipts.map((r) => r.id));
+    const cashReceipts = totalReceived;
+    const mdReceipts = totalMdReceived;
+
     const incomeRows = visibleReceipts
       .map((r, i) => {
-        const evt = isStatusEvent(r);
-        const amt = evt
-          ? `<span class="hand">📦 Delivery</span>`
-          : `<span class="in">${money(r.amount || 0)}</span>`;
-        const disc = Number(r.discount || 0) > 0 ? `<span class="due">− ${money(r.discount || 0)}</span>` : "";
-        return `<tr>
-  <td class="num">${i + 1}</td>
-  <td class="wrap">${r.passenger_name || "—"}</td>
-  <td class="wrap">${svcLine(r) || r.receipt_id || ""}</td>
-  <td class="num">${amt}</td>
-  <td class="num">${disc}</td>
+        const info = r.svc ?? {};
+        const sk = serviceKey(r);
+        const allForSvc = sk ? (recByService[sk] ?? []) : [];
+        const past = allForSvc.filter((x) => !batchIds.has(x.id) && new Date(x.created_at ?? r.entry_date).getTime() < now);
+        const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+        const lastPast = past.length
+          ? past.reduce((a, b) => (new Date(a.created_at ?? "").getTime() > new Date(b.created_at ?? "").getTime() ? a : b))
+          : null;
+        const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+        const bill = Number(info.bill ?? 0);
+        const discount = Number(info.discount ?? 0);
+        const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+        const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+        const statusEvt = isStatusEvent(r);
+        const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+        const tint = i % 2 === 0 ? "#0f1a30" : "#13203a";
+
+        // সার্ভিস column
+        const svcLines = [
+          `<div style="font-weight:600">${r.service_type ?? ""}</div>`,
+          info.service_name ? `<div class="muted">${info.service_name}</div>` : "",
+          info.country ? `<div class="muted">${info.country}</div>` : "",
+          info.airline ? `<div class="muted">${info.airline}${info.flight_date ? ` · ${formatDate(info.flight_date)}` : ""}</div>` : "",
+        ].join("");
+
+        // মোট বিল column
+        let billCell = `<span class="muted">—</span>`;
+        if (bill > 0) {
+          billCell = `<div style="font-weight:700">${money(bill)}</div>`;
+          if (discount > 0) billCell += `<div class="in" style="font-size:12px">${money(discount)} (ডিসকাউন্ট)</div>`;
+          billCell += due > 0.005
+            ? `<div class="due" style="font-size:12px">বাকি: ${money(due)}</div>`
+            : `<div class="in" style="font-size:12px">✓ পরিশোধিত</div>`;
+        }
+        if (info.vendor) {
+          billCell += `<div class="muted" style="font-size:12px">V: ${info.vendor}${Number(info.vendor_price ?? 0) > 0 ? `-${Math.round(Number(info.vendor_price)).toLocaleString()}/` : ""}</div>`;
+        }
+
+        // পূর্বের জমা
+        const prevCell = previousPaid > 0
+          ? `<div class="sky" style="font-weight:600">${money(previousPaid)}</div>${lastPast ? `<div class="sky" style="font-size:12px">${formatDate(lastPast.entry_date)}${past.length > 1 ? ` +${past.length - 1}` : ""}</div>` : ""}`
+          : `<span class="muted">— নতুন —</span>`;
+
+        // এই বারের জমা
+        const thisCell = statusEvt
+          ? `<div class="violet" style="font-weight:600">📦 ${cleanStatusText(r.remarks)}</div>`
+          : `<b class="${mdRecv ? "sky" : "in"}">${money(r.amount || 0)}</b>${mdRecv ? `<div class="sky" style="font-size:12px;font-weight:600">MD · ${r.method}</div>` : ""}`;
+
+        // বাকি (after this)
+        let dueCell = `<span class="muted">—</span>`;
+        if (bill > 0) {
+          dueCell = dueAfterThis <= 0.005
+            ? `<span class="in" style="font-size:18px">✓</span>`
+            : `<span class="due" style="font-weight:800">${money(dueAfterThis)}</span>`;
+        }
+
+        return `<tr style="background:${tint}">
+  <td>
+    <div style="font-weight:600">${formatDate(r.entry_date)}</div>
+    ${r.receipt_id ? `<div class="muted mono">${r.receipt_id}</div>` : ""}
+  </td>
+  <td>
+    <div style="font-weight:700">${r.passenger_name || "—"}</div>
+    <div class="muted">A: ${info.agent || "Self"}${info.passport ? ` · ${info.passport}` : ""}</div>
+  </td>
+  <td>${svcLines}</td>
+  <td class="r">${billCell}</td>
+  <td class="r">${prevCell}</td>
+  <td class="r">${thisCell}</td>
+  <td class="r">${dueCell}</td>
 </tr>`;
       })
       .join("");
+
     const expenseRows = expenses
-      .map((e, i) => `<tr>
-  <td class="num">${i + 1}</td>
-  <td class="wrap">${e.category}${e.purpose ? ` — ${e.purpose}` : ""}</td>
-  <td class="num out">− ${money(e.amount || 0)}</td>
+      .map((e, i) => `<tr style="background:${i % 2 === 0 ? "#0f1a30" : "#13203a"}">
+  <td>${formatDate(e.entry_date)}</td>
+  <td><div style="font-weight:600">${e.category || "—"}</div>${e.purpose ? `<div class="muted">${e.purpose}</div>` : ""}</td>
+  <td class="r"><b class="out">− ${money(e.amount || 0)}</b></td>
 </tr>`)
       .join("");
+
+    const headTime = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
     return `<!doctype html><html lang="bn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  body{font-family:'Noto Sans Bengali',Arial,system-ui,sans-serif;padding:8px;color:#111;margin:0;background:#ffffff}
-  .sheet{max-width:640px;margin:0 auto}
-  h1{margin:0 0 2px;font-size:16px}
-  .meta{color:#555;font-size:11px;margin-bottom:8px}
-  .summary{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;font-size:11px;font-weight:700}
-  .summary div{padding:4px 7px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:120px}
-  h2{font-size:12.5px;margin:12px 0 4px}
-  table{width:100%;border-collapse:collapse;font-size:11px;table-layout:auto;margin-bottom:6px}
-  th,td{border-bottom:1px solid #e5e5e5;padding:3px 5px;text-align:left;vertical-align:top;line-height:1.3}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word}
-  th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
-  tfoot td{font-weight:700;background:#fafafa}
+  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:16px;background:#0a1124;color:#e2e8f0;font-size:15px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:760px;margin:0 auto}
+  .brand{text-align:center;margin-bottom:14px}
+  .brand h1{margin:0;font-size:20px;font-weight:800;color:#5eead4;letter-spacing:.2px}
+  .brand p{margin:4px 0 0;font-size:13px;color:#94a3b8}
+  .card{border:1px solid #24324d;border-left:6px solid #2dd4bf;border-radius:14px;overflow:hidden;background:#0e1830;box-shadow:0 8px 26px -8px rgba(0,0,0,.6)}
+  .head{background:#16223d;padding:14px 16px;border-bottom:1px solid #24324d}
+  .badge{display:inline-block;background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
+  .hmeta{margin-top:8px;font-size:13px;color:#cbd5e1;line-height:1.7}
+  .hmeta b{color:#f1f5f9}
+  .hamt{float:right;font-size:20px;font-weight:800;color:#5eead4}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead th{background:#16223d;color:#cbd5e1;text-align:left;padding:9px 10px;font-size:13px;font-weight:700;border-bottom:2px solid #24324d}
+  thead th.r{text-align:right}
+  td{padding:9px 10px;border-top:1px solid #1d2a44;vertical-align:top;line-height:1.5}
+  td.r{text-align:right;white-space:nowrap}
+  .muted{color:#8da2bd;font-size:13px}
+  .mono{font-family:'Courier New',monospace}
+  .in{color:#34d399}.out{color:#fbbf24}.due{color:#fb7185}.sky{color:#38bdf8}.violet{color:#c4b5fd}
+  tfoot td{background:#16223d;font-weight:700;border-top:2px solid #24324d;padding:11px 10px}
+  .secbar{padding:10px 16px;background:rgba(251,113,133,.10);color:#fca5a5;font-weight:700;font-size:13px;display:flex;justify-content:space-between}
+  .foot{background:#16223d;padding:14px 16px;border-top:1px solid #24324d;font-size:14px;line-height:1.8}
+  .foot b{color:#f1f5f9}
+  .note{margin-top:10px;font-size:13px;color:#94a3b8}
 </style></head><body>
-<div class="sheet">
-  <h1>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
-  <div class="meta">${displayName(profile, user)} · ক্লোজিং তারিখ: ${formatDate(closingDate)}</div>
-  <div class="summary">
-    <div class="in">নগদ আয়: <b>+ ${money(totalReceived)}</b></div>
-    <div class="out">ব্যয়: <b>− ${money(totalExpense)}</b></div>
-    <div class="due">ডিসকাউন্ট: <b>${money(totalDiscount)}</b></div>
-    <div>Net Cash: <b>${money(netCash)}</b></div>
-    <div>গণনাকৃত নগদ: <b>${money(declared)}</b></div>
-    <div class="${variance >= 0 ? "in" : "out"}">Variance: <b>${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
+<div class="wrap">
+  <div class="brand">
+    <h1>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
+    <p>ক্যাশ হ্যান্ডওভার রিপোর্ট · ক্লোজিং তারিখ ${formatDate(closingDate)}</p>
   </div>
-  ${incomeRows ? `<h2>আয়/ডেলিভারি বিবরণ</h2>
-  <table>
-    <thead><tr><th class="num">#</th><th class="wrap">নাম</th><th class="wrap">সার্ভিস</th><th class="num">আয়</th><th class="num">ডিসকাউন্ট</th></tr></thead>
-    <tbody>${incomeRows}</tbody>
-  </table>` : ""}
-  ${expenseRows ? `<h2>ব্যয় বিবরণ</h2>
-  <table>
-    <thead><tr><th class="num">#</th><th class="wrap">খাত / উদ্দেশ্য</th><th class="num">পরিমাণ</th></tr></thead>
-    <tbody>${expenseRows}</tbody>
-  </table>` : ""}
-  ${remarks ? `<p style="font-size:11px;color:#555;"><b>মন্তব্য:</b> ${remarks}</p>` : ""}
+  <div class="card">
+    <div class="head">
+      <span class="hamt">${money(declared)}</span>
+      <span class="badge">⏳ এমডিকে পাঠানো হয়েছে — অপেক্ষমান</span>
+      <div class="hmeta">
+        📅 তারিখ: <b>${formatDate(closingDate)}</b> · সময়: <b>${headTime}</b><br>
+        👤 প্রেরক: <b>${displayName(profile, user)}</b> &nbsp;·&nbsp; 👥 গ্রহীতা: <b>Kaium Khan (MD)</b>
+      </div>
+    </div>
+    ${incomeRows ? `<table>
+      <thead><tr>
+        <th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
+        <th class="r">মোট বিল</th><th class="r">পূর্বের জমা</th><th class="r">এই বারের জমা</th><th class="r">বাকি</th>
+      </tr></thead>
+      <tbody>${incomeRows}</tbody>
+      <tfoot><tr>
+        <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
+        <td colspan="2" class="r"><span class="in">নগদ: ${money(cashReceipts)}</span>${mdReceipts > 0 ? `<div class="sky" style="font-size:12px">MD: ${money(mdReceipts)}</div>` : ""}</td>
+      </tr></tfoot>
+    </table>` : `<div style="padding:18px;text-align:center;color:#8da2bd">কোনো passenger receipt নেই</div>`}
+    ${expenseRows ? `<div class="secbar"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span>মোট খরচ: ${money(totalExpense)}</span></div>
+    <table>
+      <thead><tr><th>তারিখ</th><th>খাত / উদ্দেশ্য</th><th class="r">টাকা</th></tr></thead>
+      <tbody>${expenseRows}</tbody>
+    </table>` : ""}
+    <div class="foot">
+      মোট ${visibleReceipts.length} আইটেম থেকে আয় — <span class="in">নগদ ${money(cashReceipts)}</span>${mdReceipts > 0 ? ` · <span class="sky">MD ${money(mdReceipts)}</span>` : ""}${totalExpense > 0 ? ` · <span class="out">খরচ ${money(totalExpense)}</span>` : ""} · <span class="${variance >= 0 ? "in" : "out"}">Variance ${variance >= 0 ? "+" : ""}${money(variance)}</span><br>
+      👤 প্রেরক: <b>${displayName(profile, user)}</b> &nbsp;·&nbsp; 👥 গ্রহীতা: <b>Kaium Khan (MD)</b> &nbsp;·&nbsp; জমা: <b style="color:#5eead4">${money(declared)}</b>
+      ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
+    </div>
+  </div>
 </div>
 </body></html>`;
   };
+
 
   const sendToMd = async (): Promise<boolean> => {
     const target = mdEmail.trim();
