@@ -44,7 +44,7 @@ export const adminResetUserPassword = createServerFn({ method: "POST" })
 
     const { error: flagErr } = await supabaseAdmin
       .from("profiles")
-      .update({ must_reset_password: true })
+      .update({ must_reset_password: true } as never)
       .eq("user_id", data.userId);
     if (flagErr) throw new Error("ফ্ল্যাগ সেট ব্যর্থ: " + flagErr.message);
 
