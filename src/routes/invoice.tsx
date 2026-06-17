@@ -164,7 +164,9 @@ function InvoicePage() {
   const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   const [bill, setBill] = useState({ name: "", passport: "", nationality: "Bangladeshi", mobile: "" });
-  const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [items, setItems] = useState<InvoiceItem[]>(() => [
+    { uid: genUid(), type: "manual", serviceLabel: "", qty: 1, rate: 0 },
+  ]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
