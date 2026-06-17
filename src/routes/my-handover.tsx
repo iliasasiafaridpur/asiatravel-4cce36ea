@@ -296,10 +296,11 @@ function MyHandoverPage() {
     const cashReceipts = totalReceived;
     const mdReceipts = totalMdReceived;
 
-    // Each receipt is rendered as a STACKED CARD (mobile-safe) instead of a
-    // wide multi-column table, so nothing gets cut off on a phone screen.
-    const incomeCards = visibleReceipts
-      .map((r) => {
+    // Email layout mirrors the Accounts PRINT page: a clean white A4-style
+    // document with a real data table (not dark cards). All handover info is
+    // kept; only the visual arrangement matches the print sheet.
+    const incomeRows = visibleReceipts
+      .map((r, i) => {
         const info = r.svc ?? {};
         const sk = serviceKey(r);
         const allForSvc = sk ? (recByService[sk] ?? []) : [];
@@ -308,71 +309,59 @@ function MyHandoverPage() {
         const lastPast = past.length
           ? past.reduce((a, b) => (new Date(a.created_at ?? "").getTime() > new Date(b.created_at ?? "").getTime() ? a : b))
           : null;
-        const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
         const bill = Number(info.bill ?? 0);
         const discount = Number(info.discount ?? 0);
-        const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
         const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
         const statusEvt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
 
-        // ---- Passenger service info block (prominent, top of card) ----
         const tbl = r.service_table ?? "";
         const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
-        const svcIcon = SVC_ICONS[tbl] || (info.airline ? "✈️" : "🧾");
-        const svcMetaBits = [
+        const region = [
           info.country || "",
           info.airline ? `${info.airline}${info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}` : "",
           info.route || "",
-        ].filter(Boolean);
-        const svcMeta = svcMetaBits.join(" · ");
-        const svcBox = `<div class="svcbox"><span class="svcicon">${svcIcon}</span><span class="svctitle">${svcTitle}</span>${svcMeta ? `<span class="svcmeta">${svcMeta}</span>` : ""}</div>`;
+        ].filter(Boolean).join(" · ");
 
-        // key-value rows (label : value) — each on its own line, full width
-        const rows: string[] = [];
-        if (bill > 0) {
-          let billVal = `<b>${money(bill)}</b>`;
-          if (discount > 0) billVal += ` <span class="in" style="font-size:12px">(− ${money(discount)} ডিসকাউন্ট)</span>`;
-          rows.push(`<tr><td class="k">মোট বিল</td><td class="v">${billVal}</td></tr>`);
-        }
-        if (info.vendor) {
-          rows.push(`<tr><td class="k">ভেন্ডর</td><td class="v muted">${info.vendor}${Number(info.vendor_price ?? 0) > 0 ? ` · ${Math.round(Number(info.vendor_price)).toLocaleString()}` : ""}</td></tr>`);
-        }
-        if (previousPaid > 0) {
-          rows.push(`<tr><td class="k">পূর্বের জমা</td><td class="v"><span class="sky" style="font-weight:600">${money(previousPaid)}</span>${lastPast ? ` <span class="sky" style="font-size:12px">(${formatDate(lastPast.entry_date)}${past.length > 1 ? ` +${past.length - 1}` : ""})</span>` : ""}</td></tr>`);
-        }
-        const thisVal = statusEvt
-          ? `<span class="violet" style="font-weight:700">📦 ${cleanStatusText(r.remarks)}</span>`
-          : `<b class="${mdRecv ? "sky" : "in"}" style="font-size:16px">${money(r.amount || 0)}</b>${mdRecv ? ` <span class="sky" style="font-size:12px">(MD · ${r.method})</span>` : ""}`;
-        rows.push(`<tr><td class="k">এই বারের জমা</td><td class="v">${thisVal}</td></tr>`);
-        if (bill > 0) {
-          const dueVal = dueAfterThis <= 0.005
-            ? `<span class="in" style="font-weight:700">✓ পরিশোধিত</span>`
-            : `<span class="due" style="font-weight:800">${money(dueAfterThis)}</span>`;
-          rows.push(`<tr><td class="k">বাকি</td><td class="v">${dueVal}</td></tr>`);
-        }
+        const billCell = bill > 0
+          ? `${money(bill)}${discount > 0 ? `<div class="sub">− ${money(discount)} ডিসকাউন্ট</div>` : ""}`
+          : "";
+        const prevCell = previousPaid > 0
+          ? `${money(previousPaid)}${lastPast ? `<div class="sub">${formatDate(lastPast.entry_date)}${past.length > 1 ? ` +${past.length - 1}` : ""}</div>` : ""}`
+          : "";
+        const thisCell = statusEvt
+          ? `<span class="hand">📦 ${cleanStatusText(r.remarks)}</span>`
+          : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(r.amount || 0)}</span>${mdRecv ? `<div class="sub">MD · ${r.method}</div>` : ""}`;
+        const dueCell = bill > 0
+          ? (dueAfterThis <= 0.005 ? `<span class="paid">✓ পরিশোধিত</span>` : `<span class="due">${money(dueAfterThis)}</span>`)
+          : "";
+        const vendorLine = info.vendor
+          ? `<div class="sub">ভেন্ডর: ${info.vendor}${Number(info.vendor_price ?? 0) > 0 ? ` · ${Math.round(Number(info.vendor_price)).toLocaleString()}` : ""}</div>`
+          : "";
 
-        return `<div class="item">
-  <div class="ihead">
-    <span class="iname">${r.passenger_name || "—"}</span>
-    <span class="idate">${formatDate(r.entry_date)}${r.receipt_id ? ` · <span class="mono">${r.receipt_id}</span>` : ""}</span>
-  </div>
-  <div class="isub">👤 ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div>
-  ${svcBox}
-  <table class="kv"><tbody>${rows.join("")}</tbody></table>
-</div>`;
+        return `<tr class="row-tint-${i % 4}">
+  <td class="num">${i + 1}</td>
+  <td>${formatDate(r.entry_date)}${r.receipt_id ? `<div class="sub mono">${r.receipt_id}</div>` : ""}</td>
+  <td class="wrap"><b>${r.passenger_name || "—"}</b><div class="sub">👤 ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div></td>
+  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv ? `<div class="sub">${r.method}</div>` : ""}</td>
+  <td class="wrap">${region || "—"}${vendorLine}</td>
+  <td class="num">${billCell}</td>
+  <td class="num">${prevCell}</td>
+  <td class="num">${thisCell}</td>
+  <td class="num">${dueCell}</td>
+</tr>`;
       })
       .join("");
 
-    const expenseCards = expenses
-      .map((e) => `<div class="item out-item">
-  <div class="ihead">
-    <span class="iname">${e.category || "—"}</span>
-    <span class="idate">${formatDate(e.entry_date)}</span>
-  </div>
-  ${e.purpose ? `<div class="isub">${e.purpose}</div>` : ""}
-  <table class="kv"><tbody><tr><td class="k">খরচ</td><td class="v"><b class="out" style="font-size:16px">− ${money(e.amount || 0)}</b></td></tr></tbody></table>
-</div>`)
+    const expenseRows = expenses
+      .map((e, i) => `<tr class="row-tint-${i % 4}">
+  <td class="num">${i + 1}</td>
+  <td>${formatDate(e.entry_date)}</td>
+  <td class="wrap"><b>${e.category || "—"}</b></td>
+  <td class="wrap" colspan="4">${e.purpose || ""}</td>
+  <td class="num out">− ${money(e.amount || 0)}</td>
+  <td></td>
+</tr>`)
       .join("");
 
     const headTime = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -381,81 +370,80 @@ function MyHandoverPage() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ক্যাশ হ্যান্ডওভার রিপোর্ট- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:18px 12px;background:#0a1124;color:#e2e8f0;font-size:14px;-webkit-text-size-adjust:100%}
-  .wrap{max-width:920px;margin:0 auto}
-  .brand{text-align:center;margin-bottom:14px}
-  .brand h1{margin:0;font-size:22px;font-weight:800;color:#5eead4;letter-spacing:.2px}
-  .brand p{margin:4px 0 0;font-size:13px;color:#94a3b8}
-  .card{border:1px solid #24324d;border-radius:14px;overflow:hidden;background:#0e1830;box-shadow:0 12px 40px -12px rgba(0,0,0,.7)}
-  .head{background:#16223d;padding:16px 18px;border-bottom:1px solid #24324d}
-  .badge{display:inline-block;background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700}
-  .hamt{display:block;text-align:right;font-size:28px;font-weight:800;color:#5eead4;margin-bottom:6px}
-  .hmeta{margin-top:10px;font-size:13px;color:#cbd5e1;line-height:1.8}
-  .hmeta b{color:#f1f5f9}
-  .sec{padding:14px 18px 4px;font-size:14px;font-weight:700;color:#cbd5e1;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px}
-  .sec .amt{font-size:13px;color:#94a3b8}
-  .body{padding:6px 14px 12px}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  @media (max-width:640px){.grid{grid-template-columns:1fr}.wrap{max-width:560px}.hamt{font-size:24px}.brand h1{font-size:20px}}
-  .item{border:1px solid #1d2a44;border-left:4px solid #2dd4bf;border-radius:10px;background:#0f1a30;padding:10px 12px}
-  .out-item{border-left-color:#fbbf24}
-  .ihead{display:flex;justify-content:space-between;align-items:baseline;gap:6px;flex-wrap:wrap}
-  .iname{font-weight:800;font-size:15px;color:#f1f5f9}
-  .idate{font-size:11px;color:#8da2bd;white-space:nowrap}
-  .isub{font-size:12px;color:#9fb3cf;margin-top:2px}
-  .svcbox{margin-top:6px;font-size:12px;line-height:1.5}
-  .svcicon{font-size:14px;margin-right:4px}
-  .svctitle{font-weight:700;font-size:12px;color:#5eead4}
-  .svcmeta{color:#9fb3cf}
-  .svcmeta:before{content:" · ";color:#8da2bd}
-  table.kv{width:100%;border-collapse:collapse;margin-top:6px}
-  table.kv td{padding:4px 0;border-top:1px solid #1d2a44;vertical-align:top;line-height:1.4}
-  table.kv td.k{color:#8da2bd;font-size:12px;width:42%;white-space:nowrap}
-  table.kv td.v{text-align:right;font-size:13px}
-  table.kv tr:first-child td{border-top:none}
+  body{font-family:'Noto Sans Bengali','Segoe UI',Arial,sans-serif;margin:0;padding:16px;background:#eef1f5;color:#111;font-size:13px;-webkit-text-size-adjust:100%}
+  .sheet{max-width:900px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:6px;padding:18px 20px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  h1{margin:0 0 2px;font-size:18px;color:#111;text-align:center}
+  .sub-title{text-align:center;color:#555;font-size:12px;margin-bottom:4px}
+  .badge{display:block;text-align:center;margin:8px 0 12px}
+  .badge span{display:inline-block;background:#fff7e6;color:#b45309;border:1px solid #f0c97a;border-radius:999px;padding:3px 14px;font-size:11.5px;font-weight:700}
+  .meta{color:#555;font-size:11.5px;margin-bottom:10px;line-height:1.7;border-top:1px solid #eee;border-bottom:1px solid #eee;padding:8px 0}
+  .meta b{color:#111}
+  .summary{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;font-size:12px;font-weight:700}
+  .summary div{padding:6px 10px;border:1px solid #e2e2e2;border-radius:6px;flex:1;min-width:120px;background:#fafafa}
+  .summary .lbl{display:block;font-weight:600;color:#666;font-size:10.5px;margin-bottom:2px}
+  .sec{font-size:13px;font-weight:700;color:#111;margin:14px 0 6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  .sec .amt{font-size:11.5px;color:#666;font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:auto}
+  th,td{border-bottom:1px solid #eaeaea;padding:5px 6px;text-align:left;vertical-align:top;line-height:1.4}
+  th{background:#f5f5f5;font-weight:600;font-size:11px;color:#333}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word}
+  .sub{color:#777;font-size:10px;margin-top:2px;font-weight:400}
   .mono{font-family:'Courier New',monospace}
-  .in{color:#34d399}.out{color:#fbbf24}.due{color:#fb7185}.sky{color:#38bdf8}.violet{color:#c4b5fd}
-  .muted{color:#8da2bd}
-  .empty{padding:18px;text-align:center;color:#8da2bd}
-  .foot{background:#16223d;padding:16px;border-top:1px solid #24324d;font-size:14px;line-height:1.9}
-  .foot b{color:#f1f5f9}
-  .totalrow{display:flex;justify-content:space-between;padding:4px 0}
-  .note{margin-top:10px;font-size:13px;color:#94a3b8}
+  .in{color:#059669;font-weight:700}.out{color:#b45309;font-weight:700}.hand{color:#0284c7;font-weight:700}
+  .due{color:#b91c1c;font-weight:700}.paid{color:#059669;font-weight:700}
+  tfoot td{font-weight:700;background:#fafafa;border-top:2px solid #ddd}
+  .empty{padding:14px;text-align:center;color:#999}
+  .foot{margin-top:14px;border-top:2px solid #ddd;padding-top:10px;font-size:12.5px}
+  .totalrow{display:flex;justify-content:space-between;padding:3px 0}
+  .totalrow.big{font-size:15px;font-weight:800;border-top:1px dashed #ccc;margin-top:4px;padding-top:6px}
+  .note{margin-top:8px;font-size:11.5px;color:#555}
 </style></head><body>
-<div class="wrap">
-  <div class="brand">
-    <h1>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
-    <p>ক্যাশ হ্যান্ডওভার রিপোর্ট · ক্লোজিং তারিখ ${formatDate(closingDate)}</p>
+<div class="sheet">
+  <h1>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
+  <div class="sub-title">ক্যাশ হ্যান্ডওভার রিপোর্ট · ক্লোজিং তারিখ ${formatDate(closingDate)}</div>
+  <div class="badge"><span>⏳ এমডিকে পাঠানো হয়েছে — অপেক্ষমান</span></div>
+  <div class="meta">
+    📅 তারিখ: <b>${formatDate(closingDate)}</b> · সময়: <b>${headTime}</b><br>
+    👤 প্রেরক: <b>${displayName(profile, user)}</b> · 👥 গ্রহীতা: <b>Kaium Khan (MD)</b>
   </div>
-  <div class="card">
-    <div class="head">
-      <span class="hamt">${money(declared)}</span>
-      <span class="badge">⏳ এমডিকে পাঠানো হয়েছে — অপেক্ষমান</span>
-      <div class="hmeta">
-        📅 তারিখ: <b>${formatDate(closingDate)}</b> · সময়: <b>${headTime}</b><br>
-        👤 প্রেরক: <b>${displayName(profile, user)}</b><br>
-        👥 গ্রহীতা: <b>Kaium Khan (MD)</b>
-      </div>
-    </div>
+  <div class="summary">
+    <div><span class="lbl">নগদ আয়</span><span class="in">${money(cashReceipts)}</span></div>
+    ${mdReceipts > 0 ? `<div><span class="lbl">MD রিসিভ</span><span class="hand">${money(mdReceipts)}</span></div>` : ""}
+    ${totalExpense > 0 ? `<div><span class="lbl">খরচ</span><span class="out">− ${money(totalExpense)}</span></div>` : ""}
+    <div><span class="lbl">জমা (Declared)</span><span>${money(declared)}</span></div>
+    <div><span class="lbl">Variance</span><span class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</span></div>
+  </div>
 
-    <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}</span></div>
-    <div class="body">${incomeCards ? `<div class="grid">${incomeCards}</div>` : `<div class="empty">কোনো passenger receipt নেই</div>`}</div>
+  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}</span></div>
+  ${incomeRows ? `<table>
+    <thead><tr>
+      <th class="num">#</th><th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th><th>দেশ/রোড</th>
+      <th class="num">মোট বিল</th><th class="num">পূর্বের জমা</th><th class="num">এই বারের জমা</th><th class="num">বাকি</th>
+    </tr></thead>
+    <tbody>${incomeRows}</tbody>
+  </table>` : `<div class="empty">কোনো passenger receipt নেই</div>`}
 
-    ${expenseCards ? `<div class="sec"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span class="amt">মোট: ${money(totalExpense)}</span></div>
-    <div class="body"><div class="grid">${expenseCards}</div></div>` : ""}
+  ${expenseRows ? `<div class="sec"><span>💸 খরচের বিবরণ — ${expenses.length} টি</span><span class="amt">মোট: ${money(totalExpense)}</span></div>
+  <table>
+    <thead><tr>
+      <th class="num">#</th><th>তারিখ</th><th>খাত</th><th>বিবরণ</th><th class="num">খরচ</th><th></th>
+    </tr></thead>
+    <tbody>${expenseRows}</tbody>
+  </table>` : ""}
 
-    <div class="foot">
-      <div class="totalrow"><span class="muted">নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
-      ${mdReceipts > 0 ? `<div class="totalrow"><span class="muted">MD রিসিভ</span><b class="sky">${money(mdReceipts)}</b></div>` : ""}
-      ${totalExpense > 0 ? `<div class="totalrow"><span class="muted">খরচ</span><b class="out">− ${money(totalExpense)}</b></div>` : ""}
-      <div class="totalrow"><span class="muted">জমা (Declared)</span><b style="color:#5eead4">${money(declared)}</b></div>
-      <div class="totalrow"><span class="muted">Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
-      ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
-    </div>
+  <div class="foot">
+    <div class="totalrow"><span>নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
+    ${mdReceipts > 0 ? `<div class="totalrow"><span>MD রিসিভ</span><b class="hand">${money(mdReceipts)}</b></div>` : ""}
+    ${totalExpense > 0 ? `<div class="totalrow"><span>খরচ</span><b class="out">− ${money(totalExpense)}</b></div>` : ""}
+    <div class="totalrow big"><span>জমা (Declared)</span><b>${money(declared)}</b></div>
+    <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
+    ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
   </div>
 </div>
 </body></html>`;
   };
+
 
 
   const sendToMd = async (): Promise<boolean> => {
