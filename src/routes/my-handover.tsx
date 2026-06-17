@@ -57,8 +57,6 @@ type Expense = {
   entry_date: string; created_at?: string | null;
 };
 
-const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
-
 // Module label per service table (matches MODULES schema).
 const TABLE_LABELS: Record<string, string> = {
   tickets: "AIR TICKET",
@@ -69,27 +67,61 @@ const TABLE_LABELS: Record<string, string> = {
   agency_ledger: "Agency Ledger",
 };
 
-// Columns + mapper to pull service/route info per table.
+// Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
 const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
   tickets: {
-    cols: "id,airline,trip_road,flight_date",
-    map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string }),
+    cols: "id,airline,trip_road,flight_date,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,status",
+    map: (r) => {
+      const isBook = String(r.status ?? "").toUpperCase() === "BOOK";
+      return {
+        airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string,
+        bill: Number(r.sold_price ?? 0), vendor: isBook ? null : (r.vendor_bought as string),
+        agent: r.agency_sold as string, passport: r.passport as string,
+        discount: Number(r.discount_amount ?? 0), vendor_price: isBook ? 0 : Number(r.cost_price ?? 0),
+        tracks_cost: !isBook, has_delivery: false,
+      };
+    },
   },
   bmet_cards: {
-    cols: "id,country_name",
-    map: (r) => ({ country: r.country_name as string }),
+    cols: "id,country_name,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      country: r.country_name as string, bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
+      agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
   },
   saudi_visas: {
-    cols: "id",
-    map: () => ({ country: "Saudi Arabia" }),
+    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      country: "Saudi Arabia", bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
+      agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
   },
   kuwait_visas: {
-    cols: "id",
-    map: () => ({ country: "Kuwait" }),
+    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      country: "Kuwait", bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
+      agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
   },
   others: {
-    cols: "id,service_name,airline,trip_road,flight_date,country_route",
-    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_route as string }),
+    cols: "id,service_name,airline,trip_road,flight_date,country_route,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    map: (r) => ({
+      service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string,
+      flight_date: r.flight_date as string, country: r.country_route as string, bill: Number(r.sold_price ?? 0),
+      vendor: r.vendor_bought as string, agent: r.agency_sold as string, passport: r.passport as string,
+      discount: Number(r.discount_amount ?? 0), vendor_price: Number(r.cost_price ?? 0), tracks_cost: true,
+      delivery_date: r.delivery_date as string, has_delivery: true,
+    }),
+  },
+  agency_ledger: {
+    cols: "id,country_route,agent_name,total_bill,discount_amount",
+    map: (r) => ({
+      country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: r.agent_name as string,
+      agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), tracks_cost: false, has_delivery: false,
+    }),
   },
 };
 
