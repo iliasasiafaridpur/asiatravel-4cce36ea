@@ -423,17 +423,9 @@ function InvoicePage() {
             </table>
           </div>
 
-          {/* notes + totals */}
-          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-6">
-            <div className="flex-1 text-xs text-slate-600 space-y-1">
-              {notes && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="font-semibold text-slate-700 flex items-center gap-1.5 mb-1"><StickyNote className="h-3.5 w-3.5" /> Notes</p>
-                  <p className="leading-relaxed">{notes}</p>
-                </div>
-              )}
-            </div>
-            <div className="sm:w-80 rounded-xl border border-slate-200 p-4 space-y-2.5 bg-white">
+          {/* totals */}
+          <div className="mt-6 flex justify-end">
+            <div className="w-full sm:w-80 rounded-xl border border-slate-200 p-4 space-y-2.5 bg-white">
               <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="tabular-nums font-medium">{subtotal.toLocaleString()}৳</span></div>
               {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-500">Discount</span><span className="tabular-nums text-[#b91c1c] font-medium">- {discount.toLocaleString()}৳</span></div>)}
               <div className="flex justify-between items-center bg-gradient-to-r from-[#0b2545] to-[#1d3b6b] text-white px-4 py-3 rounded-lg shadow-sm">
