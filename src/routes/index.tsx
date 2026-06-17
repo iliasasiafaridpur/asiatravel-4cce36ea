@@ -257,6 +257,8 @@ function DashboardPage() {
   const { data: myBalance } = useQuery({
     queryKey: ["dashboard", "my_balance", user?.id],
     enabled: !!user?.id,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [recv, exp, hand] = await Promise.all([
