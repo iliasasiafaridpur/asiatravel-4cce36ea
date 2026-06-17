@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, Plus, Plane, User, IdCard } from "lucide-react";
+import { Printer, Search, Plane, User, IdCard, ReceiptText, WalletCards } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -52,12 +52,12 @@ interface InvoiceItem {
 }
 
 const ITEM_TYPES = [
-  { key: "manual", label: "Manual / Custom" },
-  { key: "tickets", label: "Air Ticket" },
-  { key: "bmet", label: "BMET Card" },
-  { key: "saudi-visa", label: "Saudi Visa" },
-  { key: "kuwait-visa", label: "Kuwait Visa" },
-  { key: "other", label: "Other Service" },
+  { key: "tickets", label: "AIR TICKET" },
+  { key: "bmet", label: "BMET CARD" },
+  { key: "saudi-visa", label: "SAUDI VISA" },
+  { key: "kuwait-visa", label: "KUWAIT VISA" },
+  { key: "other", label: "OTHER SERVICE" },
+  { key: "manual", label: "CUSTOM / MANUAL" },
 ];
 
 const AGENCY = {
@@ -69,6 +69,14 @@ const AGENCY = {
 
 const genUid = () => Math.random().toString(36).slice(2, 10);
 const str = (v: unknown) => (v == null ? "" : String(v));
+const serviceLabelFor = (type: string) => ITEM_TYPES.find((t) => t.key === type)?.label ?? "";
+const blankItem = (type = "tickets"): InvoiceItem => ({
+  uid: genUid(),
+  type,
+  serviceLabel: type === "manual" ? "" : serviceLabelFor(type),
+  qty: 1,
+  rate: 0,
+});
 
 function splitRoute(s: string): { from: string; to: string } {
   if (!s) return { from: "", to: "" };
