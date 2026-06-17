@@ -330,8 +330,7 @@ function InvoicePage() {
             <section className="space-y-3">
               <SectionTitle icon={<WalletCards className="h-4 w-4" />} title="Amount" />
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Quantity"><Input type="number" value={item.qty || ""} placeholder="0" onChange={(e) => setItem({ qty: Number(e.target.value) || 0 })} /></Field>
-                <Field label="Rate"><Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} /></Field>
+                <Field label="Price"><Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} /></Field>
                 <Field label="Discount"><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} /></Field>
                 <Field label="Received"><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} /></Field>
               </div>
