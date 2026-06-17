@@ -235,7 +235,7 @@ function InvoicePage() {
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Invoice</h1>
-          <p className="text-sm text-muted-foreground">ম্যানুয়াল বা মডিউল সার্ভিস থেকে — একাধিক সার্ভিস যোগ করুন</p>
+          <p className="text-sm text-muted-foreground">সার্ভিস বাছাই করুন — ম্যানুয়ালি লিখুন বা সার্চ করে এন্ট্রি যোগ করুন</p>
         </div>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
