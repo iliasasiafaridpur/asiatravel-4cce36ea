@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
-import { isCashMethod, isMdReceivedMethod, DUE_RECEIVE_METHODS } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
 
 
@@ -267,6 +267,7 @@ function AccountsPage() {
   // go straight to MD — kept as entries but excluded from balance.
   const periodIncome = fRecv.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodMdIncome = fRecv.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const periodVendorIncome = fRecv.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
   const balance = useMemo(() => {
@@ -439,13 +440,14 @@ function AccountsPage() {
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) acc.inAmt += amt;
+          else if (isVendorReceivedMethod((it.row as Recv).method)) acc.vendorAmt += amt;
           else acc.mdAmt += amt;
         }
         else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
         else acc.outAmt += amt;
         return acc;
       },
-      { inAmt: 0, outAmt: 0, mdAmt: 0 },
+      { inAmt: 0, outAmt: 0, mdAmt: 0, vendorAmt: 0 },
     );
     // Balance shown on the print is SCOPED to the filtered entries (net of the
     // printed lines only), so it never carries the historical 38,000 balance.
@@ -465,7 +467,7 @@ function AccountsPage() {
   th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.num.in{text-align:left}
-  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
   @media print{body{padding:2px}}
 </style></head><body>
@@ -475,6 +477,7 @@ function AccountsPage() {
   <div>এই ${timeline.length} লেনদেনের নিট: <b>${fmt(scopedBalance)}</b></div>
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
   ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
+  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece (ব্যালেন্সে নয়): <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
 </div>
 ${node.innerHTML.replace(
@@ -782,8 +785,9 @@ ${node.innerHTML.replace(
                   const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const isMdRecv = isIn && !statusEvt && isMdReceivedMethod(r.method);
+                  const isVendorRecv = isIn && !statusEvt && isVendorReceivedMethod(r.method);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
-                  const amountTone = isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
+                  const amountTone = isVendorRecv ? "text-orange-500 dark:text-orange-400" : isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                   // Col 1: উৎস/নাম (source/name)
@@ -927,6 +931,9 @@ ${node.innerHTML.replace(
                         {isMdRecv && (
                           <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
                         )}
+                        {isVendorRecv && (
+                          <p className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap leading-tight">Vendor Rece</p>
+                        )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
@@ -963,6 +970,7 @@ ${node.innerHTML.replace(
                   const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
+                  const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
                   const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
@@ -1008,9 +1016,9 @@ ${node.innerHTML.replace(
                       <td>{formatDate(it.date)}</td>
                       <td className="wrap">{name}</td>
                       <td className="wrap">{service}{isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>
-                      <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}</td>
+                      <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}{vendorRecv ? " · Vendor Rece (ব্যালেন্সে নয়)" : ""}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className={`num ${mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
+                      <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
                       <td className="wrap" style={{whiteSpace:"nowrap"}}>
                         {advLines.map((l, idx) => (
@@ -1051,22 +1059,26 @@ ${node.innerHTML.replace(
                   }
                   const statusEvt = isStatusEventReceipt(r);
                   const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+                  const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
                   const isAdvance = !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date) && !statusEvt;
                   return (
                     <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
-                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
+                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${vendorRecv ? "bg-orange-500/10 text-orange-600 border-orange-500/20" : mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
                         <ArrowDownLeft className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : vendorRecv ? "text-orange-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
                            {r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                          {mdRecv && (
                            <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
+                         )}
+                         {vendorRecv && (
+                           <p className="text-[11px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece — ব্যালেন্সে যোগ হয়নি</p>
                          )}
                        </div>
                        <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />

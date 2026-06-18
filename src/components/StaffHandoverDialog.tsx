@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, BookOpen, Mail } from "lucide-react";
 import { HandoverLedgerBook } from "@/components/HandoverLedgerBook";
 import { formatDateTime, formatDate } from "@/lib/modules";
-import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
@@ -218,6 +218,7 @@ export function StaffHandoverDialog({
 
   const totalReceived = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalVendorReceived = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
@@ -373,6 +374,9 @@ export function StaffHandoverDialog({
               {totalMdReceived > 0 && (
                 <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD: {fmt(totalMdReceived)}</div>
               )}
+              {totalVendorReceived > 0 && (
+                <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor: {fmt(totalVendorReceived)}</div>
+              )}
             </div>
             <div className="rounded-lg border bg-rose-500/10 p-2.5">
               <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
@@ -411,6 +415,7 @@ export function StaffHandoverDialog({
                 visibleReceipts.map((r) => {
                   const statusEvt = isStatusEvent(r);
                   const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+                  const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
                   return (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
                     <div className="min-w-0">
@@ -426,13 +431,16 @@ export function StaffHandoverDialog({
                       {mdRecv && (
                         <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
                       )}
+                      {vendorRecv && (
+                        <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece — ব্যালেন্সে নয়</div>
+                      )}
                     </div>
                     <div className="text-right">
                       {statusEvt ? (
                         <div className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">📦 Delivery</div>
                       ) : (
-                        <div className={`tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                          {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
+                        <div className={`tabular-nums font-semibold ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv || vendorRecv ? "" : "+"}{fmt(Number(r.amount))}
                         </div>
                       )}
                       {Number(r.discount || 0) > 0 && (

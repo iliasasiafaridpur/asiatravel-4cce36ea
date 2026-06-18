@@ -18,7 +18,7 @@ import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
-import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
@@ -455,6 +455,7 @@ function HandoverCard({
   
   const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const vendorReceipts = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
   const moneyServiceKeys = new Set(
     receipts.filter((r) => !isStatusEventReceipt(r) && Number(r.amount || 0) > 0).map(receiptServiceKey).filter(Boolean)
@@ -664,6 +665,7 @@ function HandoverCard({
               const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
               const statusEvt = isStatusEventReceipt(r);
               const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+              const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
 
               return (
                 <tr
@@ -770,9 +772,12 @@ function HandoverCard({
                     ) : (
                       <>
                         {isAdvance && <AdvanceBadge advance className="mr-1" />}
-                        <b className={`text-sm ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                        <b className={`text-sm ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                         {mdRecv && (
                           <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
+                        )}
+                        {vendorRecv && (
+                          <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
                         )}
                       </>
                     )}
@@ -812,6 +817,9 @@ function HandoverCard({
                 <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
                   <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)}</div>
+                )}
+                {vendorReceipts > 0 && (
+                  <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">Vendor: {fmt(vendorReceipts)}</div>
                 )}
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
@@ -885,6 +893,9 @@ function HandoverCard({
           <span className="tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ {fmt(cashReceipts)}</span>
           {mdReceipts > 0 && (
             <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)}</span>
+          )}
+          {vendorReceipts > 0 && (
+            <span className="tabular-nums text-orange-600 dark:text-orange-400 whitespace-nowrap">— Vendor {fmt(vendorReceipts)}</span>
           )}
           {totalExpenses > 0 && (
             <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>

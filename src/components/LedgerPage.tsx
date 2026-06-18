@@ -59,7 +59,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -2790,7 +2790,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
-                  {isAgency && isMdReceivedMethod(payMethod) && (
+                  {isVendorReceivedMethod(payMethod) ? (
+                    <p className="mt-1.5 text-[11px] leading-snug text-orange-600 dark:text-orange-400">
+                      🏢 Vendor Rece — যাত্রী সরাসরি Vendor কে দিয়েছে, Vendor এর বিল পরিশোধ হবে ও Due কমবে; আপনার ব্যালেন্সে যোগ হবে না।
+                    </p>
+                  ) : isAgency && isMdReceivedMethod(payMethod) && (
                     <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
                       ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — user cash balance-এ যোগ হবে না, কিন্তু My Accounts ও Cash Handover-এ এন্ট্রি থাকবে ({payMethod})।
                     </p>

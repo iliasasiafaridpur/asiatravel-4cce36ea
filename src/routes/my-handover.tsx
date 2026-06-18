@@ -17,7 +17,7 @@ import {
 import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
-import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
@@ -270,6 +270,7 @@ function MyHandoverPage() {
   // Only Cash counts as the staff's physical cash. Non-cash goes to MD directly.
   const totalReceived = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalVendorReceived = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
@@ -290,6 +291,7 @@ function MyHandoverPage() {
     const batchIds = new Set(receipts.map((r) => r.id));
     const cashReceipts = totalReceived;
     const mdReceipts = totalMdReceived;
+    const vendorReceipts = totalVendorReceived;
 
     // Email layout mirrors the Accounts PRINT page: a clean white A4-style
     // document with a real data table (not dark cards). All handover info is
@@ -309,6 +311,7 @@ function MyHandoverPage() {
         const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
         const statusEvt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+        const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
 
         const tbl = r.service_table ?? "";
         const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
@@ -326,6 +329,8 @@ function MyHandoverPage() {
           : "";
         const thisCell = statusEvt
           ? `<span class="hand">📦 ${cleanStatusText(r.remarks)}</span>`
+          : vendorRecv
+          ? `<span class="vendor">(Vendor) ${money(r.amount || 0)}</span><div class="sub">Vendor Rece</div>`
           : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(r.amount || 0)}</span>${mdRecv ? `<div class="sub">MD · ${r.method}</div>` : ""}`;
         const dueCell = bill > 0
           ? (dueAfterThis <= 0.005 ? `<span class="paid">✓ পরিশোধিত</span>` : `<span class="due">${money(dueAfterThis)}</span>`)
@@ -338,7 +343,7 @@ function MyHandoverPage() {
   <td class="num">${i + 1}</td>
   <td>${formatDate(r.entry_date)}${r.receipt_id ? `<div class="sub mono">${r.receipt_id}</div>` : ""}</td>
   <td class="wrap"><b>${r.passenger_name || "—"}</b><div class="sub">👤 ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div></td>
-  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv ? `<div class="sub">${r.method}</div>` : ""}</td>
+  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv && !vendorRecv ? `<div class="sub">${r.method}</div>` : ""}</td>
   <td class="wrap">${region || "—"}${vendorLine}</td>
   <td class="num">${billCell}</td>
   <td class="num">${prevCell}</td>
@@ -385,7 +390,7 @@ function MyHandoverPage() {
   td.wrap,th.wrap{white-space:normal;word-break:break-word}
   .sub{color:#777;font-size:10px;margin-top:2px;font-weight:400}
   .mono{font-family:'Courier New',monospace}
-  .in{color:#059669;font-weight:700}.out{color:#b45309;font-weight:700}.hand{color:#0284c7;font-weight:700}
+  .in{color:#059669;font-weight:700}.out{color:#b45309;font-weight:700}.hand{color:#0284c7;font-weight:700}.vendor{color:#ea580c;font-weight:700}
   .due{color:#b91c1c;font-weight:700}.paid{color:#059669;font-weight:700}
   tfoot td{font-weight:700;background:#fafafa;border-top:2px solid #ddd}
   .empty{padding:14px;text-align:center;color:#999}
@@ -405,12 +410,13 @@ function MyHandoverPage() {
   <div class="summary">
     <div><span class="lbl">নগদ আয়</span><span class="in">${money(cashReceipts)}</span></div>
     ${mdReceipts > 0 ? `<div><span class="lbl">MD রিসিভ</span><span class="hand">${money(mdReceipts)}</span></div>` : ""}
+    ${vendorReceipts > 0 ? `<div><span class="lbl">Vendor Rece</span><span class="vendor">${money(vendorReceipts)}</span></div>` : ""}
     ${totalExpense > 0 ? `<div><span class="lbl">খরচ</span><span class="out">− ${money(totalExpense)}</span></div>` : ""}
     <div><span class="lbl">জমা (Declared)</span><span>${money(declared)}</span></div>
     <div><span class="lbl">Variance</span><span class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</span></div>
   </div>
 
-  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}</span></div>
+  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${money(vendorReceipts)}` : ""}</span></div>
   ${incomeRows ? `<table>
     <thead><tr>
       <th class="num">#</th><th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th><th>দেশ/রোড</th>
@@ -430,6 +436,7 @@ function MyHandoverPage() {
   <div class="foot">
     <div class="totalrow"><span>নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
     ${mdReceipts > 0 ? `<div class="totalrow"><span>MD রিসিভ</span><b class="hand">${money(mdReceipts)}</b></div>` : ""}
+    ${vendorReceipts > 0 ? `<div class="totalrow"><span>Vendor Rece</span><b class="vendor">${money(vendorReceipts)}</b></div>` : ""}
     ${totalExpense > 0 ? `<div class="totalrow"><span>খরচ</span><b class="out">− ${money(totalExpense)}</b></div>` : ""}
     <div class="totalrow big" style="display:flex;align-items:center;gap:10px;justify-content:flex-start">
       <span>জমা (Declared)</span>
@@ -544,6 +551,9 @@ function MyHandoverPage() {
           {totalMdReceived > 0 && (
             <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} (ব্যালেন্সে নয়)</div>
           )}
+          {totalVendorReceived > 0 && (
+            <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece: {fmt(totalVendorReceived)} (ব্যালেন্সে নয়)</div>
+          )}
         </div>
         <div className="rounded-lg border bg-rose-500/10 p-3">
           <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
@@ -608,6 +618,7 @@ function MyHandoverPage() {
                   visibleReceipts.map((r, idx) => {
                     const statusEvt = isStatusEvent(r);
                     const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+                    const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
                     return (
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
@@ -623,13 +634,16 @@ function MyHandoverPage() {
                         {mdRecv && (
                           <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
                         )}
+                        {vendorRecv && (
+                          <div className="text-[11px] text-orange-600 dark:text-orange-400">Vendor Rece — ব্যালেন্সে নয়</div>
+                        )}
                       </div>
                       <div className="text-right">
                         {statusEvt ? (
                           <div className="text-[11px] font-semibold text-violet-600 dark:text-violet-400">📦 Delivery</div>
                         ) : (
-                          <div className={`text-sm tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                            {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
+                          <div className={`text-sm tabular-nums font-semibold ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                            {mdRecv || vendorRecv ? "" : "+"}{fmt(Number(r.amount))}
                           </div>
                         )}
                         {Number(r.discount || 0) > 0 && (
