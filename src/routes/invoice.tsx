@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, Plane, User, IdCard, ReceiptText, WalletCards, MapPin, Phone } from "lucide-react";
+import { Printer, Search, Plane, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -159,7 +159,6 @@ function ItemDetail({ it }: { it: InvoiceItem }) {
 
 function InvoicePage() {
   const [allEntries, setAllEntries] = useState<ServiceEntry[]>([]);
-  const [search, setSearch] = useState("");
 
   const [invoiceNo, setInvoiceNo] = useState<string>(
     "INV-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(Math.random() * 900 + 100),
@@ -201,37 +200,28 @@ function InvoicePage() {
     })();
   }, [serviceModules]);
 
-  const item: InvoiceItem = items[0] ?? blankItem("tickets");
-  const setItem = (patch: Partial<InvoiceItem>) =>
-    setItems((p) => {
-      const cur = p[0] ?? blankItem("tickets");
-      return [{ ...cur, ...patch }];
-    });
+  const updateItem = (uid: string, patch: Partial<InvoiceItem>) =>
+    setItems((p) => p.map((it) => (it.uid === uid ? { ...it, ...patch } : it)));
 
-  const changeService = (type: string) => {
-    setItems([blankItem(type)]);
-    setSearch("");
-  };
+  const changeItemService = (uid: string, type: string) =>
+    setItems((p) => p.map((it) => (it.uid === uid ? { ...blankItem(type), uid } : it)));
 
-  const filtered = useMemo(() => {
-    if (item.type === "manual") return [];
-    const q = search.trim().toLowerCase();
-    if (!q) return [];
-    let list = allEntries.filter((e) => e.moduleKey === item.type);
-    list = list.filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q));
-    return list.slice(0, 30);
-  }, [allEntries, search, item.type]);
+  const addItem = () => setItems((p) => [...p, blankItem("tickets")]);
 
-  const loadEntry = (e: ServiceEntry) => {
-    setBill({
-      name: e.passenger || "",
-      passport: e.passport || "",
-      nationality: bill.nationality || "Bangladeshi",
-      mobile: e.mobile || "",
-    });
-    setItems([buildItemFromEntry(e)]);
-    setReceived(e.received || 0);
-    setSearch("");
+  const removeItem = (uid: string) =>
+    setItems((p) => (p.length <= 1 ? p : p.filter((it) => it.uid !== uid)));
+
+  // Loading an existing entry into a service line. Passenger info is filled only
+  // if still empty (one passenger per invoice). Received accumulates per service.
+  const loadEntryIntoItem = (uid: string, e: ServiceEntry) => {
+    setItems((p) => p.map((it) => (it.uid === uid ? { ...buildItemFromEntry(e), uid } : it)));
+    setBill((prev) => ({
+      name: prev.name || e.passenger || "",
+      passport: prev.passport || e.passport || "",
+      nationality: prev.nationality || "Bangladeshi",
+      mobile: prev.mobile || e.mobile || "",
+    }));
+    if (e.received) setReceived((prev) => prev + (e.received || 0));
   };
 
   const subtotal = items.reduce((s, i) => s + i.rate, 0);
@@ -243,72 +233,23 @@ function InvoicePage() {
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Invoice</h1>
-          <p className="text-sm text-muted-foreground">সার্ভিস বাছাই করুন — ম্যানুয়ালি লিখুন বা সার্চ করে এন্ট্রি যোগ করুন</p>
+          <p className="text-sm text-muted-foreground">এক প্যাসেঞ্জারের জন্য এক বা একাধিক সার্ভিস যোগ করুন — ম্যানুয়ালি লিখুন বা সার্চ করে এন্ট্রি আনুন</p>
         </div>
       </div>
 
       <Card className="print:hidden overflow-hidden border-primary/20">
         <CardContent className="p-0">
           <div className="border-b bg-muted/25 px-4 py-3 sm:px-5">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.25fr] gap-3">
-              <div className="rounded-md border bg-card/70 p-3">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
-                  <ReceiptText className="h-3.5 w-3.5" /> Invoice Info
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <Field label="Invoice No"><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} /></Field>
-                  <Field label="Invoice Date"><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} /></Field>
-                </div>
+            <div className="rounded-md border bg-card/70 p-3">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+                <ReceiptText className="h-3.5 w-3.5" /> Invoice Info
               </div>
-
-              <div className="rounded-md border bg-card/70 p-3">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
-                  <IdCard className="h-3.5 w-3.5" /> Service & Search
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-2">
-                  <Field label="Service">
-                    <Select value={item.type} onValueChange={changeService}>
-                      <SelectTrigger><SelectValue placeholder="সার্ভিস বাছাই করুন" /></SelectTrigger>
-                      <SelectContent>
-                        {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Search Existing Entry">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                        disabled={item.type === "manual"}
-                        placeholder={item.type === "manual" ? "Manual entry selected" : "ID / নাম / পাসপোর্ট / মোবাইল"}
-                        className="pl-8" />
-                    </div>
-                  </Field>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Field label="Invoice No"><Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} /></Field>
+                <Field label="Invoice Date"><DateInput value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} /></Field>
               </div>
             </div>
           </div>
-
-          {item.type !== "manual" && search.trim() && filtered.length === 0 && (
-            <div className="mx-4 mt-4 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground sm:mx-5">কোনো এন্ট্রি পাওয়া যায়নি</div>
-          )}
-          {search.trim() && filtered.length > 0 && (
-            <div className="mx-4 mt-4 max-h-64 overflow-auto rounded-md border sm:mx-5">
-              {filtered.map((e) => (
-                <button key={e.moduleKey + e.id} type="button" onClick={() => loadEntry(e)} className="flex w-full items-center justify-between gap-3 border-b p-3 text-left transition-colors last:border-b-0 hover:bg-accent/70">
-                  <span className="min-w-0 flex-1 text-sm">
-                    <span className="flex items-center gap-1.5 truncate font-medium">
-                      <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />{e.passenger}
-                      {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
-                    </span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      <span className="font-mono">{e.id}</span> · {e.module}{e.mobile ? ` · ${e.mobile}` : ""}{e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
-                    </span>
-                  </span>
-                  <span className="shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold text-primary">Use</span>
-                </button>
-              ))}
-            </div>
-          )}
 
           <div className="grid grid-cols-1 gap-4 p-4 sm:p-5 xl:grid-cols-[1.25fr_1fr]">
             <section className="space-y-3">
@@ -319,14 +260,36 @@ function InvoicePage() {
                 <Field label="Mobile"><Input value={bill.mobile} onChange={(e) => setBill({ ...bill, mobile: e.target.value })} /></Field>
               </div>
 
-              <SectionTitle icon={<IdCard className="h-4 w-4" />} title="Service Information" />
-              <ItemFields it={item} onChange={setItem} />
+              <div className="flex items-center justify-between border-b pb-2">
+                <SectionTitle icon={<IdCard className="h-4 w-4" />} title="Services" />
+                <Button type="button" variant="outline" size="sm" onClick={addItem} className="h-8 gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Add Service
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {items.map((it, idx) => (
+                  <ItemEditor
+                    key={it.uid}
+                    index={idx}
+                    item={it}
+                    allEntries={allEntries}
+                    canRemove={items.length > 1}
+                    onChange={(patch) => updateItem(it.uid, patch)}
+                    onChangeService={(type) => changeItemService(it.uid, type)}
+                    onRemove={() => removeItem(it.uid)}
+                    onLoadEntry={(e) => loadEntryIntoItem(it.uid, e)}
+                  />
+                ))}
+              </div>
             </section>
 
             <section className="space-y-3">
               <SectionTitle icon={<WalletCards className="h-4 w-4" />} title="Amount" />
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Price"><Input type="number" value={item.rate || ""} placeholder="0" onChange={(e) => setItem({ rate: Number(e.target.value) || 0 })} /></Field>
+                <Field label="Subtotal">
+                  <Input value={`${subtotal.toLocaleString()}৳`} readOnly className="bg-muted/40" />
+                </Field>
                 <Field label="Discount"><Input type="number" value={discount || ""} placeholder="0" onChange={(e) => setDiscount(Number(e.target.value) || 0)} /></Field>
                 <Field label="Received"><Input type="number" value={received || ""} placeholder="0" onChange={(e) => setReceived(Number(e.target.value) || 0)} /></Field>
               </div>
@@ -338,6 +301,7 @@ function InvoicePage() {
           </div>
         </CardContent>
       </Card>
+
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
       <div className="flex justify-end print:hidden">
@@ -605,4 +569,118 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
 
   // manual
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{CustomServiceName}</div>;
+}
+
+/* ---------------------- per-service editor (search + fields) -------------- */
+
+function ItemEditor({
+  index,
+  item,
+  allEntries,
+  canRemove,
+  onChange,
+  onChangeService,
+  onRemove,
+  onLoadEntry,
+}: {
+  index: number;
+  item: InvoiceItem;
+  allEntries: ServiceEntry[];
+  canRemove: boolean;
+  onChange: (patch: Partial<InvoiceItem>) => void;
+  onChangeService: (type: string) => void;
+  onRemove: () => void;
+  onLoadEntry: (e: ServiceEntry) => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (item.type === "manual") return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return allEntries
+      .filter((e) => e.moduleKey === item.type)
+      .filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [allEntries, search, item.type]);
+
+  return (
+    <div className="rounded-lg border bg-card/60 p-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+          Service {index + 1}
+        </span>
+        <span className="text-xs text-muted-foreground truncate">{(item.serviceLabel || "—").toUpperCase()}</span>
+        <div className="flex-1" />
+        {canRemove && (
+          <Button type="button" variant="ghost" size="icon" onClick={onRemove} title="মুছুন" className="h-8 w-8">
+            <Trash2 className="h-4 w-4 text-rose-500" />
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-2">
+        <Field label="Service">
+          <Select value={item.type} onValueChange={(t) => { onChangeService(t); setSearch(""); }}>
+            <SelectTrigger><SelectValue placeholder="সার্ভিস বাছাই করুন" /></SelectTrigger>
+            <SelectContent>
+              {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Search Existing Entry">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              disabled={item.type === "manual"}
+              placeholder={item.type === "manual" ? "Manual entry selected" : "ID / নাম / পাসপোর্ট / মোবাইল"}
+              className="pl-8"
+            />
+          </div>
+        </Field>
+      </div>
+
+      {item.type !== "manual" && search.trim() && filtered.length === 0 && (
+        <div className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">কোনো এন্ট্রি পাওয়া যায়নি</div>
+      )}
+      {search.trim() && filtered.length > 0 && (
+        <div className="max-h-56 overflow-auto rounded-md border">
+          {filtered.map((e) => (
+            <button
+              key={e.moduleKey + e.id}
+              type="button"
+              onClick={() => { onLoadEntry(e); setSearch(""); }}
+              className="flex w-full items-center justify-between gap-3 border-b p-2.5 text-left transition-colors last:border-b-0 hover:bg-accent/70"
+            >
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="flex items-center gap-1.5 truncate font-medium">
+                  <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />{e.passenger}
+                  {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  <span className="font-mono">{e.id}</span> · {e.module}{e.mobile ? ` · ${e.mobile}` : ""}{e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
+                </span>
+              </span>
+              <span className="shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold text-primary">Use</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <ItemFields it={item} onChange={onChange} />
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Price">
+          <Input
+            type="number"
+            value={item.rate || ""}
+            placeholder="0"
+            onChange={(e) => onChange({ rate: Number(e.target.value) || 0 })}
+          />
+        </Field>
+      </div>
+    </div>
+  );
 }
