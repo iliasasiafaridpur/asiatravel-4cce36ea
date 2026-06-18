@@ -25,13 +25,7 @@ const page = (title: string, color: string, icon: string, body: string) => `<!do
 const html = (content: string, status = 200) =>
   new Response(content, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
 
-const money = (n: unknown) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
-const fmtDate = (d: unknown) => {
-  if (!d) return "";
-  const dt = new Date(String(d));
-  return isNaN(dt.getTime()) ? String(d) : dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-};
 
 export const Route = createFileRoute("/api/public/handover-accept")({
   server: {
