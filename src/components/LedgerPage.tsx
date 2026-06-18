@@ -1102,12 +1102,19 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           monthlyId: true, fields: [],
         });
         const signedAmt = isExpense ? -amt : amt;
-        const label = isExpense ? "অতিরিক্ত সার্ভিস বিল (Advance থেকে)" : "Vendor Refund (Advance-এ যুক্ত)";
+        // "Manual Adjust" with an আয়/ব্যয় tag so the vendor ledger row reads
+        // clearly. The user's typed remarks are stored separately so they show
+        // verbatim in the ledger's remarks line.
+        const kindLabel = isExpense ? "ব্যয়" : "আয়";
+        const label = `Manual Adjust · ${kindLabel}`;
         const payload: Record<string, unknown> = {
           [mod.idColumn]: ledgerId,
           entry_date: payDate,
           [groupField]: payTarget,
           service_type: "ADVANCE",
+          // country_route drives the ledger "Service" sub-line; tag it so the row
+          // displays as a Manual Adjust (আয়/ব্যয়) entry.
+          country_route: label,
           [billCol]: 0,
           [paidCol]: signedAmt,
           // Virtual adjustment — no real cash/bank movement, so no payment method.
@@ -1115,7 +1122,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           // Non-null source_table => sync_vendor_payment_to_cash skips the cash mirror,
           // so this is a pure advance-balance adjustment with no Cash/Bank impact.
           source_table: "manual_adjust",
-          remarks: `${label}${payRemarks ? " · " + payRemarks : ""}`,
+          // Store only what the user typed — shown verbatim in the remarks line.
+          remarks: payRemarks ? payRemarks.trim() : null,
           created_by: user?.id ?? null,
         };
         const { offline } = await resilientInsert(mod.table, payload as Record<string, unknown>);
