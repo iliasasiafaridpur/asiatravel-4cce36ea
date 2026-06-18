@@ -1991,26 +1991,49 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Service
                         </div>
-                        <div className="text-sm font-semibold">{serviceLabel}</div>
-                        {cr && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {cr}
-                          </div>
-                        )}
-                        {info?.airline && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {info.airline}
-                          </div>
-                        )}
-                        {flightDate && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            ✈ {flightDate}
-                          </div>
-                        )}
-                        {info?.pnr && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            PNR: {info.pnr}
-                          </div>
+                        {isManualAdvAdjust ? (
+                          <>
+                            <div className="text-sm font-semibold">Manual</div>
+                            <div
+                              className={cn(
+                                "text-xs font-semibold leading-tight",
+                                adjustIsExpense
+                                  ? "text-rose-600 dark:text-rose-400"
+                                  : "text-emerald-600 dark:text-emerald-400",
+                              )}
+                            >
+                              {adjustIsExpense ? "ব্যয়" : "আয়"}
+                            </div>
+                            {remarks && (
+                              <div className="text-xs text-muted-foreground leading-tight mt-0.5">
+                                {remarks}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-sm font-semibold">{serviceLabel}</div>
+                            {cr && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                {cr}
+                              </div>
+                            )}
+                            {info?.airline && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                {info.airline}
+                              </div>
+                            )}
+                            {flightDate && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                ✈ {flightDate}
+                              </div>
+                            )}
+                            {info?.pnr && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                PNR: {info.pnr}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                       <div className="min-w-0">
