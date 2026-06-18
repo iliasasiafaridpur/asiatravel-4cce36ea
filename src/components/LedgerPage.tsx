@@ -1863,7 +1863,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
                   const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
                   const isPayment = svcUpper === "PAYMENT";
+                  const isManualAdvAdjust = String(r.source_table ?? "") === "manual_adjust";
+                  const adjustIsExpense = Number(r[paidCol] ?? 0) < 0;
                   const isManualAdjust =
+                    isManualAdvAdjust ||
                     cr.startsWith("Manual Advance Adjustment") || cr.startsWith("Advance Adjustment");
                   const srcId = String(r.source_id ?? "");
                   const info = srcId ? sourceInfoMap.get(srcId) : undefined;
@@ -1978,7 +1981,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                             📱 {mobile}
                           </div>
                         )}
-                        {remarks && (
+                        {remarks && !isManualAdvAdjust && (
                           <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">
                             {remarks}
                           </div>
@@ -1988,26 +1991,49 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           Service
                         </div>
-                        <div className="text-sm font-semibold">{serviceLabel}</div>
-                        {cr && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {cr}
-                          </div>
-                        )}
-                        {info?.airline && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {info.airline}
-                          </div>
-                        )}
-                        {flightDate && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            ✈ {flightDate}
-                          </div>
-                        )}
-                        {info?.pnr && (
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            PNR: {info.pnr}
-                          </div>
+                        {isManualAdvAdjust ? (
+                          <>
+                            <div className="text-sm font-semibold">Manual</div>
+                            <div
+                              className={cn(
+                                "text-xs font-semibold leading-tight",
+                                adjustIsExpense
+                                  ? "text-rose-600 dark:text-rose-400"
+                                  : "text-emerald-600 dark:text-emerald-400",
+                              )}
+                            >
+                              {adjustIsExpense ? "ব্যয়" : "আয়"}
+                            </div>
+                            {remarks && (
+                              <div className="text-xs text-muted-foreground leading-tight mt-0.5">
+                                {remarks}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-sm font-semibold">{serviceLabel}</div>
+                            {cr && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                {cr}
+                              </div>
+                            )}
+                            {info?.airline && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                {info.airline}
+                              </div>
+                            )}
+                            {flightDate && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                ✈ {flightDate}
+                              </div>
+                            )}
+                            {info?.pnr && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                PNR: {info.pnr}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                       <div className="min-w-0">
