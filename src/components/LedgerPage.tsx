@@ -1863,7 +1863,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
                   const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
                   const isPayment = svcUpper === "PAYMENT";
-                  const isManualAdjust = cr.startsWith("Manual Advance Adjustment");
+                  const isManualAdjust =
+                    cr.startsWith("Manual Advance Adjustment") || cr.startsWith("Advance Adjustment");
                   const srcId = String(r.source_id ?? "");
                   const info = srcId ? sourceInfoMap.get(srcId) : undefined;
                   if (!cr && srcId) {
@@ -1885,7 +1886,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                               : "Payment Paid"
                             : service || "—";
                   if (isManualAdjust) {
-                    cr = Number(r[paidCol] ?? 0) < 0 ? "ব্যয়" : "আয়";
+                    cr = "";
                   }
                   const ServiceIcon = isTicket
                     ? "✈"
