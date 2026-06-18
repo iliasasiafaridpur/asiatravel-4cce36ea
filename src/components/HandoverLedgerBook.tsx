@@ -665,6 +665,7 @@ function HandoverCard({
               const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
               const statusEvt = isStatusEventReceipt(r);
               const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+              const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
 
               return (
                 <tr
