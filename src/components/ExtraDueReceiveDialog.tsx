@@ -201,6 +201,12 @@ export function ExtraDueReceiveDialog({
             received_by_name: me,
           });
           if (insRes.offline) offline = true;
+
+          // "Vendor Received" → passenger paid the vendor directly; settle the
+          // extra service's vendor bill without touching the staff balance.
+          if (isVendorReceivedMethod(method)) {
+            await settleVendorBillByBooking("extra_services", r.id, amt, user.id);
+          }
         }
       }
 
