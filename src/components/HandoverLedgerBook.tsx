@@ -818,6 +818,9 @@ function HandoverCard({
                 {mdReceipts > 0 && (
                   <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)}</div>
                 )}
+                {vendorReceipts > 0 && (
+                  <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">Vendor: {fmt(vendorReceipts)}</div>
+                )}
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
             </tr>
