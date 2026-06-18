@@ -218,6 +218,7 @@ export function StaffHandoverDialog({
 
   const totalReceived = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalVendorReceived = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
   const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
   const netCash = totalReceived - totalExpense;
