@@ -772,9 +772,12 @@ function HandoverCard({
                     ) : (
                       <>
                         {isAdvance && <AdvanceBadge advance className="mr-1" />}
-                        <b className={`text-sm ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
+                        <b className={`text-sm ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
                         {mdRecv && (
                           <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
+                        )}
+                        {vendorRecv && (
+                          <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
                         )}
                       </>
                     )}
