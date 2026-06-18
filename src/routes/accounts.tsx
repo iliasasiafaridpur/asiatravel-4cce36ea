@@ -440,13 +440,14 @@ function AccountsPage() {
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) acc.inAmt += amt;
+          else if (isVendorReceivedMethod((it.row as Recv).method)) acc.vendorAmt += amt;
           else acc.mdAmt += amt;
         }
         else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
         else acc.outAmt += amt;
         return acc;
       },
-      { inAmt: 0, outAmt: 0, mdAmt: 0 },
+      { inAmt: 0, outAmt: 0, mdAmt: 0, vendorAmt: 0 },
     );
     // Balance shown on the print is SCOPED to the filtered entries (net of the
     // printed lines only), so it never carries the historical 38,000 balance.
