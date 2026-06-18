@@ -448,7 +448,7 @@ function MyHandoverPage() {
     </div>
     <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
     ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
-    ${acceptUrl ? `<div class="note" style="font-size:10.5px;color:#777">✅ "টাকা পেলাম" বাটনে ক্লিক করলে সফটওয়্যারে রিকোয়েস্টটি গ্রহণ (approved) হয়ে যাবে</div>` : ""}
+    ${acceptUrl ? `<div class="note" style="font-size:10.5px;color:#777">🔐 নিরাপত্তার জন্য অনুমোদন শুধুমাত্র MD/Owner আইডি থেকে সম্ভব। বাটনে ক্লিক করে মোবাইল ও পাসওয়ার্ড দিয়ে লগইন করার পর সফটওয়্যারে গিয়ে অনুমোদন করুন।</div>` : ""}
   </div>
 
   <div style="margin-top:16px;padding:14px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12.5px;line-height:1.85;color:#374151">
