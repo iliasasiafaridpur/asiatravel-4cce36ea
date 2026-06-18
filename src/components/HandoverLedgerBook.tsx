@@ -894,6 +894,9 @@ function HandoverCard({
           {mdReceipts > 0 && (
             <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)}</span>
           )}
+          {vendorReceipts > 0 && (
+            <span className="tabular-nums text-orange-600 dark:text-orange-400 whitespace-nowrap">— Vendor {fmt(vendorReceipts)}</span>
+          )}
           {totalExpenses > 0 && (
             <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>
           )}
