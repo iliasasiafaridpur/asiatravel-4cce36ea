@@ -139,13 +139,9 @@ let started = false;
 let timer: number | null = null;
 
 export async function runAlertScanOnce(): Promise<void> {
-  if (typeof window === "undefined") return;
-  if (navigator.onLine === false) return;
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) return; // not logged in
-  try {
-    await Promise.all(TARGETS.map((t) => scanTarget(t)));
-  } catch { /* swallow — scan is best-effort */ }
+  // All alert types (বকেয়া সতর্কতা + ডেলিভারি বিলম্ব) are disabled per user request.
+  // Scanner is a no-op; keep the export so callers/scheduler stay intact.
+  return;
 }
 
 export function startAlertScanner(intervalMs = 5 * 60 * 1000) {
