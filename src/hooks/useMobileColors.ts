@@ -8,17 +8,17 @@ import { supabase } from "@/integrations/supabase/client";
  * the mobile number everywhere it appears: every module data page, the customer
  * data page, and the profile drawers.
  */
-export type MobileColor = "default" | "blue" | "green";
+export type MobileColor = "default" | "red" | "green";
 
 export const MOBILE_COLOR_OPTIONS: { value: MobileColor; label: string; swatch: string; text: string }[] = [
   { value: "default", label: "সাদা", swatch: "text-foreground", text: "" },
-  { value: "blue", label: "নীল", swatch: "text-blue-500", text: "text-blue-500" },
+  { value: "red", label: "লাল", swatch: "text-red-500", text: "text-red-500" },
   { value: "green", label: "সবুজ", swatch: "text-emerald-500", text: "text-emerald-500" },
 ];
 
 /** Tailwind text-color class for a given mobile color (empty = inherit/default). */
 export function mobileColorTextClass(color: MobileColor | undefined): string {
-  if (color === "blue") return "text-blue-500";
+  if (color === "red") return "text-red-500";
   if (color === "green") return "text-emerald-500";
   return "";
 }
