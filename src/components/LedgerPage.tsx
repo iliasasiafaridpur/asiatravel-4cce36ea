@@ -1856,7 +1856,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   const isPayment = svcUpper === "PAYMENT";
                   // Manual advance adjustment row (no cash/bank impact). country_route
                   // carries the "Manual Adjust · আয়/ব্যয়" tag set at save time.
-                  const isManualAdjust = String(r.source_table ?? "") === "manual_adjust";
+                  // Detect by that label (NOT source_table — the old extra-service
+                  // void-charge entries also use source_table='manual_adjust').
+                  const isManualAdjust = cr.startsWith("Manual Adjust");
                   const srcId = String(r.source_id ?? "");
                   const info = srcId ? sourceInfoMap.get(srcId) : undefined;
                   if (!cr && srcId) {
