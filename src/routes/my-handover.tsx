@@ -291,6 +291,7 @@ function MyHandoverPage() {
     const batchIds = new Set(receipts.map((r) => r.id));
     const cashReceipts = totalReceived;
     const mdReceipts = totalMdReceived;
+    const vendorReceipts = totalVendorReceived;
 
     // Email layout mirrors the Accounts PRINT page: a clean white A4-style
     // document with a real data table (not dark cards). All handover info is
