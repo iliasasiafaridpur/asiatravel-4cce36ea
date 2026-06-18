@@ -130,21 +130,8 @@ async function scanTarget(t: Target) {
     // if (outstanding > 0) { ... } removed: no more outstanding/due notifications.
     void outstanding;
 
-    // 2) Aging alert — Card Ready > 3 days without delivery
-    if (r.status === "Card Ready") {
-      const days = ageDays(r);
-      if (days >= AGING_DAYS) {
-        pushNotification(
-          "warning",
-          "ডেলিভারি বিলম্ব: Card Ready ৩+ দিন",
-          `${t.serviceLabel} — ${days} দিন ধরে Card Ready, এখনো ডেলিভারি হয়নি`,
-          {
-            meta,
-            dedupeKey: `aging:${t.table}:${r.id}:${Math.floor(Date.now() / DAY_MS)}`,
-          },
-        );
-      }
-    }
+    // 2) Aging alert (ডেলিভারি বিলম্ব) — disabled per user request
+    // Card Ready 3+ days delivery-delay notifications removed.
   }
 }
 
