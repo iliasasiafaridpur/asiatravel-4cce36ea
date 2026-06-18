@@ -661,7 +661,9 @@ export function DueReceiveDialog({
                             placeholder="0"
                             className="text-base font-semibold"
                           />
-                          {isMdReceivedMethod(m)
+                          {isVendorReceivedMethod(m)
+                            ? <span className="text-[10px] text-sky-600 dark:text-sky-400 whitespace-nowrap">→ Vendor</span>
+                            : isMdReceivedMethod(m)
                             ? <span className="text-[10px] text-amber-600 dark:text-amber-400 whitespace-nowrap">→ MD</span>
                             : <span className="text-[10px] text-emerald-600 whitespace-nowrap">→ আপনার ব্যালেন্স</span>}
                         </div>
