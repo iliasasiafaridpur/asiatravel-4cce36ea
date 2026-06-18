@@ -59,7 +59,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { cn } from "@/lib/utils";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
