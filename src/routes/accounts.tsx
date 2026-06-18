@@ -785,8 +785,9 @@ ${node.innerHTML.replace(
                   const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const statusEvt = isIn && isStatusEventReceipt(r);
                   const isMdRecv = isIn && !statusEvt && isMdReceivedMethod(r.method);
+                  const isVendorRecv = isIn && !statusEvt && isVendorReceivedMethod(r.method);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
-                  const amountTone = isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
+                  const amountTone = isVendorRecv ? "text-orange-500 dark:text-orange-400" : isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
                   // Col 1: উৎস/নাম (source/name)
