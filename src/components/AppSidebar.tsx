@@ -143,9 +143,9 @@ export function AppSidebar() {
                     >
                       <Link to={item.to} className="flex items-center gap-2">
                         <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ring-1 ring-inset ring-white/5 shadow-sm transition-transform group-hover/menu-item:scale-105`}
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ring-1 ring-inset ring-white/5 shadow-sm transition-transform group-hover/menu-item:scale-105 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9`}
                         >
-                          <item.icon className={`h-[18px] w-[18px] ${item.color}`} strokeWidth={2.25} />
+                          <item.icon className={`h-[18px] w-[18px] ${item.color} group-data-[collapsible=icon]:h-[22px] group-data-[collapsible=icon]:w-[22px]`} strokeWidth={2.25} />
                         </span>
                         <span className="truncate">{item.title}</span>
                       </Link>
