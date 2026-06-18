@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
-import { Phone, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus } from "lucide-react";
+import { Phone, PhoneCall, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
