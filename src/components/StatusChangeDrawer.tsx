@@ -657,7 +657,9 @@ export function StatusChangeDrawer({
                           value={methodAmts[m] ?? ""}
                           onChange={(e) => setMethodAmts((prev) => ({ ...prev, [m]: e.target.value }))}
                           placeholder="0" />
-                        {isMdReceivedMethod(m)
+                        {isVendorReceivedMethod(m)
+                          ? <span className="text-[9px] text-sky-600 dark:text-sky-400 whitespace-nowrap w-12">→ Vendor</span>
+                          : isMdReceivedMethod(m)
                           ? <span className="text-[9px] text-amber-600 dark:text-amber-400 whitespace-nowrap w-12">→ MD</span>
                           : <span className="text-[9px] text-emerald-600 whitespace-nowrap w-12">→ ব্যালেন্স</span>}
                       </div>
