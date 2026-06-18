@@ -7,9 +7,17 @@ import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall } from "lucide-react";
+import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall, MessageCircle } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+
+/** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
+function waNumber(raw: string): string {
+  let d = (raw ?? "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "880" + d.slice(1);
+  return d;
+}
 
 type Row = Record<string, unknown> & { id: string };
 
