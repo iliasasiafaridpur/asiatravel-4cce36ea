@@ -188,7 +188,7 @@ export function ExtraDueReceiveDialog({
           const insRes = await resilientInsert("payment_receipts", {
             receipt_id: receiptId,
             entry_date: today,
-            service_type: "Extra Service",
+            service_type: `✨ ${r.service_name || "Extra Service"}`,
             service_table: "extra_services",
             service_row_id: r.id,
             ref_id: preselect.refId,
