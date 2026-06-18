@@ -299,6 +299,8 @@ export function StaffHandoverDialog({
     <p style="padding:0 12px;font-size:13px;color:#555;">Staff: <b>${user?.email || user?.id || "—"}</b></p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       ${row("নগদ আয় (Cash Received)", `৳ ${totalReceived.toLocaleString()}`, "#059669")}
+      ${totalMdReceived > 0 ? row("MD রিসিভ (ব্যালেন্সে নয়)", `৳ ${totalMdReceived.toLocaleString()}`, "#0284c7") : ""}
+      ${totalVendorReceived > 0 ? row("Vendor Rece (ব্যালেন্সে নয়)", `৳ ${totalVendorReceived.toLocaleString()}`, "#ea580c") : ""}
       ${row("ব্যয় (Expense)", `− ৳ ${totalExpense.toLocaleString()}`, "#dc2626")}
       ${row("ডিসকাউন্ট (Discount)", `৳ ${totalDiscount.toLocaleString()}`, "#d97706")}
       ${row("Net Cash", `৳ ${netCash.toLocaleString()}`, "#0f172a")}
