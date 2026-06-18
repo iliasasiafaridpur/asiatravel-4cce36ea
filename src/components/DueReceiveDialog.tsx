@@ -636,7 +636,11 @@ export function DueReceiveDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      {isMdReceivedMethod(method) && (
+                      {isVendorReceivedMethod(method) ? (
+                        <p className="mt-1.5 text-[11px] leading-snug text-sky-600 dark:text-sky-400">
+                          🏢 যাত্রী সরাসরি Vendor কে টাকা দিয়েছে — Vendor এর বিল পরিশোধ হবে ও যাত্রীর Due কমবে, আপনার ক্যাশ ব্যালেন্সে যোগ হবে না।
+                        </p>
+                      ) : isMdReceivedMethod(method) && (
                         <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
                           ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
                         </p>
