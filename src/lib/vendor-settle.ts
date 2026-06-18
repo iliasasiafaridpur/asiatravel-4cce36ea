@@ -12,19 +12,34 @@ import { supabase } from "@/integrations/supabase/client";
  * `sync_vendor_payment_to_cash` trigger skips the cash-drawer mirror — so this
  * settles the vendor without ever touching the staff member's cash balance.
  *
- * The applied amount is capped at the vendor's remaining payable; any passenger
- * payment beyond the vendor cost is simply not pushed onto the vendor.
+ * Overpayment handling: if the passenger pays MORE than this booking's vendor
+ * cost, the surplus is adjusted against the SAME vendor's other outstanding
+ * bills (oldest first / FIFO — i.e. the vendor's previous due). Anything still
+ * left after every due is cleared is parked as a vendor ADVANCE wallet row.
+ * Both the FIFO bill bumps and the advance row carry a non-empty `source_table`
+ * so the cash-sync trigger never mirrors them into the staff cash drawer.
  *
  * Errors are swallowed (best-effort) so an offline/edge failure never blocks
  * the passenger receipt that already succeeded.
  */
+const LOG_TYPES = new Set(["ADVANCE", "OPENING", "PAYMENT"]);
+
+const isBillRow = (r: Record<string, unknown>) =>
+  !LOG_TYPES.has(String(r.service_type ?? "").toUpperCase());
+
+const rowRemaining = (r: Record<string, unknown>) =>
+  Math.max(
+    0,
+    Number(r.total_payable ?? 0) - Number(r.paid_amount ?? 0) - Number(r.advance_applied ?? 0),
+  );
+
 export async function settleVendorBillByBooking(
   sourceTable: string,
   sourceId: string,
   amount: number,
   userId: string,
-): Promise<{ applied: number; vendor: string | null }> {
-  if (!sourceTable || !sourceId || amount <= 0) return { applied: 0, vendor: null };
+): Promise<{ applied: number; advance: number; vendor: string | null }> {
+  if (!sourceTable || !sourceId || amount <= 0) return { applied: 0, advance: 0, vendor: null };
   try {
     const { data } = await supabase
       .from("vendor_ledger" as never)
@@ -33,23 +48,92 @@ export async function settleVendorBillByBooking(
       .eq("source_id", sourceId)
       .limit(10);
     const rows = ((data as unknown) as Record<string, unknown>[] | null) ?? [];
-    const bill = rows.find((r) => {
-      const st = String(r.service_type ?? "").toUpperCase();
-      return st !== "ADVANCE" && st !== "OPENING" && st !== "PAYMENT";
-    });
-    if (!bill) return { applied: 0, vendor: null };
-    const payable = Number(bill.total_payable ?? 0);
-    const paid = Number(bill.paid_amount ?? 0);
-    const remaining = Math.max(0, payable - paid - Number(bill.advance_applied ?? 0));
-    const apply = Math.min(remaining, amount);
-    if (apply <= 0) return { applied: 0, vendor: bill.vendor_name ? String(bill.vendor_name) : null };
-    const { error } = await supabase
-      .from("vendor_ledger" as never)
-      .update({ paid_amount: paid + apply, received_by: userId } as never)
-      .eq("id", bill.id as never);
-    if (error) return { applied: 0, vendor: bill.vendor_name ? String(bill.vendor_name) : null };
-    return { applied: apply, vendor: bill.vendor_name ? String(bill.vendor_name) : null };
+    const bill = rows.find(isBillRow);
+    if (!bill) return { applied: 0, advance: 0, vendor: null };
+
+    const vendor = bill.vendor_name ? String(bill.vendor_name) : null;
+    let remaining = amount;
+    let appliedTotal = 0;
+
+    // 1) Settle this booking's own bill first.
+    const ownDue = rowRemaining(bill);
+    const ownApply = Math.min(ownDue, remaining);
+    if (ownApply > 0) {
+      const { error } = await supabase
+        .from("vendor_ledger" as never)
+        .update({ paid_amount: Number(bill.paid_amount ?? 0) + ownApply, received_by: userId } as never)
+        .eq("id", bill.id as never);
+      if (!error) {
+        appliedTotal += ownApply;
+        remaining -= ownApply;
+      }
+    }
+
+    // 2) Adjust the surplus against the SAME vendor's previous due (FIFO).
+    if (remaining > 0.009 && vendor) {
+      const { data: vData } = await supabase
+        .from("vendor_ledger" as never)
+        .select("id, total_payable, paid_amount, advance_applied, service_type, entry_date, created_at")
+        .eq("vendor_name", vendor)
+        .order("entry_date", { ascending: true })
+        .order("created_at", { ascending: true });
+      const vRows = ((vData as unknown) as Record<string, unknown>[] | null) ?? [];
+      for (const r of vRows) {
+        if (remaining <= 0.009) break;
+        if (String(r.id) === String(bill.id)) continue;
+        if (!isBillRow(r)) continue;
+        const due = rowRemaining(r);
+        if (due <= 0.009) continue;
+        const take = Math.min(due, remaining);
+        const { error } = await supabase
+          .from("vendor_ledger" as never)
+          .update({ paid_amount: Number(r.paid_amount ?? 0) + take, received_by: userId } as never)
+          .eq("id", r.id as never);
+        if (!error) {
+          appliedTotal += take;
+          remaining -= take;
+        }
+      }
+    }
+
+    // 3) Park anything left as a vendor ADVANCE wallet row (no cash impact).
+    let advance = 0;
+    if (remaining > 0.009 && vendor) {
+      let advId = "";
+      try {
+        const { data: idData } = await supabase.rpc("next_module_id" as never, {
+          _prefix: "VDL",
+          _table: "vendor_ledger",
+          _column: "ledger_id",
+        } as never);
+        advId = (idData as unknown as string) ?? "";
+      } catch {
+        advId = "";
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const payload: Record<string, unknown> = {
+        ledger_id: advId || `VDL-${Date.now()}`,
+        entry_date: today,
+        payment_date: today,
+        vendor_name: vendor,
+        service_type: "ADVANCE",
+        total_payable: 0,
+        paid_amount: remaining,
+        payment_method: "Vendor Received",
+        source_table: "vendor_received",
+        remarks: "Advance (Vendor Received surplus)",
+        created_by: userId,
+        received_by: userId,
+      };
+      const { error } = await supabase.from("vendor_ledger" as never).insert(payload as never);
+      if (!error) {
+        advance = remaining;
+        remaining = 0;
+      }
+    }
+
+    return { applied: appliedTotal, advance, vendor };
   } catch {
-    return { applied: 0, vendor: null };
+    return { applied: 0, advance: 0, vendor: null };
   }
 }
