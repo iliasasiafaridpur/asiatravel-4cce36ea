@@ -455,6 +455,7 @@ function HandoverCard({
   
   const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const vendorReceipts = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
   const moneyServiceKeys = new Set(
     receipts.filter((r) => !isStatusEventReceipt(r) && Number(r.amount || 0) > 0).map(receiptServiceKey).filter(Boolean)
