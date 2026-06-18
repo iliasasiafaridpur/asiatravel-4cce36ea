@@ -269,8 +269,18 @@ export function StaffHandoverDialog({
     const incomeRows = visibleReceipts
       .map((r) => {
         const evt = isStatusEvent(r);
-        const amt = evt ? "📦 Delivery" : `৳ ${Number(r.amount || 0).toLocaleString()}`;
-        return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${r.passenger_name || "—"}<br><span style="color:#999;font-size:11px;">${svcLine(r) || (r.receipt_id || "")}</span></td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:#059669;">${amt}</td></tr>`;
+        const mdRecv = isMdReceivedMethod(r.method) && !evt;
+        const vendorRecv = isVendorReceivedMethod(r.method) && !evt;
+        // Cash = green, MD received = sky-blue, Vendor received = orange.
+        const color = evt ? "#7c3aed" : vendorRecv ? "#ea580c" : mdRecv ? "#0284c7" : "#059669";
+        const tag = vendorRecv ? "(Vendor) " : mdRecv ? "(MD) " : "";
+        const amt = evt ? "📦 Delivery" : `${tag}৳ ${Number(r.amount || 0).toLocaleString()}`;
+        const note = vendorRecv
+          ? `<br><span style="color:#ea580c;font-size:10px;">Vendor Rece — ব্যালেন্সে নয়</span>`
+          : mdRecv
+          ? `<br><span style="color:#0284c7;font-size:10px;">MD রিসিভ · ${r.method} — ব্যালেন্সে নয়</span>`
+          : "";
+        return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${r.passenger_name || "—"}<br><span style="color:#999;font-size:11px;">${svcLine(r) || (r.receipt_id || "")}</span>${note}</td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:${color};font-weight:600;">${amt}</td></tr>`;
       })
       .join("");
     const expenseRows = expenses
