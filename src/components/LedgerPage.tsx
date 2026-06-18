@@ -1850,7 +1850,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
                   let cr = String(r.country_route ?? "");
-                  const remarks = String(r.remarks ?? "");
+                  const remarks = cleanAdvanceAdjustmentRemarks(String(r.remarks ?? ""));
                   const svcUpper = service.toUpperCase();
                   const svcLower = service.toLowerCase();
                   const isTicket = svcUpper.includes("TICKET") || svcLower === "tickets";
@@ -1863,11 +1863,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
                   const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
                   const isPayment = svcUpper === "PAYMENT";
-                  // Manual advance adjustment row (no cash/bank impact). country_route
-                  // carries the "Advance Adjustment · আয়/ব্যয়" tag set at save time.
-                  // Detect by that label (NOT source_table — the old extra-service
-                  // void-charge entries also use source_table='manual_adjust').
-                  const isManualAdjust = cr.startsWith("Advance Adjustment");
+                  const isManualAdjust = cr.startsWith("Manual Advance Adjustment");
                   const srcId = String(r.source_id ?? "");
                   const info = srcId ? sourceInfoMap.get(srcId) : undefined;
                   if (!cr && srcId) {
@@ -1875,9 +1871,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     else if (isBmet) cr = bmetCountryMap.get(srcId) ?? "";
                     else if (isVisa) cr = visaCountryMap.get(srcId) ?? "";
                   }
-                  const serviceLabel = isManualAdjust
-                    ? "Advance Adjustment"
-                    : isTicket
+                  const serviceLabel = isTicket
                     ? "Air Ticket"
                     : isBmet
                       ? "BMET Card"
@@ -1890,8 +1884,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                               ? "Payment Received"
                               : "Payment Paid"
                             : service || "—";
-                  // For a manual adjust row, show just the আয়/ব্যয় tag under the
-                  // "Advance Adjustment" label (derive from the signed amount).
                   if (isManualAdjust) {
                     cr = Number(r[paidCol] ?? 0) < 0 ? "ব্যয়" : "আয়";
                   }
