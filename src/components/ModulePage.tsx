@@ -231,13 +231,14 @@ export function ModulePage({ module: mod }: Props) {
     loadingRef.current = true;
     if (showSpinner) setLoading(true);
     try {
+      const baseQuery = supabase.from(mod.table as never).select(columns);
+      // Contact tables (agents/vendors) have no entry_date column — ordering by
+      // it would throw a 400. Only transactional tables get the entry_date sort.
+      const orderedQuery = hasDateFilter
+        ? baseQuery.order("entry_date", { ascending: false }).order("created_at", { ascending: false })
+        : baseQuery.order("created_at", { ascending: false });
       const result = await Promise.race([
-        supabase
-          .from(mod.table as never)
-          .select(columns)
-          .order("entry_date", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(250),
+        orderedQuery.limit(250),
         new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 6500)),
       ]);
       const { data, error } = result as { data: unknown; error: { message: string } | null };
