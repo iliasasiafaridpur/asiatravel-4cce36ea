@@ -311,6 +311,7 @@ function MyHandoverPage() {
         const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
         const statusEvt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+        const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
 
         const tbl = r.service_table ?? "";
         const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
