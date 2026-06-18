@@ -18,7 +18,7 @@ import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
-import { isCashMethod, isMdReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
