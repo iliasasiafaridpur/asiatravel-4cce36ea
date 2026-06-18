@@ -84,10 +84,10 @@ const NAV: { group: string; items: NavItem[] }[] = [
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
-  const { isMd } = useRole();
+  const { isMd, isAdmin } = useRole();
 
   // Simple rule: only MD sees the MD Panel. Staff/Admin see আমার ক্যাশ হিসাব.
-  const nav = isMd
+  const baseNav = isMd
     ? [
         ...NAV.slice(0, 3),
         {
@@ -109,6 +109,15 @@ export function AppSidebar() {
         },
         ...NAV.slice(3),
       ];
+
+  // User Management is admin-only — hide it from everyone else.
+  const nav = baseNav
+    .map((g) => ({
+      ...g,
+      items: isAdmin ? g.items : g.items.filter((item) => item.to !== "/users"),
+    }))
+    .filter((g) => g.items.length > 0);
+
 
 
   return (
