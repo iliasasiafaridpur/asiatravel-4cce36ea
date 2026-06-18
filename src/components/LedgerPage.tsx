@@ -108,6 +108,19 @@ function errMsg(e: unknown): string {
   return String(e);
 }
 
+function cleanAdvanceAdjustmentRemarks(value: string): string {
+  const text = value.trim();
+  const generatedPrefixes = [
+    "অতিরিক্ত সার্ভিস বিল (Advance থেকে)",
+    "Vendor Refund (Advance-এ যুক্ত)",
+  ];
+  for (const prefix of generatedPrefixes) {
+    if (text === prefix) return "";
+    if (text.startsWith(`${prefix} · `)) return text.slice(prefix.length + 3).trim();
+  }
+  return text;
+}
+
 export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const { user, profile } = useCurrentUser();
   const { colorFor } = useMobileColors();
@@ -1102,19 +1115,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           monthlyId: true, fields: [],
         });
         const signedAmt = isExpense ? -amt : amt;
-        // "Advance Adjustment" with an আয়/ব্যয় tag so the vendor ledger row reads
-        // clearly. The user's typed remarks are stored separately so they show
-        // verbatim in the ledger's remarks line.
         const kindLabel = isExpense ? "ব্যয়" : "আয়";
-        const label = `Advance Adjustment · ${kindLabel}`;
+        const label = `Manual Advance Adjustment · ${kindLabel}`;
         const payload: Record<string, unknown> = {
           [mod.idColumn]: ledgerId,
           entry_date: payDate,
           [groupField]: payTarget,
           service_type: "ADVANCE",
-          // country_route drives the ledger "Service" sub-line; tag it so the row
-          // displays as a Manual Adjust (আয়/ব্যয়) entry.
-          country_route: label,
+          // Keep the vendor ledger display exactly like the old ADVANCE row.
+          country_route: null,
           [billCol]: 0,
           [paidCol]: signedAmt,
           // Virtual adjustment — no real cash/bank movement, so no payment method.
