@@ -25,59 +25,29 @@ const page = (title: string, color: string, icon: string, body: string) => `<!do
 const html = (content: string, status = 200) =>
   new Response(content, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
 
-const money = (n: unknown) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
-const fmtDate = (d: unknown) => {
-  if (!d) return "";
-  const dt = new Date(String(d));
-  return isNaN(dt.getTime()) ? String(d) : dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-};
 
 export const Route = createFileRoute("/api/public/handover-accept")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        // SECURITY: this public link must NEVER approve a handover by itself.
+        // Anyone who receives a forwarded email would otherwise be able to
+        // approve. Approval is allowed ONLY from inside the app, after the
+        // MD/Owner logs in with their own ID + password (server-side role +
+        // RLS enforced in the MD Panel). This endpoint only directs them to
+        // log in — it performs no database writes.
         const token = new URL(request.url).searchParams.get("t")?.trim() ?? "";
-        if (!token) {
-          return html(page("লিংকটি সঠিক নয়", "#b91c1c", "⚠️", "<p>এই লিংকটিতে কোনো হ্যান্ডওভার তথ্য নেই।</p>"), 400);
-        }
 
-        try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data, error } = await supabaseAdmin.rpc("approve_handover_by_token" as never, { _token: token } as never);
+        const loginBtn = `<div style="margin-top:18px"><a href="https://asiatravel.lovable.app/md-panel${token ? `?t=${encodeURIComponent(token)}` : ""}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 24px;border-radius:9px">🔐 লগইন করে অনুমোদন করুন</a></div>`;
 
-          if (error) {
-            return html(page("সমস্যা হয়েছে", "#b91c1c", "⚠️", `<p>গ্রহণ করা যায়নি। আবার চেষ্টা করুন।</p>`), 500);
-          }
+        const body = `
+          <p>নিরাপত্তার জন্য এই লিংক থেকে সরাসরি অনুমোদন করা যায় না।</p>
+          <p>অনুগ্রহ করে <b>MD/Owner</b> আইডি দিয়ে সফটওয়্যারে লগইন করুন, তারপর <b>MD Panel</b> থেকে টাকা বুঝে পেয়ে অনুমোদন (approve) করুন।</p>
+          ${loginBtn}
+          <div class="meta" style="margin-top:16px">🔐 শুধুমাত্র আপনার নিজের আইডি ও পাসওয়ার্ড দিয়েই এই অনুমোদন সম্ভব — অন্য কেউ পারবে না।</div>`;
 
-          const res = (data ?? {}) as {
-            ok?: boolean; already?: boolean; reason?: string;
-            from_name?: string; handover_id?: string; amount?: number; closing_date?: string;
-          };
-
-          if (!res.ok) {
-            const msg = res.reason === "not_found"
-              ? "এই হ্যান্ডওভারটি খুঁজে পাওয়া যায়নি।"
-              : res.reason === "not_pending"
-                ? "এই হ্যান্ডওভারটি আর অপেক্ষমান নেই।"
-                : "লিংকটি সঠিক নয়।";
-            return html(page("গ্রহণ করা যায়নি", "#b91c1c", "⚠️", `<p>${msg}</p>`), 400);
-          }
-
-          const meta = `<div class="meta">
-            প্রেরক: <b>${res.from_name ?? "—"}</b><br>
-            হ্যান্ডওভার আইডি: <b>${res.handover_id ?? "—"}</b><br>
-            ক্লোজিং তারিখ: <b>${fmtDate(res.closing_date)}</b>
-          </div>`;
-
-          if (res.already) {
-            return html(page("আগেই গ্রহণ করা হয়েছে", "#0284c7", "✓", `<p>এই জমাটি ইতিমধ্যে গ্রহণ (approved) করা হয়েছে।</p><div class="amt">${money(res.amount)}</div>${meta}`));
-          }
-
-          return html(page("টাকা গ্রহণ সম্পন্ন", "#059669", "✅", `<p>জমার রিকোয়েস্ট সফলভাবে গ্রহণ করা হয়েছে।</p><div class="amt">${money(res.amount)}</div>${meta}`));
-        } catch {
-          return html(page("সমস্যা হয়েছে", "#b91c1c", "⚠️", "<p>সার্ভারে সমস্যা হয়েছে। আবার চেষ্টা করুন।</p>"), 500);
-        }
+        return html(page("লগইন করে অনুমোদন করুন", "#0f172a", "🔐", body));
       },
     },
   },

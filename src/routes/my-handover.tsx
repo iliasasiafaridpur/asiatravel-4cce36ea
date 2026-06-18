@@ -284,9 +284,12 @@ function MyHandoverPage() {
 
   const buildReportHtml = (acceptToken?: string) => {
     const money = (n: number) => `৳&nbsp;${(Number(n) || 0).toLocaleString()}`;
+    // Security: the email link only OPENS the software. Approval happens
+    // inside the app after the MD logs in with their own ID + password.
+    // No public token auto-approve (that would let anyone with the link approve).
     const acceptUrl = acceptToken
       ? `https://asiatravel.lovable.app/api/public/handover-accept?t=${encodeURIComponent(acceptToken)}`
-      : "";
+      : "https://asiatravel.lovable.app/md-panel";
     const now = Date.now();
     const batchIds = new Set(receipts.map((r) => r.id));
     const cashReceipts = totalReceived;
@@ -441,18 +444,18 @@ function MyHandoverPage() {
     <div class="totalrow big" style="display:flex;align-items:center;gap:10px;justify-content:flex-start">
       <span>জমা (Declared)</span>
       <b>${money(declared)}</b>
-      ${acceptUrl ? `<a href="${acceptUrl}" target="_blank" rel="noopener" style="margin-left:auto;display:inline-block;background:#059669;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;box-shadow:0 2px 6px rgba(5,150,105,.3)">✅ টাকা পেলাম</a>` : ""}
+      ${acceptUrl ? `<a href="${acceptUrl}" target="_blank" rel="noopener" style="margin-left:auto;display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;box-shadow:0 2px 6px rgba(15,23,42,.3)">🔐 সফটওয়্যারে গিয়ে অনুমোদন করুন</a>` : ""}
     </div>
     <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
     ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
-    ${acceptUrl ? `<div class="note" style="font-size:10.5px;color:#777">✅ "টাকা পেলাম" বাটনে ক্লিক করলে সফটওয়্যারে রিকোয়েস্টটি গ্রহণ (approved) হয়ে যাবে</div>` : ""}
+    ${acceptUrl ? `<div class="note" style="font-size:10.5px;color:#777">🔐 নিরাপত্তার জন্য অনুমোদন শুধুমাত্র MD/Owner আইডি থেকে সম্ভব। বাটনে ক্লিক করে মোবাইল ও পাসওয়ার্ড দিয়ে লগইন করার পর সফটওয়্যারে গিয়ে অনুমোদন করুন।</div>` : ""}
   </div>
 
   <div style="margin-top:16px;padding:14px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12.5px;line-height:1.85;color:#374151">
     <div style="font-weight:800;color:#065f46;margin-bottom:6px">🙏 প্রিয় মহোদয়,</div>
-    <div style="margin-bottom:8px">এই হিসাবটি আপনার কাছে স্বচ্ছভাবে উপস্থাপন করা হলো। টাকা বুঝে পাওয়ার পর অনুগ্রহ করে নিচের যেকোনো একটি উপায়ে নিশ্চিত করুন —</div>
-    <div style="margin-bottom:6px">✅ দ্রুত অনুমোদনের জন্য উপরের <b>"টাকা পেলাম"</b> বাটনে এক ক্লিক করুন।</div>
-    <div style="margin-bottom:6px">🔐 আরও বিস্তারিত দেখতে চাইলে <b>Travel Manager</b> সফটওয়্যারে আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে <a href="https://asiatravel.lovable.app/" target="_blank" rel="noopener" style="color:#059669;font-weight:700;text-decoration:underline">লগইন</a> করুন এবং সেখান থেকেই অনুমোদন করুন।</div>
+    <div style="margin-bottom:8px">এই হিসাবটি আপনার কাছে স্বচ্ছভাবে উপস্থাপন করা হলো। টাকা বুঝে পাওয়ার পর অনুগ্রহ করে <b>সফটওয়্যারে লগইন করে</b> অনুমোদন করুন —</div>
+    <div style="margin-bottom:6px">🔐 শুধুমাত্র আপনার (MD/Owner) আইডি থেকেই এই অনুমোদন করা যাবে — অন্য কেউ পারবে না, যা আপনার টাকার নিরাপত্তা নিশ্চিত করে।</div>
+    <div style="margin-bottom:6px">📲 উপরের বাটনে অথবা নিচের বাটনে ক্লিক করে <b>Travel Manager</b> সফটওয়্যারে আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে <a href="https://asiatravel.lovable.app/" target="_blank" rel="noopener" style="color:#059669;font-weight:700;text-decoration:underline">লগইন</a> করুন এবং সেখান থেকেই অনুমোদন করুন।</div>
     <div style="margin-bottom:10px">📊 সফটওয়্যারে লগইন করলে আপনি আপনার প্রতিষ্ঠানের সকল আয়-ব্যয়, কর্মীদের জমা-খরচ ও সম্পূর্ণ ব্যবস্থাপনা যেকোনো সময়, যেকোনো জায়গা থেকে দেখতে ও পরিচালনা করতে পারবেন।</div>
     <div style="text-align:center;margin-top:12px">
       <a href="https://asiatravel.lovable.app/" target="_blank" rel="noopener" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 22px;border-radius:8px">🔐 Travel Manager — লগইন করুন</a>
