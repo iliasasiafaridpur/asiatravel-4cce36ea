@@ -371,6 +371,18 @@ export function PassengerProfileDrawer({
                           <PhoneCall className="h-3.5 w-3.5" />
                         </a>
                       ) : null}
+                      {row.mobile ? (
+                        <a
+                          href={`https://wa.me/${waNumber(String(row.mobile))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30 transition-colors hover:bg-green-500/25"
+                          aria-label={`WhatsApp ${String(row.mobile)}`}
+                          title={`WhatsApp ${String(row.mobile)}`}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
                     </span>
                   </div>
                   <div className="col-span-2">
