@@ -10,10 +10,11 @@
 
 /** Method options shown in the Due Receive dialog. */
 export const DUE_RECEIVE_METHODS = [
-  "Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Md cash",
+  "Cash", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cheque", "Md cash", "Vendor Received",
 ] as const;
 
 const CASH_METHODS = new Set(["cash", "hand cash"]);
+const VENDOR_RECEIVED_METHODS = new Set(["vendor received", "vendor receive"]);
 
 /**
  * True only when the payment is physical cash held by the staff member
@@ -27,11 +28,21 @@ export function isCashMethod(method?: string | null): boolean {
 }
 
 /**
+ * "Vendor Received" — the passenger paid the vendor directly. The passenger's
+ * due is cleared and the vendor's bill is settled, but NO money reaches the
+ * staff drawer OR MD, so it is kept out of both cash and MD income buckets.
+ */
+export function isVendorReceivedMethod(method?: string | null): boolean {
+  return VENDOR_RECEIVED_METHODS.has((method ?? "").trim().toLowerCase());
+}
+
+/**
  * Non-cash methods go straight to MD — kept as entries everywhere but never
- * added to the staff member's cash balance.
+ * added to the staff member's cash balance. "Vendor Received" is excluded:
+ * that money goes to the vendor, not MD.
  */
 export function isMdReceivedMethod(method?: string | null): boolean {
-  return !isCashMethod(method);
+  return !isCashMethod(method) && !isVendorReceivedMethod(method);
 }
 
 /** Short Bengali note marking an entry as MD-received via a non-cash method. */
