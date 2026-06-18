@@ -431,13 +431,16 @@ export function StaffHandoverDialog({
                       {mdRecv && (
                         <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
                       )}
+                      {vendorRecv && (
+                        <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece — ব্যালেন্সে নয়</div>
+                      )}
                     </div>
                     <div className="text-right">
                       {statusEvt ? (
                         <div className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">📦 Delivery</div>
                       ) : (
-                        <div className={`tabular-nums font-semibold ${mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                          {mdRecv ? "" : "+"}{fmt(Number(r.amount))}
+                        <div className={`tabular-nums font-semibold ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv || vendorRecv ? "" : "+"}{fmt(Number(r.amount))}
                         </div>
                       )}
                       {Number(r.discount || 0) > 0 && (
