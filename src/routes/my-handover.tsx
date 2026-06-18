@@ -444,7 +444,7 @@ function MyHandoverPage() {
     <div class="totalrow big" style="display:flex;align-items:center;gap:10px;justify-content:flex-start">
       <span>জমা (Declared)</span>
       <b>${money(declared)}</b>
-      ${acceptUrl ? `<a href="${acceptUrl}" target="_blank" rel="noopener" style="margin-left:auto;display:inline-block;background:#059669;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;box-shadow:0 2px 6px rgba(5,150,105,.3)">✅ টাকা পেলাম</a>` : ""}
+      ${acceptUrl ? `<a href="${acceptUrl}" target="_blank" rel="noopener" style="margin-left:auto;display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;box-shadow:0 2px 6px rgba(15,23,42,.3)">🔐 সফটওয়্যারে গিয়ে অনুমোদন করুন</a>` : ""}
     </div>
     <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
     ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
