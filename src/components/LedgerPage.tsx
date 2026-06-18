@@ -2089,6 +2089,30 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                               {isAgency ? "Payment Received" : "Payment Paid"}
                             </Badge>
                           </>
+                        ) : isManualAdvAdjust ? (
+                          <>
+                            <div
+                              className={cn(
+                                "font-bold text-base",
+                                adjustIsExpense
+                                  ? "text-rose-500"
+                                  : "text-emerald-600 dark:text-emerald-400",
+                              )}
+                            >
+                              {adjustIsExpense ? "−" : "+"} ৳ {Math.abs(Number(r[paidCol] ?? 0)).toLocaleString()}
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "mt-1 text-[10px]",
+                                adjustIsExpense
+                                  ? "border-rose-500/50 text-rose-600 dark:text-rose-400"
+                                  : "border-emerald-500/50 text-emerald-600 dark:text-emerald-400",
+                              )}
+                            >
+                              {adjustIsExpense ? "Advance কমেছে" : "Advance বেড়েছে"}
+                            </Badge>
+                          </>
                         ) : (
                           <>
                         <div className="font-bold text-base">
