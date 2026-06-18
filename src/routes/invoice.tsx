@@ -570,3 +570,117 @@ function ItemFields({ it, onChange }: { it: InvoiceItem; onChange: (patch: Parti
   // manual
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{CustomServiceName}</div>;
 }
+
+/* ---------------------- per-service editor (search + fields) -------------- */
+
+function ItemEditor({
+  index,
+  item,
+  allEntries,
+  canRemove,
+  onChange,
+  onChangeService,
+  onRemove,
+  onLoadEntry,
+}: {
+  index: number;
+  item: InvoiceItem;
+  allEntries: ServiceEntry[];
+  canRemove: boolean;
+  onChange: (patch: Partial<InvoiceItem>) => void;
+  onChangeService: (type: string) => void;
+  onRemove: () => void;
+  onLoadEntry: (e: ServiceEntry) => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (item.type === "manual") return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return allEntries
+      .filter((e) => e.moduleKey === item.type)
+      .filter((e) => `${e.id} ${e.passenger} ${e.passport} ${e.mobile}`.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [allEntries, search, item.type]);
+
+  return (
+    <div className="rounded-lg border bg-card/60 p-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+          Service {index + 1}
+        </span>
+        <span className="text-xs text-muted-foreground truncate">{(item.serviceLabel || "—").toUpperCase()}</span>
+        <div className="flex-1" />
+        {canRemove && (
+          <Button type="button" variant="ghost" size="icon" onClick={onRemove} title="মুছুন" className="h-8 w-8">
+            <Trash2 className="h-4 w-4 text-rose-500" />
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-2">
+        <Field label="Service">
+          <Select value={item.type} onValueChange={(t) => { onChangeService(t); setSearch(""); }}>
+            <SelectTrigger><SelectValue placeholder="সার্ভিস বাছাই করুন" /></SelectTrigger>
+            <SelectContent>
+              {ITEM_TYPES.map((t) => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Search Existing Entry">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              disabled={item.type === "manual"}
+              placeholder={item.type === "manual" ? "Manual entry selected" : "ID / নাম / পাসপোর্ট / মোবাইল"}
+              className="pl-8"
+            />
+          </div>
+        </Field>
+      </div>
+
+      {item.type !== "manual" && search.trim() && filtered.length === 0 && (
+        <div className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">কোনো এন্ট্রি পাওয়া যায়নি</div>
+      )}
+      {search.trim() && filtered.length > 0 && (
+        <div className="max-h-56 overflow-auto rounded-md border">
+          {filtered.map((e) => (
+            <button
+              key={e.moduleKey + e.id}
+              type="button"
+              onClick={() => { onLoadEntry(e); setSearch(""); }}
+              className="flex w-full items-center justify-between gap-3 border-b p-2.5 text-left transition-colors last:border-b-0 hover:bg-accent/70"
+            >
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="flex items-center gap-1.5 truncate font-medium">
+                  <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />{e.passenger}
+                  {e.passport && <span className="text-xs font-mono text-muted-foreground">· {e.passport}</span>}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  <span className="font-mono">{e.id}</span> · {e.module}{e.mobile ? ` · ${e.mobile}` : ""}{e.amount ? ` · ${e.amount.toLocaleString()}৳` : ""}
+                </span>
+              </span>
+              <span className="shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold text-primary">Use</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <ItemFields it={item} onChange={onChange} />
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Price">
+          <Input
+            type="number"
+            value={item.rate || ""}
+            placeholder="0"
+            onChange={(e) => onChange({ rate: Number(e.target.value) || 0 })}
+          />
+        </Field>
+      </div>
+    </div>
+  );
+}
