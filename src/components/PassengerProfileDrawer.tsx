@@ -7,9 +7,17 @@ import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall } from "lucide-react";
+import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall, MessageCircle } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+
+/** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
+function waNumber(raw: string): string {
+  let d = (raw ?? "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "880" + d.slice(1);
+  return d;
+}
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -361,6 +369,18 @@ export function PassengerProfileDrawer({
                           title={`কল করুন ${String(row.mobile)}`}
                         >
                           <PhoneCall className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
+                      {row.mobile ? (
+                        <a
+                          href={`https://wa.me/${waNumber(String(row.mobile))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30 transition-colors hover:bg-green-500/25"
+                          aria-label={`WhatsApp ${String(row.mobile)}`}
+                          title={`WhatsApp ${String(row.mobile)}`}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
                         </a>
                       ) : null}
                     </span>

@@ -8,10 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
-import { Phone, PhoneCall, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus } from "lucide-react";
+import { Phone, PhoneCall, MessageCircle, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+
+/** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
+function waNumber(raw: string): string {
+  let d = (raw ?? "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "880" + d.slice(1);
+  return d;
+}
 
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null; created_at?: string | null };
@@ -404,6 +412,16 @@ export function PartyProfileDrawer({
                             title={`কল করুন ${ph}`}
                           >
                             <PhoneCall className="h-3.5 w-3.5" />
+                          </a>
+                          <a
+                            href={`https://wa.me/${waNumber(ph)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30 transition-colors hover:bg-green-500/25"
+                            aria-label={`WhatsApp ${ph}`}
+                            title={`WhatsApp ${ph}`}
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
                           </a>
                         </div>
                       ))
