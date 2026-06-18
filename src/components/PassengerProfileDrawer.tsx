@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, ReceiptText, Layers } from "lucide-react";
+import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
@@ -353,6 +353,16 @@ export function PassengerProfileDrawer({
                     <span className="inline-flex items-center gap-2 flex-wrap">
                       <span className={mobileColorTextClass(mobileColor)}>{val(row.mobile)}</span>
                       {row.mobile ? <MobileColorPicker mobile={String(row.mobile)} /> : null}
+                      {row.mobile ? (
+                        <a
+                          href={`tel:${String(row.mobile).replace(/[^+\d]/g, "")}`}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30 transition-colors hover:bg-emerald-500/25"
+                          aria-label={`Call ${String(row.mobile)}`}
+                          title={`কল করুন ${String(row.mobile)}`}
+                        >
+                          <PhoneCall className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
                     </span>
                   </div>
                   <div className="col-span-2">
