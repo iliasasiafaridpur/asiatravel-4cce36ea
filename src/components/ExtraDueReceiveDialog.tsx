@@ -13,7 +13,8 @@ import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -200,6 +201,12 @@ export function ExtraDueReceiveDialog({
             received_by_name: me,
           });
           if (insRes.offline) offline = true;
+
+          // "Vendor Received" → passenger paid the vendor directly; settle the
+          // extra service's vendor bill without touching the staff balance.
+          if (isVendorReceivedMethod(method)) {
+            await settleVendorBillByBooking("extra_services", r.id, amt, user.id);
+          }
         }
       }
 
@@ -311,7 +318,11 @@ export function ExtraDueReceiveDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {isMdReceivedMethod(method) && (
+              {isVendorReceivedMethod(method) ? (
+                <p className="mt-1.5 text-[11px] leading-snug text-sky-600 dark:text-sky-400">
+                  🏢 যাত্রী সরাসরি Vendor কে দিয়েছে — Vendor এর বিল পরিশোধ হবে ও Due কমবে, আপনার ব্যালেন্সে যোগ হবে না।
+                </p>
+              ) : isMdReceivedMethod(method) && (
                 <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
                   ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না ({method})।
                 </p>

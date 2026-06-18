@@ -15,7 +15,8 @@ import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate } from "@/lib/modules";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
@@ -389,6 +390,15 @@ export function DueReceiveDialog({
       }
       const insRes = { offline: receiptsOffline };
 
+      // 2b) "Vendor Received" → passenger paid the vendor directly. Settle the
+      // vendor's bill for this booking; never touches the staff cash balance.
+      const vendorPaidAmt = payments
+        .filter((p) => isVendorReceivedMethod(p.method))
+        .reduce((s, p) => s + p.amount, 0);
+      if (vendorPaidAmt > 0) {
+        await settleVendorBillByBooking(selected.service.table, selected.id, vendorPaidAmt, user.id);
+      }
+
       // 3) if excess → route to agency_ledger as Advance Received
       let ledgerOffline = false;
       if (excess > 0 && selected.agencySold) {
@@ -626,7 +636,11 @@ export function DueReceiveDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      {isMdReceivedMethod(method) && (
+                      {isVendorReceivedMethod(method) ? (
+                        <p className="mt-1.5 text-[11px] leading-snug text-sky-600 dark:text-sky-400">
+                          🏢 যাত্রী সরাসরি Vendor কে টাকা দিয়েছে — Vendor এর বিল পরিশোধ হবে ও যাত্রীর Due কমবে, আপনার ক্যাশ ব্যালেন্সে যোগ হবে না।
+                        </p>
+                      ) : isMdReceivedMethod(method) && (
                         <p className="mt-1.5 text-[11px] leading-snug text-amber-600 dark:text-amber-400">
                           ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
                         </p>
@@ -647,7 +661,9 @@ export function DueReceiveDialog({
                             placeholder="0"
                             className="text-base font-semibold"
                           />
-                          {isMdReceivedMethod(m)
+                          {isVendorReceivedMethod(m)
+                            ? <span className="text-[10px] text-sky-600 dark:text-sky-400 whitespace-nowrap">→ Vendor</span>
+                            : isMdReceivedMethod(m)
                             ? <span className="text-[10px] text-amber-600 dark:text-amber-400 whitespace-nowrap">→ MD</span>
                             : <span className="text-[10px] text-emerald-600 whitespace-nowrap">→ আপনার ব্যালেন্স</span>}
                         </div>

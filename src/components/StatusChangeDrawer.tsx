@@ -19,7 +19,8 @@ import { generateNextId } from "@/lib/idgen";
 import { speakDelivery } from "@/lib/voice";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 
 const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 
@@ -407,6 +408,18 @@ export function StatusChangeDrawer({
         if (!isNetworkError(le)) toast.warning("Vendor ledger update failed: " + errMsg(le));
       }
 
+      // "Vendor Received" → passenger paid the vendor directly. Settle the
+      // vendor's bill for this booking (after any bill creation above); the
+      // staff cash balance is untouched.
+      if (receiveDue) {
+        const vendorPaidAmt = payments
+          .filter((p) => isVendorReceivedMethod(p.method))
+          .reduce((s, p) => s + p.amount, 0);
+        if (vendorPaidAmt > 0) {
+          await settleVendorBillByBooking(request.table, request.row.id, vendorPaidAmt, user!.id);
+        }
+      }
+
       toast.success(`Status: ${finalStatus}${request.refId ? `-${request.refId}` : ""}`, {
         meta: {
           passenger: String(request.row.passenger_name ?? "") || undefined,
@@ -624,7 +637,11 @@ export function StatusChangeDrawer({
                         </Select>
                       </div>
                     </div>
-                    {isMdReceivedMethod(method) && (
+                    {isVendorReceivedMethod(method) ? (
+                      <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
+                        🏢 যাত্রী সরাসরি Vendor কে দিয়েছে — Vendor এর বিল পরিশোধ হবে ও Due কমবে, আপনার ব্যালেন্সে যোগ হবে না।
+                      </div>
+                    ) : isMdReceivedMethod(method) && (
                       <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
                         ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
                       </div>
@@ -640,7 +657,9 @@ export function StatusChangeDrawer({
                           value={methodAmts[m] ?? ""}
                           onChange={(e) => setMethodAmts((prev) => ({ ...prev, [m]: e.target.value }))}
                           placeholder="0" />
-                        {isMdReceivedMethod(m)
+                        {isVendorReceivedMethod(m)
+                          ? <span className="text-[9px] text-sky-600 dark:text-sky-400 whitespace-nowrap w-12">→ Vendor</span>
+                          : isMdReceivedMethod(m)
                           ? <span className="text-[9px] text-amber-600 dark:text-amber-400 whitespace-nowrap w-12">→ MD</span>
                           : <span className="text-[9px] text-emerald-600 whitespace-nowrap w-12">→ ব্যালেন্স</span>}
                       </div>
