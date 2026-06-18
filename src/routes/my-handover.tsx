@@ -343,7 +343,7 @@ function MyHandoverPage() {
   <td class="num">${i + 1}</td>
   <td>${formatDate(r.entry_date)}${r.receipt_id ? `<div class="sub mono">${r.receipt_id}</div>` : ""}</td>
   <td class="wrap"><b>${r.passenger_name || "—"}</b><div class="sub">👤 ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div></td>
-  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv ? `<div class="sub">${r.method}</div>` : ""}</td>
+  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv && !vendorRecv ? `<div class="sub">${r.method}</div>` : ""}</td>
   <td class="wrap">${region || "—"}${vendorLine}</td>
   <td class="num">${billCell}</td>
   <td class="num">${prevCell}</td>
