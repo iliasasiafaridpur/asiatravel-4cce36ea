@@ -1879,6 +1879,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                               ? "Payment Received"
                               : "Payment Paid"
                             : service || "—";
+                  // For a manual adjust row, show just the আয়/ব্যয় tag under the
+                  // "Manual Adjust" label (derive from the signed amount).
+                  if (isManualAdjust) {
+                    cr = Number(r[paidCol] ?? 0) < 0 ? "ব্যয়" : "আয়";
+                  }
                   const ServiceIcon = isTicket
                     ? "✈"
                     : isBmet
