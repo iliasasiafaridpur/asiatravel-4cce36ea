@@ -931,6 +931,9 @@ ${node.innerHTML.replace(
                         {isMdRecv && (
                           <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
                         )}
+                        {isVendorRecv && (
+                          <p className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap leading-tight">Vendor Rece</p>
+                        )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
                         </p>
