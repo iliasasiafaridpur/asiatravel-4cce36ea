@@ -618,6 +618,7 @@ function MyHandoverPage() {
                   visibleReceipts.map((r, idx) => {
                     const statusEvt = isStatusEvent(r);
                     const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+                    const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
                     return (
                     <div key={r.id} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
                       <div className="min-w-0">
