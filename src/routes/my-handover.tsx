@@ -436,6 +436,7 @@ function MyHandoverPage() {
   <div class="foot">
     <div class="totalrow"><span>নগদ আয়</span><b class="in">${money(cashReceipts)}</b></div>
     ${mdReceipts > 0 ? `<div class="totalrow"><span>MD রিসিভ</span><b class="hand">${money(mdReceipts)}</b></div>` : ""}
+    ${vendorReceipts > 0 ? `<div class="totalrow"><span>Vendor Rece</span><b class="vendor">${money(vendorReceipts)}</b></div>` : ""}
     ${totalExpense > 0 ? `<div class="totalrow"><span>খরচ</span><b class="out">− ${money(totalExpense)}</b></div>` : ""}
     <div class="totalrow big" style="display:flex;align-items:center;gap:10px;justify-content:flex-start">
       <span>জমা (Declared)</span>
