@@ -1863,7 +1863,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     (svcUpper.includes("SAUDI") && svcUpper.includes("VISA"));
                   const isVisa = svcUpper.includes("VISA") || isKuwait || isSaudi;
                   const isPayment = svcUpper === "PAYMENT";
+                  const isManualAdvAdjust = String(r.source_table ?? "") === "manual_adjust";
+                  const adjustIsExpense = Number(r[paidCol] ?? 0) < 0;
                   const isManualAdjust =
+                    isManualAdvAdjust ||
                     cr.startsWith("Manual Advance Adjustment") || cr.startsWith("Advance Adjustment");
                   const srcId = String(r.source_id ?? "");
                   const info = srcId ? sourceInfoMap.get(srcId) : undefined;
