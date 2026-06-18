@@ -467,7 +467,7 @@ function AccountsPage() {
   th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.num.in{text-align:left}
-  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
   @media print{body{padding:2px}}
 </style></head><body>
