@@ -551,6 +551,9 @@ function MyHandoverPage() {
           {totalMdReceived > 0 && (
             <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} (ব্যালেন্সে নয়)</div>
           )}
+          {totalVendorReceived > 0 && (
+            <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece: {fmt(totalVendorReceived)} (ব্যালেন্সে নয়)</div>
+          )}
         </div>
         <div className="rounded-lg border bg-rose-500/10 p-3">
           <div className="flex items-center gap-1 text-[10px] uppercase text-rose-600 dark:text-rose-400">
