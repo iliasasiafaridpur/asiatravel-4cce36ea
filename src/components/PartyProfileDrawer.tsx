@@ -397,6 +397,14 @@ export function PartyProfileDrawer({
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className={mobileColorTextClass(colorFor(ph))}>{ph}</span>
                           <MobileColorPicker mobile={ph} />
+                          <a
+                            href={`tel:${ph.replace(/[^+\d]/g, "")}`}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30 transition-colors hover:bg-emerald-500/25"
+                            aria-label={`Call ${ph}`}
+                            title={`কল করুন ${ph}`}
+                          >
+                            <PhoneCall className="h-3.5 w-3.5" />
+                          </a>
                         </div>
                       ))
                     ) : (
