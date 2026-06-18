@@ -39,7 +39,7 @@ const listeners = new Set<(next: MobileColorMap) => void>();
 const emit = () => listeners.forEach((listener) => listener(colorCache));
 
 function coerceColor(color: string | null | undefined): MobileColor {
-  return color === "blue" || color === "green" ? color : "default";
+  return color === "red" || color === "green" ? color : "default";
 }
 
 async function loadMobileColors() {
