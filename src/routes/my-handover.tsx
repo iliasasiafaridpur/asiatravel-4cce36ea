@@ -329,6 +329,8 @@ function MyHandoverPage() {
           : "";
         const thisCell = statusEvt
           ? `<span class="hand">📦 ${cleanStatusText(r.remarks)}</span>`
+          : vendorRecv
+          ? `<span class="vendor">(Vendor) ${money(r.amount || 0)}</span><div class="sub">Vendor Rece</div>`
           : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(r.amount || 0)}</span>${mdRecv ? `<div class="sub">MD · ${r.method}</div>` : ""}`;
         const dueCell = bill > 0
           ? (dueAfterThis <= 0.005 ? `<span class="paid">✓ পরিশোধিত</span>` : `<span class="due">${money(dueAfterThis)}</span>`)
