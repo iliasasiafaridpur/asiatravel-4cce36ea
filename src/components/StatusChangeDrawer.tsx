@@ -637,7 +637,11 @@ export function StatusChangeDrawer({
                         </Select>
                       </div>
                     </div>
-                    {isMdReceivedMethod(method) && (
+                    {isVendorReceivedMethod(method) ? (
+                      <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
+                        🏢 যাত্রী সরাসরি Vendor কে দিয়েছে — Vendor এর বিল পরিশোধ হবে ও Due কমবে, আপনার ব্যালেন্সে যোগ হবে না।
+                      </div>
+                    ) : isMdReceivedMethod(method) && (
                       <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-1.5 text-[10px] text-sky-700 dark:text-sky-300">
                         ⚠️ এই টাকা সরাসরি MD-এর কাছে যাবে — আপনার ক্যাশ ব্যালেন্সে যোগ হবে না, শুধু এন্ট্রি থাকবে ({method})।
                       </div>
