@@ -69,34 +69,11 @@ export async function settleVendorBillByBooking(
       }
     }
 
-    // 2) Adjust the surplus against the SAME vendor's previous due (FIFO).
-    if (remaining > 0.009 && vendor) {
-      const { data: vData } = await supabase
-        .from("vendor_ledger" as never)
-        .select("id, total_payable, paid_amount, advance_applied, service_type, entry_date, created_at")
-        .eq("vendor_name", vendor)
-        .order("entry_date", { ascending: true })
-        .order("created_at", { ascending: true });
-      const vRows = ((vData as unknown) as Record<string, unknown>[] | null) ?? [];
-      for (const r of vRows) {
-        if (remaining <= 0.009) break;
-        if (String(r.id) === String(bill.id)) continue;
-        if (!isBillRow(r)) continue;
-        const due = rowRemaining(r);
-        if (due <= 0.009) continue;
-        const take = Math.min(due, remaining);
-        const { error } = await supabase
-          .from("vendor_ledger" as never)
-          .update({ paid_amount: Number(r.paid_amount ?? 0) + take, received_by: userId } as never)
-          .eq("id", r.id as never);
-        if (!error) {
-          appliedTotal += take;
-          remaining -= take;
-        }
-      }
-    }
-
-    // 3) Park anything left as a vendor ADVANCE wallet row (no cash impact).
+    // 2) Park any surplus (paid more than this booking's vendor cost) as a
+    //    vendor ADVANCE wallet row. We do NOT force-match it against the
+    //    vendor's other bills here — the recalculate_vendor_advance trigger
+    //    decides how the advance offsets genuine (received) dues, so the
+    //    surplus reliably shows up as advance / reduces real due.
     let advance = 0;
     if (remaining > 0.009 && vendor) {
       let advId = "";
