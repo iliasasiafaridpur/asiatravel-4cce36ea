@@ -107,7 +107,15 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 }
 
 function selectColumns(mod: ModuleSchema): string {
-  const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
+  // Contact tables (agents/vendors) have no transactional columns
+  // (entry_date / created_by / received_by). Only request those on tables
+  // that actually carry an entry_date field.
+  const isTransactional = mod.fields.some((f) => f.name === "entry_date");
+  const columns = new Set(["id", mod.idColumn, "created_at"]);
+  if (isTransactional) {
+    columns.add("created_by");
+    columns.add("received_by");
+  }
   // status_by only exists on the service tables that have a status workflow
   if (RECV_META[mod.table]) columns.add("status_by");
   // soft-cancel columns (BMET / Saudi / Kuwait)
