@@ -390,7 +390,7 @@ function MyHandoverPage() {
   td.wrap,th.wrap{white-space:normal;word-break:break-word}
   .sub{color:#777;font-size:10px;margin-top:2px;font-weight:400}
   .mono{font-family:'Courier New',monospace}
-  .in{color:#059669;font-weight:700}.out{color:#b45309;font-weight:700}.hand{color:#0284c7;font-weight:700}
+  .in{color:#059669;font-weight:700}.out{color:#b45309;font-weight:700}.hand{color:#0284c7;font-weight:700}.vendor{color:#ea580c;font-weight:700}
   .due{color:#b91c1c;font-weight:700}.paid{color:#059669;font-weight:700}
   tfoot td{font-weight:700;background:#fafafa;border-top:2px solid #ddd}
   .empty{padding:14px;text-align:center;color:#999}
