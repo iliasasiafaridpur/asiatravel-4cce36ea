@@ -1102,11 +1102,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           monthlyId: true, fields: [],
         });
         const signedAmt = isExpense ? -amt : amt;
-        // "Manual Adjust" with an আয়/ব্যয় tag so the vendor ledger row reads
+        // "Advance Adjustment" with an আয়/ব্যয় tag so the vendor ledger row reads
         // clearly. The user's typed remarks are stored separately so they show
         // verbatim in the ledger's remarks line.
         const kindLabel = isExpense ? "ব্যয়" : "আয়";
-        const label = `Manual Adjust · ${kindLabel}`;
+        const label = `Advance Adjustment · ${kindLabel}`;
         const payload: Record<string, unknown> = {
           [mod.idColumn]: ledgerId,
           entry_date: payDate,
