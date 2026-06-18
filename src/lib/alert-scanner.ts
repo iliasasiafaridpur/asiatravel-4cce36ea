@@ -126,18 +126,9 @@ async function scanTarget(t: Target) {
     const meta = { passenger, service: t.serviceLabel, country, refId, vendor, receiptId };
     const outstanding = due(r);
 
-    // 1) Financial alert
-    if (outstanding > 0) {
-      pushNotification(
-        "warning",
-        "বকেয়া সতর্কতা: পেমেন্ট সম্পন্ন নয়",
-        `${t.serviceLabel} — অবস্থা: ${r.status} • বকেয়া ৳${outstanding.toLocaleString()}`,
-        {
-          meta: { ...meta, amount: outstanding },
-          dedupeKey: `due:${t.table}:${r.id}:${r.status}:${outstanding}`,
-        },
-      );
-    }
+    // 1) Financial alert (বকেয়া সতর্কতা) — disabled per user request
+    // if (outstanding > 0) { ... } removed: no more outstanding/due notifications.
+    void outstanding;
 
     // 2) Aging alert — Card Ready > 3 days without delivery
     if (r.status === "Card Ready") {
