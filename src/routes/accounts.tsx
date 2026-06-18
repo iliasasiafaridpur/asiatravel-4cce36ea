@@ -267,6 +267,7 @@ function AccountsPage() {
   // go straight to MD — kept as entries but excluded from balance.
   const periodIncome = fRecv.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodMdIncome = fRecv.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const periodVendorIncome = fRecv.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
   const balance = useMemo(() => {
