@@ -284,9 +284,12 @@ function MyHandoverPage() {
 
   const buildReportHtml = (acceptToken?: string) => {
     const money = (n: number) => `৳&nbsp;${(Number(n) || 0).toLocaleString()}`;
+    // Security: the email link only OPENS the software. Approval happens
+    // inside the app after the MD logs in with their own ID + password.
+    // No public token auto-approve (that would let anyone with the link approve).
     const acceptUrl = acceptToken
       ? `https://asiatravel.lovable.app/api/public/handover-accept?t=${encodeURIComponent(acceptToken)}`
-      : "";
+      : "https://asiatravel.lovable.app/md-panel";
     const now = Date.now();
     const batchIds = new Set(receipts.map((r) => r.id));
     const cashReceipts = totalReceived;
