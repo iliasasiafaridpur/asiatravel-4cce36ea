@@ -405,6 +405,16 @@ export function PartyProfileDrawer({
                           >
                             <PhoneCall className="h-3.5 w-3.5" />
                           </a>
+                          <a
+                            href={`https://wa.me/${waNumber(ph)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30 transition-colors hover:bg-green-500/25"
+                            aria-label={`WhatsApp ${ph}`}
+                            title={`WhatsApp ${ph}`}
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                          </a>
                         </div>
                       ))
                     ) : (
