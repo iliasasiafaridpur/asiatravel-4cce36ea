@@ -410,6 +410,7 @@ function MyHandoverPage() {
   <div class="summary">
     <div><span class="lbl">নগদ আয়</span><span class="in">${money(cashReceipts)}</span></div>
     ${mdReceipts > 0 ? `<div><span class="lbl">MD রিসিভ</span><span class="hand">${money(mdReceipts)}</span></div>` : ""}
+    ${vendorReceipts > 0 ? `<div><span class="lbl">Vendor Rece</span><span class="vendor">${money(vendorReceipts)}</span></div>` : ""}
     ${totalExpense > 0 ? `<div><span class="lbl">খরচ</span><span class="out">− ${money(totalExpense)}</span></div>` : ""}
     <div><span class="lbl">জমা (Declared)</span><span>${money(declared)}</span></div>
     <div><span class="lbl">Variance</span><span class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</span></div>
