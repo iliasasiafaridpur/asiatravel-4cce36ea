@@ -1059,22 +1059,26 @@ ${node.innerHTML.replace(
                   }
                   const statusEvt = isStatusEventReceipt(r);
                   const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+                  const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
                   const isAdvance = !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date) && !statusEvt;
                   return (
                     <div key={r.id} className={`row-tint-${idx % 4} flex items-start gap-3 p-3`}>
-                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
+                      <div className={`shrink-0 h-9 w-9 rounded-full grid place-items-center border ${vendorRecv ? "bg-orange-500/10 text-orange-600 border-orange-500/20" : mdRecv ? "bg-sky-500/10 text-sky-600 border-sky-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
                         <ArrowDownLeft className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold text-sm truncate">{r.passenger_name}</p>
-                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
+                          <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : vendorRecv ? "text-orange-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
                            {r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                          {mdRecv && (
                            <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
+                         )}
+                         {vendorRecv && (
+                           <p className="text-[11px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece — ব্যালেন্সে যোগ হয়নি</p>
                          )}
                        </div>
                        <ConfirmDeleteButton allowOwner onConfirm={() => deleteRecv(r.id)} description={`আয় ${r.receipt_id} ডিলেট করতে চান?`} />
