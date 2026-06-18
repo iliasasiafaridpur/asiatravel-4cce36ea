@@ -477,6 +477,7 @@ function AccountsPage() {
   <div>এই ${timeline.length} লেনদেনের নিট: <b>${fmt(scopedBalance)}</b></div>
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
   ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
+  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece (ব্যালেন্সে নয়): <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
 </div>
 ${node.innerHTML.replace(
