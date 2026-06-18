@@ -107,7 +107,15 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
 }
 
 function selectColumns(mod: ModuleSchema): string {
-  const columns = new Set(["id", mod.idColumn, "created_at", "created_by", "received_by"]);
+  // Contact tables (agents/vendors) have no transactional columns
+  // (entry_date / created_by / received_by). Only request those on tables
+  // that actually carry an entry_date field.
+  const isTransactional = mod.fields.some((f) => f.name === "entry_date");
+  const columns = new Set(["id", mod.idColumn, "created_at"]);
+  if (isTransactional) {
+    columns.add("created_by");
+    columns.add("received_by");
+  }
   // status_by only exists on the service tables that have a status workflow
   if (RECV_META[mod.table]) columns.add("status_by");
   // soft-cancel columns (BMET / Saudi / Kuwait)
@@ -223,13 +231,14 @@ export function ModulePage({ module: mod }: Props) {
     loadingRef.current = true;
     if (showSpinner) setLoading(true);
     try {
+      const baseQuery = supabase.from(mod.table as never).select(columns);
+      // Contact tables (agents/vendors) have no entry_date column — ordering by
+      // it would throw a 400. Only transactional tables get the entry_date sort.
+      const orderedQuery = hasDateFilter
+        ? baseQuery.order("entry_date", { ascending: false }).order("created_at", { ascending: false })
+        : baseQuery.order("created_at", { ascending: false });
       const result = await Promise.race([
-        supabase
-          .from(mod.table as never)
-          .select(columns)
-          .order("entry_date", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(250),
+        orderedQuery.limit(250),
         new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 6500)),
       ]);
       const { data, error } = result as { data: unknown; error: { message: string } | null };
@@ -250,7 +259,7 @@ export function ModulePage({ module: mod }: Props) {
       reloadQueuedRef.current = false;
       window.setTimeout(() => void load(false), 250);
     }
-  }, [mod.table, cacheKey, columns]);
+  }, [mod.table, cacheKey, columns, hasDateFilter]);
 
   // Count of extra services per parent row (for the "+N" badge on the data list)
   const loadExtraCounts = useCallback(async () => {
