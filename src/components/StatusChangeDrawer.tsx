@@ -408,6 +408,18 @@ export function StatusChangeDrawer({
         if (!isNetworkError(le)) toast.warning("Vendor ledger update failed: " + errMsg(le));
       }
 
+      // "Vendor Received" → passenger paid the vendor directly. Settle the
+      // vendor's bill for this booking (after any bill creation above); the
+      // staff cash balance is untouched.
+      if (receiveDue) {
+        const vendorPaidAmt = payments
+          .filter((p) => isVendorReceivedMethod(p.method))
+          .reduce((s, p) => s + p.amount, 0);
+        if (vendorPaidAmt > 0) {
+          await settleVendorBillByBooking(request.table, request.row.id, vendorPaidAmt, user!.id);
+        }
+      }
+
       toast.success(`Status: ${finalStatus}${request.refId ? `-${request.refId}` : ""}`, {
         meta: {
           passenger: String(request.row.passenger_name ?? "") || undefined,
