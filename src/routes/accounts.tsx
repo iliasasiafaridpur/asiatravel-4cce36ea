@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
-import { isCashMethod, isMdReceivedMethod, DUE_RECEIVE_METHODS } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
 
 
