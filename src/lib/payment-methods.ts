@@ -49,3 +49,8 @@ export function isMdReceivedMethod(method?: string | null): boolean {
 export function mdReceivedNote(method?: string | null): string {
   return `MD রিসিভ · ${(method ?? "—")} — ব্যালেন্সে যোগ হয়নি`;
 }
+
+/** Short label marking an entry as paid directly to the vendor. */
+export function vendorReceivedNote(): string {
+  return `Vendor Rece — ব্যালেন্সে যোগ হয়নি`;
+}
