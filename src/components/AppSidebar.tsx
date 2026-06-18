@@ -139,11 +139,11 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive(item.to)}
                       tooltip={item.title}
-                      className="h-9 data-[active=true]:bg-primary/20 data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:ring-1 data-[active=true]:ring-primary/40 data-[active=true]:shadow-[0_0_12px_-2px_var(--primary)] data-[active=true]:border-l-4 data-[active=true]:border-primary"
+                      className="h-9 group-data-[collapsible=icon]:!size-11 group-data-[collapsible=icon]:!p-1.5 data-[active=true]:bg-primary/20 data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:ring-1 data-[active=true]:ring-primary/40 data-[active=true]:shadow-[0_0_12px_-2px_var(--primary)] data-[active=true]:border-l-4 data-[active=true]:border-primary"
                     >
                       <Link to={item.to} className="flex items-center gap-2">
                         <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ring-1 ring-inset ring-white/5 shadow-sm transition-transform group-hover/menu-item:scale-105 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9`}
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ring-1 ring-inset ring-white/5 shadow-sm transition-transform group-hover/menu-item:scale-105 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8`}
                         >
                           <item.icon className={`h-[18px] w-[18px] ${item.color} group-data-[collapsible=icon]:h-[22px] group-data-[collapsible=icon]:w-[22px]`} strokeWidth={2.25} />
                         </span>
