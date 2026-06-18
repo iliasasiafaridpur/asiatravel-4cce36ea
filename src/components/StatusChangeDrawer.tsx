@@ -19,7 +19,8 @@ import { generateNextId } from "@/lib/idgen";
 import { speakDelivery } from "@/lib/voice";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 
 const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 
