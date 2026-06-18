@@ -1981,7 +1981,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                             📱 {mobile}
                           </div>
                         )}
-                        {remarks && (
+                        {remarks && !isManualAdvAdjust && (
                           <div className="text-[11px] text-muted-foreground/80 italic truncate max-w-[200px] mt-0.5">
                             {remarks}
                           </div>
