@@ -390,6 +390,15 @@ export function DueReceiveDialog({
       }
       const insRes = { offline: receiptsOffline };
 
+      // 2b) "Vendor Received" → passenger paid the vendor directly. Settle the
+      // vendor's bill for this booking; never touches the staff cash balance.
+      const vendorPaidAmt = payments
+        .filter((p) => isVendorReceivedMethod(p.method))
+        .reduce((s, p) => s + p.amount, 0);
+      if (vendorPaidAmt > 0) {
+        await settleVendorBillByBooking(selected.service.table, selected.id, vendorPaidAmt, user.id);
+      }
+
       // 3) if excess → route to agency_ledger as Advance Received
       let ledgerOffline = false;
       if (excess > 0 && selected.agencySold) {
