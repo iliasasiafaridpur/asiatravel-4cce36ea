@@ -90,24 +90,24 @@ export function useCurrentUser(): CurrentUser {
     refetchOnWindowFocus: true,
   });
 
-  // Realtime: if an admin changes this user's role / active status, update
-  // immediately without requiring a log out / log in.
+  // NOTE: We deliberately do NOT subscribe to `profiles` over Realtime.
+  // The profiles table is no longer in the Realtime publication, because its
+  // SELECT policy is open to all authenticated staff and broadcasting would
+  // leak sensitive fields (mobile, notify_email, role, must_reset_password)
+  // for every staff member. The own-profile query below refetches on window
+  // focus (and AuthGate re-checks is_active / must_reset_password on auth
+  // events), so role/active changes are still picked up without a live feed.
   const qc = useQueryClient();
   useEffect(() => {
     if (!user) return;
-    // Unique channel name per mount avoids "cannot add postgres_changes
-    // callbacks after subscribe()" when StrictMode re-runs the effect and a
-    // same-named channel instance is still being torn down.
-    const channel = supabase.channel(`profile-self-${user.id}-${Math.random().toString(36).slice(2)}`);
-    channel
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
-        () => { void qc.invalidateQueries({ queryKey: ["profile", user.id] }); },
-      )
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    // Lightweight periodic refresh of the current user's own profile so an
+    // admin's role / deactivation change is reflected without a live channel.
+    const t = setInterval(() => {
+      void qc.invalidateQueries({ queryKey: ["profile", user.id] });
+    }, 60 * 1000);
+    return () => clearInterval(t);
   }, [user, qc]);
+
 
   return { user, profile: profile ?? null, loading: authLoading || (!!user && profileLoading) };
 }
