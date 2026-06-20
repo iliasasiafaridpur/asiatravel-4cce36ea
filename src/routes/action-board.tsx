@@ -120,6 +120,7 @@ function ActionBoardPage() {
         ...base,
         service_name: name,
         service_price: Number(ex.service_price) || 0,
+        received_amount: Number(ex.received_amount) || 0,
         vendor_cost: Number(ex.vendor_cost) || 0,
         notes: (ex.notes || "").trim() || null,
       } as never);
@@ -437,7 +438,7 @@ function ExtraServiceSectionLocal({ rows, setRows, show, setShow, vendorName }: 
 }) {
   const addRow = () => {
     setShow(true);
-    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0, notes: "" }]);
+    setRows((p) => [...p, { service_name: "", service_price: 0, received_amount: 0, vendor_cost: 0, notes: "" }]);
   };
   const update = (i: number, patch: Partial<ExtraServiceRow>) =>
     setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -483,6 +484,17 @@ function ExtraServiceSectionLocal({ rows, setRows, show, setShow, vendorName }: 
                   min={0}
                   value={ex.service_price || ""}
                   onChange={(e) => update(i, { service_price: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Received Amount</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.received_amount || ""}
+                  onChange={(e) => update(i, { received_amount: Number(e.target.value) || 0 })}
                   placeholder="0"
                 />
               </div>

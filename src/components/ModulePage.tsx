@@ -71,6 +71,7 @@ export type ExtraServiceRow = {
   id?: string;
   service_name: string;
   service_price: number;
+  received_amount: number;
   vendor_cost: number;
   notes: string;
 };
@@ -437,7 +438,7 @@ export function ModulePage({ module: mod }: Props) {
     if (supportsExtra) {
       void supabase
         .from("extra_services" as never)
-        .select("id,service_name,service_price,vendor_cost,notes")
+        .select("id,service_name,service_price,vendor_cost,received_amount,notes")
         .eq("source_table", mod.table)
         .eq("source_id", r.id)
         .order("created_at", { ascending: true })
@@ -446,6 +447,7 @@ export function ModulePage({ module: mod }: Props) {
             id: x.id,
             service_name: String(x.service_name ?? ""),
             service_price: Number(x.service_price ?? 0),
+            received_amount: Number(x.received_amount ?? 0),
             vendor_cost: Number(x.vendor_cost ?? 0),
             notes: String(x.notes ?? ""),
           }));
@@ -486,6 +488,7 @@ export function ModulePage({ module: mod }: Props) {
         ...base,
         service_name: name,
         service_price: Number(ex.service_price) || 0,
+        received_amount: Number(ex.received_amount) || 0,
         vendor_cost: Number(ex.vendor_cost) || 0,
         notes: (ex.notes || "").trim() || null,
       };
@@ -2000,7 +2003,7 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, 
 }) {
   const addRow = () => {
     setShow(true);
-    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0, notes: "" }]);
+    setRows((p) => [...p, { service_name: "", service_price: 0, received_amount: 0, vendor_cost: 0, notes: "" }]);
   };
   const update = (i: number, patch: Partial<ExtraServiceRow>) =>
     setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -2050,6 +2053,17 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, 
                   min={0}
                   value={ex.service_price || ""}
                   onChange={(e) => update(i, { service_price: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Received Amount</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.received_amount || ""}
+                  onChange={(e) => update(i, { received_amount: Number(e.target.value) || 0 })}
                   placeholder="0"
                 />
               </div>

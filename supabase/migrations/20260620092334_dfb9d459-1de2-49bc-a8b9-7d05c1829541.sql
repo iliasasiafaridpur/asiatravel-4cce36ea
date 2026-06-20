@@ -1,0 +1,1 @@
+ALTER TABLE public.kuwait_visas ADD COLUMN IF NOT EXISTS vendor_sent_date date;
