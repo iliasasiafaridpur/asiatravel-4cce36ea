@@ -284,21 +284,34 @@ export function RowDetailDrawer({
                   <Layers className="h-3.5 w-3.5 text-primary" /> অতিরিক্ত সার্ভিস ({extras.length} টি)
                 </h3>
                 <div className="space-y-1.5">
-                  {extras.map((e) => (
+                  {extras.map((e) => {
+                    const due = Math.max(0, e.service_price - e.received_amount - (e.discount_amount ?? 0));
+                    return (
                     <div key={e.id} className="rounded-md border px-2.5 py-1 text-sm">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium">{e.service_name}</span>
-                        <span className="text-xs text-muted-foreground">{formatDate(e.entry_date)}</span>
+                        {due > 0 ? (
+                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+                            Due ৳{fmtMoney(due)}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+                            পরিশোধিত
+                          </span>
+                        )}
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span>{formatDate(e.entry_date)}</span>
                         <span>বিল: {fmtMoney(e.service_price)}</span>
                         <span>জমা: {fmtMoney(e.received_amount)}</span>
+                        {e.discount_amount ? <span>ডিসকাউন্ট: {fmtMoney(e.discount_amount)}</span> : null}
                         {e.vendor_cost ? <span>খরচ: {fmtMoney(e.vendor_cost)}</span> : null}
                         {e.vendor_name ? <span>ভেন্ডর: {e.vendor_name}</span> : null}
                       </div>
                       {e.notes && <div className="mt-0.5 text-xs">{e.notes}</div>}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
