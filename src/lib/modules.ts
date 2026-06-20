@@ -635,12 +635,47 @@ export const MODULES: ModuleSchema[] = [
       },
       { name: "vendor_bought", label: "Vendor", type: "text", showInList: true, filterable: true, lookup: "vendor", section: "vendor" },
 
-      { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
-      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor" },
-      { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
-      { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
+      { name: "cost_price", label: "Cost Price", type: "number", showInList: true, section: "vendor" },
+      { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", showInList: true, section: "vendor" },
+      { name: "received_date", label: "Received Date From Vendor", type: "date", showInList: true, section: "vendor" },
+      { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
+      { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received", "discount_amount") }],
+    listOrder: [
+      "entry_date",
+      "passenger_name",
+      "passport",
+      "mobile",
+      "visa_no",
+      "agency_sold",
+      "vendor_bought",
+      "vendor_sent_date",
+      "received_date",
+      "status",
+      "delivery_date",
+      "sold_price",
+      "cost_price",
+      "received",
+      "discount_amount",
+      "due",
+      "profit",
+      "notes",
+      "entry_by",
+    ],
+    computed: [
+      { name: "due", label: "Due", compute: DUE("sold_price", "received", "discount_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price", "discount_amount") },
+    ],
+    deriveStatus: (r) => {
+      // Auto-update status from date fields, mirroring BMET's flow. Manual
+      // selection (e.g. Card Ready) wins only when no later date is set.
+      if (r.delivery_date) return "Delivered";
+      const cur = String(r.status ?? "");
+      if (r.received_date) return "Pending Delivery";
+      if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
+      if (r.vendor_sent_date) return "File Process";
+      return cur || "NEW";
+    },
   },
   {
     key: "other",
