@@ -230,6 +230,20 @@ export function PartyProfileDrawer({
     };
   }, [open, partyName, displayName, table, groupField, contactsTable, isCustomer]);
 
+  // A bill row "counts" in the party's accounting only when it is real money
+  // owed/owing now. For vendors, delivery-based source files (BMET/Saudi/Kuwait)
+  // count ONLY once received from the vendor (Received Date From Vendor set) —
+  // exactly mirroring the live Vendor Balance table (get_vendor_balances).
+  // Other sources (tickets/others) and all customer rows always count.
+  const counts = useMemo(() => {
+    return (r: LedgerRow) => {
+      if (isCustomer) return true;
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+      return receivedSrcIds.has(String(r.source_id ?? ""));
+    };
+  }, [isCustomer, receivedSrcIds]);
+
   const stats = useMemo(() => {
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
     const byService = new Map<string, { count: number; bill: number; paid: number; due: number }>();
@@ -244,6 +258,9 @@ export function PartyProfileDrawer({
         applied += applyAmt;
         continue;
       }
+      // Skip delivery files not yet received from the vendor — they are not part
+      // of the vendor's real accounting yet (matches the Vendor Balance table).
+      if (!counts(r)) continue;
       const b = Number(r[billCol] ?? 0);
       const p = Number(r[paidCol] ?? 0);
       bill += b;
@@ -262,22 +279,15 @@ export function PartyProfileDrawer({
     const due = Math.max(bill - totalPaid, 0);
     const advBal = Math.max(advance - applied, 0);
     return { bill, totalPaid, due, advance: advBal, profit, byService };
-  }, [rows, billCol, paidCol]);
+  }, [rows, billCol, paidCol, counts]);
 
-  const serviceRows = useMemo(() => {
-    const base = rows.filter((r) => !isAdvance(r) && !isPayment(r));
-    if (isCustomer) return base.slice(0, 20);
-    // Vendor: only show files actually received from the vendor (i.e. counted in
-    // the vendor's accounting). Delivery-based files (BMET/Saudi/Kuwait) must have
-    // a "Received Date From Vendor"; other sources (tickets/others) always count.
-    return base
-      .filter((r) => {
-        const src = String(r.source_table ?? "");
-        if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
-        return receivedSrcIds.has(String(r.source_id ?? ""));
-      })
-      .slice(0, 20);
-  }, [rows, isCustomer, receivedSrcIds]);
+  // All service files that count in the accounting (no slice) — used for both
+  // the recent list and the file counters so they never disagree.
+  const eligibleServiceRows = useMemo(
+    () => rows.filter((r) => !isAdvance(r) && !isPayment(r) && counts(r)),
+    [rows, counts],
+  );
+  const serviceRows = useMemo(() => eligibleServiceRows.slice(0, 20), [eligibleServiceRows]);
   const paymentRows = useMemo(
     () =>
       rows
