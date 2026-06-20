@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -11,12 +10,6 @@ import {
 export interface PassportFields {
   passenger_name?: string;
   passport?: string;
-  date_of_birth?: string;
-  issue_date?: string;
-  expiry_date?: string;
-  gender?: string;
-  nationality?: string;
-  country_code?: string;
   mrz_raw?: string;
 }
 
@@ -25,10 +18,8 @@ interface Props {
   compact?: boolean;
 }
 
-const FUNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/passport-ocr`;
-
-async function fileToDataUrl(file: File): Promise<string> {
-  // Some phones return HEIC which the browser cannot decode → reject early
+// Load image file → grayscale + upscaled canvas data URL for better OCR.
+async function fileToProcessedCanvas(file: File): Promise<HTMLCanvasElement> {
   if (/\.hei[cf]$/i.test(file.name) || /heic|heif/i.test(file.type)) {
     throw new Error("HEIC ছবি সাপোর্ট করে না — JPG/PNG দিয়ে আপলোড করুন");
   }
@@ -41,24 +32,79 @@ async function fileToDataUrl(file: File): Promise<string> {
       i.onerror = () => { window.clearTimeout(t); rej(new Error("ছবি ডিকোড করা যায়নি")); };
       i.src = url;
     });
-    const max = 1600;
-    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    // Upscale so the small MRZ font is large enough for OCR.
+    const target = 2000;
+    const scale = Math.min(2.5, Math.max(1, target / Math.max(img.width, img.height)));
     const w = Math.round(img.width * scale);
     const h = Math.round(img.height * scale);
     const canvas = document.createElement("canvas");
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(img, 0, 0, w, h);
-    return canvas.toDataURL("image/jpeg", 0.85);
+    // Grayscale + contrast boost to make the MRZ characters crisp.
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      const c = gray < 110 ? 0 : gray > 165 ? 255 : gray;
+      d[i] = d[i + 1] = d[i + 2] = c;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+// Crop the bottom ~30% of the page where the MRZ lives.
+function cropMrzRegion(src: HTMLCanvasElement): HTMLCanvasElement {
+  const h = Math.round(src.height * 0.32);
+  const out = document.createElement("canvas");
+  out.width = src.width;
+  out.height = h;
+  const ctx = out.getContext("2d")!;
+  ctx.drawImage(src, 0, src.height - h, src.width, h, 0, 0, src.width, h);
+  return out;
+}
+
+// Parse a TD3 passport MRZ (two 44-char lines) → name + passport number.
+function parseMrz(text: string): PassportFields | null {
+  const lines = text
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, "").toUpperCase())
+    .filter((l) => l.length >= 25 && /[A-Z0-9<]/.test(l));
+
+  // Line 1 starts with P< (passport). Find it.
+  const l1Idx = lines.findIndex((l) => /^P[A-Z0-9<]</.test(l) || l.startsWith("P<"));
+  if (l1Idx === -1 || l1Idx + 1 >= lines.length) return null;
+
+  let l1 = lines[l1Idx].replace(/[^A-Z0-9<]/g, "");
+  let l2 = lines[l1Idx + 1].replace(/[^A-Z0-9<]/g, "");
+
+  // --- Name from line 1 ---
+  // Format: P<ISSUER + SURNAME<<GIVEN<NAMES
+  const nameZone = l1.slice(5); // strip "P<" + 3-char issuing country
+  const [surnameRaw, givenRaw = ""] = nameZone.split("<<");
+  const titleCase = (s: string) =>
+    s.replace(/</g, " ").trim().replace(/\s+/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  const surname = titleCase(surnameRaw);
+  const given = titleCase(givenRaw);
+  const passenger_name = [given, surname].filter(Boolean).join(" ").trim();
+
+  // --- Passport number from line 2 (first 9 chars, < = filler) ---
+  const passport = l2.slice(0, 9).replace(/</g, "").trim();
+
+  if (!passenger_name && !passport) return null;
+  return { passenger_name, passport, mrz_raw: `${l1}\n${l2}` };
 }
 
 export function PassportScanner({ onResult, compact }: Props) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [errorOpen, setErrorOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -70,54 +116,42 @@ export function PassportScanner({ onResult, compact }: Props) {
   const handleFile = async (file: File | null) => {
     if (!file) return;
     setBusy(true);
+    setProgress(0);
     try {
-      const dataUrl = await fileToDataUrl(file);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("লগ-ইন প্রয়োজন");
-        setBusy(false);
-        return;
-      }
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 30000);
-      let resp: Response;
-      try {
-        resp = await fetch(FUNC_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      const full = await fileToProcessedCanvas(file);
+      const mrzCanvas = cropMrzRegion(full);
+
+      // Lazy-load Tesseract only in the browser when actually scanning.
+      const { default: Tesseract } = await import("tesseract.js");
+
+      const runOcr = (canvas: HTMLCanvasElement) =>
+        Tesseract.recognize(canvas, "eng", {
+          logger: (m: { status?: string; progress?: number }) => {
+            if (m.status === "recognizing text" && typeof m.progress === "number") {
+              setProgress(Math.round(m.progress * 100));
+            }
           },
-          body: JSON.stringify({ image: dataUrl }),
-          signal: controller.signal,
         });
-      } catch (err) {
-        if ((err as Error).name === "AbortError") {
-          throw new Error("TIMEOUT");
-        }
-        throw err;
-      } finally {
-        window.clearTimeout(timer);
+
+      // First try the cropped MRZ band; fall back to the full page.
+      let { data } = await runOcr(mrzCanvas);
+      let fields = parseMrz(data.text);
+      if (!fields) {
+        ({ data } = await runOcr(full));
+        fields = parseMrz(data.text);
       }
-      const json = await resp.json();
-      if (!resp.ok) throw new Error(json.error || `HTTP ${resp.status}`);
-      const fields: PassportFields = json.fields ?? {};
-      if (!fields.passenger_name && !fields.passport) {
-        showError("পাসপোর্টের ছবি অস্পষ্ট বা পড়া যায়নি।\n\n• ছবিটি স্পষ্ট ও আলোকিত হতে হবে\n• MRZ লাইন (নিচের ২ লাইন) সম্পূর্ণ থাকতে হবে\n• ছায়া/চমক ছাড়া আবার তুলে চেষ্টা করুন");
+
+      if (!fields || (!fields.passenger_name && !fields.passport)) {
+        showError("পাসপোর্টের MRZ পড়া যায়নি।\n\n• নিচের ২ লাইন (<<< সহ) সম্পূর্ণ ও স্পষ্ট থাকতে হবে\n• ভালো আলোতে, সোজা করে, ছায়া/চমক ছাড়া ছবি তুলুন\n• ছবিটি ঝাপসা হলে আবার চেষ্টা করুন");
       } else {
         toast.success(`তথ্য পাওয়া গেছে: ${fields.passenger_name ?? ""}`);
         onResult(fields);
       }
     } catch (e) {
-      const msg = (e as Error).message;
-      if (msg === "TIMEOUT") {
-        showError("সার্ভার সময়মতো রেসপন্স দেয়নি (টাইমআউট)।\n\n• ছবিটি অস্পষ্ট হলে রিড করতে সমস্যা হয়\n• পরিষ্কার, সরাসরি, ভালো আলোতে তোলা ছবি দিন\n• ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন");
-      } else {
-        showError("OCR সমস্যা: " + msg);
-      }
+      showError("OCR সমস্যা: " + (e as Error).message);
     } finally {
       setBusy(false);
+      setProgress(0);
       if (cameraRef.current) cameraRef.current.value = "";
       if (fileRef.current) fileRef.current.value = "";
     }
@@ -149,7 +183,7 @@ export function PassportScanner({ onResult, compact }: Props) {
         className="gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-        {busy ? "পড়ছি..." : "পাসপোর্ট স্ক্যান"}
+        {busy ? (progress ? `পড়ছি... ${progress}%` : "পড়ছি...") : "পাসপোর্ট স্ক্যান"}
       </Button>
       <Button type="button" size={compact ? "sm" : "default"} variant="outline" onClick={() => fileRef.current?.click()} disabled={busy} className="gap-1.5">
         <Upload className="h-4 w-4" /> ছবি আপলোড
