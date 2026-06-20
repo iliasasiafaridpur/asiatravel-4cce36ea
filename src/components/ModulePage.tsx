@@ -71,6 +71,7 @@ export type ExtraServiceRow = {
   id?: string;
   service_name: string;
   service_price: number;
+  received_amount: number;
   vendor_cost: number;
   notes: string;
 };
