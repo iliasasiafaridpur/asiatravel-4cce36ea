@@ -82,8 +82,12 @@ function parseMrz(text: string): PassportFields | null {
   let l2 = lines[l1Idx + 1].replace(/[^A-Z0-9<]/g, "");
 
   // --- Name from line 1 ---
-  // Format: P<ISSUER + SURNAME<<GIVEN<NAMES
-  const nameZone = l1.slice(5); // strip "P<" + 3-char issuing country
+  // Format: P<ISSUER + SURNAME<<GIVEN<NAMES, padded with "<" filler.
+  // OCR often misreads the "<" filler as |, digits, or stray marks. Anything
+  // that is not A-Z inside the name zone is treated as filler.
+  const nameZone = l1
+    .slice(5) // strip "P<" + 3-char issuing country
+    .replace(/[^A-Z<]/g, "<"); // normalise OCR noise to filler
   const [surnameRaw, givenRaw = ""] = nameZone.split("<<");
   const titleCase = (s: string) =>
     s.replace(/</g, " ").trim().replace(/\s+/g, " ")
@@ -122,23 +126,35 @@ export function PassportScanner({ onResult, compact }: Props) {
       const mrzCanvas = cropMrzRegion(full);
 
       // Lazy-load Tesseract only in the browser when actually scanning.
-      const { default: Tesseract } = await import("tesseract.js");
+      const { createWorker, PSM } = await import("tesseract.js");
 
-      const runOcr = (canvas: HTMLCanvasElement) =>
-        Tesseract.recognize(canvas, "eng", {
-          logger: (m: { status?: string; progress?: number }) => {
-            if (m.status === "recognizing text" && typeof m.progress === "number") {
-              setProgress(Math.round(m.progress * 100));
-            }
-          },
-        });
+      const worker = await createWorker("eng", 1, {
+        logger: (m: { status?: string; progress?: number }) => {
+          if (m.status === "recognizing text" && typeof m.progress === "number") {
+            setProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+      // MRZ uses only A-Z, 0-9 and "<". Whitelisting these stops the engine
+      // from inventing garbage (|, l, I, etc.) for the "<" filler characters.
+      await worker.setParameters({
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<",
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+      });
 
-      // First try the cropped MRZ band; fall back to the full page.
-      let { data } = await runOcr(mrzCanvas);
-      let fields = parseMrz(data.text);
-      if (!fields) {
-        ({ data } = await runOcr(full));
+      const runOcr = (canvas: HTMLCanvasElement) => worker.recognize(canvas);
+
+      let fields: PassportFields | null;
+      try {
+        // First try the cropped MRZ band; fall back to the full page.
+        let { data } = await runOcr(mrzCanvas);
         fields = parseMrz(data.text);
+        if (!fields) {
+          ({ data } = await runOcr(full));
+          fields = parseMrz(data.text);
+        }
+      } finally {
+        await worker.terminate();
       }
 
       if (!fields || (!fields.passenger_name && !fields.passport)) {
