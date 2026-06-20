@@ -230,6 +230,20 @@ export function PartyProfileDrawer({
     };
   }, [open, partyName, displayName, table, groupField, contactsTable, isCustomer]);
 
+  // A bill row "counts" in the party's accounting only when it is real money
+  // owed/owing now. For vendors, delivery-based source files (BMET/Saudi/Kuwait)
+  // count ONLY once received from the vendor (Received Date From Vendor set) —
+  // exactly mirroring the live Vendor Balance table (get_vendor_balances).
+  // Other sources (tickets/others) and all customer rows always count.
+  const counts = useMemo(() => {
+    return (r: LedgerRow) => {
+      if (isCustomer) return true;
+      const src = String(r.source_table ?? "");
+      if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
+      return receivedSrcIds.has(String(r.source_id ?? ""));
+    };
+  }, [isCustomer, receivedSrcIds]);
+
   const stats = useMemo(() => {
     let bill = 0, cashPaid = 0, applied = 0, advance = 0, profit = 0;
     const byService = new Map<string, { count: number; bill: number; paid: number; due: number }>();
@@ -244,6 +258,9 @@ export function PartyProfileDrawer({
         applied += applyAmt;
         continue;
       }
+      // Skip delivery files not yet received from the vendor — they are not part
+      // of the vendor's real accounting yet (matches the Vendor Balance table).
+      if (!counts(r)) continue;
       const b = Number(r[billCol] ?? 0);
       const p = Number(r[paidCol] ?? 0);
       bill += b;
@@ -262,22 +279,15 @@ export function PartyProfileDrawer({
     const due = Math.max(bill - totalPaid, 0);
     const advBal = Math.max(advance - applied, 0);
     return { bill, totalPaid, due, advance: advBal, profit, byService };
-  }, [rows, billCol, paidCol]);
+  }, [rows, billCol, paidCol, counts]);
 
-  const serviceRows = useMemo(() => {
-    const base = rows.filter((r) => !isAdvance(r) && !isPayment(r));
-    if (isCustomer) return base.slice(0, 20);
-    // Vendor: only show files actually received from the vendor (i.e. counted in
-    // the vendor's accounting). Delivery-based files (BMET/Saudi/Kuwait) must have
-    // a "Received Date From Vendor"; other sources (tickets/others) always count.
-    return base
-      .filter((r) => {
-        const src = String(r.source_table ?? "");
-        if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
-        return receivedSrcIds.has(String(r.source_id ?? ""));
-      })
-      .slice(0, 20);
-  }, [rows, isCustomer, receivedSrcIds]);
+  // All service files that count in the accounting (no slice) — used for both
+  // the recent list and the file counters so they never disagree.
+  const eligibleServiceRows = useMemo(
+    () => rows.filter((r) => !isAdvance(r) && !isPayment(r) && counts(r)),
+    [rows, counts],
+  );
+  const serviceRows = useMemo(() => eligibleServiceRows.slice(0, 20), [eligibleServiceRows]);
   const paymentRows = useMemo(
     () =>
       rows
@@ -486,7 +496,7 @@ export function PartyProfileDrawer({
                         : ""
                     }`}
                   >
-                    {isCustomer ? fmtMoney(stats.profit) : serviceRows.length + (rows.filter(r => !isAdvance(r) && !isPayment(r)).length - serviceRows.length)}
+                    {isCustomer ? fmtMoney(stats.profit) : eligibleServiceRows.length}
                   </div>
                 </div>
               </div>
@@ -548,6 +558,7 @@ export function PartyProfileDrawer({
                         <th className="px-2 py-1.5 font-medium">Date</th>
                         <th className="px-2 py-1.5 font-medium">Passenger</th>
                         <th className="px-2 py-1.5 font-medium text-right">{isCustomer ? "Bill" : "Vendor Cost"}</th>
+                        <th className="px-2 py-1.5 font-medium text-right">{isCustomer ? "Received" : "Paid"}</th>
                         <th className="px-2 py-1.5 font-medium text-right">Due</th>
                       </tr>
                     </thead>
@@ -556,12 +567,14 @@ export function PartyProfileDrawer({
                         const b = Number(r[billCol] ?? 0);
                         const p = Number(r[paidCol] ?? 0);
                         const a = Number(r.advance_applied ?? 0);
-                        const due = Math.max(b - p - a, 0);
+                        const paid = p + a;
+                        const due = Math.max(b - paid, 0);
                         return (
                           <tr key={r.id} className="border-t">
                             <td className="px-2 py-1.5 whitespace-nowrap">{formatDate(r.entry_date as string)}</td>
                             <td className="px-2 py-1.5 truncate max-w-[110px]">{String(r.passenger_name ?? "—")}</td>
                             <td className="px-2 py-1.5 text-right tabular-nums">{fmtMoney(b)}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums text-emerald-600">{fmtMoney(paid)}</td>
                             <td className={`px-2 py-1.5 text-right tabular-nums ${due > 0 ? "text-rose-600 font-medium" : "text-emerald-600"}`}>
                               {due > 0 ? fmtMoney(due) : "Paid"}
                             </td>
@@ -661,7 +674,7 @@ export function PartyProfileDrawer({
                     <div className="rounded-lg border bg-background p-3">
                       <div className="text-[11px] text-muted-foreground">Total Files</div>
                       <div className="mt-0.5 text-base font-semibold">
-                        {rows.filter((r) => !isAdvance(r) && !isPayment(r)).length}
+                        {eligibleServiceRows.length}
                       </div>
                     </div>
                     <div className="rounded-lg border bg-background p-3">
@@ -669,8 +682,7 @@ export function PartyProfileDrawer({
                         <TrendingDown className="h-3 w-3" /> Pending Files
                       </div>
                       <div className="mt-0.5 text-base font-semibold text-amber-600">
-                        {rows.filter((r) => {
-                          if (isAdvance(r) || isPayment(r)) return false;
+                        {eligibleServiceRows.filter((r) => {
                           const b = Number(r[billCol] ?? 0);
                           const p = Number(r[paidCol] ?? 0);
                           const a = Number(r.advance_applied ?? 0);
