@@ -884,7 +884,10 @@ export function ModulePage({ module: mod }: Props) {
       if (!n) return null;
       const details = extraDetails[r.id] ?? [];
       const tip = details.length
-        ? details.map((d) => `${d.service_name || "Service"} — Bill ৳${(d.service_price || 0).toLocaleString()}${d.vendor_cost ? ` / Vendor ৳${(d.vendor_cost || 0).toLocaleString()}` : ""}${d.notes ? ` (${d.notes})` : ""}`).join("\n")
+        ? details.map((d) => {
+            const due = Math.max(0, (Number(d.service_price) || 0) - (Number(d.received) || 0));
+            return `${d.service_name || "Service"} — Bill ৳${(d.service_price || 0).toLocaleString()}${d.vendor_cost ? ` / Vendor ৳${(d.vendor_cost || 0).toLocaleString()}` : ""} · ${due > 0 ? `Due ৳${due.toLocaleString()}` : "পরিশোধিত"}${d.notes ? ` (${d.notes})` : ""}`;
+          }).join("\n")
         : `${n} Extra Service`;
       return (
         <Badge
