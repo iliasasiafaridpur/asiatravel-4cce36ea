@@ -239,6 +239,11 @@ function ActionBoardPage() {
         (payload as Record<string, unknown>).created_by = user.id;
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
+      // Auto-capture payment date when money is received but none was entered.
+      if (hasField("payment_date") && recvAmount > 0 && !payload.payment_date) {
+        (payload as Record<string, unknown>).payment_date =
+          (payload.entry_date as string) || todayIso();
+      }
       if (hasField("entry_by") && (!payload.entry_by || payload.entry_by === "User")) {
         (payload as Record<string, unknown>).entry_by = meName;
       }
