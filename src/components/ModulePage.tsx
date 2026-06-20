@@ -2237,6 +2237,11 @@ function FormField({ field, value, onChange, disabled }: {
           readOnly={isEntryBy || disabled}
         />
       )}
+      {disabled && ["received", "received_amount", "paid_amount"].includes(field.name) && (
+        <p className="text-[10px] leading-tight text-amber-600 dark:text-amber-400">
+          🔒 লক করা — টাকা জমা নিতে "Due Receive" ব্যবহার করুন
+        </p>
+      )}
     </div>
   );
 }
