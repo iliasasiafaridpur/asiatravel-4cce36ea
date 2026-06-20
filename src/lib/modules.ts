@@ -602,8 +602,9 @@ export const MODULES: ModuleSchema[] = [
         section: "passenger",
         lookup: "status_visa",
         lookupDefaults: STATUS_VISA,
+        defaultEmpty: true,
       },
-      { name: "delivery_date", label: "Delivery Date", type: "date", section: "passenger" },
+      { name: "delivery_date", label: "Delivery Date", type: "date", showInList: true, section: "passenger" },
       {
         name: "agency_sold",
         label: "Sub Agency / Reference",
