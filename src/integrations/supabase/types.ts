@@ -647,6 +647,7 @@ export type Database = {
           status_by: string | null
           updated_at: string
           vendor_bought: string | null
+          vendor_sent_date: string | null
           visa_no: string | null
         }
         Insert: {
@@ -678,6 +679,7 @@ export type Database = {
           status_by?: string | null
           updated_at?: string
           vendor_bought?: string | null
+          vendor_sent_date?: string | null
           visa_no?: string | null
         }
         Update: {
@@ -709,6 +711,7 @@ export type Database = {
           status_by?: string | null
           updated_at?: string
           vendor_bought?: string | null
+          vendor_sent_date?: string | null
           visa_no?: string | null
         }
         Relationships: []
