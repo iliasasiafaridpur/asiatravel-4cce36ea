@@ -496,7 +496,7 @@ export function PartyProfileDrawer({
                         : ""
                     }`}
                   >
-                    {isCustomer ? fmtMoney(stats.profit) : serviceRows.length + (rows.filter(r => !isAdvance(r) && !isPayment(r)).length - serviceRows.length)}
+                    {isCustomer ? fmtMoney(stats.profit) : eligibleServiceRows.length}
                   </div>
                 </div>
               </div>
