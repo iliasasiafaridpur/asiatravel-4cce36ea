@@ -144,19 +144,18 @@ export function PassportScanner({ onResult, compact }: Props) {
 
       const runOcr = (canvas: HTMLCanvasElement) => worker.recognize(canvas);
 
+      let fields: PassportFields | null;
       try {
         // First try the cropped MRZ band; fall back to the full page.
         let { data } = await runOcr(mrzCanvas);
-        let fields = parseMrz(data.text);
+        fields = parseMrz(data.text);
         if (!fields) {
           ({ data } = await runOcr(full));
           fields = parseMrz(data.text);
         }
-        return fields;
       } finally {
         await worker.terminate();
       }
-
 
       if (!fields || (!fields.passenger_name && !fields.passport)) {
         showError("পাসপোর্টের MRZ পড়া যায়নি।\n\n• নিচের ২ লাইন (<<< সহ) সম্পূর্ণ ও স্পষ্ট থাকতে হবে\n• ভালো আলোতে, সোজা করে, ছায়া/চমক ছাড়া ছবি তুলুন\n• ছবিটি ঝাপসা হলে আবার চেষ্টা করুন");
