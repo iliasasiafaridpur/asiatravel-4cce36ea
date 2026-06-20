@@ -567,6 +567,46 @@ export function ModulePage({ module: mod }: Props) {
       const finalId = !isEdit ? await generateNextId(mod, entryDateForId) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
 
+      // --- Edit-form status automation (mirror of the Status badge drawer) ---
+      // Changing the status from the Edit form now auto-stamps the workflow
+      // dates and creates/removes the vendor ledger entry the same way the
+      // status badge does, so the vendor accounting stays in sync.
+      let edLedgerForward = false;
+      let edLedgerBackward = false;
+      if (isEdit && hasField("status")) {
+        const eqs = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+        const order = mod.statuses ?? [];
+        const idxOf = (s: string) => order.findIndex((x) => eqs(x, s));
+        const prevS = String(editRow?.status ?? "") || (order[0] ?? "");
+        const newS = String((payload as Record<string, unknown>).status ?? "") || (order[0] ?? "");
+        const curIdx = idxOf(prevS);
+        const tgtIdx = idxOf(newS);
+        const direction = tgtIdx > curIdx ? "forward" : tgtIdx < curIdx ? "backward" : "same";
+        const pdIdx = idxOf("Pending Delivery");
+        const issueIdx = order.findIndex((x) => eqs(x, "ISSUE"));
+        const dlIdx = order.findIndex((x) => eqs(x, "Delivered") || eqs(x, "Delivery"));
+        const ledgerIdx = pdIdx >= 0 ? pdIdx : issueIdx >= 0 ? issueIdx : dlIdx;
+        const fpIdx = idxOf("File Process");
+
+        if (direction === "forward") {
+          if (fpIdx >= 0 && curIdx < fpIdx && tgtIdx >= fpIdx && hasField("vendor_sent_date") && !payload.vendor_sent_date) {
+            (payload as Record<string, unknown>).vendor_sent_date = todayIso();
+          }
+          if (pdIdx >= 0 && curIdx < pdIdx && tgtIdx >= pdIdx && hasField("received_date") && !payload.received_date) {
+            (payload as Record<string, unknown>).received_date = todayIso();
+          }
+          if (dlIdx >= 0 && curIdx < dlIdx && tgtIdx >= dlIdx && hasField("delivery_date") && !payload.delivery_date) {
+            (payload as Record<string, unknown>).delivery_date = todayIso();
+          }
+          if (ledgerIdx >= 0 && curIdx < ledgerIdx && tgtIdx >= ledgerIdx) edLedgerForward = true;
+        } else if (direction === "backward") {
+          if (fpIdx >= 0 && tgtIdx < fpIdx && hasField("vendor_sent_date")) (payload as Record<string, unknown>).vendor_sent_date = null;
+          if (pdIdx >= 0 && tgtIdx < pdIdx && hasField("received_date")) (payload as Record<string, unknown>).received_date = null;
+          if (dlIdx >= 0 && tgtIdx < dlIdx && hasField("delivery_date")) (payload as Record<string, unknown>).delivery_date = null;
+          if (ledgerIdx >= 0 && curIdx >= ledgerIdx && tgtIdx < ledgerIdx) edLedgerBackward = true;
+        }
+      }
+
       if (isEdit && editId) {
         // STRICT EDIT PATH: UPDATE only — never insert a new row.
         // Make sure no stray id column is in the payload that would target a different row.
@@ -576,6 +616,45 @@ export function ModulePage({ module: mod }: Props) {
           .update(payload as never)
           .eq("id", editId);
         if (error) throw error;
+        // Mirror the status-badge automation: create/remove the vendor ledger
+        // entry when the Edit form moved the status across the ledger checkpoint.
+        if (edLedgerForward || edLedgerBackward) {
+          try {
+            const vendorName = String((payload as Record<string, unknown>).vendor_bought ?? editRow?.vendor_bought ?? "").trim();
+            const costPrice = Number((payload as Record<string, unknown>).cost_price ?? editRow?.cost_price ?? 0);
+            if (edLedgerForward && vendorName && costPrice > 0 && mod.key !== "other") {
+              const { data: existing } = await supabase
+                .from("vendor_ledger").select("id")
+                .eq("source_table", mod.table).eq("source_id", editId).limit(1);
+              if (!existing || existing.length === 0) {
+                let ledgerId: string;
+                try {
+                  ledgerId = await generateNextId({ key: "_vdl", label: "", short: "", table: "vendor_ledger", idColumn: "ledger_id", idPrefix: "VDL", monthlyId: true, fields: [] } as unknown as ModuleSchema);
+                } catch {
+                  const d = new Date();
+                  ledgerId = `VDL-${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getFullYear()).slice(-2)}-OFFLINE-${Date.now().toString().slice(-6)}`;
+                }
+                const meta = RECV_META[mod.table] ?? { recvCol: "received", serviceType: mod.label };
+                const pname = String((payload as Record<string, unknown>).passenger_name ?? editRow?.passenger_name ?? "");
+                const passport = String((payload as Record<string, unknown>).passport ?? editRow?.passport ?? "");
+                await resilientInsert("vendor_ledger", {
+                  ledger_id: ledgerId, entry_date: todayIso(),
+                  vendor_name: vendorName, passenger_name: pname,
+                  passport: passport || null,
+                  mobile: String((payload as Record<string, unknown>).mobile ?? editRow?.mobile ?? "") || null,
+                  service_type: meta.serviceType,
+                  country_route: String((payload as Record<string, unknown>).country_name ?? (payload as Record<string, unknown>).country_route ?? editRow?.country_name ?? editRow?.country_route ?? "") || null,
+                  total_payable: costPrice, paid_amount: 0, advance_applied: 0,
+                  payment_method: "Cash", source_table: mod.table, source_id: editId,
+                  remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${todayIso()})`,
+                  created_by: user?.id ?? null,
+                });
+              }
+            } else if (edLedgerBackward) {
+              await supabase.rpc("delete_vendor_ledger_by_source", { _source_table: mod.table, _source_id: editId });
+            }
+          } catch { /* vendor ledger best-effort */ }
+        }
         if (supportsExtra) {
           try { await syncExtraServices(editId, payload); } catch { /* extra services best-effort */ }
         }
