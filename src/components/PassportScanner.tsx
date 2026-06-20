@@ -85,9 +85,17 @@ function parseMrz(text: string): PassportFields | null {
   // Format: P<ISSUER + SURNAME<<GIVEN<NAMES, padded with "<" filler.
   // OCR often misreads the "<" filler as |, digits, or stray marks. Anything
   // that is not A-Z inside the name zone is treated as filler.
-  const nameZone = l1
+  let nameZone = l1
     .slice(5) // strip "P<" + 3-char issuing country
     .replace(/[^A-Z<]/g, "<"); // normalise OCR noise to filler
+
+  // The trailing "<" filler run is frequently misread by OCR as a long run of
+  // repeated letters (e.g. "<<<<<<<<" → "Clllllllllck"). A run of 3+ identical
+  // letters can never be a real name, so everything from that run to the end is
+  // filler. We also absorb the 1-2 stray chars right before the run (the lone
+  // "C"/"I"/"|" that "<" often becomes) so the real name ends cleanly.
+  nameZone = nameZone.replace(/[CIJ1]{0,2}([A-Z])\1{2,}[A-Z<]*$/, "<<");
+
   const [surnameRaw, givenRaw = ""] = nameZone.split("<<");
   const titleCase = (s: string) =>
     s.replace(/</g, " ").trim().replace(/\s+/g, " ")
