@@ -2002,7 +2002,7 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, 
 }) {
   const addRow = () => {
     setShow(true);
-    setRows((p) => [...p, { service_name: "", service_price: 0, vendor_cost: 0, notes: "" }]);
+    setRows((p) => [...p, { service_name: "", service_price: 0, received_amount: 0, vendor_cost: 0, notes: "" }]);
   };
   const update = (i: number, patch: Partial<ExtraServiceRow>) =>
     setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
