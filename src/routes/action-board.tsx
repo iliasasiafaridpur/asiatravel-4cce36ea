@@ -488,6 +488,17 @@ function ExtraServiceSectionLocal({ rows, setRows, show, setShow, vendorName }: 
                 />
               </div>
               <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Received Amount</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={ex.received_amount || ""}
+                  onChange={(e) => update(i, { received_amount: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
                 <Label className="text-sm font-medium">Vendor Cost</Label>
                 <Input
                   type="number"
