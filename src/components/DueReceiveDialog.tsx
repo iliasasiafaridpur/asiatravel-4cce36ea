@@ -336,6 +336,9 @@ export function DueReceiveDialog({
       upd[selected.service.recvCol] = newRecv;
       if (disc > 0) upd.discount_amount = newDiscount;
       upd.received_by = user.id;
+      // Capture the payment date on the booking so it shows in the edit form
+      // and view page. Set whenever real cash is applied to the due.
+      if (appliedToDue > 0) upd.payment_date = today;
       if (withDelivery) {
         if (selected.service.hasDelivery) upd.delivery_date = today;
         upd.status = selected.service.deliveredStatus;
