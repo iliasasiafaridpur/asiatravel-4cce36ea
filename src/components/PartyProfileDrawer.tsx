@@ -674,7 +674,7 @@ export function PartyProfileDrawer({
                     <div className="rounded-lg border bg-background p-3">
                       <div className="text-[11px] text-muted-foreground">Total Files</div>
                       <div className="mt-0.5 text-base font-semibold">
-                        {rows.filter((r) => !isAdvance(r) && !isPayment(r)).length}
+                        {eligibleServiceRows.length}
                       </div>
                     </div>
                     <div className="rounded-lg border bg-background p-3">
@@ -682,8 +682,7 @@ export function PartyProfileDrawer({
                         <TrendingDown className="h-3 w-3" /> Pending Files
                       </div>
                       <div className="mt-0.5 text-base font-semibold text-amber-600">
-                        {rows.filter((r) => {
-                          if (isAdvance(r) || isPayment(r)) return false;
+                        {eligibleServiceRows.filter((r) => {
                           const b = Number(r[billCol] ?? 0);
                           const p = Number(r[paidCol] ?? 0);
                           const a = Number(r.advance_applied ?? 0);
