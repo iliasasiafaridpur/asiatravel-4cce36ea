@@ -1278,6 +1278,8 @@ export function ModulePage({ module: mod }: Props) {
               {r.visa_no && r.visa_type ? subLine("No", String(r.visa_no)) : null}
               {r.sponsor_name ? subLine("Sponsor", String(r.sponsor_name)) : null}
               {r.medical_status ? subLine("Medical", String(r.medical_status)) : null}
+              {r.vendor_sent_date ? subLine("V.Sent", formatDate(r.vendor_sent_date as string)) : null}
+              {r.received_date ? subLine("V.Recv", formatDate(r.received_date as string)) : null}
             </div>
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (
