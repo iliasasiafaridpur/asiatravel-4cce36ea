@@ -545,7 +545,20 @@ export const MODULES: ModuleSchema[] = [
       { name: "entry_by", label: "Entry By", type: "text", section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", section: "vendor" },
     ],
-    computed: [{ name: "due", label: "Due", compute: DUE("sold_price", "received_amount", "discount_amount") }],
+    computed: [
+      { name: "due", label: "Due", compute: DUE("sold_price", "received_amount", "discount_amount") },
+      { name: "profit", label: "Profit", compute: PROFIT("sold_price", "cost_price", "discount_amount") },
+    ],
+    deriveStatus: (r) => {
+      // Auto-update status from date fields, mirroring BMET/Kuwait's flow.
+      // Manual selection (e.g. Card Ready) wins only when no later date is set.
+      if (r.delivery_date) return "Delivered";
+      const cur = String(r.status ?? "");
+      if (r.received_date) return "Pending Delivery";
+      if (cur === "Card Ready" && r.vendor_sent_date) return "Card Ready";
+      if (r.vendor_sent_date) return "File Process";
+      return cur || "NEW";
+    },
   },
   {
     key: "kuwait-visa",
