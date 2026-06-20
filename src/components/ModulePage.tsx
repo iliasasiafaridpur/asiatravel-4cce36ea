@@ -488,6 +488,7 @@ export function ModulePage({ module: mod }: Props) {
         ...base,
         service_name: name,
         service_price: Number(ex.service_price) || 0,
+        received_amount: Number(ex.received_amount) || 0,
         vendor_cost: Number(ex.vendor_cost) || 0,
         notes: (ex.notes || "").trim() || null,
       };
