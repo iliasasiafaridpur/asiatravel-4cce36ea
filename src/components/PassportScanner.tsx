@@ -148,7 +148,58 @@ function parseMrz(text: string): PassportFields | null {
   return { passenger_name, passport, mrz_raw: `${l1}\n${l2}` };
 }
 
-export function PassportScanner({ onResult, compact }: Props) {
+// Fallback: extract name + passport number from the full visible (non-MRZ)
+// passport text. Used when the MRZ lines could not be parsed. Filters out
+// random noise and keeps only plausible name words / passport tokens.
+function parseVisualText(text: string): PassportFields | null {
+  const rawLines = text
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  // --- Passport number ---
+  // Typical formats: 2 letters + 7 digits (e.g. BW0123456) or
+  // 1 letter + 8 digits / 9-char alphanumerics. Pick the best candidate.
+  let passport = "";
+  const flat = rawLines.join(" ").toUpperCase().replace(/[^A-Z0-9 ]/g, " ");
+  const candidates = flat.match(/\b[A-Z]{1,2}\d{6,8}\b|\b\d{8,9}\b/g) || [];
+  // Prefer tokens that look like a real passport number (letters + digits).
+  passport =
+    candidates.find((c) => /[A-Z]/.test(c) && /\d/.test(c)) ||
+    candidates[0] ||
+    "";
+
+  // --- Full name ---
+  // Look for an explicit "Name" label first; otherwise take the longest line
+  // made only of uppercase letters/spaces that is not a known header word.
+  const NOISE = /(PASSPORT|REPUBLIC|TYPE|CODE|COUNTRY|NATIONALITY|DATE|BIRTH|SEX|PLACE|AUTHORITY|EXPIRY|ISSUE|GIVEN|SURNAME|NAME)/;
+  let passenger_name = "";
+  const labelIdx = rawLines.findIndex((l) => /name/i.test(l));
+  if (labelIdx !== -1) {
+    // Name value is often on the same line after a colon, or the next line.
+    const sameLine = rawLines[labelIdx].split(/[:\-]/).slice(1).join(" ").trim();
+    const next = rawLines[labelIdx + 1] || "";
+    const pick = /[A-Za-z]{2,}/.test(sameLine) ? sameLine : next;
+    passenger_name = pick;
+  }
+  if (!passenger_name) {
+    const nameLines = rawLines
+      .filter((l) => /^[A-Z][A-Z .'-]{4,}$/.test(l) && !NOISE.test(l) && !/\d/.test(l));
+    nameLines.sort((a, b) => b.length - a.length);
+    passenger_name = nameLines[0] || "";
+  }
+
+  // Clean noise/garbage characters and title-case the name.
+  passenger_name = passenger_name
+    .replace(/[^A-Za-z .'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  if (!passenger_name && !passport) return null;
+  return { passenger_name, passport, mrz_raw: text.trim() };
+}
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
