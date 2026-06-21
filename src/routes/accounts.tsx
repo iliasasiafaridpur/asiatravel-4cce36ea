@@ -270,12 +270,17 @@ function AccountsPage() {
   const periodVendorIncome = fRecv.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
+  // A vendor payment made by a non-cash method (Bank Transfer, MD Sir Deposit,
+  // bKash…) does NOT leave the staff's cash drawer — only Cash-method vendor
+  // payments reduce cash-in-hand. Manual/office expenses always reduce it.
+  const expenseHitsCash = (e: Exp) =>
+    e.linked_source_table === "vendor_ledger" ? isCashMethod(e.category) : true;
   const balance = useMemo(() => {
     const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
     const cashOut = handovers
       .filter((h) => (h.status ?? "approved") === "approved")
       .reduce((s, h) => s + Number(h.amount || 0), 0);
-    const spent = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    const spent = expenses.reduce((s, e) => s + (expenseHitsCash(e) ? Number(e.amount || 0) : 0), 0);
     return cashIn - cashOut - spent;
   }, [received, handovers, expenses]);
 
