@@ -1781,6 +1781,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                       </TableCell>
                       <TableCell className="text-right">
                         {g.due > 0 ? (
+                          isAgency && isSelfGroup ? (
+                            <span
+                              className="font-semibold tabular-nums text-rose-500"
+                              title="Self মানে সাধারণ passenger — agent receive প্রযোজ্য নয়। Passenger profile থেকে due গ্রহণ করুন।"
+                            >
+                              {g.due.toLocaleString()}
+                            </span>
+                          ) : (
                           <button
                             type="button"
                             onClick={() => openPayment(g.key, g.due)}
@@ -1789,6 +1797,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           >
                             {g.due.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                           </button>
+                          )
                         ) : (
                           <Badge
                             variant="outline"
