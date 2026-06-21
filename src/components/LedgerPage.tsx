@@ -904,6 +904,26 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
     const recvCol = srcTable ? sourceRecvCol(srcTable) : null;
+    // Vendor side: paying a vendor for a Saudi/Kuwait visa auto-marks it as
+    // "Received from Vendor" (sets vendor_sent_date + received_date when empty)
+    // so the bill + payment immediately count in the vendor balance/profile —
+    // just like tickets and other modules.
+    if (!isAgency && srcId && (srcTable === "saudi_visas" || srcTable === "kuwait_visas")) {
+      const { data: vRow } = await supabase
+        .from(srcTable as never)
+        .select("id, vendor_sent_date, received_date")
+        .eq("id", srcId)
+        .maybeSingle();
+      const v = vRow as { vendor_sent_date: string | null; received_date: string | null } | null;
+      if (v && !v.received_date) {
+        const recvUpd: Record<string, unknown> = { received_date: payDate };
+        if (!v.vendor_sent_date) recvUpd.vendor_sent_date = payDate;
+        await supabase
+          .from(srcTable as never)
+          .update(recvUpd as never)
+          .eq("id", srcId);
+      }
+    }
     if (srcTable && srcId && recvCol) {
       const { data: srcRow, error: rErr } = await supabase
         .from(srcTable as never)
