@@ -2589,8 +2589,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Payment from User Balance toggle (bulk mode only) */}
-            {!payRow && payTarget && (
+            {/* Payment from User Balance toggle (vendor payment only — never on agent receive) */}
+            {!payRow && payTarget && !isAgency && (
               <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2.5">
                 <Checkbox
                   id="payAsAdvance"
