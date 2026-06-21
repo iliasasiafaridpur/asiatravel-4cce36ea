@@ -200,6 +200,8 @@ function parseVisualText(text: string): PassportFields | null {
   if (!passenger_name && !passport) return null;
   return { passenger_name, passport, mrz_raw: text.trim() };
 }
+
+export function PassportScanner({ onResult, compact }: Props) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
