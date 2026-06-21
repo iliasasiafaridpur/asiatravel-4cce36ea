@@ -18,6 +18,42 @@ interface Props {
   compact?: boolean;
 }
 
+// OCR.space free public endpoint + key. Runs entirely client-side.
+const OCR_SPACE_URL = "https://api.ocr.space/parse/image";
+const OCR_SPACE_KEY = "helloworld";
+
+// Send a canvas to OCR.space and return the extracted plain text.
+async function ocrSpaceRecognize(canvas: HTMLCanvasElement): Promise<string> {
+  const blob: Blob = await new Promise((res, rej) =>
+    canvas.toBlob(
+      (b) => (b ? res(b) : rej(new Error("ছবি প্রসেস করা যায়নি"))),
+      "image/jpeg",
+      0.85,
+    ),
+  );
+
+  const form = new FormData();
+  form.append("apikey", OCR_SPACE_KEY);
+  form.append("language", "eng");
+  form.append("isOverlayRequired", "false");
+  form.append("OCREngine", "2");
+  form.append("scale", "true");
+  form.append("file", blob, "passport.jpg");
+
+  const resp = await fetch(OCR_SPACE_URL, { method: "POST", body: form });
+  if (!resp.ok) throw new Error(`OCR সার্ভার সাড়া দেয়নি (${resp.status})`);
+  const json = await resp.json();
+  if (json.IsErroredOnProcessing) {
+    const msg = Array.isArray(json.ErrorMessage)
+      ? json.ErrorMessage.join(" ")
+      : json.ErrorMessage || "OCR ব্যর্থ";
+    throw new Error(String(msg));
+  }
+  return (json.ParsedResults ?? [])
+    .map((r: { ParsedText?: string }) => r.ParsedText ?? "")
+    .join("\n");
+}
+
 // Load image file → grayscale + upscaled canvas data URL for better OCR.
 async function fileToProcessedCanvas(file: File): Promise<HTMLCanvasElement> {
   if (/\.hei[cf]$/i.test(file.name) || /heic|heif/i.test(file.type)) {
