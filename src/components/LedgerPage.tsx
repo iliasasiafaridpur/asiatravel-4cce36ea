@@ -2165,6 +2165,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                               এখনো Due নয়
                             </Badge>
                           ) : displayDue > 0 ? (
+                            isAgency && String(r[groupField] ?? "").trim().toLowerCase() === "self" ? (
+                              <span
+                                className="text-rose-500 font-semibold"
+                                title="Self মানে সাধারণ passenger — agent receive প্রযোজ্য নয়"
+                              >
+                                Cus:-Due: {displayDue.toLocaleString()}
+                              </span>
+                            ) : (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -2176,6 +2184,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                             >
                               {isAgency ? "Cus:-Due" : "Ven:-Due"}: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />
                             </button>
+                            )
                           ) : bal >= 0 || appliedAdvance > 0 ? (
                             <Badge
                               variant="outline"
