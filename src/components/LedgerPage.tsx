@@ -1781,6 +1781,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                       </TableCell>
                       <TableCell className="text-right">
                         {g.due > 0 ? (
+                          isAgency && isSelfGroup ? (
+                            <span
+                              className="font-semibold tabular-nums text-rose-500"
+                              title="Self মানে সাধারণ passenger — agent receive প্রযোজ্য নয়। Passenger profile থেকে due গ্রহণ করুন।"
+                            >
+                              {g.due.toLocaleString()}
+                            </span>
+                          ) : (
                           <button
                             type="button"
                             onClick={() => openPayment(g.key, g.due)}
@@ -1789,6 +1797,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           >
                             {g.due.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                           </button>
+                          )
                         ) : (
                           <Badge
                             variant="outline"
@@ -2156,6 +2165,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                               এখনো Due নয়
                             </Badge>
                           ) : displayDue > 0 ? (
+                            isAgency && String(r[groupField] ?? "").trim().toLowerCase() === "self" ? (
+                              <span
+                                className="text-rose-500 font-semibold"
+                                title="Self মানে সাধারণ passenger — agent receive প্রযোজ্য নয়"
+                              >
+                                Cus:-Due: {displayDue.toLocaleString()}
+                              </span>
+                            ) : (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -2167,6 +2184,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                             >
                               {isAgency ? "Cus:-Due" : "Ven:-Due"}: {displayDue.toLocaleString()} <Wallet className="h-3 w-3" />
                             </button>
+                            )
                           ) : bal >= 0 || appliedAdvance > 0 ? (
                             <Badge
                               variant="outline"
@@ -2589,8 +2607,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               </div>
             )}
 
-            {/* Payment from User Balance toggle (bulk mode only) */}
-            {!payRow && payTarget && (
+            {/* Payment from User Balance toggle (vendor payment only — never on agent receive) */}
+            {!payRow && payTarget && !isAgency && (
               <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2.5">
                 <Checkbox
                   id="payAsAdvance"
@@ -2602,7 +2620,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                       setPayAsMdDeposit(false);
                       setPayAsAdjust(false);
                       setPayMode("fifo");
-                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                      // Keep any amount the user already typed; only pre-fill when empty.
+                      setPayAmount((prev) =>
+                        prev && Number(prev) > 0 ? prev : String(payDue > 0 ? payDue : ""),
+                      );
                     }
                   }}
                 />
@@ -2628,7 +2649,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                       setPayAsAdvance(false);
                       setPayAsAdjust(false);
                       setPayMode("fifo");
-                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                      // Keep any amount the user already typed; only pre-fill when empty.
+                      setPayAmount((prev) =>
+                        prev && Number(prev) > 0 ? prev : String(payDue > 0 ? payDue : ""),
+                      );
                     }
                   }}
                 />

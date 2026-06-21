@@ -270,12 +270,17 @@ function AccountsPage() {
   const periodVendorIncome = fRecv.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const periodExp    = fExp.reduce((s, e) => s + Number(e.amount || 0), 0);
+  // A vendor payment made by a non-cash method (Bank Transfer, MD Sir Deposit,
+  // bKash…) does NOT leave the staff's cash drawer — only Cash-method vendor
+  // payments reduce cash-in-hand. Manual/office expenses always reduce it.
+  const expenseHitsCash = (e: Exp) =>
+    e.linked_source_table === "vendor_ledger" ? isCashMethod(e.category) : true;
   const balance = useMemo(() => {
     const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
     const cashOut = handovers
       .filter((h) => (h.status ?? "approved") === "approved")
       .reduce((s, h) => s + Number(h.amount || 0), 0);
-    const spent = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    const spent = expenses.reduce((s, e) => s + (expenseHitsCash(e) ? Number(e.amount || 0) : 0), 0);
     return cashIn - cashOut - spent;
   }, [received, handovers, expenses]);
 
@@ -297,7 +302,7 @@ function AccountsPage() {
       // Non-cash (MD-received) income does NOT change the running balance.
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number(it.row.amount) : 0;
       else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
-      else bal -= Number(it.row.amount);
+      else bal -= expenseHitsCash(it.row as Exp) ? Number(it.row.amount) : 0;
       return { ...it, running: bal };
     });
   }, [accountingReceived, handovers, expenses]);
@@ -323,7 +328,7 @@ function AccountsPage() {
     return asc.map((it) => {
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
       else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? Number((it.row as Hand).amount) : 0;
-      else bal -= Number((it.row as Exp).amount);
+      else bal -= expenseHitsCash(it.row as Exp) ? Number((it.row as Exp).amount) : 0;
       return { it, running: bal };
     });
   }, [timeline]);
@@ -444,7 +449,7 @@ function AccountsPage() {
           else acc.mdAmt += amt;
         }
         else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
-        else acc.outAmt += amt;
+        else acc.outAmt += expenseHitsCash(it.row as Exp) ? amt : 0;
         return acc;
       },
       { inAmt: 0, outAmt: 0, mdAmt: 0, vendorAmt: 0 },
