@@ -2602,7 +2602,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                       setPayAsMdDeposit(false);
                       setPayAsAdjust(false);
                       setPayMode("fifo");
-                      setPayAmount(String(payDue > 0 ? payDue : ""));
+                      // Keep any amount the user already typed; only pre-fill when empty.
+                      setPayAmount((prev) =>
+                        prev && Number(prev) > 0 ? prev : String(payDue > 0 ? payDue : ""),
+                      );
                     }
                   }}
                 />
