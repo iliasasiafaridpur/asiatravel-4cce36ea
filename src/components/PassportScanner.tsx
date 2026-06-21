@@ -222,40 +222,23 @@ export function PassportScanner({ onResult, compact }: Props) {
       const full = await fileToProcessedCanvas(file);
       const mrzCanvas = cropMrzRegion(full);
 
-      // Lazy-load Tesseract only in the browser when actually scanning.
-      const { createWorker, PSM } = await import("tesseract.js");
+      setProgress(40);
+      // Try the cropped MRZ band first, then the full page if needed.
+      let fields: PassportFields | null = null;
 
-      const worker = await createWorker("eng", 1, {
-        logger: (m: { status?: string; progress?: number }) => {
-          if (m.status === "recognizing text" && typeof m.progress === "number") {
-            setProgress(Math.round(m.progress * 100));
-          }
-        },
-      });
-      // MRZ uses only A-Z, 0-9 and "<". Whitelisting these stops the engine
-      // from inventing garbage (|, l, I, etc.) for the "<" filler characters.
-      await worker.setParameters({
-        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<",
-        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-      });
-
-      const runOcr = (canvas: HTMLCanvasElement) => worker.recognize(canvas);
-
-      let fields: PassportFields | null;
-      try {
-        // First try the cropped MRZ band; fall back to the full page.
-        let { data } = await runOcr(mrzCanvas);
-        fields = parseMrz(data.text);
-        if (!fields) {
-          ({ data } = await runOcr(full));
-          fields = parseMrz(data.text);
-        }
-      } finally {
-        await worker.terminate();
-      }
+      const mrzText = await ocrSpaceRecognize(mrzCanvas);
+      fields = parseMrz(mrzText);
 
       if (!fields || (!fields.passenger_name && !fields.passport)) {
-        showError("পাসপোর্টের MRZ পড়া যায়নি।\n\n• নিচের ২ লাইন (<<< সহ) সম্পূর্ণ ও স্পষ্ট থাকতে হবে\n• ভালো আলোতে, সোজা করে, ছায়া/চমক ছাড়া ছবি তুলুন\n• ছবিটি ঝাপসা হলে আবার চেষ্টা করুন");
+        setProgress(75);
+        const fullText = await ocrSpaceRecognize(full);
+        // Try MRZ parsing on the full page first, then the visual-zone parser.
+        fields = parseMrz(fullText) ?? parseVisualText(fullText);
+      }
+      setProgress(100);
+
+      if (!fields || (!fields.passenger_name && !fields.passport)) {
+        showError("পাসপোর্টের তথ্য পড়া যায়নি।\n\n• নিচের ২ লাইন (<<< সহ) সম্পূর্ণ ও স্পষ্ট থাকতে হবে\n• ভালো আলোতে, সোজা করে, ছায়া/চমক ছাড়া ছবি তুলুন\n• ছবিটি ঝাপসা হলে আবার চেষ্টা করুন");
       } else {
         toast.success(`তথ্য পাওয়া গেছে: ${fields.passenger_name ?? ""}`);
         onResult(fields);
