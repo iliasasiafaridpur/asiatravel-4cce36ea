@@ -449,7 +449,7 @@ function AccountsPage() {
           else acc.mdAmt += amt;
         }
         else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
-        else acc.outAmt += amt;
+        else acc.outAmt += expenseHitsCash(it.row as Exp) ? amt : 0;
         return acc;
       },
       { inAmt: 0, outAmt: 0, mdAmt: 0, vendorAmt: 0 },
