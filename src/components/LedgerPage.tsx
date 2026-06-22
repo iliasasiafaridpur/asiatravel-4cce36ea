@@ -3,10 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
-import { formatDate, statusBadgeClass, isAdvancePayment, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
+import { formatDate, statusBadgeClass, isAdvancePayment, type ModuleSchema, type Field } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
-import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { LookupSelect } from "@/components/LookupSelect";
 import {
@@ -190,49 +190,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
   const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
   const [profileParty, setProfileParty] = useState<string | null>(null);
-  const [passengerProfile, setPassengerProfile] = useState<{
-    row: Row;
-    serviceTable: string;
-    moduleKey?: string;
-    statusOrder?: string[];
-  } | null>(null);
 
-  const openProfileFor = useCallback(
-    async (r: Row) => {
-      const gf = mod.groupBy?.field ?? "agent_name";
-      const party = String(r[gf] ?? "").trim();
-      const isSelf = party.toLowerCase() === "self";
-      if (!isSelf) {
-        setProfileParty(party);
-        return;
-      }
-      const srcTable = String(r.source_table ?? "");
-      const srcId = String(r.source_id ?? "");
-      const srcModule = srcTable ? MODULES.find((m) => m.table === srcTable) : undefined;
-      if (srcTable && srcId) {
-        const { data } = await supabase
-          .from(srcTable as never)
-          .select("*")
-          .eq("id", srcId)
-          .maybeSingle();
-        const fullRow = (data as Row | null) ?? r;
-        setPassengerProfile({
-          row: fullRow,
-          serviceTable: srcTable,
-          moduleKey: srcModule?.key,
-          statusOrder: srcModule?.statuses,
-        });
-      } else {
-        setPassengerProfile({
-          row: r,
-          serviceTable: srcTable || mod.table,
-          moduleKey: srcModule?.key,
-          statusOrder: srcModule?.statuses,
-        });
-      }
-    },
-    [mod],
-  );
+
 
   const PAYMENT_METHODS = [
     "Cash",
@@ -1927,20 +1886,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   const status = info?.status ?? "";
                   const rowCancelled = !!info?.cancelled;
                   return (
-                    <div
-                      key={r.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => void openProfileFor(r)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          void openProfileFor(r);
-                        }
-                      }}
-                      className={`relative row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
-                      title={rowCancelled ? "বাতিল করা কাজ — " + (isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন") : isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
-                    >
+                     <div
+                       key={r.id}
+                       className={`relative row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start transition-colors`}
+                       title={rowCancelled ? "বাতিল করা কাজ" : undefined}
+                     >
                       {rowCancelled && (
                         <span className="absolute right-3 top-3 rounded-full bg-rose-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
                           বাতিল
@@ -2044,17 +1994,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           {groupLabel}
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void openProfileFor(r);
-                          }}
-                          className="font-semibold text-left hover:underline hover:text-primary"
-                          title={isAgency ? "Customer profile" : "Vendor profile"}
-                        >
+                        <span className="font-semibold text-left">
                           {String(r[groupField] ?? "—")}
-                        </button>
+                        </span>
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
@@ -2942,15 +2884,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           setProfileParty(newName);
           void load();
         }}
-      />
-
-      <PassengerProfileDrawer
-        open={!!passengerProfile}
-        onOpenChange={(v) => { if (!v) setPassengerProfile(null); }}
-        row={passengerProfile?.row ?? null}
-        serviceTable={passengerProfile?.serviceTable ?? ""}
-        moduleKey={passengerProfile?.moduleKey}
-        statusOrder={passengerProfile?.statusOrder}
       />
     </div>
   );
