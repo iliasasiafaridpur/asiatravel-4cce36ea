@@ -77,6 +77,8 @@ export function PartyLedgerPage({
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Filter text for the on-page party list (shown when no party is selected).
+  const [listFilter, setListFilter] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
