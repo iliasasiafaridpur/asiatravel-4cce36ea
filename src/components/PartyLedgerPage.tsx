@@ -31,6 +31,12 @@ import { toast } from "sonner";
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null };
 type ContactId = { id: string };
+type SrcInfo = {
+  displayId?: string | null;
+  countDate?: string | null;
+  airline?: string | null;
+  country?: string | null;
+};
 
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
 
@@ -64,8 +70,9 @@ export function PartyLedgerPage({
   const [summary, setSummary] = useState<{ bill: number; paid: number; due: number; advance: number }>(
     { bill: 0, paid: 0, due: 0, advance: 0 },
   );
-  // Vendor source files actually received (only these count financially).
-  const [receivedSrcIds, setReceivedSrcIds] = useState<Set<string>>(new Set());
+  // Vendor source-file details keyed by source_id (module id, real count date,
+  // and extra description fields like airline / country).
+  const [srcMap, setSrcMap] = useState<Map<string, SrcInfo>>(new Map());
 
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
@@ -120,26 +127,47 @@ export function PartyLedgerPage({
       advance: Number(mine?.advance_balance ?? 0),
     });
 
-    // For vendors: find which delivery-based source files were received.
-    const received = new Set<string>();
+    // For vendors: pull each source file's module id, the date it actually
+    // counted in the vendor balance (received_date for delivery items), and the
+    // extra description fields. bmet/saudi/kuwait only count once received.
+    const map = new Map<string, SrcInfo>();
     if (!isCustomer) {
-      const byTable: Record<string, string[]> = { bmet_cards: [], saudi_visas: [], kuwait_visas: [] };
+      // table -> [columns to select], with a normalizer for each row.
+      const specs: Record<string, { cols: string; map: (r: Record<string, unknown>) => SrcInfo }> = {
+        bmet_cards: {
+          cols: "id,bmet_id,received_date,country_name",
+          map: (r) => ({ displayId: r.bmet_id as string, countDate: r.received_date as string, country: r.country_name as string }),
+        },
+        saudi_visas: {
+          cols: "id,saudi_id,received_date",
+          map: (r) => ({ displayId: r.saudi_id as string, countDate: r.received_date as string }),
+        },
+        kuwait_visas: {
+          cols: "id,kuwait_id,received_date",
+          map: (r) => ({ displayId: r.kuwait_id as string, countDate: r.received_date as string }),
+        },
+        tickets: {
+          cols: "id,ticket_id,airline,entry_date",
+          map: (r) => ({ displayId: r.ticket_id as string, airline: r.airline as string, countDate: r.entry_date as string }),
+        },
+      };
+      const byTable: Record<string, string[]> = {};
       for (const r of ledgerRows) {
         const src = String(r.source_table ?? "");
         const sid = String(r.source_id ?? "");
-        if (sid && byTable[src]) byTable[src].push(sid);
+        if (sid && specs[src]) (byTable[src] ||= []).push(sid);
       }
       await Promise.all(
         Object.entries(byTable).map(async ([tbl, ids]) => {
           if (!ids.length) return;
-          const { data } = await supabase.from(tbl as never).select("id,received_date").in("id", ids);
-          for (const row of (data as { id: string; received_date: string | null }[] | null) ?? []) {
-            if (row.received_date) received.add(row.id);
+          const { data } = await supabase.from(tbl as never).select(specs[tbl].cols).in("id", ids);
+          for (const row of (data as Record<string, unknown>[] | null) ?? []) {
+            map.set(String(row.id), specs[tbl].map(row));
           }
         }),
       );
     }
-    setReceivedSrcIds(received);
+    setSrcMap(map);
     setLoading(false);
   };
 
@@ -251,38 +279,109 @@ export function PartyLedgerPage({
       advance: number;
     };
 
-    // VENDOR: simple ledger — money paid to the vendor (ADVANCE / PAYMENT) is a
-    // Deposit, no separate advance wallet. Latest entry shown on top.
+    // VENDOR: uniform ledger for every vendor.
+    //  • Deposit/Payment (money paid to vendor) increases the balance (+).
+    //  • Credit (vendor cost) decreases the balance (−).
+    //  • Final balance: positive = I overpaid (Adv), negative = vendor owed (V Due).
     if (!isCustomer) {
-      let bal = 0;
-      const out: Stmt[] = [];
+      const moduleLabel: Record<string, string> = {
+        bmet_cards: "BMET Card",
+        saudi_visas: "Saudi Visa",
+        kuwait_visas: "Kuwait Visa",
+        tickets: "Ticket",
+      };
+      // 1) Prepare each visible row with its effective count-date and fields.
+      type Prep = Omit<Stmt, "previous" | "balance"> & { sortKey: string; cash: number; bill: number };
+      const prepped: Prep[] = [];
       for (const r of rows) {
         const svc = String(r.service_type ?? "").toUpperCase();
-        if (svc === "OPENING") continue;
         const isDeposit = svc === "ADVANCE" || svc === "PAYMENT";
-        // Sourced bills (BMET/Saudi/Kuwait) count only once received.
         const src = String(r.source_table ?? "");
+        const sid = String(r.source_id ?? "");
+        const info = srcMap.get(sid);
+        // Payments redirected to the MD deposit pool don't settle this vendor's
+        // due, so the balance RPC excludes them — skip to keep the ledger
+        // reconciled with the summary board.
+        const alloc = r.alloc_detail as { as_md_deposit?: boolean } | null;
+        if (src === "payment_log" && alloc?.as_md_deposit) continue;
+        // Delivery items (BMET/Saudi/Kuwait) count only once received.
         const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
-        const counts = !sourced || receivedSrcIds.has(String(r.source_id ?? ""));
+        const counts = !sourced || Boolean(info?.countDate);
         if (!isDeposit && !counts) continue;
+
+
         const cash = Number(r[paidCol] ?? 0);
         const bill = isDeposit ? 0 : Number(r[billCol] ?? 0);
-        const prev = bal;
-        bal = prev + bill - cash;
-        const desc = String(r.passenger_name ?? "").trim() || String(r.remarks ?? "").trim();
-        out.push({
+
+        // Date: deposit -> payment date; delivery item -> received date; else entry date.
+        const date = isDeposit
+          ? String(r.payment_date ?? r.entry_date ?? "")
+          : String(info?.countDate ?? r.entry_date ?? "");
+
+        // Module id from the source record so the full id shows.
+        const idText = (sourced || src === "tickets" || src === "extra_services") && info?.displayId
+          ? String(info.displayId)
+          : String(r.ledger_id ?? "");
+
+        // Service type label.
+        let service: string;
+        if (isDeposit) service = "Deposit";
+        else if (moduleLabel[src]) service = moduleLabel[src];
+        else service = String(r.service_type ?? "—");
+
+        // Description: passenger + trip/airline (ticket) or country (bmet).
+        const route = String(r.country_route ?? "").trim();
+        const parts: string[] = [];
+        const pax = String(r.passenger_name ?? "").trim();
+        if (pax) parts.push(pax);
+        if (src === "tickets") {
+          if (route) parts.push(route);
+          if (info?.airline) parts.push(String(info.airline));
+        } else if (src === "bmet_cards") {
+          if (info?.country || route) parts.push(String(info?.country ?? route));
+        } else if (route) {
+          parts.push(route);
+        }
+        const desc = parts.join(" · ") || String(r.remarks ?? "").trim();
+
+        prepped.push({
           id: String(r.id),
-          ledgerId: String(r.ledger_id ?? ""),
-          date: String(r.entry_date ?? ""),
-          service: isDeposit ? "Deposit" : String(r.service_type ?? "—"),
+          ledgerId: idText,
+          date,
+          service,
           description: desc,
-          previous: prev,
           deposit: cash,
           credit: bill,
-          balance: bal,
           advance: 0,
+          cash,
+          bill,
+          sortKey: `${date || "0000-00-00"}|${String(r.created_at ?? "")}`,
         });
       }
+
+      // 2) Chronological order so the running balance is meaningful.
+      prepped.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+      // 3) Running balance: deposit (+), credit (−).
+      let bal = 0;
+      const out: Stmt[] = prepped.map((p) => {
+        const prev = bal;
+        bal = prev + p.cash - p.bill;
+        return {
+          id: p.id,
+          ledgerId: p.ledgerId,
+          date: p.date,
+          service: p.service,
+          description: p.description,
+          previous: prev,
+          deposit: p.deposit,
+          credit: p.credit,
+          balance: bal,
+          advance: 0,
+        };
+      });
+
+      // 4) Latest entry on top.
       return out.reverse();
     }
 
@@ -320,7 +419,7 @@ export function PartyLedgerPage({
       });
     }
     return out;
-  }, [rows, billCol, paidCol, isCustomer, receivedSrcIds]);
+  }, [rows, billCol, paidCol, isCustomer, srcMap]);
 
   const totals = summary;
 
@@ -508,17 +607,19 @@ export function PartyLedgerPage({
         <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="table-fixed w-full min-w-[760px]">
+            <Table className="table-fixed w-full min-w-[940px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[108px] whitespace-nowrap">Date</TableHead>
-                  <TableHead className="w-[110px] whitespace-nowrap">ID</TableHead>
-                  <TableHead className="w-[96px] whitespace-nowrap">Service Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[88px] text-right">Prev. Bal</TableHead>
-                  <TableHead className="w-[84px] text-right">Deposit</TableHead>
-                  <TableHead className="w-[80px] text-right">Credit</TableHead>
-                  <TableHead className="w-[88px] text-right">Balance</TableHead>
+                  <TableHead className="w-[120px] whitespace-nowrap pr-2">Date</TableHead>
+                  <TableHead className="w-[128px] whitespace-nowrap pl-2">ID</TableHead>
+                  <TableHead className="w-[118px] whitespace-nowrap">Service Type</TableHead>
+                  <TableHead className="min-w-[160px]">Description</TableHead>
+                  <TableHead className="w-[100px] text-right whitespace-nowrap">Prev. Bal</TableHead>
+                  <TableHead className="w-[108px] text-right whitespace-nowrap">
+                    {isCustomer ? "Deposit" : "Deposit/Payment"}
+                  </TableHead>
+                  <TableHead className="w-[92px] text-right">Credit</TableHead>
+                  <TableHead className="w-[120px] text-right">Balance</TableHead>
                   {isCustomer && (
                     <TableHead className="w-[84px] text-right">Advance</TableHead>
                   )}
@@ -540,8 +641,8 @@ export function PartyLedgerPage({
                 ) : (
                   statement.map((s, idx) => (
                     <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
-                      <TableCell className="whitespace-nowrap">{formatDate(s.date)}</TableCell>
-                      <TableCell className="truncate font-mono text-xs" title={s.ledgerId}>{s.ledgerId}</TableCell>
+                      <TableCell className="whitespace-nowrap pr-2 text-xs">{formatDate(s.date)}</TableCell>
+                      <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
                       <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
@@ -553,8 +654,24 @@ export function PartyLedgerPage({
                       <TableCell className="text-right tabular-nums">
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className={`text-right tabular-nums font-semibold ${s.balance > 0 ? "text-rose-600" : "text-muted-foreground"}`}>
-                        {s.balance.toLocaleString()}
+                      <TableCell className="text-right tabular-nums font-semibold">
+                        {isCustomer ? (
+                          <span className={s.balance > 0 ? "text-rose-600" : "text-muted-foreground"}>
+                            {s.balance.toLocaleString()}
+                          </span>
+                        ) : s.balance < 0 ? (
+                          <div className="text-rose-600 leading-tight">
+                            <div>{s.balance.toLocaleString()}</div>
+                            <div className="text-[10px] font-medium">V Due</div>
+                          </div>
+                        ) : s.balance > 0 ? (
+                          <div className="text-emerald-600 leading-tight">
+                            <div>+{s.balance.toLocaleString()}</div>
+                            <div className="text-[10px] font-medium">Adv</div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
                       </TableCell>
                       {isCustomer && (
                         <TableCell className="text-right tabular-nums text-emerald-600">
