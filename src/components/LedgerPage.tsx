@@ -58,6 +58,7 @@ import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
 
@@ -190,6 +191,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
   const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
   const [profileParty, setProfileParty] = useState<string | null>(null);
+  const navigate = useNavigate();
 
 
 
@@ -1699,9 +1701,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setProfileParty(g.key)}
+                            onClick={() => {
+                              const name = encodeURIComponent(g.key);
+                              if (isAgency) {
+                                navigate({ to: "/agency-ledger/$name", params: { name } });
+                              } else {
+                                navigate({ to: "/vendor-ledger/$name", params: { name } });
+                              }
+                            }}
                             className="text-left hover:underline hover:text-primary"
-                            title={isAgency ? "Customer profile দেখুন" : "Vendor profile দেখুন"}
+                            title={isAgency ? "Agency Ledger দেখুন" : "Vendor Ledger দেখুন"}
                           >
                             {g.key}
                           </button>
