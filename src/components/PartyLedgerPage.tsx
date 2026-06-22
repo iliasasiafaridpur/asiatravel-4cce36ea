@@ -508,19 +508,19 @@ export function PartyLedgerPage({
         <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
           <div className="overflow-x-auto rounded-md border">
-            <Table>
+            <Table className="table-fixed w-full min-w-[760px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Date</TableHead>
-                  <TableHead className="whitespace-nowrap">ID</TableHead>
-                  <TableHead className="whitespace-nowrap">Service Type</TableHead>
-                  <TableHead className="whitespace-nowrap">Description</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Previous Balance</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Deposit</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Credit</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Balance</TableHead>
+                  <TableHead className="w-[108px] whitespace-nowrap">Date</TableHead>
+                  <TableHead className="w-[110px] whitespace-nowrap">ID</TableHead>
+                  <TableHead className="w-[96px] whitespace-nowrap">Service Type</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="w-[88px] text-right">Prev. Bal</TableHead>
+                  <TableHead className="w-[84px] text-right">Deposit</TableHead>
+                  <TableHead className="w-[80px] text-right">Credit</TableHead>
+                  <TableHead className="w-[88px] text-right">Balance</TableHead>
                   {isCustomer && (
-                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
+                    <TableHead className="w-[84px] text-right">Advance</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
@@ -541,9 +541,9 @@ export function PartyLedgerPage({
                   statement.map((s, idx) => (
                     <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
                       <TableCell className="whitespace-nowrap">{formatDate(s.date)}</TableCell>
-                      <TableCell className="whitespace-nowrap font-mono text-xs">{s.ledgerId}</TableCell>
-                      <TableCell className="whitespace-nowrap">{s.service}</TableCell>
-                      <TableCell className="whitespace-nowrap">{s.description || "—"}</TableCell>
+                      <TableCell className="truncate font-mono text-xs" title={s.ledgerId}>{s.ledgerId}</TableCell>
+                      <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
+                      <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {s.previous.toLocaleString()}
                       </TableCell>
