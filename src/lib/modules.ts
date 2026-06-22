@@ -367,6 +367,7 @@ export const MODULES: ModuleSchema[] = [
         type: "date",
         showInList: true,
         section: "vendor",
+        noFuture: true,
       },
       { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
