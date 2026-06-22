@@ -860,7 +860,7 @@ export function PartyLedgerPage({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  statement.map((s, idx) => (
+                  pagedStatement.map((s, idx) => (
                     <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
                       <TableCell className="whitespace-nowrap pr-2 text-xs">{formatDate(s.date)}</TableCell>
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
