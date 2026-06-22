@@ -543,7 +543,7 @@ export function PartyLedgerPage({
                       <TableCell className="whitespace-nowrap">{formatDate(s.date)}</TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{s.ledgerId}</TableCell>
                       <TableCell className="whitespace-nowrap">{s.service}</TableCell>
-                      <TableCell className="whitespace-nowrap">{s.description || "—"}</TableCell>
+                      <TableCell className="max-w-[180px] truncate" title={s.description}>{s.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {s.previous.toLocaleString()}
                       </TableCell>
