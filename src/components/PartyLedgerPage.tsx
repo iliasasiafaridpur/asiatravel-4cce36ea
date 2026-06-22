@@ -490,8 +490,8 @@ export function PartyLedgerPage({
               aria-expanded={pickerOpen}
               className="ml-1 h-8 w-[200px] justify-between gap-1.5 font-normal sm:w-[260px]"
             >
-              <span className="truncate text-muted-foreground">
-                {isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
+              <span className={`truncate ${name ? "font-medium" : "text-muted-foreground"}`}>
+                {name || (isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…")}
               </span>
               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
