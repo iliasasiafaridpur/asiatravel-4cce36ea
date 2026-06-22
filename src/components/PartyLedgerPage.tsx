@@ -527,13 +527,13 @@ export function PartyLedgerPage({
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : statement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
@@ -543,6 +543,7 @@ export function PartyLedgerPage({
                       <TableCell className="whitespace-nowrap">{formatDate(s.date)}</TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{s.ledgerId}</TableCell>
                       <TableCell className="whitespace-nowrap">{s.service}</TableCell>
+                      <TableCell className="whitespace-nowrap">{s.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {s.previous.toLocaleString()}
                       </TableCell>
@@ -555,9 +556,11 @@ export function PartyLedgerPage({
                       <TableCell className={`text-right tabular-nums font-semibold ${s.balance > 0 ? "text-rose-600" : "text-muted-foreground"}`}>
                         {s.balance.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-emerald-600">
-                        {s.advance ? s.advance.toLocaleString() : "—"}
-                      </TableCell>
+                      {isCustomer && (
+                        <TableCell className="text-right tabular-nums text-emerald-600">
+                          {s.advance ? s.advance.toLocaleString() : "—"}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
