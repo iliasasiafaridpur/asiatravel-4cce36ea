@@ -72,6 +72,11 @@ export function PartyLedgerPage({
   const paidCol = isCustomer ? "received_amount" : "paid_amount";
   const contactsTable = isCustomer ? "agents" : "vendors";
   const backTo = isCustomer ? "/customer-data" : "/vendor-data";
+  const navigate = useNavigate();
+
+  // Full list of parties for the dropdown search filter (top-right).
+  const [partyList, setPartyList] = useState<string[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
