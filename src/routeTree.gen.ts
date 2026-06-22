@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as VendorLedgerRouteImport } from './routes/vendor-ledger'
+import { Route as VendorDataRouteImport } from './routes/vendor-data'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -38,6 +39,11 @@ const VendorsRoute = VendorsRouteImport.update({
 const VendorLedgerRoute = VendorLedgerRouteImport.update({
   id: '/vendor-ledger',
   path: '/vendor-ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorDataRoute = VendorDataRouteImport.update({
+  id: '/vendor-data',
+  path: '/vendor-data',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersRoute = UsersRouteImport.update({
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
+  '/vendor-data': typeof VendorDataRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
+  '/vendor-data': typeof VendorDataRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
+  '/vendor-data': typeof VendorDataRoute
   '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
+    | '/vendor-data'
     | '/vendor-ledger'
     | '/vendors'
     | '/api/public/handover-accept'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
+    | '/vendor-data'
     | '/vendor-ledger'
     | '/vendors'
     | '/api/public/handover-accept'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
+    | '/vendor-data'
     | '/vendor-ledger'
     | '/vendors'
     | '/api/public/handover-accept'
@@ -285,6 +297,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TicketsRoute: typeof TicketsRoute
   UsersRoute: typeof UsersRoute
+  VendorDataRoute: typeof VendorDataRoute
   VendorLedgerRoute: typeof VendorLedgerRoute
   VendorsRoute: typeof VendorsRoute
   ApiPublicHandoverAcceptRoute: typeof ApiPublicHandoverAcceptRoute
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor-ledger'
       fullPath: '/vendor-ledger'
       preLoaderRoute: typeof VendorLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor-data': {
+      id: '/vendor-data'
+      path: '/vendor-data'
+      fullPath: '/vendor-data'
+      preLoaderRoute: typeof VendorDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users': {
@@ -453,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TicketsRoute: TicketsRoute,
   UsersRoute: UsersRoute,
+  VendorDataRoute: VendorDataRoute,
   VendorLedgerRoute: VendorLedgerRoute,
   VendorsRoute: VendorsRoute,
   ApiPublicHandoverAcceptRoute: ApiPublicHandoverAcceptRoute,
