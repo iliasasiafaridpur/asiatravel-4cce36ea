@@ -1574,8 +1574,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
       {/* Filter bar — ModulePage-style grid */}
       <Card className="print:hidden">
-        <CardContent className="p-3 sm:p-4">
-          <div className="space-y-3">
+        <CardContent className="p-2 sm:p-2.5">
+          <div className="space-y-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row lg:flex-nowrap gap-2 items-end w-full">
               <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">Start Date</Label>
