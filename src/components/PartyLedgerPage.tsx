@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Phone,
   PhoneCall,
@@ -25,6 +34,7 @@ import {
   X,
   Plus,
   ArrowLeft,
+  ChevronsUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
