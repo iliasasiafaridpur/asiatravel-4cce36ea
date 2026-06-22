@@ -611,18 +611,18 @@ export function PartyLedgerPage({
             <Table className="table-fixed w-full min-w-[940px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px] whitespace-nowrap pr-2">Date</TableHead>
-                  <TableHead className="w-[128px] whitespace-nowrap pl-2">ID</TableHead>
-                  <TableHead className="w-[118px] whitespace-nowrap">Service Type</TableHead>
-                  <TableHead className="min-w-[160px]">Description</TableHead>
-                  <TableHead className="w-[100px] text-right whitespace-nowrap">Prev. Bal</TableHead>
-                  <TableHead className="w-[108px] text-right whitespace-nowrap">
+                  <TableHead className="w-[112px] whitespace-nowrap pr-2">Date</TableHead>
+                  <TableHead className="w-[120px] whitespace-nowrap pl-2">ID</TableHead>
+                  <TableHead className="w-[112px] whitespace-nowrap">Service Type</TableHead>
+                  <TableHead className="min-w-[150px]">Description</TableHead>
+                  <TableHead className="w-[112px] text-right whitespace-nowrap px-4">Prev. Bal</TableHead>
+                  <TableHead className="w-[120px] text-right whitespace-nowrap px-4">
                     {isCustomer ? "Deposit" : "Deposit/Payment"}
                   </TableHead>
-                  <TableHead className="w-[92px] text-right">Credit</TableHead>
-                  <TableHead className="w-[120px] text-right">Balance</TableHead>
+                  <TableHead className="w-[104px] text-right px-4">Credit</TableHead>
+                  <TableHead className={`w-[128px] text-right px-4 ${isCustomer ? "" : "pr-6"}`}>Balance</TableHead>
                   {isCustomer && (
-                    <TableHead className="w-[84px] text-right">Advance</TableHead>
+                    <TableHead className="w-[104px] text-right px-4 pr-6">Advance</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
