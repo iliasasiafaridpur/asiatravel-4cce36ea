@@ -190,49 +190,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
   const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
   const [profileParty, setProfileParty] = useState<string | null>(null);
-  const [passengerProfile, setPassengerProfile] = useState<{
-    row: Row;
-    serviceTable: string;
-    moduleKey?: string;
-    statusOrder?: string[];
-  } | null>(null);
 
-  const openProfileFor = useCallback(
-    async (r: Row) => {
-      const gf = mod.groupBy?.field ?? "agent_name";
-      const party = String(r[gf] ?? "").trim();
-      const isSelf = party.toLowerCase() === "self";
-      if (!isSelf) {
-        setProfileParty(party);
-        return;
-      }
-      const srcTable = String(r.source_table ?? "");
-      const srcId = String(r.source_id ?? "");
-      const srcModule = srcTable ? MODULES.find((m) => m.table === srcTable) : undefined;
-      if (srcTable && srcId) {
-        const { data } = await supabase
-          .from(srcTable as never)
-          .select("*")
-          .eq("id", srcId)
-          .maybeSingle();
-        const fullRow = (data as Row | null) ?? r;
-        setPassengerProfile({
-          row: fullRow,
-          serviceTable: srcTable,
-          moduleKey: srcModule?.key,
-          statusOrder: srcModule?.statuses,
-        });
-      } else {
-        setPassengerProfile({
-          row: r,
-          serviceTable: srcTable || mod.table,
-          moduleKey: srcModule?.key,
-          statusOrder: srcModule?.statuses,
-        });
-      }
-    },
-    [mod],
-  );
+
 
   const PAYMENT_METHODS = [
     "Cash",
