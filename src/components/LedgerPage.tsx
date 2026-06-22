@@ -1574,15 +1574,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
       {/* Filter bar — ModulePage-style grid */}
       <Card className="print:hidden">
-        <CardContent className="p-3 sm:p-4">
-          <div className="space-y-3">
+        <CardContent className="p-2 sm:p-2.5">
+          <div className="space-y-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row lg:flex-nowrap gap-2 items-end w-full">
               <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">Start Date</Label>
                 <DateInput
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="h-10 text-sm w-full min-w-0"
+                  className="h-9 text-sm w-full min-w-0"
                 />
               </div>
               <div className="space-y-1.5 min-w-0 lg:flex-1">
@@ -1590,13 +1590,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                 <DateInput
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="h-10 text-sm w-full min-w-0"
+                  className="h-9 text-sm w-full min-w-0"
                 />
               </div>
               <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">{groupLabel}</Label>
                 <Select value={groupFilter} onValueChange={setGroupFilter}>
-                  <SelectTrigger className="h-10 text-sm w-full min-w-0">
+                  <SelectTrigger className="h-9 text-sm w-full min-w-0">
                     <SelectValue placeholder={`সব ${groupLabel}`} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1612,7 +1612,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               <div className="space-y-1.5 min-w-0 lg:flex-1">
                 <Label className="text-xs font-medium truncate block">সার্ভিস মডিউল</Label>
                 <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                  <SelectTrigger className="h-10 text-sm w-full min-w-0">
+                  <SelectTrigger className="h-9 text-sm w-full min-w-0">
                     <SelectValue placeholder="সব সার্ভিস" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1635,7 +1635,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   disabled={!!(startDate || endDate)}
                   onChange={(e) => setLatestInput(e.target.value.replace(/[^\d]/g, ""))}
                   placeholder="N"
-                  className="h-10 text-sm tabular-nums disabled:opacity-50 w-full min-w-0"
+                  className="h-9 text-sm tabular-nums disabled:opacity-50 w-full min-w-0"
                 />
               </div>
               <div className="space-y-1.5 flex flex-col col-span-2 sm:col-span-3 lg:col-span-1 lg:shrink-0 min-w-0">
@@ -1644,7 +1644,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     type="button"
                     variant={dueOnly ? "default" : "outline"}
                     onClick={() => setDueOnly((v) => !v)}
-                    className="h-10 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
+                    className="h-9 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
                     title="শুধু Due"
                   >
                     <Wallet className="h-4 w-4 shrink-0" />
@@ -1661,7 +1661,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           if (isToday) { setStartDate(""); setEndDate(""); }
                           else { setStartDate(t); setEndDate(t); }
                         }}
-                        className="h-10 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
+                        className="h-9 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
                         title="আজকের লেনদেন"
                       >
                         <Wallet className="h-4 w-4 shrink-0" />
@@ -1673,7 +1673,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                     type="button"
                     variant="outline"
                     onClick={resetFilters}
-                    className="h-10 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
+                    className="h-9 gap-1 px-1.5 flex-1 min-w-0 lg:flex-none lg:shrink-0 text-[11px] sm:text-xs"
                     title="Reset"
                   >
                     <RotateCcw className="h-4 w-4 shrink-0" />
@@ -1690,7 +1690,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="খুঁজুন…"
-                  className="pl-9 h-11 text-base"
+                  className="pl-9 h-9 text-base"
                 />
               </div>
               <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
@@ -1701,39 +1701,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         </CardContent>
       </Card>
 
-      {/* Summary — ModulePage-style plain boxes */}
-      <Card>
-        <CardContent className="p-3 sm:p-4">
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
-              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
-                {billLabel}
-              </div>
-              <div className="mt-1 text-sm sm:text-lg font-bold tabular-nums truncate">
-                {totals.bill.toLocaleString()}
-              </div>
-            </div>
-            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
-              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
-                {paidLabel}
-              </div>
-              <div className="mt-1 text-sm sm:text-lg font-bold tabular-nums truncate">
-                {totals.paid.toLocaleString()}
-              </div>
-            </div>
-            <div className="rounded-md border bg-muted/30 p-2 sm:p-3 min-w-0 overflow-hidden">
-              <div className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground truncate">
-                Total Due
-              </div>
-              <div
-                className={`mt-1 text-sm sm:text-lg font-bold tabular-nums truncate ${totals.due > 0 ? "text-rose-500" : ""}`}
-              >
-                {totals.due.toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
+
 
       {/* Group summary */}
       {groupSummary.length > 0 && (
