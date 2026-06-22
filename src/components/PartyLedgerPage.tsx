@@ -536,12 +536,39 @@ export function PartyLedgerPage({
 
       {!name ? (
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            উপরের ড্রপডাউন থেকে একটি {isCustomer ? "Agency" : "Vendor"} সিলেক্ট করুন
+          <CardContent className="p-3 sm:p-4 space-y-3">
+            <Input
+              value={listFilter}
+              onChange={(e) => setListFilter(e.target.value)}
+              placeholder={isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
+              className="h-9 max-w-sm"
+            />
+            <div className="text-xs text-muted-foreground">
+              মোট {partyList.length} টি {isCustomer ? "Agency" : "Vendor"}
+            </div>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+              {partyList
+                .filter((p) => p.toLowerCase().includes(listFilter.trim().toLowerCase()))
+                .map((p) => (
+                  <Link
+                    key={p}
+                    to={isCustomer ? "/agency-ledger/$name" : "/vendor-ledger/$name"}
+                    params={{ name: p }}
+                    className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm transition-colors hover:bg-primary/10 hover:border-primary/40"
+                  >
+                    <span className="truncate font-medium">{p}</span>
+                    <ArrowLeft className="h-4 w-4 shrink-0 rotate-180 opacity-50" />
+                  </Link>
+                ))}
+            </div>
+            {partyList.length === 0 && (
+              <div className="py-6 text-center text-muted-foreground">কোনো তালিকা নেই</div>
+            )}
           </CardContent>
         </Card>
       ) : (
         <>
+
       {/* Profile + summary */}
       <Card>
         <CardContent className="p-3 sm:p-4">
