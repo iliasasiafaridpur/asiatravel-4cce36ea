@@ -6,7 +6,7 @@ import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, MODULES, type ModuleSchema, type Field } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
-import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
+
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { LookupSelect } from "@/components/LookupSelect";
 import {
