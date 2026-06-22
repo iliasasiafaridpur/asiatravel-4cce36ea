@@ -2926,15 +2926,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           void load();
         }}
       />
-
-      <PassengerProfileDrawer
-        open={!!passengerProfile}
-        onOpenChange={(v) => { if (!v) setPassengerProfile(null); }}
-        row={passengerProfile?.row ?? null}
-        serviceTable={passengerProfile?.serviceTable ?? ""}
-        moduleKey={passengerProfile?.moduleKey}
-        statusOrder={passengerProfile?.statusOrder}
-      />
     </div>
   );
 }
