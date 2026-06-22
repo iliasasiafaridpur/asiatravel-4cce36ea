@@ -1727,7 +1727,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   কোনো এন্ট্রি পাওয়া যায়নি
                 </div>
               ) : (
-                filtered.map((r, idx) => {
+                paged.map((r, idx) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
