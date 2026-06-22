@@ -161,6 +161,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [latestInput, setLatestInput] = useState("");
+  // Pagination for the main entries list.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
