@@ -646,20 +646,30 @@ export function PartyLedgerPage({
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
                       <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="text-right tabular-nums text-muted-foreground px-4">
                         {s.previous.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-emerald-600">
+                      <TableCell className="text-right tabular-nums text-emerald-600 px-4">
                         {s.deposit ? s.deposit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
+                      <TableCell className="text-right tabular-nums px-4">
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">
+                      <TableCell className={`text-right tabular-nums font-semibold px-4 ${isCustomer ? "" : "pr-6"}`}>
                         {isCustomer ? (
-                          <span className={s.balance > 0 ? "text-rose-600" : "text-muted-foreground"}>
-                            {s.balance.toLocaleString()}
-                          </span>
+                          s.balance > 0 ? (
+                            <div className="text-rose-600 leading-tight">
+                              <div>{s.balance.toLocaleString()}</div>
+                              <div className="text-[10px] font-medium">Due</div>
+                            </div>
+                          ) : s.balance < 0 ? (
+                            <div className="text-emerald-600 leading-tight">
+                              <div>+{Math.abs(s.balance).toLocaleString()}</div>
+                              <div className="text-[10px] font-medium">Adv</div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )
                         ) : s.balance < 0 ? (
                           <div className="text-rose-600 leading-tight">
                             <div>{s.balance.toLocaleString()}</div>
@@ -675,7 +685,7 @@ export function PartyLedgerPage({
                         )}
                       </TableCell>
                       {isCustomer && (
-                        <TableCell className="text-right tabular-nums text-emerald-600">
+                        <TableCell className="text-right tabular-nums text-emerald-600 px-4 pr-6">
                           {s.advance ? s.advance.toLocaleString() : "—"}
                         </TableCell>
                       )}
