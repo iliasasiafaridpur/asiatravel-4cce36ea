@@ -2287,6 +2287,7 @@ function FormField({ field, value, onChange, disabled }: {
         <DateInput
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
+          max={field.noFuture ? todayIso() : undefined}
         />
       ) : (
         <AutoGrowTextInput

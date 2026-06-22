@@ -21,6 +21,8 @@ export interface Field {
   hideInForm?: boolean; // hide from entry/edit form (still shown in list)
   /** Only show this field in the form when another field equals one of these values. */
   showWhen?: { field: string; equals: string[] };
+  /** For date fields: disallow selecting/entering a future date (max = today). */
+  noFuture?: boolean;
 }
 
 export const LEDGER_SERVICE_TYPES = [
@@ -365,6 +367,7 @@ export const MODULES: ModuleSchema[] = [
         type: "date",
         showInList: true,
         section: "vendor",
+        noFuture: true,
       },
       { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
@@ -534,7 +537,7 @@ export const MODULES: ModuleSchema[] = [
 
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
       { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", section: "vendor" },
-      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor" },
+      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor", noFuture: true },
       {
         name: "tasheer_finger_date",
         label: "Tasheer Finger Date",
@@ -651,7 +654,7 @@ export const MODULES: ModuleSchema[] = [
 
       { name: "cost_price", label: "Cost Price", type: "number", showInList: true, section: "vendor" },
       { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", showInList: true, section: "vendor" },
-      { name: "received_date", label: "Received Date From Vendor", type: "date", showInList: true, section: "vendor" },
+      { name: "received_date", label: "Received Date From Vendor", type: "date", showInList: true, section: "vendor", noFuture: true },
       { name: "entry_by", label: "Entry By", type: "text", showInList: true, section: "vendor" },
       { name: "notes", label: "Notes", type: "textarea", showInList: true, section: "vendor" },
     ],
