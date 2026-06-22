@@ -591,6 +591,20 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup, advanceAdjustedRows, isCancelledRow]);
 
+  // Pagination derived values for the entries list.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize],
+  );
+  // Reset to first page whenever filters or page-size change.
+  useEffect(() => {
+    setPage(1);
+  }, [groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, pageSize]);
+
+
+
   const totals = useMemo(() => {
     let bill = 0,
       paid = 0,
