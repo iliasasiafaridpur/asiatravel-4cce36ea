@@ -541,9 +541,9 @@ export function PartyLedgerPage({
                   statement.map((s, idx) => (
                     <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
                       <TableCell className="whitespace-nowrap">{formatDate(s.date)}</TableCell>
-                      <TableCell className="whitespace-nowrap font-mono text-xs">{s.ledgerId}</TableCell>
-                      <TableCell className="whitespace-nowrap">{s.service}</TableCell>
-                      <TableCell className="max-w-[180px] truncate" title={s.description}>{s.description || "—"}</TableCell>
+                      <TableCell className="truncate font-mono text-xs" title={s.ledgerId}>{s.ledgerId}</TableCell>
+                      <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
+                      <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {s.previous.toLocaleString()}
                       </TableCell>
