@@ -238,39 +238,70 @@ export function PartyLedgerPage({
   // Build the running statement (chronological). Mirrors get_agent_balances /
   // get_vendor_balances so the final running balance reconciles with the summary.
   const statement = useMemo(() => {
-    let bal = 0;
-    let adv = 0;
-    const out: {
+    type Stmt = {
       id: string;
       ledgerId: string;
       date: string;
       service: string;
+      description: string;
       previous: number;
       deposit: number;
       credit: number;
       balance: number;
       advance: number;
-    }[] = [];
+    };
+
+    // VENDOR: simple ledger — money paid to the vendor (ADVANCE / PAYMENT) is a
+    // Deposit, no separate advance wallet. Latest entry shown on top.
+    if (!isCustomer) {
+      let bal = 0;
+      const out: Stmt[] = [];
+      for (const r of rows) {
+        const svc = String(r.service_type ?? "").toUpperCase();
+        if (svc === "OPENING") continue;
+        const isDeposit = svc === "ADVANCE" || svc === "PAYMENT";
+        // Sourced bills (BMET/Saudi/Kuwait) count only once received.
+        const src = String(r.source_table ?? "");
+        const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
+        const counts = !sourced || receivedSrcIds.has(String(r.source_id ?? ""));
+        if (!isDeposit && !counts) continue;
+        const cash = Number(r[paidCol] ?? 0);
+        const bill = isDeposit ? 0 : Number(r[billCol] ?? 0);
+        const prev = bal;
+        bal = prev + bill - cash;
+        const desc = String(r.passenger_name ?? "").trim() || String(r.remarks ?? "").trim();
+        out.push({
+          id: String(r.id),
+          ledgerId: String(r.ledger_id ?? ""),
+          date: String(r.entry_date ?? ""),
+          service: isDeposit ? "Deposit" : String(r.service_type ?? "—"),
+          description: desc,
+          previous: prev,
+          deposit: cash,
+          credit: bill,
+          balance: bal,
+          advance: 0,
+        });
+      }
+      return out.reverse();
+    }
+
+    // CUSTOMER: keep the advance-wallet aware logic.
+    let bal = 0;
+    let adv = 0;
+    const out: Stmt[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
       if (svc === "PAYMENT" || svc === "OPENING") continue;
       const advRow = svc === "ADVANCE";
-      // Vendor sourced bills (BMET/Saudi/Kuwait) count only once received.
-      const src = String(r.source_table ?? "");
-      const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
-      const counts = isCustomer || !sourced || receivedSrcIds.has(String(r.source_id ?? ""));
       const cash = Number(r[paidCol] ?? 0);
       const applied = Number(r.advance_applied ?? 0);
       const bill = Number(r[billCol] ?? 0);
-      const discount = isCustomer ? Number(r.discount_amount ?? 0) : 0;
+      const discount = Number(r.discount_amount ?? 0);
       const prev = bal;
 
       if (advRow) {
-        // Advance deposit into the wallet — does not pay down a bill.
         adv += cash;
-      } else if (!counts) {
-        // Vendor file not yet received — not part of accounting; skip.
-        continue;
       } else {
         bal = prev + bill - cash - applied - discount;
         adv = Math.max(adv - applied, 0);
@@ -280,6 +311,7 @@ export function PartyLedgerPage({
         ledgerId: String(r.ledger_id ?? ""),
         date: String(r.entry_date ?? ""),
         service: String(r.service_type ?? "—"),
+        description: String(r.passenger_name ?? "").trim(),
         previous: prev,
         deposit: advRow ? cash : cash + applied,
         credit: advRow ? 0 : bill,
@@ -482,23 +514,26 @@ export function PartyLedgerPage({
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">ID</TableHead>
                   <TableHead className="whitespace-nowrap">Service Type</TableHead>
+                  <TableHead className="whitespace-nowrap">Description</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Previous Balance</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Deposit</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Credit</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Balance</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
+                  {isCustomer && (
+                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : statement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
@@ -508,6 +543,7 @@ export function PartyLedgerPage({
                       <TableCell className="whitespace-nowrap">{formatDate(s.date)}</TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{s.ledgerId}</TableCell>
                       <TableCell className="whitespace-nowrap">{s.service}</TableCell>
+                      <TableCell className="whitespace-nowrap">{s.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {s.previous.toLocaleString()}
                       </TableCell>
@@ -520,9 +556,11 @@ export function PartyLedgerPage({
                       <TableCell className={`text-right tabular-nums font-semibold ${s.balance > 0 ? "text-rose-600" : "text-muted-foreground"}`}>
                         {s.balance.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-emerald-600">
-                        {s.advance ? s.advance.toLocaleString() : "—"}
-                      </TableCell>
+                      {isCustomer && (
+                        <TableCell className="text-right tabular-nums text-emerald-600">
+                          {s.advance ? s.advance.toLocaleString() : "—"}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
