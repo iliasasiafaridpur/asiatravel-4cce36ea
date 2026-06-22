@@ -904,6 +904,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
     const recvCol = srcTable ? sourceRecvCol(srcTable) : null;
+    const effectiveMethod = payAsMdDeposit ? "MD Sir Deposit" : payMethod;
     // Vendor side: paying a vendor for a Saudi/Kuwait visa auto-marks it as
     // "Received from Vendor" (sets vendor_sent_date + received_date when empty)
     // so the bill + payment immediately count in the vendor balance/profile —
@@ -946,7 +947,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
       const cur = Number(row[paidCol] ?? 0);
       const { error: uErr } = await supabase
         .from(mod.table as never)
-        .update({ [paidCol]: cur + amt } as never)
+        .update({ [paidCol]: cur + amt, payment_method: effectiveMethod, payment_date: payDate } as never)
         .eq("id", row.id);
       if (uErr) throw uErr;
     }
@@ -957,7 +958,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     // (e.g. Opening Due / direct vendor bills) would mirror a cash_expense with
     // the underlying method (often "Cash") and wrongly reduce the staff's
     // cash balance, even though the UI promises the user balance stays intact.
-    const effectiveMethod = payAsMdDeposit ? "MD Sir Deposit" : payMethod;
     await supabase
       .from(mod.table as never)
         .update({ payment_method: effectiveMethod, payment_date: payDate } as never)

@@ -17,7 +17,7 @@ import { lazy, Suspense } from "react";
 import { DigitalClock } from "@/components/DigitalClock";
 
 const DashboardCharts = lazy(() => import("@/components/DashboardCharts"));
-import { isCashMethod } from "@/lib/payment-methods";
+import { isCashMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
@@ -272,14 +272,14 @@ function DashboardPage() {
       const receipts = (recv.data ?? []) as Array<{ amount: number; entry_date: string; approval_status: string; source: string | null; method: string | null; handover_id: string | null }>;
       const expenses = (exp.data ?? []) as Array<{ amount: number; entry_date: string; category: string | null; linked_source_table: string | null }>;
       const handovers = (hand.data ?? []) as Array<{ amount: number; status: string | null }>;
-      const expenseHitsCash = (row: { category: string | null; linked_source_table: string | null }) =>
-        row.linked_source_table === "vendor_ledger" ? isCashMethod(row.category) : true;
+      const expenseHitsBalance = (row: { category: string | null; linked_source_table: string | null }) =>
+        row.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(row.category) : true;
       const nonDiscount = receipts.filter((r) => r.source !== "discount" && (r.method ?? "").toLowerCase() !== "discount");
       const cashReceipts = nonDiscount.filter((r) => isCashMethod(r.method));
       const totalReceived = cashReceipts.reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalReceivedToday = cashReceipts.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
-      const totalExpenses = expenses.reduce((s, r) => s + (expenseHitsCash(r) ? Number(r.amount || 0) : 0), 0);
-      const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + (expenseHitsCash(r) ? Number(r.amount || 0) : 0), 0);
+      const totalExpenses = expenses.reduce((s, r) => s + (expenseHitsBalance(r) ? Number(r.amount || 0) : 0), 0);
+      const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + (expenseHitsBalance(r) ? Number(r.amount || 0) : 0), 0);
       // Match /accounts "হাতে আছে": only approved handovers reduce the shown cash balance.
       const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
       const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
@@ -329,7 +329,7 @@ function DashboardPage() {
         .filter((row) => (row.status ?? "approved") === "approved")
         .reduce((sum, row) => sum + Number(row.amount || 0), 0);
       const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number; category: string | null; linked_source_table: string | null }>).reduce((sum, row) => {
-        const hitsCash = row.linked_source_table === "vendor_ledger" ? isCashMethod(row.category) : true;
+        const hitsCash = row.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(row.category) : true;
         return hitsCash ? sum + Number(row.amount || 0) : sum;
       }, 0);
       return totalReceived - totalHandedOver - totalExpenses;
