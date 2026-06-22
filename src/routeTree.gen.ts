@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
-import { Route as VendorLedgerRouteImport } from './routes/vendor-ledger'
 import { Route as VendorDataRouteImport } from './routes/vendor-data'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsRouteImport } from './routes/tickets'
@@ -25,7 +24,6 @@ import { Route as HelpRouteImport } from './routes/help'
 import { Route as CustomerDataRouteImport } from './routes/customer-data'
 import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
-import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
 import { Route as ActionBoardRouteImport } from './routes/action-board'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as AccountingRouteImport } from './routes/accounting'
@@ -35,11 +33,6 @@ import { Route as ApiPublicHandoverAcceptRouteImport } from './routes/api/public
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VendorLedgerRoute = VendorLedgerRouteImport.update({
-  id: '/vendor-ledger',
-  path: '/vendor-ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VendorDataRoute = VendorDataRouteImport.update({
@@ -112,11 +105,6 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgencyLedgerRoute = AgencyLedgerRouteImport.update({
-  id: '/agency-ledger',
-  path: '/agency-ledger',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ActionBoardRoute = ActionBoardRouteImport.update({
   id: '/action-board',
   path: '/action-board',
@@ -148,7 +136,6 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
-  '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
   '/customer-data': typeof CustomerDataRoute
@@ -163,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
   '/vendor-data': typeof VendorDataRoute
-  '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
@@ -172,7 +158,6 @@ export interface FileRoutesByTo {
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
-  '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
   '/customer-data': typeof CustomerDataRoute
@@ -187,7 +172,6 @@ export interface FileRoutesByTo {
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
   '/vendor-data': typeof VendorDataRoute
-  '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
@@ -197,7 +181,6 @@ export interface FileRoutesById {
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
-  '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
   '/customer-data': typeof CustomerDataRoute
@@ -212,7 +195,6 @@ export interface FileRoutesById {
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
   '/vendor-data': typeof VendorDataRoute
-  '/vendor-ledger': typeof VendorLedgerRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
@@ -223,7 +205,6 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/accounts'
     | '/action-board'
-    | '/agency-ledger'
     | '/agents'
     | '/bmet'
     | '/customer-data'
@@ -238,7 +219,6 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/users'
     | '/vendor-data'
-    | '/vendor-ledger'
     | '/vendors'
     | '/api/public/handover-accept'
   fileRoutesByTo: FileRoutesByTo
@@ -247,7 +227,6 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/accounts'
     | '/action-board'
-    | '/agency-ledger'
     | '/agents'
     | '/bmet'
     | '/customer-data'
@@ -262,7 +241,6 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/users'
     | '/vendor-data'
-    | '/vendor-ledger'
     | '/vendors'
     | '/api/public/handover-accept'
   id:
@@ -271,7 +249,6 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/accounts'
     | '/action-board'
-    | '/agency-ledger'
     | '/agents'
     | '/bmet'
     | '/customer-data'
@@ -286,7 +263,6 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/users'
     | '/vendor-data'
-    | '/vendor-ledger'
     | '/vendors'
     | '/api/public/handover-accept'
   fileRoutesById: FileRoutesById
@@ -296,7 +272,6 @@ export interface RootRouteChildren {
   AccountingRoute: typeof AccountingRoute
   AccountsRoute: typeof AccountsRoute
   ActionBoardRoute: typeof ActionBoardRoute
-  AgencyLedgerRoute: typeof AgencyLedgerRoute
   AgentsRoute: typeof AgentsRoute
   BmetRoute: typeof BmetRoute
   CustomerDataRoute: typeof CustomerDataRoute
@@ -311,7 +286,6 @@ export interface RootRouteChildren {
   TicketsRoute: typeof TicketsRoute
   UsersRoute: typeof UsersRoute
   VendorDataRoute: typeof VendorDataRoute
-  VendorLedgerRoute: typeof VendorLedgerRoute
   VendorsRoute: typeof VendorsRoute
   ApiPublicHandoverAcceptRoute: typeof ApiPublicHandoverAcceptRoute
 }
@@ -323,13 +297,6 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vendor-ledger': {
-      id: '/vendor-ledger'
-      path: '/vendor-ledger'
-      fullPath: '/vendor-ledger'
-      preLoaderRoute: typeof VendorLedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vendor-data': {
@@ -430,13 +397,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agency-ledger': {
-      id: '/agency-ledger'
-      path: '/agency-ledger'
-      fullPath: '/agency-ledger'
-      preLoaderRoute: typeof AgencyLedgerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/action-board': {
       id: '/action-board'
       path: '/action-board'
@@ -480,7 +440,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccountingRoute: AccountingRoute,
   AccountsRoute: AccountsRoute,
   ActionBoardRoute: ActionBoardRoute,
-  AgencyLedgerRoute: AgencyLedgerRoute,
   AgentsRoute: AgentsRoute,
   BmetRoute: BmetRoute,
   CustomerDataRoute: CustomerDataRoute,
@@ -495,7 +454,6 @@ const rootRouteChildren: RootRouteChildren = {
   TicketsRoute: TicketsRoute,
   UsersRoute: UsersRoute,
   VendorDataRoute: VendorDataRoute,
-  VendorLedgerRoute: VendorLedgerRoute,
   VendorsRoute: VendorsRoute,
   ApiPublicHandoverAcceptRoute: ApiPublicHandoverAcceptRoute,
 }
