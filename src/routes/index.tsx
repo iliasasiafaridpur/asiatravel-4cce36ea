@@ -265,21 +265,23 @@ function DashboardPage() {
         supabase.from("payment_receipts")
           .select("amount,entry_date,approval_status,source,method,handover_id")
           .eq("received_by", user!.id),
-        supabase.from("cash_expenses").select("amount,entry_date").eq("spent_by", user!.id),
+        supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user!.id),
         supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id),
       ]);
       const today = new Date().toISOString().slice(0, 10);
       const receipts = (recv.data ?? []) as Array<{ amount: number; entry_date: string; approval_status: string; source: string | null; method: string | null; handover_id: string | null }>;
-      const expenses = (exp.data ?? []) as Array<{ amount: number; entry_date: string }>;
+      const expenses = (exp.data ?? []) as Array<{ amount: number; entry_date: string; category: string | null; linked_source_table: string | null }>;
       const handovers = (hand.data ?? []) as Array<{ amount: number; status: string | null }>;
+      const expenseHitsCash = (row: { category: string | null; linked_source_table: string | null }) =>
+        row.linked_source_table === "vendor_ledger" ? isCashMethod(row.category) : true;
       const nonDiscount = receipts.filter((r) => r.source !== "discount" && (r.method ?? "").toLowerCase() !== "discount");
       const cashReceipts = nonDiscount.filter((r) => isCashMethod(r.method));
       const totalReceived = cashReceipts.reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalReceivedToday = cashReceipts.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
-      const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
-      const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
-      // Subtract approved AND pending handovers — once sent to MD the cash leaves the staff's balance, even before MD accepts.
-      const totalHandedOver = handovers.filter((h) => ["approved", "pending"].includes(h.status ?? "approved")).reduce((s, h) => s + Number(h.amount || 0), 0);
+      const totalExpenses = expenses.reduce((s, r) => s + (expenseHitsCash(r) ? Number(r.amount || 0) : 0), 0);
+      const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + (expenseHitsCash(r) ? Number(r.amount || 0) : 0), 0);
+      // Match /accounts "হাতে আছে": only approved handovers reduce the shown cash balance.
+      const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
       const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
       return {
         currentBalance: totalReceived - totalExpenses - totalHandedOver,
@@ -315,7 +317,7 @@ function DashboardPage() {
       const [receipts, handovers, expenses] = await Promise.all([
         supabase.from("payment_receipts").select("amount,approval_status,source,method"),
         supabase.from("cash_handovers").select("amount,status"),
-        supabase.from("cash_expenses").select("amount"),
+        supabase.from("cash_expenses").select("amount,category,linked_source_table"),
       ]);
       const err = receipts.error || handovers.error || expenses.error;
       if (err) throw err;
@@ -326,7 +328,10 @@ function DashboardPage() {
       const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>)
         .filter((row) => (row.status ?? "approved") === "approved")
         .reduce((sum, row) => sum + Number(row.amount || 0), 0);
-      const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number }>).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number; category: string | null; linked_source_table: string | null }>).reduce((sum, row) => {
+        const hitsCash = row.linked_source_table === "vendor_ledger" ? isCashMethod(row.category) : true;
+        return hitsCash ? sum + Number(row.amount || 0) : sum;
+      }, 0);
       return totalReceived - totalHandedOver - totalExpenses;
     },
   });
