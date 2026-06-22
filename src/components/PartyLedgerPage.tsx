@@ -79,6 +79,10 @@ export function PartyLedgerPage({
   const [pickerOpen, setPickerOpen] = useState(false);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
+  // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
+  const [balances, setBalances] = useState<
+    { name: string; bill: number; paid: number; due: number; advance: number }[]
+  >([]);
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
@@ -132,6 +136,40 @@ export function PartyLedgerPage({
       cancelled = true;
     };
   }, [contactsTable, table, groupField]);
+
+  // Load live balances (same RPC the Agent/Vendor List pages use) for the
+  // on-page list shown when no party is selected.
+  useEffect(() => {
+    if (name) return;
+    let cancelled = false;
+    const loadBalances = async () => {
+      const { data } = await supabase.rpc(
+        (isCustomer ? "get_agent_balances" : "get_vendor_balances") as never,
+      );
+      const nameKey = isCustomer ? "agent_name" : "vendor_name";
+      const billKey = isCustomer ? "total_bill" : "total_payable";
+      const paidKey = isCustomer ? "total_received" : "total_paid";
+      const list = ((data as unknown as Record<string, unknown>[]) ?? []).map((b) => ({
+        name: String(b[nameKey] ?? ""),
+        bill: Number(b[billKey] ?? 0),
+        paid: Number(b[paidKey] ?? 0),
+        due: Number(b.balance_due ?? 0),
+        advance: Number(b.advance_balance ?? 0),
+      }));
+      if (!cancelled) setBalances(list);
+    };
+    void loadBalances();
+    const ch = supabase
+      .channel(`party_bal_rt_${table}`)
+      .on("postgres_changes", { event: "*", schema: "public", table }, () => void loadBalances())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, [isCustomer, table, name]);
+
+
 
 
   const phoneList = (contact?.phone ?? "")
@@ -544,26 +582,55 @@ export function PartyLedgerPage({
               className="h-9 max-w-sm"
             />
             <div className="text-xs text-muted-foreground">
-              মোট {partyList.length} টি {isCustomer ? "Agency" : "Vendor"}
+              মোট {balances.length} টি {isCustomer ? "Agency" : "Vendor"}
             </div>
-            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-              {partyList
-                .filter((p) => p.toLowerCase().includes(listFilter.trim().toLowerCase()))
-                .map((p) => (
-                  <Link
-                    key={p}
-                    to={isCustomer ? "/agency-ledger/$name" : "/vendor-ledger/$name"}
-                    params={{ name: p }}
-                    className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm transition-colors hover:bg-primary/10 hover:border-primary/40"
-                  >
-                    <span className="truncate font-medium">{p}</span>
-                    <ArrowLeft className="h-4 w-4 shrink-0 rotate-180 opacity-50" />
-                  </Link>
-                ))}
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{isCustomer ? "Agent" : "Vendor"}</TableHead>
+                    <TableHead className="text-right">{isCustomer ? "Total Bill" : "Total Payable"}</TableHead>
+                    <TableHead className="text-right">{isCustomer ? "Received" : "Paid"}</TableHead>
+                    <TableHead className="text-right">Balance Due</TableHead>
+                    <TableHead className="text-right">Advance Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const filtered = balances.filter((b) =>
+                      b.name.toLowerCase().includes(listFilter.trim().toLowerCase()),
+                    );
+                    if (filtered.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                            কোনো হিসাব নেই
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    return filtered.map((b, idx) => (
+                      <TableRow
+                        key={b.name}
+                        className={`row-tint-${idx % 4} cursor-pointer`}
+                        onClick={() =>
+                          navigate({
+                            to: isCustomer ? "/agency-ledger/$name" : "/vendor-ledger/$name",
+                            params: { name: b.name },
+                          })
+                        }
+                      >
+                        <TableCell className="font-medium">{b.name}</TableCell>
+                        <TableCell className="text-right tabular-nums">৳ {b.bill.toLocaleString()}</TableCell>
+                        <TableCell className="text-right tabular-nums text-emerald-600">৳ {b.paid.toLocaleString()}</TableCell>
+                        <TableCell className={`text-right tabular-nums font-semibold ${b.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {b.due.toLocaleString()}</TableCell>
+                        <TableCell className={`text-right tabular-nums font-semibold ${b.advance > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {b.advance.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ));
+                  })()}
+                </TableBody>
+              </Table>
             </div>
-            {partyList.length === 0 && (
-              <div className="py-6 text-center text-muted-foreground">কোনো তালিকা নেই</div>
-            )}
           </CardContent>
         </Card>
       ) : (
