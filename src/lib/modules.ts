@@ -537,7 +537,7 @@ export const MODULES: ModuleSchema[] = [
 
       { name: "cost_price", label: "Cost Price", type: "number", section: "vendor" },
       { name: "vendor_sent_date", label: "Vendor Sent Date", type: "date", section: "vendor" },
-      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor" },
+      { name: "received_date", label: "Received Date From Vendor", type: "date", section: "vendor", noFuture: true },
       {
         name: "tasheer_finger_date",
         label: "Tasheer Finger Date",
