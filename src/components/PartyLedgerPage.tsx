@@ -532,7 +532,14 @@ export function PartyLedgerPage({
         </Popover>
       </div>
 
-
+      {!name ? (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            উপরের ড্রপডাউন থেকে একটি {isCustomer ? "Agency" : "Vendor"} সিলেক্ট করুন
+          </CardContent>
+        </Card>
+      ) : (
+        <>
       {/* Profile + summary */}
       <Card>
         <CardContent className="p-3 sm:p-4">
