@@ -508,19 +508,19 @@ export function PartyLedgerPage({
         <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
           <div className="overflow-x-auto rounded-md border">
-            <Table>
+            <Table className="table-fixed w-full min-w-[760px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Date</TableHead>
-                  <TableHead className="whitespace-nowrap">ID</TableHead>
-                  <TableHead className="whitespace-nowrap">Service Type</TableHead>
+                  <TableHead className="w-[92px] whitespace-nowrap">Date</TableHead>
+                  <TableHead className="w-[110px] whitespace-nowrap">ID</TableHead>
+                  <TableHead className="w-[96px] whitespace-nowrap">Service Type</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Previous Balance</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Deposit</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Credit</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Balance</TableHead>
+                  <TableHead className="w-[88px] text-right">Prev. Bal</TableHead>
+                  <TableHead className="w-[84px] text-right">Deposit</TableHead>
+                  <TableHead className="w-[80px] text-right">Credit</TableHead>
+                  <TableHead className="w-[88px] text-right">Balance</TableHead>
                   {isCustomer && (
-                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
+                    <TableHead className="w-[84px] text-right">Advance</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
