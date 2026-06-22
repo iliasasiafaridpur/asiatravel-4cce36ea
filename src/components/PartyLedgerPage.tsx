@@ -800,6 +800,8 @@ export function PartyLedgerPage({
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }
