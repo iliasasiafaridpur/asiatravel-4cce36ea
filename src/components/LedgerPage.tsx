@@ -161,6 +161,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [latestInput, setLatestInput] = useState("");
+  // Pagination for the main entries list.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(() => emptyForm(mod));
@@ -587,6 +590,20 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     return xs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, dueByGroup, advanceAdjustedRows, isCancelledRow]);
+
+  // Pagination derived values for the entries list.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize],
+  );
+  // Reset to first page whenever filters or page-size change.
+  useEffect(() => {
+    setPage(1);
+  }, [groupFilter, serviceFilter, dueOnly, startDate, endDate, search, latestInput, pageSize]);
+
+
 
   const totals = useMemo(() => {
     let bill = 0,
@@ -1665,114 +1682,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
 
 
-      {/* Group summary */}
-      {groupSummary.length > 0 && (
-        <Card className="print:hidden">
-          <CardContent className="p-3 sm:p-4">
-            <div className="mb-2">
-              <h3 className="text-sm font-semibold">
-                {isAgency ? "Customers/Sub-Agent List" : "Vendor List"} ({groupSummary.length})
-              </h3>
-            </div>
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="whitespace-nowrap">{groupLabel}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">{billLabel}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">{paidLabel}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">{isAgency ? "Cus:-Due" : "Vendor-Due"}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupSummary.map((g, idx) => {
-                    const isSelfGroup = g.key.trim().toLowerCase() === "self";
-                     const openLedger = () => {
-                       const name = encodeURIComponent(g.key);
-                       if (isAgency) {
-                         navigate({ to: "/agency-ledger/$name", params: { name } });
-                       } else {
-                         navigate({ to: "/vendor-ledger/$name", params: { name } });
-                       }
-                     };
-                     return (
-                     <TableRow
-                       key={g.key}
-                       className={`row-tint-${idx % 4} ${isSelfGroup ? "" : "cursor-pointer"}`}
-                       onClick={isSelfGroup ? undefined : openLedger}
-                       title={isSelfGroup ? undefined : isAgency ? "Agency Ledger দেখুন" : "Vendor Ledger দেখুন"}
-                     >
-                       <TableCell className="font-medium">
-                         {isSelfGroup ? (
-                           <span
-                             className="text-left text-muted-foreground"
-                             title="Self মানে passenger নিজেই — নিচের রো-তে ক্লিক করে individual passenger profile দেখুন"
-                           >
-                             {g.key}
-                           </span>
-                         ) : (
-                           <span className="text-left hover:underline hover:text-primary">
-                             {g.key}
-                           </span>
-                         )}
-                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {g.bill.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {g.paid.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {g.due > 0 ? (
-                          isAgency && isSelfGroup ? (
-                            <span
-                              className="font-semibold tabular-nums text-rose-500"
-                              title="Self মানে সাধারণ passenger — agent receive প্রযোজ্য নয়। Passenger profile থেকে due গ্রহণ করুন।"
-                            >
-                              {g.due.toLocaleString()}
-                            </span>
-                          ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); openPayment(g.key, g.due); }}
-                            className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
-                            title="পেমেন্ট"
-                          >
-                            {g.due.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
-                          </button>
-                          )
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
-                          >
-                            Paid
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {g.advance > 0 ? (
-                          <Badge
-                            variant="outline"
-                            className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-semibold"
-                          >
-                            ৳ {g.advance.toLocaleString()}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Main ledger entries — Ticket-page style stacked rows */}
       <Card>
         <CardContent className="p-3 sm:p-4">
@@ -1818,7 +1727,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   কোনো এন্ট্রি পাওয়া যায়নি
                 </div>
               ) : (
-                filtered.map((r, idx) => {
+                paged.map((r, idx) => {
                   const bal = balanceOf(r);
                   const passenger = String(r.passenger_name ?? "");
                   const service = String(r.service_type ?? "");
@@ -2187,6 +2096,48 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
               )}
             </div>
           </div>
+          {!loading && filtered.length > 0 && (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between print:hidden">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>প্রতি পৃষ্ঠায়</span>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="h-8 w-[72px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span>টি দেখান</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  পৃষ্ঠা {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  পূর্ববর্তী
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  পরবর্তী
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

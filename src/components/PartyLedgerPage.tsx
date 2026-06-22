@@ -25,6 +25,13 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Phone,
   PhoneCall,
   MessageCircle,
@@ -83,6 +90,9 @@ export function PartyLedgerPage({
   const [balances, setBalances] = useState<
     { name: string; bill: number; paid: number; due: number; advance: number }[]
   >([]);
+  // Pagination for the ledger statement table.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
@@ -508,6 +518,17 @@ export function PartyLedgerPage({
 
   const totals = summary;
 
+  // Paginate the statement (latest entries already on top).
+  const totalPages = Math.max(1, Math.ceil(statement.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedStatement = useMemo(
+    () => statement.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [statement, currentPage, pageSize],
+  );
+  useEffect(() => {
+    setPage(1);
+  }, [displayName, pageSize]);
+
   const pageTitle = isCustomer ? "Agency Ledger" : "Vendor Ledger";
 
   return (
@@ -839,7 +860,7 @@ export function PartyLedgerPage({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  statement.map((s, idx) => (
+                  pagedStatement.map((s, idx) => (
                     <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
                       <TableCell className="whitespace-nowrap pr-2 text-xs">{formatDate(s.date)}</TableCell>
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
@@ -894,6 +915,48 @@ export function PartyLedgerPage({
               </TableBody>
             </Table>
           </div>
+          {!loading && statement.length > 0 && (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>প্রতি পৃষ্ঠায়</span>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="h-8 w-[72px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span>টি দেখান</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  পৃষ্ঠা {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  পূর্ববর্তী
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  পরবর্তী
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
         </>
