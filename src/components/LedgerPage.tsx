@@ -1735,7 +1735,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           ) : (
                           <button
                             type="button"
-                            onClick={() => openPayment(g.key, g.due)}
+                            onClick={(e) => { e.stopPropagation(); openPayment(g.key, g.due); }}
                             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
                             title="পেমেন্ট"
                           >
