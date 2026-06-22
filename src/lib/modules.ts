@@ -21,6 +21,8 @@ export interface Field {
   hideInForm?: boolean; // hide from entry/edit form (still shown in list)
   /** Only show this field in the form when another field equals one of these values. */
   showWhen?: { field: string; equals: string[] };
+  /** For date fields: disallow selecting/entering a future date (max = today). */
+  noFuture?: boolean;
 }
 
 export const LEDGER_SERVICE_TYPES = [
