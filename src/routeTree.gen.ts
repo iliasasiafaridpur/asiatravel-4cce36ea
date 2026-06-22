@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
-import { Route as VendorLedgerRouteImport } from './routes/vendor-ledger'
+import { Route as VendorDataRouteImport } from './routes/vendor-data'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -21,9 +21,9 @@ import { Route as MdPanelRouteImport } from './routes/md-panel'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as HelpRouteImport } from './routes/help'
+import { Route as CustomerDataRouteImport } from './routes/customer-data'
 import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
-import { Route as AgencyLedgerRouteImport } from './routes/agency-ledger'
 import { Route as ActionBoardRouteImport } from './routes/action-board'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as AccountingRouteImport } from './routes/accounting'
@@ -35,9 +35,9 @@ const VendorsRoute = VendorsRouteImport.update({
   path: '/vendors',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VendorLedgerRoute = VendorLedgerRouteImport.update({
-  id: '/vendor-ledger',
-  path: '/vendor-ledger',
+const VendorDataRoute = VendorDataRouteImport.update({
+  id: '/vendor-data',
+  path: '/vendor-data',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersRoute = UsersRouteImport.update({
@@ -90,6 +90,11 @@ const HelpRoute = HelpRouteImport.update({
   path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomerDataRoute = CustomerDataRouteImport.update({
+  id: '/customer-data',
+  path: '/customer-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BmetRoute = BmetRouteImport.update({
   id: '/bmet',
   path: '/bmet',
@@ -98,11 +103,6 @@ const BmetRoute = BmetRouteImport.update({
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgencyLedgerRoute = AgencyLedgerRouteImport.update({
-  id: '/agency-ledger',
-  path: '/agency-ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ActionBoardRoute = ActionBoardRouteImport.update({
@@ -136,9 +136,9 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
-  '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
+  '/customer-data': typeof CustomerDataRoute
   '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -149,7 +149,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
-  '/vendor-ledger': typeof VendorLedgerRoute
+  '/vendor-data': typeof VendorDataRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
@@ -158,9 +158,9 @@ export interface FileRoutesByTo {
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
-  '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
+  '/customer-data': typeof CustomerDataRoute
   '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -171,7 +171,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
-  '/vendor-ledger': typeof VendorLedgerRoute
+  '/vendor-data': typeof VendorDataRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
@@ -181,9 +181,9 @@ export interface FileRoutesById {
   '/accounting': typeof AccountingRoute
   '/accounts': typeof AccountsRoute
   '/action-board': typeof ActionBoardRoute
-  '/agency-ledger': typeof AgencyLedgerRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
+  '/customer-data': typeof CustomerDataRoute
   '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -194,7 +194,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
-  '/vendor-ledger': typeof VendorLedgerRoute
+  '/vendor-data': typeof VendorDataRoute
   '/vendors': typeof VendorsRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
@@ -205,9 +205,9 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/accounts'
     | '/action-board'
-    | '/agency-ledger'
     | '/agents'
     | '/bmet'
+    | '/customer-data'
     | '/help'
     | '/invoice'
     | '/kuwait-visa'
@@ -218,7 +218,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
-    | '/vendor-ledger'
+    | '/vendor-data'
     | '/vendors'
     | '/api/public/handover-accept'
   fileRoutesByTo: FileRoutesByTo
@@ -227,9 +227,9 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/accounts'
     | '/action-board'
-    | '/agency-ledger'
     | '/agents'
     | '/bmet'
+    | '/customer-data'
     | '/help'
     | '/invoice'
     | '/kuwait-visa'
@@ -240,7 +240,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
-    | '/vendor-ledger'
+    | '/vendor-data'
     | '/vendors'
     | '/api/public/handover-accept'
   id:
@@ -249,9 +249,9 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/accounts'
     | '/action-board'
-    | '/agency-ledger'
     | '/agents'
     | '/bmet'
+    | '/customer-data'
     | '/help'
     | '/invoice'
     | '/kuwait-visa'
@@ -262,7 +262,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
-    | '/vendor-ledger'
+    | '/vendor-data'
     | '/vendors'
     | '/api/public/handover-accept'
   fileRoutesById: FileRoutesById
@@ -272,9 +272,9 @@ export interface RootRouteChildren {
   AccountingRoute: typeof AccountingRoute
   AccountsRoute: typeof AccountsRoute
   ActionBoardRoute: typeof ActionBoardRoute
-  AgencyLedgerRoute: typeof AgencyLedgerRoute
   AgentsRoute: typeof AgentsRoute
   BmetRoute: typeof BmetRoute
+  CustomerDataRoute: typeof CustomerDataRoute
   HelpRoute: typeof HelpRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
@@ -285,7 +285,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TicketsRoute: typeof TicketsRoute
   UsersRoute: typeof UsersRoute
-  VendorLedgerRoute: typeof VendorLedgerRoute
+  VendorDataRoute: typeof VendorDataRoute
   VendorsRoute: typeof VendorsRoute
   ApiPublicHandoverAcceptRoute: typeof ApiPublicHandoverAcceptRoute
 }
@@ -299,11 +299,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/vendor-ledger': {
-      id: '/vendor-ledger'
-      path: '/vendor-ledger'
-      fullPath: '/vendor-ledger'
-      preLoaderRoute: typeof VendorLedgerRouteImport
+    '/vendor-data': {
+      id: '/vendor-data'
+      path: '/vendor-data'
+      fullPath: '/vendor-data'
+      preLoaderRoute: typeof VendorDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users': {
@@ -376,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customer-data': {
+      id: '/customer-data'
+      path: '/customer-data'
+      fullPath: '/customer-data'
+      preLoaderRoute: typeof CustomerDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bmet': {
       id: '/bmet'
       path: '/bmet'
@@ -388,13 +395,6 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AgentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agency-ledger': {
-      id: '/agency-ledger'
-      path: '/agency-ledger'
-      fullPath: '/agency-ledger'
-      preLoaderRoute: typeof AgencyLedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/action-board': {
@@ -440,9 +440,9 @@ const rootRouteChildren: RootRouteChildren = {
   AccountingRoute: AccountingRoute,
   AccountsRoute: AccountsRoute,
   ActionBoardRoute: ActionBoardRoute,
-  AgencyLedgerRoute: AgencyLedgerRoute,
   AgentsRoute: AgentsRoute,
   BmetRoute: BmetRoute,
+  CustomerDataRoute: CustomerDataRoute,
   HelpRoute: HelpRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
@@ -453,7 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TicketsRoute: TicketsRoute,
   UsersRoute: UsersRoute,
-  VendorLedgerRoute: VendorLedgerRoute,
+  VendorDataRoute: VendorDataRoute,
   VendorsRoute: VendorsRoute,
   ApiPublicHandoverAcceptRoute: ApiPublicHandoverAcceptRoute,
 }

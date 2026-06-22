@@ -6,7 +6,7 @@ interface VendorLedgerSearch {
   pay?: string;
 }
 
-export const Route = createFileRoute("/vendor-ledger")({
+export const Route = createFileRoute("/vendor-data")({
   head: () => ({ meta: [{ title: "Vendor Data — Travel Manager" }] }),
   validateSearch: (search: Record<string, unknown>): VendorLedgerSearch => ({
     pay: typeof search.pay === "string" ? search.pay : undefined,
@@ -21,7 +21,7 @@ function VendorLedgerRoute() {
     <LedgerPage
       module={moduleByKey("vendor-ledger")!}
       autoPay={pay}
-      onAutoPayHandled={() => navigate({ to: "/vendor-ledger", search: {}, replace: true })}
+      onAutoPayHandled={() => navigate({ to: "/vendor-data", search: {}, replace: true })}
     />
   );
 }
