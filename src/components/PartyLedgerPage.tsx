@@ -90,6 +90,9 @@ export function PartyLedgerPage({
   const [balances, setBalances] = useState<
     { name: string; bill: number; paid: number; due: number; advance: number }[]
   >([]);
+  // Pagination for the ledger statement table.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
