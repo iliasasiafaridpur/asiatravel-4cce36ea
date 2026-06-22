@@ -45,6 +45,17 @@ export function isMdReceivedMethod(method?: string | null): boolean {
   return !isCashMethod(method) && !isVendorReceivedMethod(method);
 }
 
+/**
+ * Vendor-ledger mirrored expenses mean staff-paid/vendor-paid from the user's
+ * accountable balance. The visible method can be Cash, Bank Transfer, bKash,
+ * etc.; all of them reduce that user's balance unless the row is explicitly an
+ * external/non-user route (MD deposit / vendor received / adjustment).
+ */
+export function vendorExpenseHitsUserBalance(method?: string | null): boolean {
+  const m = (method ?? "").trim().toLowerCase();
+  return !["md sir deposit", "md deposit", "vendor received", "vendor receive", "adjustment"].includes(m);
+}
+
 /** Short Bengali note marking an entry as MD-received via a non-cash method. */
 export function mdReceivedNote(method?: string | null): string {
   return `MD রিসিভ · ${(method ?? "—")} — ব্যালেন্সে যোগ হয়নি`;
