@@ -418,7 +418,8 @@ export function PartyLedgerPage({
         advance: Math.max(adv, 0),
       });
     }
-    return out;
+    // Latest entry on top (same as the vendor ledger).
+    return out.reverse();
   }, [rows, billCol, paidCol, isCustomer, srcMap]);
 
   const totals = summary;
