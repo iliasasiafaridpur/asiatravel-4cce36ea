@@ -28,6 +28,8 @@ import { Route as ActionBoardRouteImport } from './routes/action-board'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as AccountingRouteImport } from './routes/accounting'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VendorLedgerIndexRouteImport } from './routes/vendor-ledger.index'
+import { Route as AgencyLedgerIndexRouteImport } from './routes/agency-ledger.index'
 import { Route as VendorLedgerNameRouteImport } from './routes/vendor-ledger.$name'
 import { Route as AgencyLedgerNameRouteImport } from './routes/agency-ledger.$name'
 import { Route as ApiPublicHandoverAcceptRouteImport } from './routes/api/public/handover-accept'
@@ -127,6 +129,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorLedgerIndexRoute = VendorLedgerIndexRouteImport.update({
+  id: '/vendor-ledger/',
+  path: '/vendor-ledger/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyLedgerIndexRoute = AgencyLedgerIndexRouteImport.update({
+  id: '/agency-ledger/',
+  path: '/agency-ledger/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendorLedgerNameRoute = VendorLedgerNameRouteImport.update({
   id: '/vendor-ledger/$name',
   path: '/vendor-ledger/$name',
@@ -165,6 +177,8 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof VendorsRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
   '/vendor-ledger/$name': typeof VendorLedgerNameRoute
+  '/agency-ledger/': typeof AgencyLedgerIndexRoute
+  '/vendor-ledger/': typeof VendorLedgerIndexRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
 export interface FileRoutesByTo {
@@ -189,6 +203,8 @@ export interface FileRoutesByTo {
   '/vendors': typeof VendorsRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
   '/vendor-ledger/$name': typeof VendorLedgerNameRoute
+  '/agency-ledger': typeof AgencyLedgerIndexRoute
+  '/vendor-ledger': typeof VendorLedgerIndexRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
 export interface FileRoutesById {
@@ -214,6 +230,8 @@ export interface FileRoutesById {
   '/vendors': typeof VendorsRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
   '/vendor-ledger/$name': typeof VendorLedgerNameRoute
+  '/agency-ledger/': typeof AgencyLedgerIndexRoute
+  '/vendor-ledger/': typeof VendorLedgerIndexRoute
   '/api/public/handover-accept': typeof ApiPublicHandoverAcceptRoute
 }
 export interface FileRouteTypes {
@@ -240,6 +258,8 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/agency-ledger/$name'
     | '/vendor-ledger/$name'
+    | '/agency-ledger/'
+    | '/vendor-ledger/'
     | '/api/public/handover-accept'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -264,6 +284,8 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/agency-ledger/$name'
     | '/vendor-ledger/$name'
+    | '/agency-ledger'
+    | '/vendor-ledger'
     | '/api/public/handover-accept'
   id:
     | '__root__'
@@ -288,6 +310,8 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/agency-ledger/$name'
     | '/vendor-ledger/$name'
+    | '/agency-ledger/'
+    | '/vendor-ledger/'
     | '/api/public/handover-accept'
   fileRoutesById: FileRoutesById
 }
@@ -313,6 +337,8 @@ export interface RootRouteChildren {
   VendorsRoute: typeof VendorsRoute
   AgencyLedgerNameRoute: typeof AgencyLedgerNameRoute
   VendorLedgerNameRoute: typeof VendorLedgerNameRoute
+  AgencyLedgerIndexRoute: typeof AgencyLedgerIndexRoute
+  VendorLedgerIndexRoute: typeof VendorLedgerIndexRoute
   ApiPublicHandoverAcceptRoute: typeof ApiPublicHandoverAcceptRoute
 }
 
@@ -451,6 +477,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor-ledger/': {
+      id: '/vendor-ledger/'
+      path: '/vendor-ledger'
+      fullPath: '/vendor-ledger/'
+      preLoaderRoute: typeof VendorLedgerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency-ledger/': {
+      id: '/agency-ledger/'
+      path: '/agency-ledger'
+      fullPath: '/agency-ledger/'
+      preLoaderRoute: typeof AgencyLedgerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vendor-ledger/$name': {
       id: '/vendor-ledger/$name'
       path: '/vendor-ledger/$name'
@@ -497,6 +537,8 @@ const rootRouteChildren: RootRouteChildren = {
   VendorsRoute: VendorsRoute,
   AgencyLedgerNameRoute: AgencyLedgerNameRoute,
   VendorLedgerNameRoute: VendorLedgerNameRoute,
+  AgencyLedgerIndexRoute: AgencyLedgerIndexRoute,
+  VendorLedgerIndexRoute: VendorLedgerIndexRoute,
   ApiPublicHandoverAcceptRoute: ApiPublicHandoverAcceptRoute,
 }
 export const routeTree = rootRouteImport
