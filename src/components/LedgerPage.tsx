@@ -2035,17 +2035,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                         <div className="hidden text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
                           {groupLabel}
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void openProfileFor(r);
-                          }}
-                          className="font-semibold text-left hover:underline hover:text-primary"
-                          title={isAgency ? "Customer profile" : "Vendor profile"}
-                        >
+                        <span className="font-semibold text-left">
                           {String(r[groupField] ?? "—")}
-                        </button>
+                        </span>
                         {isAgency && info?.vendor && (
                           <div className="text-[11px] text-muted-foreground leading-tight">
                             V: {info.vendor}
