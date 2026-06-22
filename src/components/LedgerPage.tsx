@@ -1688,34 +1688,35 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                 <TableBody>
                   {groupSummary.map((g, idx) => {
                     const isSelfGroup = g.key.trim().toLowerCase() === "self";
-                    return (
-                    <TableRow key={g.key} className={`row-tint-${idx % 4}`}>
-                      <TableCell className="font-medium">
-                        {isSelfGroup ? (
-                          <span
-                            className="text-left text-muted-foreground"
-                            title="Self মানে passenger নিজেই — নিচের রো-তে ক্লিক করে individual passenger profile দেখুন"
-                          >
-                            {g.key}
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const name = encodeURIComponent(g.key);
-                              if (isAgency) {
-                                navigate({ to: "/agency-ledger/$name", params: { name } });
-                              } else {
-                                navigate({ to: "/vendor-ledger/$name", params: { name } });
-                              }
-                            }}
-                            className="text-left hover:underline hover:text-primary"
-                            title={isAgency ? "Agency Ledger দেখুন" : "Vendor Ledger দেখুন"}
-                          >
-                            {g.key}
-                          </button>
-                        )}
-                      </TableCell>
+                     const openLedger = () => {
+                       const name = encodeURIComponent(g.key);
+                       if (isAgency) {
+                         navigate({ to: "/agency-ledger/$name", params: { name } });
+                       } else {
+                         navigate({ to: "/vendor-ledger/$name", params: { name } });
+                       }
+                     };
+                     return (
+                     <TableRow
+                       key={g.key}
+                       className={`row-tint-${idx % 4} ${isSelfGroup ? "" : "cursor-pointer"}`}
+                       onClick={isSelfGroup ? undefined : openLedger}
+                       title={isSelfGroup ? undefined : isAgency ? "Agency Ledger দেখুন" : "Vendor Ledger দেখুন"}
+                     >
+                       <TableCell className="font-medium">
+                         {isSelfGroup ? (
+                           <span
+                             className="text-left text-muted-foreground"
+                             title="Self মানে passenger নিজেই — নিচের রো-তে ক্লিক করে individual passenger profile দেখুন"
+                           >
+                             {g.key}
+                           </span>
+                         ) : (
+                           <span className="text-left hover:underline hover:text-primary">
+                             {g.key}
+                           </span>
+                         )}
+                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {g.bill.toLocaleString()}
                       </TableCell>
@@ -1734,7 +1735,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                           ) : (
                           <button
                             type="button"
-                            onClick={() => openPayment(g.key, g.due)}
+                            onClick={(e) => { e.stopPropagation(); openPayment(g.key, g.due); }}
                             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold tabular-nums rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
                             title="পেমেন্ট"
                           >
