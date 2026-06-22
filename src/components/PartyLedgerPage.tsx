@@ -511,7 +511,7 @@ export function PartyLedgerPage({
             <Table className="table-fixed w-full min-w-[760px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[92px] whitespace-nowrap">Date</TableHead>
+                  <TableHead className="w-[108px] whitespace-nowrap">Date</TableHead>
                   <TableHead className="w-[110px] whitespace-nowrap">ID</TableHead>
                   <TableHead className="w-[96px] whitespace-nowrap">Service Type</TableHead>
                   <TableHead>Description</TableHead>
