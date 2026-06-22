@@ -518,6 +518,17 @@ export function PartyLedgerPage({
 
   const totals = summary;
 
+  // Paginate the statement (latest entries already on top).
+  const totalPages = Math.max(1, Math.ceil(statement.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedStatement = useMemo(
+    () => statement.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [statement, currentPage, pageSize],
+  );
+  useEffect(() => {
+    setPage(1);
+  }, [displayName, pageSize]);
+
   const pageTitle = isCustomer ? "Agency Ledger" : "Vendor Ledger";
 
   return (
