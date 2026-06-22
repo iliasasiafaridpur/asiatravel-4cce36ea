@@ -1927,20 +1927,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
                   const status = info?.status ?? "";
                   const rowCancelled = !!info?.cancelled;
                   return (
-                    <div
-                      key={r.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => void openProfileFor(r)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          void openProfileFor(r);
-                        }
-                      }}
-                      className={`relative row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start cursor-pointer hover:border-primary/60 hover:shadow-md transition-colors`}
-                      title={rowCancelled ? "বাতিল করা কাজ — " + (isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন") : isAgency ? "Customer profile খুলুন" : "Vendor profile খুলুন"}
-                    >
+                     <div
+                       key={r.id}
+                       className={`relative row-tint-${idx % 4}${rowCancelled ? " cancelled-row opacity-70 grayscale" : ""} grid gap-3 rounded-md border border-border/70 p-4 shadow-sm grid-cols-[1.05fr_1.35fr_1.35fr_1fr_1fr_auto] items-start transition-colors`}
+                       title={rowCancelled ? "বাতিল করা কাজ" : undefined}
+                     >
                       {rowCancelled && (
                         <span className="absolute right-3 top-3 rounded-full bg-rose-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
                           বাতিল
