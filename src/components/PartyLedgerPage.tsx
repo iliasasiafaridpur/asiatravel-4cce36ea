@@ -472,14 +472,64 @@ export function PartyLedgerPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button asChild variant="ghost" size="sm" className="gap-1.5">
           <Link to={backTo}>
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
         </Button>
         <h1 className="text-lg font-bold">{pageTitle}</h1>
+
+        {/* Dropdown search filter: pick any party to view its ledger below. */}
+        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              role="combobox"
+              aria-expanded={pickerOpen}
+              className="ml-1 h-8 w-[200px] justify-between gap-1.5 font-normal sm:w-[260px]"
+            >
+              <span className="truncate text-muted-foreground">
+                {isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
+              </span>
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[260px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder={isCustomer ? "Agency নাম…" : "Vendor নাম…"} />
+              <CommandList>
+                <CommandEmpty>কিছু পাওয়া যায়নি</CommandEmpty>
+                <CommandGroup>
+                  {partyList.map((p) => (
+                    <CommandItem
+                      key={p}
+                      value={p}
+                      onSelect={() => {
+                        setPickerOpen(false);
+                        if (p === displayName) return;
+                        navigate({
+                          to: isCustomer ? "/agency-ledger/$name" : "/vendor-ledger/$name",
+                          params: { name: p },
+                        });
+                      }}
+                    >
+                      <Check
+                        className={
+                          "mr-2 h-4 w-4 " + (p === displayName ? "opacity-100" : "opacity-0")
+                        }
+                      />
+                      <span className="truncate">{p}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
+
 
       {/* Profile + summary */}
       <Card>
