@@ -234,16 +234,35 @@ function DashboardPage() {
 
   // Payment receipts — used for "who received how much" (cash per user vs MD other-method)
   // and for the Accounts Methods split (hand cash vs bank/bKash/etc).
+  // Only fetch receipts within the selected range. Default "month" pulls a
+  // small slice instead of the full 3000-row table → much faster cold-open.
+  const receiptsBounds = useMemo(() => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    if (range === "today") return { gte: ymd(now), lt: undefined as string | undefined };
+    if (range === "month") return { gte: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), lt: undefined };
+    if (range === "year") return { gte: ymd(new Date(now.getFullYear(), 0, 1)), lt: undefined };
+    if (range === "custom" && customDate) {
+      const start = new Date(customDate.getFullYear(), customDate.getMonth(), 1);
+      const end = new Date(customDate.getFullYear(), customDate.getMonth() + 1, 1);
+      return { gte: ymd(start), lt: ymd(end) };
+    }
+    return { gte: undefined, lt: undefined }; // "all"
+  }, [range, customDate]);
+
   const { data: receipts = [] } = useQuery({
-    queryKey: ["dashboard", "receipts"],
+    queryKey: ["dashboard", "receipts", receiptsBounds.gte ?? "all", receiptsBounds.lt ?? ""],
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data } = await supabase.from("payment_receipts")
+      let q = supabase.from("payment_receipts")
         .select("amount,method,source,received_by,received_by_name,entry_date")
-        .order("entry_date", { ascending: false })
-        .limit(3000);
+        .order("entry_date", { ascending: false });
+      if (receiptsBounds.gte) q = q.gte("entry_date", receiptsBounds.gte);
+      if (receiptsBounds.lt) q = q.lt("entry_date", receiptsBounds.lt);
+      const { data } = await q.limit(3000);
       return (data ?? []) as Array<{
         amount: number; method: string | null; source: string | null;
         received_by: string | null; received_by_name: string | null; entry_date: string;
