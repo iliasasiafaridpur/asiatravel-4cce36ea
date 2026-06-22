@@ -514,11 +514,14 @@ export function PartyLedgerPage({
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">ID</TableHead>
                   <TableHead className="whitespace-nowrap">Service Type</TableHead>
+                  <TableHead className="whitespace-nowrap">Description</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Previous Balance</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Deposit</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Credit</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Balance</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
+                  {isCustomer && (
+                    <TableHead className="text-right whitespace-nowrap">Advance</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
