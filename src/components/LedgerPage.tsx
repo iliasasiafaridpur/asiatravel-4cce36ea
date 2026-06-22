@@ -1710,7 +1710,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
           <CardContent className="p-3 sm:p-4">
             <div className="mb-2">
               <h3 className="text-sm font-semibold">
-                {groupLabel} অনুযায়ী Due সারাংশ ({groupSummary.length})
+                {isAgency ? "Customers/Sub-Agent List" : "Vendor List"} ({groupSummary.length})
               </h3>
             </div>
             <div className="overflow-x-auto rounded-md border">
