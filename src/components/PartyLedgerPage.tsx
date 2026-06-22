@@ -473,11 +473,13 @@ export function PartyLedgerPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <Button asChild variant="ghost" size="sm" className="gap-1.5">
-          <Link to={backTo}>
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
-        </Button>
+        {name && (
+          <Button asChild variant="ghost" size="sm" className="gap-1.5">
+            <Link to={backTo}>
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Link>
+          </Button>
+        )}
         <h1 className="text-lg font-bold">{pageTitle}</h1>
 
         {/* Dropdown search filter: pick any party to view its ledger below. */}
