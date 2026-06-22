@@ -103,6 +103,35 @@ export function PartyLedgerPage({
     setEditing(false);
   }, [name]);
 
+  // Load the full party list (contacts + any names appearing in the ledger) for
+  // the dropdown search filter beside the page title.
+  useEffect(() => {
+    let cancelled = false;
+    const loadParties = async () => {
+      const [contactsRes, ledgerRes] = await Promise.all([
+        supabase.from(contactsTable as never).select("name").limit(5000),
+        supabase.from(table as never).select(groupField).limit(5000),
+      ]);
+      const set = new Set<string>();
+      for (const r of (contactsRes.data as { name?: string }[] | null) ?? []) {
+        const n = String(r.name ?? "").trim();
+        if (n) set.add(n);
+      }
+      for (const r of (ledgerRes.data as Record<string, unknown>[] | null) ?? []) {
+        const n = String(r[groupField] ?? "").trim();
+        if (n) set.add(n);
+      }
+      if (!cancelled) {
+        setPartyList(Array.from(set).sort((a, b) => a.localeCompare(b)));
+      }
+    };
+    void loadParties();
+    return () => {
+      cancelled = true;
+    };
+  }, [contactsTable, table, groupField]);
+
+
   const phoneList = (contact?.phone ?? "")
     .split(",")
     .map((p) => p.trim())
