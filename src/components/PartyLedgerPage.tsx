@@ -79,6 +79,10 @@ export function PartyLedgerPage({
   const [pickerOpen, setPickerOpen] = useState(false);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
+  // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
+  const [balances, setBalances] = useState<
+    { name: string; bill: number; paid: number; due: number; advance: number }[]
+  >([]);
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
