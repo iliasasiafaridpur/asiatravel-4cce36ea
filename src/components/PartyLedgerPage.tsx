@@ -137,6 +137,40 @@ export function PartyLedgerPage({
     };
   }, [contactsTable, table, groupField]);
 
+  // Load live balances (same RPC the Agent/Vendor List pages use) for the
+  // on-page list shown when no party is selected.
+  useEffect(() => {
+    if (name) return;
+    let cancelled = false;
+    const loadBalances = async () => {
+      const { data } = await supabase.rpc(
+        (isCustomer ? "get_agent_balances" : "get_vendor_balances") as never,
+      );
+      const nameKey = isCustomer ? "agent_name" : "vendor_name";
+      const billKey = isCustomer ? "total_bill" : "total_payable";
+      const paidKey = isCustomer ? "total_received" : "total_paid";
+      const list = ((data as unknown as Record<string, unknown>[]) ?? []).map((b) => ({
+        name: String(b[nameKey] ?? ""),
+        bill: Number(b[billKey] ?? 0),
+        paid: Number(b[paidKey] ?? 0),
+        due: Number(b.balance_due ?? 0),
+        advance: Number(b.advance_balance ?? 0),
+      }));
+      if (!cancelled) setBalances(list);
+    };
+    void loadBalances();
+    const ch = supabase
+      .channel(`party_bal_rt_${table}`)
+      .on("postgres_changes", { event: "*", schema: "public", table }, () => void loadBalances())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, [isCustomer, table, name]);
+
+
+
 
   const phoneList = (contact?.phone ?? "")
     .split(",")
