@@ -54,12 +54,17 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    // Avoid checking the same user twice on load (getSession + SIGNED_IN
+    // both resolve within the same second → duplicate profiles request).
+    let lastChecked: string | null = null;
 
     // Optimistically render children if a token exists locally.
     if (hasStoredSession()) setOptimisticSession(true);
 
     const checkActive = async (s: Session | null) => {
       if (!s?.user) return;
+      if (lastChecked === s.user.id) return;
+      lastChecked = s.user.id;
       try {
         const { data } = await supabase.from("profiles")
           .select("is_active,must_reset_password").eq("user_id", s.user.id).maybeSingle();
