@@ -2192,6 +2192,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
           )}
         </CardContent>
       </Card>
+      </>
+      )}
 
       {/* Form dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
