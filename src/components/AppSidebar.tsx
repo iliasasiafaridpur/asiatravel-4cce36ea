@@ -4,8 +4,6 @@ import {
   ClipboardList,
   Plane,
   IdCard,
-  Users,
-  Truck,
   FileText,
   Globe2,
   Wallet,
