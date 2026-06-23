@@ -12,6 +12,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowRight, ArrowLeft, AlertTriangle, Wallet, Loader2, User2, Banknote, X } from "lucide-react";
 import { LookupSelect } from "@/components/LookupSelect";
+import { DateInput } from "@/components/ui/date-input";
 import { statusBadgeClass } from "@/lib/modules";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
