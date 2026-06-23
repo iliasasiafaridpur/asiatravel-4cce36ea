@@ -104,6 +104,18 @@ export function PartyLedgerPage({
   const contactsTable = isCustomer ? "agents" : "vendors";
   const backTo = isCustomer ? "/agency-ledger" : "/vendor-ledger";
   const navigate = useNavigate();
+  const { user } = useCurrentUser();
+
+  // Manual vendor income / expense entry (vendor ledger only).
+  const [manualKind, setManualKind] = useState<"income" | "expense" | null>(null);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualForm, setManualForm] = useState<{
+    vendor: string;
+    amount: string;
+    date: string;
+    note: string;
+  }>({ vendor: "", amount: "", date: new Date().toISOString().slice(0, 10), note: "" });
+
 
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
