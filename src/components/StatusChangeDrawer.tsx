@@ -318,7 +318,7 @@ export function StatusChangeDrawer({
           const statusReceiptId = await mkReceiptId();
           await resilientInsert("payment_receipts", {
             receipt_id: statusReceiptId,
-            entry_date: todayIso(),
+            entry_date: eventDate,
             service_type: request.serviceType,
             service_table: request.table,
             service_row_id: request.row.id,
