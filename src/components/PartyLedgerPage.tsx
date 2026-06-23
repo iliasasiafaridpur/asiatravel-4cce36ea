@@ -607,9 +607,19 @@ export function PartyLedgerPage({
         </Popover>
 
         <Button
-          variant="secondary"
+          variant="default"
           size="sm"
           className="ml-auto gap-1.5"
+          onClick={() => setCreateOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          ম্যানুয়াল এন্ট্রি
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          className="gap-1.5"
           onClick={() => setPayOpen(true)}
         >
           <Receipt className="h-4 w-4" />
@@ -623,6 +633,15 @@ export function PartyLedgerPage({
           renderMode="payment-only"
           autoPay={autoPayTarget || "__open__"}
           onPaymentClose={() => setPayOpen(false)}
+        />
+      )}
+
+      {createOpen && (
+        <LedgerPage
+          module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!}
+          renderMode="create-only"
+          autoCreate
+          onCreateClose={() => setCreateOpen(false)}
         />
       )}
 
