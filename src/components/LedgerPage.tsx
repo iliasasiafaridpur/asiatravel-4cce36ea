@@ -72,12 +72,17 @@ interface Props {
   onAutoPayHandled?: () => void;
   /**
    * "full" (default) renders the whole ledger page. "payment-only" renders just
-   * the payment entry dialog, letting another page (e.g. the Ledger pages) embed
-   * the payment flow without leaving the page.
+   * the payment entry dialog, and "create-only" renders just the manual new-entry
+   * dialog, letting another page (e.g. the Ledger pages) embed the flow without
+   * leaving the page.
    */
-  renderMode?: "full" | "payment-only";
+  renderMode?: "full" | "payment-only" | "create-only";
   /** In payment-only mode, called when the payment dialog is closed. */
   onPaymentClose?: () => void;
+  /** In create-only mode, auto-open the manual new-entry dialog on mount. */
+  autoCreate?: boolean;
+  /** In create-only mode, called when the new-entry dialog is closed. */
+  onCreateClose?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
