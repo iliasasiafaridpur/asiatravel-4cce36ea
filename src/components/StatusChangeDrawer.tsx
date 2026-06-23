@@ -388,7 +388,7 @@ export function StatusChangeDrawer({
             const passport = String(request.row.passport ?? "");
             const pname = String(request.row.passenger_name ?? "");
             await resilientInsert("vendor_ledger", {
-              ledger_id: ledgerId, entry_date: todayIso(),
+              ledger_id: ledgerId, entry_date: eventDate,
               vendor_name: effectiveVendor, passenger_name: pname,
               passport: passport || null,
               mobile: String(request.row.mobile ?? "") || null,
