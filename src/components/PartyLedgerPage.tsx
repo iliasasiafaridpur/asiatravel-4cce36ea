@@ -533,9 +533,35 @@ export function PartyLedgerPage({
         if (!isDeposit && !isPaymentLog && !counts) continue;
 
 
-        const displayPaid = Number(r[paidCol] ?? 0);
-        const cash = isPaymentLog ? 0 : displayPaid;
-        const bill = isDeposit || isPaymentLog ? 0 : Number(r[billCol] ?? 0);
+        const rawPaid = Number(r[paidCol] ?? 0);
+        let cash: number;
+        let displayPaid: number;
+        let bill: number;
+        if (isPaymentLog) {
+          // Green Payment row: count exactly what it allocated to bills so it
+          // cancels the covered portion removed from those bills; show the
+          // headline amount paid.
+          const det = (r as Record<string, unknown>).alloc_detail as
+            | { items?: Array<{ amt?: number }> }
+            | null;
+          const allocSum = (det?.items ?? []).reduce((s, it) => s + Number(it?.amt ?? 0), 0);
+          cash = allocSum;
+          displayPaid = rawPaid;
+          bill = 0;
+        } else if (isDeposit) {
+          cash = rawPaid;
+          displayPaid = rawPaid;
+          bill = 0;
+        } else {
+          // Bill row: show its cost as Credit. Only the portion of paid_amount
+          // NOT already shown on a green Payment row appears in the Payment
+          // column (e.g. direct / Vendor-Received settlements that have no log).
+          const covered = coveredByBill.get(String(r.id)) ?? 0;
+          const net = Math.max(0, rawPaid - covered);
+          cash = net;
+          displayPaid = net;
+          bill = Number(r[billCol] ?? 0);
+        }
 
         // Date: deposit -> payment date; delivery item -> received date; else entry date.
         const date = isDeposit
