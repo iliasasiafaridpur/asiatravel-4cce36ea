@@ -1041,6 +1041,37 @@ export function PartyLedgerPage({
                       className="mt-0.5 text-sm"
                     />
                   </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">
+                      হিসাবের ধরন {isCustomer ? "(পেমেন্ট গ্রহণ)" : "(পেমেন্ট পরিশোধ)"}
+                    </label>
+                    <div className="mt-0.5 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, settleMode: "total" }))}
+                        className={`rounded-lg border p-2 text-left transition-colors ${
+                          form.settleMode === "total"
+                            ? "border-primary bg-primary/10 ring-1 ring-primary"
+                            : "bg-background hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">মোটের উপর</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">সব বিল একসাথে · Auto FIFO</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, settleMode: "one_by_one" }))}
+                        className={`rounded-lg border p-2 text-left transition-colors ${
+                          form.settleMode === "one_by_one"
+                            ? "border-primary bg-primary/10 ring-1 ring-primary"
+                            : "bg-background hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">এক একটা বিল</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">নির্দিষ্ট বিল ধরে · Bill-by-Bill</div>
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex gap-2 pt-1">
                     <Button size="sm" className="h-8" onClick={saveEdit} disabled={saving}>
                       <Check className="h-3.5 w-3.5 mr-1" /> {saving ? "Saving…" : "Save"}
