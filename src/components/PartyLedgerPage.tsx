@@ -394,6 +394,76 @@ export function PartyLedgerPage({
     toast.success("তথ্য সংরক্ষণ হয়েছে");
   };
 
+  const openManual = (k: "income" | "expense") => {
+    setManualForm({
+      vendor: name || "",
+      amount: "",
+      date: new Date().toISOString().slice(0, 10),
+      note: "",
+    });
+    setManualKind(k);
+  };
+
+  const saveManual = async () => {
+    const vendor = manualForm.vendor.trim();
+    const amount = Number(manualForm.amount);
+    if (!vendor) {
+      toast.error("Vendor নির্বাচন করুন");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      toast.error("সঠিক পরিমাণ লিখুন");
+      return;
+    }
+    setManualSaving(true);
+    const mod = moduleByKey("vendor-ledger")!;
+    const ledgerId = await generateNextId(mod, manualForm.date);
+    const note = manualForm.note.trim();
+
+    // আয় (income): vendor refund / bonus — treated as a vendor advance (+),
+    //   added to the vendor's balance, balance-neutral on the cash box.
+    // ব্যায় (expense): extra charge owed to the vendor (void/date-change, etc.) —
+    //   recorded as an additional payable (−).
+    const payload =
+      manualKind === "income"
+        ? {
+            ledger_id: ledgerId,
+            entry_date: manualForm.date,
+            payment_date: manualForm.date,
+            vendor_name: vendor,
+            service_type: "ADVANCE",
+            total_payable: 0,
+            paid_amount: amount,
+            payment_method: "adjustment",
+            remarks: note ? `আয়: ${note}` : "আয় (ম্যানুয়াল)",
+            created_by: user?.id ?? null,
+          }
+        : {
+            ledger_id: ledgerId,
+            entry_date: manualForm.date,
+            vendor_name: vendor,
+            service_type: "ম্যানুয়াল ব্যায়",
+            total_payable: amount,
+            paid_amount: 0,
+            remarks: note || "ব্যায় (ম্যানুয়াল)",
+            created_by: user?.id ?? null,
+          };
+
+    const { error } = await supabase
+      .from("vendor_ledger" as never)
+      .insert(payload as never);
+    setManualSaving(false);
+    if (error) {
+      toast.error("সংরক্ষণ ব্যর্থ: " + error.message);
+      return;
+    }
+    toast.success(manualKind === "income" ? "আয় এন্ট্রি যুক্ত হয়েছে" : "ব্যায় এন্ট্রি যুক্ত হয়েছে");
+    setManualKind(null);
+    if (displayName) void load();
+  };
+
+
+
   // Build the running statement (chronological). Mirrors get_agent_balances /
   // get_vendor_balances so the final running balance reconciles with the summary.
   const statement = useMemo(() => {
