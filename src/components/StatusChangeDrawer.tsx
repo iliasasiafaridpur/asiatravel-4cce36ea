@@ -211,17 +211,17 @@ export function StatusChangeDrawer({
       if (direction === "forward") {
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
-          if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
+          if (request.hasVendorSentDate) patch.vendor_sent_date = eventDate;
         }
         if (needsCostPrice) patch.cost_price = effectiveCostPrice;
         if (crossesIntoLedger) {
           if (needsVendorForPD) {
             patch.vendor_bought = effectiveVendor;
-            if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = todayIso();
+            if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = eventDate;
           }
         }
-        if (isPendingDelivery && request.hasReceivedDate) patch.received_date = todayIso();
-        if (markDelivered && request.hasDeliveryDate) patch.delivery_date = todayIso();
+        if (isPendingDelivery && request.hasReceivedDate) patch.received_date = eventDate;
+        if (markDelivered && request.hasDeliveryDate) patch.delivery_date = eventDate;
       } else if (direction === "backward") {
         if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) patch.vendor_sent_date = null;
         if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) patch.received_date = null;
