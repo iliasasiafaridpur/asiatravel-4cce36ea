@@ -120,6 +120,7 @@ export function StatusChangeDrawer({
       : DEFAULT_STATUS_ORDER;
     const currentStatus = String(request.row.status ?? "") || (requestOrder[0] ?? "");
     setTargetStatus(request.newStatus || currentStatus);
+    setEventDate(todayIso());
     setVendor(String(request.row.vendor_bought ?? ""));
     setCostPriceInput(request.row.cost_price ? String(request.row.cost_price) : "");
     setAmount("");
