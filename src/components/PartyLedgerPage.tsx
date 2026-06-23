@@ -1186,13 +1186,13 @@ export function PartyLedgerPage({
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
                       <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground px-4">
+                      <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-muted-foreground"}`}>
                         {s.previous.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-emerald-600 px-4">
                         {s.deposit ? s.deposit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-amber-600 px-4">
+                      <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-amber-600"}`}>
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold px-4 ${isCustomer ? "" : "pr-6"}`}>
