@@ -1168,7 +1168,7 @@ export function PartyLedgerPage({
                       Loading…
                     </TableCell>
                   </TableRow>
-                ) : statement.length === 0 ? (
+                ) : filteredStatement.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
@@ -1176,7 +1176,10 @@ export function PartyLedgerPage({
                   </TableRow>
                 ) : (
                   pagedStatement.map((s, idx) => (
-                    <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
+                    <TableRow
+                      key={s.id}
+                      className={`row-tint-${idx % 4} ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}
+                    >
                       <TableCell className="whitespace-nowrap pr-2 text-xs">{formatDate(s.date)}</TableCell>
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
