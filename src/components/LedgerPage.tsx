@@ -83,6 +83,8 @@ interface Props {
   autoCreate?: boolean;
   /** In create-only mode, called when the new-entry dialog is closed. */
   onCreateClose?: () => void;
+  /** Hide the "নতুন এন্ট্রি" (manual new entry) button in full mode. */
+  hideCreate?: boolean;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -135,7 +137,7 @@ function cleanAdvanceAdjustmentRemarks(value: string): string {
   return text;
 }
 
-export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose, autoCreate, onCreateClose }: Props) {
+export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose, autoCreate, onCreateClose, hideCreate }: Props) {
   const { user, profile } = useCurrentUser();
   const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
@@ -1587,9 +1589,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
           <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button onClick={startCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" /> নতুন এন্ট্রি
-          </Button>
+          {!hideCreate && (
+            <Button onClick={startCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" /> নতুন এন্ট্রি
+            </Button>
+          )}
         </div>
       </div>
 
