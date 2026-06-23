@@ -1546,6 +1546,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
 
   return (
     <div className="relative z-10 space-y-4 print:space-y-2">
+      {renderMode !== "payment-only" && (
+      <>
       <PageWatermark text={mod.label} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between print:hidden">
