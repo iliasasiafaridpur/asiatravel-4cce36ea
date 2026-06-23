@@ -748,6 +748,93 @@ export function PartyLedgerPage({
         />
       )}
 
+      <Dialog open={manualKind !== null} onOpenChange={(o) => !o && setManualKind(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {manualKind === "income" ? (
+                <>
+                  <TrendingUp className="h-5 w-5 text-emerald-600" /> আয় এন্ট্রি
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="h-5 w-5 text-rose-600" /> ব্যায় এন্ট্রি
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              {manualKind === "income"
+                ? "Vendor থেকে রিফান্ড/বোনাস বাবদ ফেরত পাওয়া টাকা — vendor এর ব্যালেন্সে যুক্ত হবে।"
+                : "Vendor অতিরিক্ত সার্ভিস বাবদ আমাদের কাছে যে টাকা পাবে (void/date change চার্জ ইত্যাদি)।"}
+            </p>
+            <div>
+              <label className="text-[11px] text-muted-foreground">Vendor</label>
+              {name ? (
+                <Input value={manualForm.vendor} disabled className="h-9 mt-0.5" />
+              ) : (
+                <Select
+                  value={manualForm.vendor}
+                  onValueChange={(v) => setManualForm((f) => ({ ...f, vendor: v }))}
+                >
+                  <SelectTrigger className="h-9 mt-0.5">
+                    <SelectValue placeholder="Vendor নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partyList.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-muted-foreground">পরিমাণ (৳)</label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={manualForm.amount}
+                  onChange={(e) => setManualForm((f) => ({ ...f, amount: e.target.value }))}
+                  placeholder="0"
+                  className="h-9 mt-0.5"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">তারিখ</label>
+                <Input
+                  type="date"
+                  value={manualForm.date}
+                  onChange={(e) => setManualForm((f) => ({ ...f, date: e.target.value }))}
+                  className="h-9 mt-0.5"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">বিবরণ (ঐচ্ছিক)</label>
+              <Textarea
+                value={manualForm.note}
+                onChange={(e) => setManualForm((f) => ({ ...f, note: e.target.value }))}
+                placeholder={manualKind === "income" ? "যেমন: টিকেট রিফান্ড" : "যেমন: টিকেট void চার্জ"}
+                className="mt-0.5 min-h-[60px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setManualKind(null)} disabled={manualSaving}>
+              বাতিল
+            </Button>
+            <Button onClick={saveManual} disabled={manualSaving}>
+              {manualSaving ? "সংরক্ষণ হচ্ছে…" : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {!name ? (
