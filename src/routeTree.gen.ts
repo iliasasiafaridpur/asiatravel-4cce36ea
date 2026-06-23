@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
-import { Route as VendorDataRouteImport } from './routes/vendor-data'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -21,7 +20,6 @@ import { Route as MdPanelRouteImport } from './routes/md-panel'
 import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
 import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as HelpRouteImport } from './routes/help'
-import { Route as CustomerDataRouteImport } from './routes/customer-data'
 import { Route as BmetRouteImport } from './routes/bmet'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as ActionBoardRouteImport } from './routes/action-board'
@@ -37,11 +35,6 @@ import { Route as ApiPublicHandoverAcceptRouteImport } from './routes/api/public
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VendorDataRoute = VendorDataRouteImport.update({
-  id: '/vendor-data',
-  path: '/vendor-data',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersRoute = UsersRouteImport.update({
@@ -92,11 +85,6 @@ const InvoiceRoute = InvoiceRouteImport.update({
 const HelpRoute = HelpRouteImport.update({
   id: '/help',
   path: '/help',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomerDataRoute = CustomerDataRouteImport.update({
-  id: '/customer-data',
-  path: '/customer-data',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BmetRoute = BmetRouteImport.update({
@@ -162,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/action-board': typeof ActionBoardRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/customer-data': typeof CustomerDataRoute
   '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -173,7 +160,6 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
-  '/vendor-data': typeof VendorDataRoute
   '/vendors': typeof VendorsRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
   '/vendor-ledger/$name': typeof VendorLedgerNameRoute
@@ -188,7 +174,6 @@ export interface FileRoutesByTo {
   '/action-board': typeof ActionBoardRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/customer-data': typeof CustomerDataRoute
   '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -199,7 +184,6 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
-  '/vendor-data': typeof VendorDataRoute
   '/vendors': typeof VendorsRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
   '/vendor-ledger/$name': typeof VendorLedgerNameRoute
@@ -215,7 +199,6 @@ export interface FileRoutesById {
   '/action-board': typeof ActionBoardRoute
   '/agents': typeof AgentsRoute
   '/bmet': typeof BmetRoute
-  '/customer-data': typeof CustomerDataRoute
   '/help': typeof HelpRoute
   '/invoice': typeof InvoiceRoute
   '/kuwait-visa': typeof KuwaitVisaRoute
@@ -226,7 +209,6 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
-  '/vendor-data': typeof VendorDataRoute
   '/vendors': typeof VendorsRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
   '/vendor-ledger/$name': typeof VendorLedgerNameRoute
@@ -243,7 +225,6 @@ export interface FileRouteTypes {
     | '/action-board'
     | '/agents'
     | '/bmet'
-    | '/customer-data'
     | '/help'
     | '/invoice'
     | '/kuwait-visa'
@@ -254,7 +235,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
-    | '/vendor-data'
     | '/vendors'
     | '/agency-ledger/$name'
     | '/vendor-ledger/$name'
@@ -269,7 +249,6 @@ export interface FileRouteTypes {
     | '/action-board'
     | '/agents'
     | '/bmet'
-    | '/customer-data'
     | '/help'
     | '/invoice'
     | '/kuwait-visa'
@@ -280,7 +259,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
-    | '/vendor-data'
     | '/vendors'
     | '/agency-ledger/$name'
     | '/vendor-ledger/$name'
@@ -295,7 +273,6 @@ export interface FileRouteTypes {
     | '/action-board'
     | '/agents'
     | '/bmet'
-    | '/customer-data'
     | '/help'
     | '/invoice'
     | '/kuwait-visa'
@@ -306,7 +283,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tickets'
     | '/users'
-    | '/vendor-data'
     | '/vendors'
     | '/agency-ledger/$name'
     | '/vendor-ledger/$name'
@@ -322,7 +298,6 @@ export interface RootRouteChildren {
   ActionBoardRoute: typeof ActionBoardRoute
   AgentsRoute: typeof AgentsRoute
   BmetRoute: typeof BmetRoute
-  CustomerDataRoute: typeof CustomerDataRoute
   HelpRoute: typeof HelpRoute
   InvoiceRoute: typeof InvoiceRoute
   KuwaitVisaRoute: typeof KuwaitVisaRoute
@@ -333,7 +308,6 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TicketsRoute: typeof TicketsRoute
   UsersRoute: typeof UsersRoute
-  VendorDataRoute: typeof VendorDataRoute
   VendorsRoute: typeof VendorsRoute
   AgencyLedgerNameRoute: typeof AgencyLedgerNameRoute
   VendorLedgerNameRoute: typeof VendorLedgerNameRoute
@@ -349,13 +323,6 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vendor-data': {
-      id: '/vendor-data'
-      path: '/vendor-data'
-      fullPath: '/vendor-data'
-      preLoaderRoute: typeof VendorDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users': {
@@ -426,13 +393,6 @@ declare module '@tanstack/react-router' {
       path: '/help'
       fullPath: '/help'
       preLoaderRoute: typeof HelpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customer-data': {
-      id: '/customer-data'
-      path: '/customer-data'
-      fullPath: '/customer-data'
-      preLoaderRoute: typeof CustomerDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bmet': {
@@ -522,7 +482,6 @@ const rootRouteChildren: RootRouteChildren = {
   ActionBoardRoute: ActionBoardRoute,
   AgentsRoute: AgentsRoute,
   BmetRoute: BmetRoute,
-  CustomerDataRoute: CustomerDataRoute,
   HelpRoute: HelpRoute,
   InvoiceRoute: InvoiceRoute,
   KuwaitVisaRoute: KuwaitVisaRoute,
@@ -533,7 +492,6 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TicketsRoute: TicketsRoute,
   UsersRoute: UsersRoute,
-  VendorDataRoute: VendorDataRoute,
   VendorsRoute: VendorsRoute,
   AgencyLedgerNameRoute: AgencyLedgerNameRoute,
   VendorLedgerNameRoute: VendorLedgerNameRoute,
