@@ -9,6 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -44,8 +57,14 @@ import {
   ArrowLeft,
   ChevronsUpDown,
   Receipt,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateNextId } from "@/lib/idgen";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null };
@@ -85,6 +104,18 @@ export function PartyLedgerPage({
   const contactsTable = isCustomer ? "agents" : "vendors";
   const backTo = isCustomer ? "/agency-ledger" : "/vendor-ledger";
   const navigate = useNavigate();
+  const { user } = useCurrentUser();
+
+  // Manual vendor income / expense entry (vendor ledger only).
+  const [manualKind, setManualKind] = useState<"income" | "expense" | null>(null);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualForm, setManualForm] = useState<{
+    vendor: string;
+    amount: string;
+    date: string;
+    note: string;
+  }>({ vendor: "", amount: "", date: new Date().toISOString().slice(0, 10), note: "" });
+
 
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
@@ -363,6 +394,76 @@ export function PartyLedgerPage({
     toast.success("তথ্য সংরক্ষণ হয়েছে");
   };
 
+  const openManual = (k: "income" | "expense") => {
+    setManualForm({
+      vendor: name || "",
+      amount: "",
+      date: new Date().toISOString().slice(0, 10),
+      note: "",
+    });
+    setManualKind(k);
+  };
+
+  const saveManual = async () => {
+    const vendor = manualForm.vendor.trim();
+    const amount = Number(manualForm.amount);
+    if (!vendor) {
+      toast.error("Vendor নির্বাচন করুন");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      toast.error("সঠিক পরিমাণ লিখুন");
+      return;
+    }
+    setManualSaving(true);
+    const mod = moduleByKey("vendor-ledger")!;
+    const ledgerId = await generateNextId(mod, manualForm.date);
+    const note = manualForm.note.trim();
+
+    // আয় (income): vendor refund / bonus — treated as a vendor advance (+),
+    //   added to the vendor's balance, balance-neutral on the cash box.
+    // ব্যায় (expense): extra charge owed to the vendor (void/date-change, etc.) —
+    //   recorded as an additional payable (−).
+    const payload =
+      manualKind === "income"
+        ? {
+            ledger_id: ledgerId,
+            entry_date: manualForm.date,
+            payment_date: manualForm.date,
+            vendor_name: vendor,
+            service_type: "ADVANCE",
+            total_payable: 0,
+            paid_amount: amount,
+            payment_method: "adjustment",
+            remarks: note ? `আয়: ${note}` : "আয় (ম্যানুয়াল)",
+            created_by: user?.id ?? null,
+          }
+        : {
+            ledger_id: ledgerId,
+            entry_date: manualForm.date,
+            vendor_name: vendor,
+            service_type: "ম্যানুয়াল ব্যায়",
+            total_payable: amount,
+            paid_amount: 0,
+            remarks: note || "ব্যায় (ম্যানুয়াল)",
+            created_by: user?.id ?? null,
+          };
+
+    const { error } = await supabase
+      .from("vendor_ledger" as never)
+      .insert(payload as never);
+    setManualSaving(false);
+    if (error) {
+      toast.error("সংরক্ষণ ব্যর্থ: " + error.message);
+      return;
+    }
+    toast.success(manualKind === "income" ? "আয় এন্ট্রি যুক্ত হয়েছে" : "ব্যায় এন্ট্রি যুক্ত হয়েছে");
+    setManualKind(null);
+    if (displayName) void load();
+  };
+
+
+
   // Build the running statement (chronological). Mirrors get_agent_balances /
   // get_vendor_balances so the final running balance reconciles with the summary.
   const statement = useMemo(() => {
@@ -604,15 +705,38 @@ export function PartyLedgerPage({
           </PopoverContent>
         </Popover>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="ml-auto gap-1.5"
-          onClick={() => setPayOpen(true)}
-        >
-          <Receipt className="h-4 w-4" />
-          {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          {!isCustomer && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Wallet className="h-4 w-4" />
+                  ম্যানুয়ালী আয় ব্যায়
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openManual("income")}>
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  আয় এন্ট্রি
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openManual("expense")}>
+                  <TrendingDown className="h-4 w-4 text-rose-600" />
+                  ব্যায় এন্ট্রি
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setPayOpen(true)}
+          >
+            <Receipt className="h-4 w-4" />
+            {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
+          </Button>
+        </div>
+
       </div>
 
       {payOpen && (
@@ -623,6 +747,93 @@ export function PartyLedgerPage({
           onPaymentClose={() => setPayOpen(false)}
         />
       )}
+
+      <Dialog open={manualKind !== null} onOpenChange={(o) => !o && setManualKind(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {manualKind === "income" ? (
+                <>
+                  <TrendingUp className="h-5 w-5 text-emerald-600" /> আয় এন্ট্রি
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="h-5 w-5 text-rose-600" /> ব্যায় এন্ট্রি
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              {manualKind === "income"
+                ? "Vendor থেকে রিফান্ড/বোনাস বাবদ ফেরত পাওয়া টাকা — vendor এর ব্যালেন্সে যুক্ত হবে।"
+                : "Vendor অতিরিক্ত সার্ভিস বাবদ আমাদের কাছে যে টাকা পাবে (void/date change চার্জ ইত্যাদি)।"}
+            </p>
+            <div>
+              <label className="text-[11px] text-muted-foreground">Vendor</label>
+              {name ? (
+                <Input value={manualForm.vendor} disabled className="h-9 mt-0.5" />
+              ) : (
+                <Select
+                  value={manualForm.vendor}
+                  onValueChange={(v) => setManualForm((f) => ({ ...f, vendor: v }))}
+                >
+                  <SelectTrigger className="h-9 mt-0.5">
+                    <SelectValue placeholder="Vendor নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partyList.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-muted-foreground">পরিমাণ (৳)</label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={manualForm.amount}
+                  onChange={(e) => setManualForm((f) => ({ ...f, amount: e.target.value }))}
+                  placeholder="0"
+                  className="h-9 mt-0.5"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">তারিখ</label>
+                <Input
+                  type="date"
+                  value={manualForm.date}
+                  onChange={(e) => setManualForm((f) => ({ ...f, date: e.target.value }))}
+                  className="h-9 mt-0.5"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">বিবরণ (ঐচ্ছিক)</label>
+              <Textarea
+                value={manualForm.note}
+                onChange={(e) => setManualForm((f) => ({ ...f, note: e.target.value }))}
+                placeholder={manualKind === "income" ? "যেমন: টিকেট রিফান্ড" : "যেমন: টিকেট void চার্জ"}
+                className="mt-0.5 min-h-[60px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setManualKind(null)} disabled={manualSaving}>
+              বাতিল
+            </Button>
+            <Button onClick={saveManual} disabled={manualSaving}>
+              {manualSaving ? "সংরক্ষণ হচ্ছে…" : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
 
 
