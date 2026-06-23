@@ -83,6 +83,8 @@ interface Props {
   autoCreate?: boolean;
   /** In create-only mode, called when the new-entry dialog is closed. */
   onCreateClose?: () => void;
+  /** Hide the "নতুন এন্ট্রি" (manual new entry) button in full mode. */
+  hideCreate?: boolean;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
