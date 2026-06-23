@@ -1589,9 +1589,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
           <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button onClick={startCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" /> নতুন এন্ট্রি
-          </Button>
+          {!hideCreate && (
+            <Button onClick={startCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" /> নতুন এন্ট্রি
+            </Button>
+          )}
         </div>
       </div>
 
