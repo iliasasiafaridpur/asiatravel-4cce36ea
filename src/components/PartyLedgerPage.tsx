@@ -1182,10 +1182,10 @@ export function PartyLedgerPage({
                       key={s.id}
                       className={`row-tint-${idx % 4} ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}
                     >
-                      <TableCell className="whitespace-nowrap pr-2 text-xs">{formatDate(s.date)}</TableCell>
-                      <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
-                      <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
-                      <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
+                      <TableCell className={`whitespace-nowrap pr-2 text-xs ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}>{formatDate(s.date)}</TableCell>
+                      <TableCell className={`truncate font-mono text-xs pl-2 ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.ledgerId}>{s.ledgerId}</TableCell>
+                      <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.service}>{s.service}</TableCell>
+                      <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.description}>{s.description || "—"}</TableCell>
                       <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-muted-foreground"}`}>
                         {s.previous.toLocaleString()}
                       </TableCell>
