@@ -874,6 +874,30 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payOpen, renderMode]);
 
+  // Auto-open the manual new-entry dialog when embedded in create-only mode.
+  const autoCreateHandledRef = useRef(false);
+  useEffect(() => {
+    if (!autoCreate || loading) return;
+    if (autoCreateHandledRef.current) return;
+    autoCreateHandledRef.current = true;
+    startCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCreate, loading]);
+
+  // In create-only embed mode, notify the host when the dialog is closed so it
+  // can unmount this instance.
+  const formWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (renderMode !== "create-only") return;
+    if (openForm) {
+      formWasOpenRef.current = true;
+    } else if (formWasOpenRef.current) {
+      formWasOpenRef.current = false;
+      onCreateClose?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openForm, renderMode]);
+
   // Map source table -> column to bump for THIS ledger's payment side.
   // Agency receives: customer-received column on each service row.
   // Vendor pays: only saudi_visas tracks vendor-paid (received_vendor).
