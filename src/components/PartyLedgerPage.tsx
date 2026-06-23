@@ -705,15 +705,38 @@ export function PartyLedgerPage({
           </PopoverContent>
         </Popover>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="ml-auto gap-1.5"
-          onClick={() => setPayOpen(true)}
-        >
-          <Receipt className="h-4 w-4" />
-          {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          {!isCustomer && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Wallet className="h-4 w-4" />
+                  ম্যানুয়ালী আয় ব্যায়
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openManual("income")}>
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  আয় এন্ট্রি
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openManual("expense")}>
+                  <TrendingDown className="h-4 w-4 text-rose-600" />
+                  ব্যায় এন্ট্রি
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setPayOpen(true)}
+          >
+            <Receipt className="h-4 w-4" />
+            {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
+          </Button>
+        </div>
+
       </div>
 
       {payOpen && (
