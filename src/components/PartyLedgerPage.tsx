@@ -688,6 +688,8 @@ export function PartyLedgerPage({
             </div>
           </CardContent>
         </Card>
+        <LedgerPage module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!} />
+        </>
       ) : (
         <>
 
