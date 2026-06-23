@@ -491,46 +491,7 @@ export function PartyProfileDrawer({
 
             <Separator />
 
-            {/* Settlement method preference */}
-            <section>
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                হিসাবের ধরন {isCustomer ? "(পেমেন্ট গ্রহণ)" : "(পেমেন্ট পরিশোধ)"}
-              </h4>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={savingMode}
-                  onClick={() => changeSettleMode("total")}
-                  className={`rounded-lg border p-2.5 text-left transition-colors ${
-                    settleMode === "total"
-                      ? "border-primary bg-primary/10 ring-1 ring-primary"
-                      : "bg-background hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="text-sm font-semibold">মোটের উপর</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    সব বিল একসাথে · Auto FIFO
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  disabled={savingMode}
-                  onClick={() => changeSettleMode("one_by_one")}
-                  className={`rounded-lg border p-2.5 text-left transition-colors ${
-                    settleMode === "one_by_one"
-                      ? "border-primary bg-primary/10 ring-1 ring-primary"
-                      : "bg-background hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="text-sm font-semibold">এক একটা বিল</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    নির্দিষ্ট বিল ধরে · Bill-by-Bill
-                  </div>
-                </button>
-              </div>
-            </section>
 
-            <Separator />
 
 
             {/* Lifetime Summary */}
