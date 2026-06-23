@@ -603,17 +603,21 @@ export function PartyLedgerPage({
           variant="secondary"
           size="sm"
           className="ml-auto gap-1.5"
-          onClick={() =>
-            navigate({
-              to: isCustomer ? "/customer-data" : "/vendor-data",
-              search: { pay: "__open__" },
-            })
-          }
+          onClick={() => setPayOpen(true)}
         >
           <Receipt className="h-4 w-4" />
           {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
         </Button>
       </div>
+
+      {payOpen && (
+        <LedgerPage
+          module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!}
+          renderMode="payment-only"
+          autoPay="__open__"
+          onPaymentClose={() => setPayOpen(false)}
+        />
+      )}
 
       {!name ? (
         <Card>
