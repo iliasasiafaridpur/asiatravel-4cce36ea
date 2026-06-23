@@ -1746,15 +1746,17 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
               {mod.label} এন্ট্রি ({filtered.length})
             </h3>
             <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportCsv}
-                className="gap-1.5 h-8"
-                title="Export CSV"
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-              </Button>
+              {!hideCreate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportCsv}
+                  className="gap-1.5 h-8"
+                  title="Export CSV"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
