@@ -130,6 +130,10 @@ export function PartyLedgerPage({
   // Pagination for the ledger statement table.
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  // Per-ledger statement filters (search + date range).
+  const [stmtSearch, setStmtSearch] = useState("");
+  const [stmtFrom, setStmtFrom] = useState("");
+  const [stmtTo, setStmtTo] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
