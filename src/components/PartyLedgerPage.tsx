@@ -519,9 +519,9 @@ export function PartyLedgerPage({
       }
       for (const r of rows) {
         const svc = String(r.service_type ?? "").toUpperCase();
-        // 'PAYMENT' rows are summary/log lines only — the actual money is already
-        // reflected in each bill's paid_amount. Show them for every vendor, but
-        // keep them neutral in the running balance so totals still reconcile.
+        // 'PAYMENT' rows are the green payment record. The money they paid is
+        // removed from each covered bill's Payment column (via coveredByBill)
+        // and shown here once, so totals still reconcile.
         const isPaymentLog = svc === "PAYMENT";
         const isDeposit = svc === "ADVANCE";
         const src = String(r.source_table ?? "");
