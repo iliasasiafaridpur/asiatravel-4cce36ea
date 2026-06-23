@@ -68,7 +68,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 
 type LedgerRow = Record<string, unknown> & { id: string };
-type Contact = { phone?: string | null; address?: string | null };
+type Contact = { phone?: string | null; address?: string | null; settle_mode?: string | null };
 type ContactId = { id: string };
 type SrcInfo = {
   displayId?: string | null;
