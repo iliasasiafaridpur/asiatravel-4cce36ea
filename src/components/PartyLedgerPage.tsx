@@ -1180,7 +1180,7 @@ export function PartyLedgerPage({
                   pagedStatement.map((s, idx) => (
                     <TableRow
                       key={s.id}
-                      className={`row-tint-${idx % 4} ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}
+                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""}`}
                     >
                       <TableCell className={`whitespace-nowrap pr-2 text-xs ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}>{formatDate(s.date)}</TableCell>
                       <TableCell className={`truncate font-mono text-xs pl-2 ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.ledgerId}>{s.ledgerId}</TableCell>
