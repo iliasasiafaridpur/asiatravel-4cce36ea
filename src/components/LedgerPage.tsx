@@ -70,6 +70,14 @@ interface Props {
   autoPay?: string;
   /** Called once the autoPay dialog has been opened, so the caller can clear the intent. */
   onAutoPayHandled?: () => void;
+  /**
+   * "full" (default) renders the whole ledger page. "payment-only" renders just
+   * the payment entry dialog, letting another page (e.g. the Ledger pages) embed
+   * the payment flow without leaving the page.
+   */
+  renderMode?: "full" | "payment-only";
+  /** In payment-only mode, called when the payment dialog is closed. */
+  onPaymentClose?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
