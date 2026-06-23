@@ -50,7 +50,7 @@ import {
   CreditCard,
   FileSpreadsheet,
   Printer,
-  Receipt,
+  
 } from "lucide-react";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
@@ -842,7 +842,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     if (!autoPay || loading) return;
     if (autoPayHandledRef.current === autoPay) return;
     autoPayHandledRef.current = autoPay;
-    openPayment(autoPay, 0);
+    openPayment(autoPay === "__open__" ? "" : autoPay, 0);
     onAutoPayHandled?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPay, loading]);
@@ -1534,9 +1534,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button onClick={startCreate} className="gap-1.5">
             <Plus className="h-4 w-4" /> নতুন এন্ট্রি
-          </Button>
-          <Button onClick={() => openPayment("", 0)} variant="secondary" className="gap-1.5">
-            <Receipt className="h-4 w-4" /> {payTitle}
           </Button>
         </div>
       </div>
