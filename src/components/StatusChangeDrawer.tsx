@@ -82,6 +82,7 @@ export function StatusChangeDrawer({
   const [methodAmts, setMethodAmts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
+  const [eventDate, setEventDate] = useState<string>(todayIso());
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptInfo | null>(null);
 
