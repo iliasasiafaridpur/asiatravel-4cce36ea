@@ -64,7 +64,7 @@ function VendorsPage() {
                             size="sm"
                             className="h-7 gap-1 px-2 text-xs"
                             title="পেমেন্ট দিন"
-                            onClick={() => navigate({ to: "/vendor-data", search: { pay: b.vendor_name } })}
+                            onClick={() => navigate({ to: "/vendor-ledger/$name", params: { name: b.vendor_name }, search: { pay: b.vendor_name } })}
                           >
                             <Wallet className="h-3.5 w-3.5" /> Pay
                           </Button>
