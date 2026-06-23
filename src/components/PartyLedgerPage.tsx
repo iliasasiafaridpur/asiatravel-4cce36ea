@@ -1098,6 +1098,50 @@ export function PartyLedgerPage({
       <Card>
         <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
+          {/* Search + date-range filter for this ledger statement. */}
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex-1 min-w-[160px]">
+              <label className="text-[11px] text-muted-foreground">খুঁজুন</label>
+              <Input
+                value={stmtSearch}
+                onChange={(e) => setStmtSearch(e.target.value)}
+                placeholder="ID / Service / বিবরণ…"
+                className="h-9 mt-0.5"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
+              <Input
+                type="date"
+                value={stmtFrom}
+                onChange={(e) => setStmtFrom(e.target.value)}
+                className="h-9 mt-0.5"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
+              <Input
+                type="date"
+                value={stmtTo}
+                onChange={(e) => setStmtTo(e.target.value)}
+                className="h-9 mt-0.5"
+              />
+            </div>
+            {(stmtSearch || stmtFrom || stmtTo) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9"
+                onClick={() => {
+                  setStmtSearch("");
+                  setStmtFrom("");
+                  setStmtTo("");
+                }}
+              >
+                মুছুন
+              </Button>
+            )}
+          </div>
           <div className="overflow-x-auto rounded-md border">
             <Table className="table-fixed w-full min-w-[1000px]">
               <TableHeader>
@@ -1108,7 +1152,7 @@ export function PartyLedgerPage({
                   <TableHead className="min-w-[150px]">Description</TableHead>
                   <TableHead className="w-[112px] text-right whitespace-nowrap px-4">Prev. Bal</TableHead>
                   <TableHead className="w-[120px] text-right whitespace-nowrap px-4 text-emerald-600">
-                    {isCustomer ? "Deposit" : "Deposit/Payment"}
+                    {isCustomer ? "Deposit" : "Payment"}
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
                   <TableHead className={`w-[128px] text-right px-4 ${isCustomer ? "" : "pr-6"}`}>Balance</TableHead>
