@@ -568,6 +568,7 @@ export function PartyLedgerPage({
           advance: 0,
           cash,
           bill,
+          isPayment: isDeposit,
           sortKey: `${date || "0000-00-00"}|${String(r.created_at ?? "")}`,
         });
       }
