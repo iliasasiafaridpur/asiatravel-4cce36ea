@@ -995,6 +995,7 @@ export function PartyLedgerPage({
           )}
         </CardContent>
       </Card>
+        </>
       )}
     </div>
   );
