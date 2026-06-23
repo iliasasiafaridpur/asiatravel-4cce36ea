@@ -70,9 +70,12 @@ function waNumber(raw: string): string {
 export function PartyLedgerPage({
   kind,
   name,
+  autoPayTarget,
 }: {
   kind: "customer" | "vendor";
   name: string;
+  /** When set, auto-open the payment dialog pre-targeting this party on mount. */
+  autoPayTarget?: string;
 }) {
   const isCustomer = kind === "customer";
   const table = isCustomer ? "agency_ledger" : "vendor_ledger";
@@ -86,7 +89,7 @@ export function PartyLedgerPage({
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [payOpen, setPayOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(!!autoPayTarget);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
@@ -616,7 +619,7 @@ export function PartyLedgerPage({
         <LedgerPage
           module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!}
           renderMode="payment-only"
-          autoPay="__open__"
+          autoPay={autoPayTarget || "__open__"}
           onPaymentClose={() => setPayOpen(false)}
         />
       )}
