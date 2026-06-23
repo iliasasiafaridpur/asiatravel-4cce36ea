@@ -352,7 +352,7 @@ export function StatusChangeDrawer({
             const p = payments[i];
             await resilientInsert("payment_receipts", {
               receipt_id: payments.length > 1 ? `${baseRid}-${i + 1}` : baseRid,
-              entry_date: todayIso(),
+              entry_date: eventDate,
               service_type: request.serviceType,
               service_table: request.table,
               service_row_id: request.row.id,
