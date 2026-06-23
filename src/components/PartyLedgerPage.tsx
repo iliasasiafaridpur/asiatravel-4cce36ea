@@ -389,7 +389,13 @@ export function PartyLedgerPage({
       const prepped: Prep[] = [];
       for (const r of rows) {
         const svc = String(r.service_type ?? "").toUpperCase();
-        const isDeposit = svc === "ADVANCE" || svc === "PAYMENT";
+        // 'PAYMENT' rows are summary/log lines only — the actual money is already
+        // reflected in each bill's paid_amount. Counting them here double-counts
+        // the payment (e.g. Ashik's ৳1,00,000) and breaks reconciliation with the
+        // balance board (get_vendor_balances also ignores PAYMENT). Skip them so
+        // every vendor behaves uniformly (like TripLover, which only uses ADVANCE).
+        if (svc === "PAYMENT") continue;
+        const isDeposit = svc === "ADVANCE";
         const src = String(r.source_table ?? "");
         const sid = String(r.source_id ?? "");
         const info = srcMap.get(sid);
