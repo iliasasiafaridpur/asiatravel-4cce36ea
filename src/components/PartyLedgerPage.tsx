@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
 import { LedgerPage } from "@/components/LedgerPage";
+import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +68,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 
 type LedgerRow = Record<string, unknown> & { id: string };
-type Contact = { phone?: string | null; address?: string | null };
+type Contact = { phone?: string | null; address?: string | null; settle_mode?: string | null };
 type ContactId = { id: string };
 type SrcInfo = {
   displayId?: string | null;
@@ -149,11 +150,14 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({
+  const [form, setForm] = useState<{ name: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     phones: [""],
     address: "",
+    settleMode: "total",
   });
+
+  const settleMode = (contact?.settle_mode ?? "total") === "one_by_one" ? "one_by_one" : "total";
 
   useEffect(() => {
     setDisplayName(name);
@@ -241,7 +245,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,address")
+        .select("phone,address,settle_mode")
         .eq("name", displayName)
         .maybeSingle(),
       supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
@@ -323,6 +327,7 @@ export function PartyLedgerPage({
       name: displayName,
       phones: list.length ? list : [""],
       address: contact?.address ?? "",
+      settleMode,
     });
     setEditing(true);
   };
@@ -362,7 +367,7 @@ export function PartyLedgerPage({
     if (existingId) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
+        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
         .eq("id", existingId);
       err = error;
     } else {
@@ -376,14 +381,14 @@ export function PartyLedgerPage({
       if (newExistingId) {
         const { error } = await supabase
           .from(contactsTable as never)
-          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
+          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
           .eq("id", newExistingId);
         err = error;
       } else {
         const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
         const { error } = await supabase
           .from(contactsTable as never)
-          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null } as never);
+          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
         err = error;
       }
     }
@@ -393,7 +398,7 @@ export function PartyLedgerPage({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null }));
+    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
@@ -1036,6 +1041,37 @@ export function PartyLedgerPage({
                       className="mt-0.5 text-sm"
                     />
                   </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">
+                      হিসাবের ধরন {isCustomer ? "(পেমেন্ট গ্রহণ)" : "(পেমেন্ট পরিশোধ)"}
+                    </label>
+                    <div className="mt-0.5 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, settleMode: "total" }))}
+                        className={`rounded-lg border p-2 text-left transition-colors ${
+                          form.settleMode === "total"
+                            ? "border-primary bg-primary/10 ring-1 ring-primary"
+                            : "bg-background hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">মোটের উপর</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">সব বিল একসাথে · Auto FIFO</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, settleMode: "one_by_one" }))}
+                        className={`rounded-lg border p-2 text-left transition-colors ${
+                          form.settleMode === "one_by_one"
+                            ? "border-primary bg-primary/10 ring-1 ring-primary"
+                            : "bg-background hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">এক একটা বিল</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">নির্দিষ্ট বিল ধরে · Bill-by-Bill</div>
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex gap-2 pt-1">
                     <Button size="sm" className="h-8" onClick={saveEdit} disabled={saving}>
                       <Check className="h-3.5 w-3.5 mr-1" /> {saving ? "Saving…" : "Save"}
@@ -1055,6 +1091,7 @@ export function PartyLedgerPage({
                     >
                       {isCustomer ? "Customer" : "Vendor"}
                     </Badge>
+                    <SettleModeBadge mode={settleMode} />
                     <Button
                       size="icon"
                       variant="ghost"
