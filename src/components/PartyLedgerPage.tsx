@@ -367,7 +367,7 @@ export function PartyLedgerPage({
     if (existingId) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
+        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
         .eq("id", existingId);
       err = error;
     } else {
@@ -381,14 +381,14 @@ export function PartyLedgerPage({
       if (newExistingId) {
         const { error } = await supabase
           .from(contactsTable as never)
-          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null } as never)
+          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
           .eq("id", newExistingId);
         err = error;
       } else {
         const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
         const { error } = await supabase
           .from(contactsTable as never)
-          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null } as never);
+          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
         err = error;
       }
     }
@@ -398,7 +398,7 @@ export function PartyLedgerPage({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null }));
+    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
