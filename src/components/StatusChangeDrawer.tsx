@@ -396,7 +396,7 @@ export function StatusChangeDrawer({
               country_route: String(request.row.country_name ?? request.row.country_route ?? "") || null,
               total_payable: effectiveCostPrice, paid_amount: 0, advance_applied: 0,
               payment_method: "Cash", source_table: request.table, source_id: request.row.id,
-              remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${todayIso()})`,
+              remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${eventDate})`,
               created_by: user?.id ?? null,
             });
           }
