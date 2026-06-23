@@ -64,8 +64,6 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "হিসাব",
     items: [
-      { to: "/customer-data", title: "Customers Data", icon: Users, color: "text-violet-400", bg: "bg-violet-500/15" },
-      { to: "/vendor-data", title: "Vendor Data", icon: Truck, color: "text-orange-400", bg: "bg-orange-500/15" },
       { to: "/agency-ledger", title: "Agency Ledger", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
       { to: "/vendor-ledger", title: "Vendor Ledger", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
       { to: "/accounts", title: "My Accounts", icon: Wallet, color: "text-yellow-400", bg: "bg-yellow-500/15" },
