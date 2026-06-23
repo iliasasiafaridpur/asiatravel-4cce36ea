@@ -78,7 +78,7 @@ export function PartyLedgerPage({
   const billCol = isCustomer ? "total_bill" : "total_payable";
   const paidCol = isCustomer ? "received_amount" : "paid_amount";
   const contactsTable = isCustomer ? "agents" : "vendors";
-  const backTo = isCustomer ? "/customer-data" : "/vendor-data";
+  const backTo = isCustomer ? "/agency-ledger" : "/vendor-ledger";
   const navigate = useNavigate();
 
   // Full list of parties for the dropdown search filter (top-right).
