@@ -608,19 +608,9 @@ export function PartyLedgerPage({
         </Popover>
 
         <Button
-          variant={manageOpen ? "default" : "outline"}
-          size="sm"
-          className="ml-auto gap-1.5"
-          onClick={() => setManageOpen((v) => !v)}
-        >
-          <ListChecks className="h-4 w-4" />
-          {manageOpen ? "স্টেটমেন্ট" : "সব এন্ট্রি (ম্যানেজ)"}
-        </Button>
-
-        <Button
           variant="secondary"
           size="sm"
-          className="gap-1.5"
+          className="ml-auto gap-1.5"
           onClick={() => setPayOpen(true)}
         >
           <Receipt className="h-4 w-4" />
@@ -637,10 +627,8 @@ export function PartyLedgerPage({
         />
       )}
 
-      {manageOpen ? (
-        <LedgerPage module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!} />
-      ) : (
       <>
+
 
       {!name ? (
         <Card>
@@ -1009,8 +997,6 @@ export function PartyLedgerPage({
         </CardContent>
       </Card>
         </>
-      )}
-      </>
       )}
     </div>
   );
