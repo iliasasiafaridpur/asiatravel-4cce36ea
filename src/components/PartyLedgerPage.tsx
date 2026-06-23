@@ -828,18 +828,18 @@ export function PartyLedgerPage({
         <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="table-fixed w-full min-w-[940px]">
+            <Table className="table-fixed w-full min-w-[1000px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[112px] whitespace-nowrap pr-2">Date</TableHead>
-                  <TableHead className="w-[120px] whitespace-nowrap pl-2">ID</TableHead>
+                  <TableHead className="w-[176px] whitespace-nowrap pl-2">ID</TableHead>
                   <TableHead className="w-[112px] whitespace-nowrap">Service Type</TableHead>
                   <TableHead className="min-w-[150px]">Description</TableHead>
                   <TableHead className="w-[112px] text-right whitespace-nowrap px-4">Prev. Bal</TableHead>
-                  <TableHead className="w-[120px] text-right whitespace-nowrap px-4">
+                  <TableHead className="w-[120px] text-right whitespace-nowrap px-4 text-emerald-600">
                     {isCustomer ? "Deposit" : "Deposit/Payment"}
                   </TableHead>
-                  <TableHead className="w-[104px] text-right px-4">Credit</TableHead>
+                  <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
                   <TableHead className={`w-[128px] text-right px-4 ${isCustomer ? "" : "pr-6"}`}>Balance</TableHead>
                   {isCustomer && (
                     <TableHead className="w-[104px] text-right px-4 pr-6">Advance</TableHead>
@@ -872,7 +872,7 @@ export function PartyLedgerPage({
                       <TableCell className="text-right tabular-nums text-emerald-600 px-4">
                         {s.deposit ? s.deposit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums px-4">
+                      <TableCell className="text-right tabular-nums text-amber-600 px-4">
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold px-4 ${isCustomer ? "" : "pr-6"}`}>
