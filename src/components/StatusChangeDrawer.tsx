@@ -12,6 +12,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowRight, ArrowLeft, AlertTriangle, Wallet, Loader2, User2, Banknote, X } from "lucide-react";
 import { LookupSelect } from "@/components/LookupSelect";
+import { DateInput } from "@/components/ui/date-input";
 import { statusBadgeClass } from "@/lib/modules";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
@@ -81,6 +82,7 @@ export function StatusChangeDrawer({
   const [methodAmts, setMethodAmts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<string>("");
   const [targetStatus, setTargetStatus] = useState<string>("");
+  const [eventDate, setEventDate] = useState<string>(todayIso());
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptInfo | null>(null);
 
@@ -118,6 +120,7 @@ export function StatusChangeDrawer({
       : DEFAULT_STATUS_ORDER;
     const currentStatus = String(request.row.status ?? "") || (requestOrder[0] ?? "");
     setTargetStatus(request.newStatus || currentStatus);
+    setEventDate(todayIso());
     setVendor(String(request.row.vendor_bought ?? ""));
     setCostPriceInput(request.row.cost_price ? String(request.row.cost_price) : "");
     setAmount("");
@@ -136,9 +139,9 @@ export function StatusChangeDrawer({
   if (!request) return null;
 
   const forwardEffects: string[] = [];
-  if (isFileProcess && request.hasVendorSentDate) forwardEffects.push("Vendor Sent Date = আজ");
+  if (isFileProcess && request.hasVendorSentDate) forwardEffects.push(`Vendor Sent Date = ${eventDate}`);
   if (isFileProcess && request.hasVendorField) forwardEffects.push("Vendor সংরক্ষণ হবে");
-  if (isPendingDelivery && request.hasReceivedDate) forwardEffects.push("Received Date = আজ");
+  if (isPendingDelivery && request.hasReceivedDate) forwardEffects.push(`Received Date = ${eventDate}`);
   const currentIdx = idxOf(current);
   const _targetIdx = idxOf(next);
   const pdIdx = idxOf("Pending Delivery");
@@ -161,7 +164,7 @@ export function StatusChangeDrawer({
   if (crossesIntoLedger && effectiveCostPrice > 0 && effectiveVendor) {
     forwardEffects.push(`Vendor "${effectiveVendor}" এর খাতায় ৳${effectiveCostPrice.toLocaleString()} Credit`);
   }
-  if ((isDeliveredAny || isDeliveryButDue) && request.hasDeliveryDate) forwardEffects.push("Delivery Date = আজ");
+  if ((isDeliveredAny || isDeliveryButDue) && request.hasDeliveryDate) forwardEffects.push(`Delivery Date = ${eventDate}`);
   if (isDeliveredWithDue) forwardEffects.push(`Due ৳${due.toLocaleString()} আদায় রসিদ`);
   if (isDeliveryButDue && due > 0) forwardEffects.push(`Due ৳${due.toLocaleString()} বকেয়া থাকবে`);
 
@@ -208,17 +211,17 @@ export function StatusChangeDrawer({
       if (direction === "forward") {
         if (isFileProcess) {
           if (request.hasVendorField) patch.vendor_bought = vendor.trim();
-          if (request.hasVendorSentDate) patch.vendor_sent_date = todayIso();
+          if (request.hasVendorSentDate) patch.vendor_sent_date = eventDate;
         }
         if (needsCostPrice) patch.cost_price = effectiveCostPrice;
         if (crossesIntoLedger) {
           if (needsVendorForPD) {
             patch.vendor_bought = effectiveVendor;
-            if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = todayIso();
+            if (request.hasVendorSentDate && !request.row.vendor_sent_date) patch.vendor_sent_date = eventDate;
           }
         }
-        if (isPendingDelivery && request.hasReceivedDate) patch.received_date = todayIso();
-        if (markDelivered && request.hasDeliveryDate) patch.delivery_date = todayIso();
+        if (isPendingDelivery && request.hasReceivedDate) patch.received_date = eventDate;
+        if (markDelivered && request.hasDeliveryDate) patch.delivery_date = eventDate;
       } else if (direction === "backward") {
         if (fpIdx >= 0 && targetIdx < fpIdx && request.hasVendorSentDate) patch.vendor_sent_date = null;
         if (pdIdx >= 0 && targetIdx < pdIdx && request.hasReceivedDate) patch.received_date = null;
@@ -315,7 +318,7 @@ export function StatusChangeDrawer({
           const statusReceiptId = await mkReceiptId();
           await resilientInsert("payment_receipts", {
             receipt_id: statusReceiptId,
-            entry_date: todayIso(),
+            entry_date: eventDate,
             service_type: request.serviceType,
             service_table: request.table,
             service_row_id: request.row.id,
@@ -349,7 +352,7 @@ export function StatusChangeDrawer({
             const p = payments[i];
             await resilientInsert("payment_receipts", {
               receipt_id: payments.length > 1 ? `${baseRid}-${i + 1}` : baseRid,
-              entry_date: todayIso(),
+              entry_date: eventDate,
               service_type: request.serviceType,
               service_table: request.table,
               service_row_id: request.row.id,
@@ -385,7 +388,7 @@ export function StatusChangeDrawer({
             const passport = String(request.row.passport ?? "");
             const pname = String(request.row.passenger_name ?? "");
             await resilientInsert("vendor_ledger", {
-              ledger_id: ledgerId, entry_date: todayIso(),
+              ledger_id: ledgerId, entry_date: eventDate,
               vendor_name: effectiveVendor, passenger_name: pname,
               passport: passport || null,
               mobile: String(request.row.mobile ?? "") || null,
@@ -393,7 +396,7 @@ export function StatusChangeDrawer({
               country_route: String(request.row.country_name ?? request.row.country_route ?? "") || null,
               total_payable: effectiveCostPrice, paid_amount: 0, advance_applied: 0,
               payment_method: "Cash", source_table: request.table, source_id: request.row.id,
-              remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${todayIso()})`,
+              remarks: `Cost for ${pname}${passport ? ` - ${passport}` : ""} (Received on ${eventDate})`,
               created_by: user?.id ?? null,
             });
           }
@@ -509,6 +512,12 @@ export function StatusChangeDrawer({
               : <ArrowRight className="h-3 w-3 text-muted-foreground" />}
             <Badge variant="outline" className={`${statusBadgeClass(next)} text-[10px]`}>{next}</Badge>
           </div>
+
+          <div className="space-y-1">
+            <Label className="text-[10px]">স্ট্যাটাস পরিবর্তনের তারিখ</Label>
+            <DateInput value={eventDate} onChange={(e) => setEventDate(e.target.value || todayIso())} max={todayIso()} />
+          </div>
+
 
           {isWarn && (
             <Alert variant="destructive" className="border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>svg]:text-amber-500 py-1.5">
