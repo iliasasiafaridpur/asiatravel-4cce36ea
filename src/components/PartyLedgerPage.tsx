@@ -327,6 +327,7 @@ export function PartyLedgerPage({
       name: displayName,
       phones: list.length ? list : [""],
       address: contact?.address ?? "",
+      settleMode,
     });
     setEditing(true);
   };
