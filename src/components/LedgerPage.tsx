@@ -70,6 +70,14 @@ interface Props {
   autoPay?: string;
   /** Called once the autoPay dialog has been opened, so the caller can clear the intent. */
   onAutoPayHandled?: () => void;
+  /**
+   * "full" (default) renders the whole ledger page. "payment-only" renders just
+   * the payment entry dialog, letting another page (e.g. the Ledger pages) embed
+   * the payment flow without leaving the page.
+   */
+  renderMode?: "full" | "payment-only";
+  /** In payment-only mode, called when the payment dialog is closed. */
+  onPaymentClose?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -122,7 +130,7 @@ function cleanAdvanceAdjustmentRemarks(value: string): string {
   return text;
 }
 
-export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
+export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose }: Props) {
   const { user, profile } = useCurrentUser();
   const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
@@ -847,6 +855,20 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPay, loading]);
 
+  // In payment-only embed mode, notify the host when the dialog is closed so it
+  // can unmount this instance.
+  const payWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (renderMode !== "payment-only") return;
+    if (payOpen) {
+      payWasOpenRef.current = true;
+    } else if (payWasOpenRef.current) {
+      payWasOpenRef.current = false;
+      onPaymentClose?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payOpen, renderMode]);
+
   // Map source table -> column to bump for THIS ledger's payment side.
   // Agency receives: customer-received column on each service row.
   // Vendor pays: only saudi_visas tracks vendor-paid (received_vendor).
@@ -1524,6 +1546,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
 
   return (
     <div className="relative z-10 space-y-4 print:space-y-2">
+      {renderMode !== "payment-only" && (
+      <>
       <PageWatermark text={mod.label} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between print:hidden">
@@ -2370,6 +2394,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled }: Props) {
         confirmClassName="bg-rose-600 hover:bg-rose-700 text-white"
         onConfirmed={confirmDelete}
       />
+      </>
+      )}
 
       {/* Payment entry dialog (Receive / Pay) */}
       <Dialog

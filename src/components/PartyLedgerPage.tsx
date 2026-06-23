@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDate } from "@/lib/modules";
+import { formatDate, moduleByKey } from "@/lib/modules";
+import { LedgerPage } from "@/components/LedgerPage";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +86,7 @@ export function PartyLedgerPage({
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
@@ -603,17 +605,21 @@ export function PartyLedgerPage({
           variant="secondary"
           size="sm"
           className="ml-auto gap-1.5"
-          onClick={() =>
-            navigate({
-              to: isCustomer ? "/customer-data" : "/vendor-data",
-              search: { pay: "__open__" },
-            })
-          }
+          onClick={() => setPayOpen(true)}
         >
           <Receipt className="h-4 w-4" />
           {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
         </Button>
       </div>
+
+      {payOpen && (
+        <LedgerPage
+          module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!}
+          renderMode="payment-only"
+          autoPay="__open__"
+          onPaymentClose={() => setPayOpen(false)}
+        />
+      )}
 
       {!name ? (
         <Card>
