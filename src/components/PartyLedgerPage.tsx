@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
@@ -186,6 +186,7 @@ export function PartyLedgerPage({
 
   // Load live balances (same RPC the Agent/Vendor List pages use) for the
   // on-page list shown when no party is selected.
+  const rtId = useId();
   useEffect(() => {
     if (name) return;
     let cancelled = false;
@@ -207,14 +208,14 @@ export function PartyLedgerPage({
     };
     void loadBalances();
     const ch = supabase
-      .channel(`party_bal_rt_${table}`)
+      .channel(`party_bal_rt_${table}_${rtId}`)
       .on("postgres_changes", { event: "*", schema: "public", table }, () => void loadBalances())
       .subscribe();
     return () => {
       cancelled = true;
       supabase.removeChannel(ch);
     };
-  }, [isCustomer, table, name]);
+  }, [isCustomer, table, name, rtId]);
 
 
 

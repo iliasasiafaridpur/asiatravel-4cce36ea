@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
@@ -324,9 +324,10 @@ export function ModulePage({ module: mod }: Props) {
   useEffect(() => { void load(true); void loadExtraCounts(); void loadRecvInfo(); }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
 
   // Realtime: auto-refresh on any change to this table
+  const rtId = useId();
   useEffect(() => {
     const ch = supabase
-      .channel(`rt_${mod.table}`)
+      .channel(`rt_${mod.table}_${rtId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
         void load(false);
         void loadRecvInfo();
@@ -335,7 +336,7 @@ export function ModulePage({ module: mod }: Props) {
     let chx: ReturnType<typeof supabase.channel> | null = null;
     if (supportsExtra) {
       chx = supabase
-        .channel(`rt_extra_${mod.table}`)
+        .channel(`rt_extra_${mod.table}_${rtId}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "extra_services" }, () => {
           void loadExtraCounts();
         })

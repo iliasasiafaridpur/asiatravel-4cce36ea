@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
@@ -485,15 +485,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     })();
   }, []);
 
+  const rtId = useId();
   useEffect(() => {
     const ch = supabase
-      .channel(`rt_${mod.table}`)
+      .channel(`rt_${mod.table}_${rtId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => void load())
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [mod.table, load]);
+  }, [mod.table, load, rtId]);
 
   const balanceOf = (r: Row) => Number(r[billCol] ?? 0) - Number(r[paidCol] ?? 0) - discountOf(r);
 
