@@ -513,6 +513,12 @@ export function StatusChangeDrawer({
             <Badge variant="outline" className={`${statusBadgeClass(next)} text-[10px]`}>{next}</Badge>
           </div>
 
+          <div className="space-y-1">
+            <Label className="text-[10px]">স্ট্যাটাস পরিবর্তনের তারিখ</Label>
+            <DateInput value={eventDate} onChange={(e) => setEventDate(e.target.value || todayIso())} max={todayIso()} />
+          </div>
+
+
           {isWarn && (
             <Alert variant="destructive" className="border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>svg]:text-amber-500 py-1.5">
               <AlertTriangle className="h-3.5 w-3.5" />
