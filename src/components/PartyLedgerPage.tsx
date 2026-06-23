@@ -1097,50 +1097,52 @@ export function PartyLedgerPage({
       {/* Ledger statement */}
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
-          {/* Search + date-range filter for this ledger statement. */}
-          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="flex-1 min-w-[160px]">
-              <label className="text-[11px] text-muted-foreground">খুঁজুন</label>
-              <Input
-                value={stmtSearch}
-                onChange={(e) => setStmtSearch(e.target.value)}
-                placeholder="ID / Service / বিবরণ…"
-                className="h-9 mt-0.5"
-              />
+          {/* Heading + inline search/date-range filter for this ledger statement. */}
+          <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <h3 className="text-sm font-semibold lg:mb-1">{pageTitle}</h3>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex-1 min-w-[160px]">
+                <label className="text-[11px] text-muted-foreground">খুঁজুন</label>
+                <Input
+                  value={stmtSearch}
+                  onChange={(e) => setStmtSearch(e.target.value)}
+                  placeholder="ID / Service / বিবরণ…"
+                  className="h-9 mt-0.5"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
+                <Input
+                  type="date"
+                  value={stmtFrom}
+                  onChange={(e) => setStmtFrom(e.target.value)}
+                  className="h-9 mt-0.5"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
+                <Input
+                  type="date"
+                  value={stmtTo}
+                  onChange={(e) => setStmtTo(e.target.value)}
+                  className="h-9 mt-0.5"
+                />
+              </div>
+              {(stmtSearch || stmtFrom || stmtTo) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9"
+                  onClick={() => {
+                    setStmtSearch("");
+                    setStmtFrom("");
+                    setStmtTo("");
+                  }}
+                >
+                  মুছুন
+                </Button>
+              )}
             </div>
-            <div>
-              <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
-              <Input
-                type="date"
-                value={stmtFrom}
-                onChange={(e) => setStmtFrom(e.target.value)}
-                className="h-9 mt-0.5"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
-              <Input
-                type="date"
-                value={stmtTo}
-                onChange={(e) => setStmtTo(e.target.value)}
-                className="h-9 mt-0.5"
-              />
-            </div>
-            {(stmtSearch || stmtFrom || stmtTo) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9"
-                onClick={() => {
-                  setStmtSearch("");
-                  setStmtFrom("");
-                  setStmtTo("");
-                }}
-              >
-                মুছুন
-              </Button>
-            )}
           </div>
           <div className="overflow-x-auto rounded-md border">
             <Table className="table-fixed w-full min-w-[1000px]">
@@ -1184,13 +1186,13 @@ export function PartyLedgerPage({
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
                       <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground px-4">
+                      <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-muted-foreground"}`}>
                         {s.previous.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-emerald-600 px-4">
                         {s.deposit ? s.deposit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-amber-600 px-4">
+                      <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-amber-600"}`}>
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold px-4 ${isCustomer ? "" : "pr-6"}`}>
