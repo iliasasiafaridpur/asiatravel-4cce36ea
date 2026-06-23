@@ -135,7 +135,7 @@ function cleanAdvanceAdjustmentRemarks(value: string): string {
   return text;
 }
 
-export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose }: Props) {
+export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose, autoCreate, onCreateClose }: Props) {
   const { user, profile } = useCurrentUser();
   const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
