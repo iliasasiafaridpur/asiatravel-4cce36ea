@@ -180,6 +180,18 @@ body { font-size: 1rem !important; }
   box-shadow: none !important;
 }
 
+/* Payment rows must stay green even when global row tints set text colors. */
+.ledger-payment-row,
+.ledger-payment-row > td,
+.ledger-payment-row > td * {
+  color: #16a34a !important;
+}
+.dark .ledger-payment-row,
+.dark .ledger-payment-row > td,
+.dark .ledger-payment-row > td * {
+  color: #4ade80 !important;
+}
+
 /* বাতিল / ফেরত করা এন্ট্রি — সার্চে এলে ধূসর রঙে ও বিশেষ চিহ্নসহ দেখানো হয় */
 tr.cancelled-row.row-tint-0, tr.cancelled-row.row-tint-1,
 tr.cancelled-row.row-tint-2, tr.cancelled-row.row-tint-3 {
