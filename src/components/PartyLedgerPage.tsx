@@ -1091,6 +1091,7 @@ export function PartyLedgerPage({
                     >
                       {isCustomer ? "Customer" : "Vendor"}
                     </Badge>
+                    <SettleModeBadge mode={settleMode} />
                     <Button
                       size="icon"
                       variant="ghost"
