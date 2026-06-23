@@ -139,9 +139,9 @@ export function StatusChangeDrawer({
   if (!request) return null;
 
   const forwardEffects: string[] = [];
-  if (isFileProcess && request.hasVendorSentDate) forwardEffects.push("Vendor Sent Date = আজ");
+  if (isFileProcess && request.hasVendorSentDate) forwardEffects.push(`Vendor Sent Date = ${eventDate}`);
   if (isFileProcess && request.hasVendorField) forwardEffects.push("Vendor সংরক্ষণ হবে");
-  if (isPendingDelivery && request.hasReceivedDate) forwardEffects.push("Received Date = আজ");
+  if (isPendingDelivery && request.hasReceivedDate) forwardEffects.push(`Received Date = ${eventDate}`);
   const currentIdx = idxOf(current);
   const _targetIdx = idxOf(next);
   const pdIdx = idxOf("Pending Delivery");
