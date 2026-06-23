@@ -130,6 +130,10 @@ export function PartyLedgerPage({
   // Pagination for the ledger statement table.
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  // Per-ledger statement filters (search + date range).
+  const [stmtSearch, setStmtSearch] = useState("");
+  const [stmtFrom, setStmtFrom] = useState("");
+  const [stmtTo, setStmtTo] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
@@ -479,6 +483,7 @@ export function PartyLedgerPage({
       credit: number;
       balance: number;
       advance: number;
+      isPayment: boolean;
     };
 
     // VENDOR: uniform ledger for every vendor.
@@ -533,7 +538,7 @@ export function PartyLedgerPage({
 
         // Service type label.
         let service: string;
-        if (isDeposit) service = "Deposit";
+        if (isDeposit) service = "Payment";
         else if (moduleLabel[src]) service = moduleLabel[src];
         else service = String(r.service_type ?? "—");
 
@@ -563,6 +568,7 @@ export function PartyLedgerPage({
           advance: 0,
           cash,
           bill,
+          isPayment: isDeposit,
           sortKey: `${date || "0000-00-00"}|${String(r.created_at ?? "")}`,
         });
       }
@@ -586,6 +592,7 @@ export function PartyLedgerPage({
           credit: p.credit,
           balance: bal,
           advance: 0,
+          isPayment: p.isPayment,
         };
       });
 
@@ -617,13 +624,14 @@ export function PartyLedgerPage({
         id: String(r.id),
         ledgerId: String(r.ledger_id ?? ""),
         date: String(r.entry_date ?? ""),
-        service: String(r.service_type ?? "—"),
+        service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
         previous: prev,
         deposit: advRow ? cash : cash + applied,
         credit: advRow ? 0 : bill,
         balance: bal,
         advance: Math.max(adv, 0),
+        isPayment: advRow,
       });
     }
     // Latest entry on top (same as the vendor ledger).
@@ -632,16 +640,31 @@ export function PartyLedgerPage({
 
   const totals = summary;
 
+  // Apply the per-ledger search + date-range filters.
+  const filteredStatement = useMemo(() => {
+    const q = stmtSearch.trim().toLowerCase();
+    if (!q && !stmtFrom && !stmtTo) return statement;
+    return statement.filter((s) => {
+      if (stmtFrom && (!s.date || s.date < stmtFrom)) return false;
+      if (stmtTo && (!s.date || s.date > stmtTo)) return false;
+      if (q) {
+        const hay = `${s.ledgerId} ${s.service} ${s.description}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [statement, stmtSearch, stmtFrom, stmtTo]);
+
   // Paginate the statement (latest entries already on top).
-  const totalPages = Math.max(1, Math.ceil(statement.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredStatement.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pagedStatement = useMemo(
-    () => statement.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [statement, currentPage, pageSize],
+    () => filteredStatement.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredStatement, currentPage, pageSize],
   );
   useEffect(() => {
     setPage(1);
-  }, [displayName, pageSize]);
+  }, [displayName, pageSize, stmtSearch, stmtFrom, stmtTo]);
 
   const pageTitle = isCustomer ? "Agency Ledger" : "Vendor Ledger";
 
@@ -1075,6 +1098,50 @@ export function PartyLedgerPage({
       <Card>
         <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-2">{pageTitle}</h3>
+          {/* Search + date-range filter for this ledger statement. */}
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex-1 min-w-[160px]">
+              <label className="text-[11px] text-muted-foreground">খুঁজুন</label>
+              <Input
+                value={stmtSearch}
+                onChange={(e) => setStmtSearch(e.target.value)}
+                placeholder="ID / Service / বিবরণ…"
+                className="h-9 mt-0.5"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
+              <Input
+                type="date"
+                value={stmtFrom}
+                onChange={(e) => setStmtFrom(e.target.value)}
+                className="h-9 mt-0.5"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
+              <Input
+                type="date"
+                value={stmtTo}
+                onChange={(e) => setStmtTo(e.target.value)}
+                className="h-9 mt-0.5"
+              />
+            </div>
+            {(stmtSearch || stmtFrom || stmtTo) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9"
+                onClick={() => {
+                  setStmtSearch("");
+                  setStmtFrom("");
+                  setStmtTo("");
+                }}
+              >
+                মুছুন
+              </Button>
+            )}
+          </div>
           <div className="overflow-x-auto rounded-md border">
             <Table className="table-fixed w-full min-w-[1000px]">
               <TableHeader>
@@ -1085,7 +1152,7 @@ export function PartyLedgerPage({
                   <TableHead className="min-w-[150px]">Description</TableHead>
                   <TableHead className="w-[112px] text-right whitespace-nowrap px-4">Prev. Bal</TableHead>
                   <TableHead className="w-[120px] text-right whitespace-nowrap px-4 text-emerald-600">
-                    {isCustomer ? "Deposit" : "Deposit/Payment"}
+                    {isCustomer ? "Deposit" : "Payment"}
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
                   <TableHead className={`w-[128px] text-right px-4 ${isCustomer ? "" : "pr-6"}`}>Balance</TableHead>
@@ -1101,7 +1168,7 @@ export function PartyLedgerPage({
                       Loading…
                     </TableCell>
                   </TableRow>
-                ) : statement.length === 0 ? (
+                ) : filteredStatement.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
@@ -1109,7 +1176,10 @@ export function PartyLedgerPage({
                   </TableRow>
                 ) : (
                   pagedStatement.map((s, idx) => (
-                    <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
+                    <TableRow
+                      key={s.id}
+                      className={`row-tint-${idx % 4} ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}
+                    >
                       <TableCell className="whitespace-nowrap pr-2 text-xs">{formatDate(s.date)}</TableCell>
                       <TableCell className="truncate font-mono text-xs pl-2" title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className="truncate" title={s.service}>{s.service}</TableCell>
@@ -1163,7 +1233,7 @@ export function PartyLedgerPage({
               </TableBody>
             </Table>
           </div>
-          {!loading && statement.length > 0 && (
+          {!loading && filteredStatement.length > 0 && (
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>প্রতি পৃষ্ঠায়</span>
