@@ -500,6 +500,23 @@ export function PartyLedgerPage({
       // 1) Prepare each visible row with its effective count-date and fields.
       type Prep = Omit<Stmt, "previous" | "balance"> & { sortKey: string; cash: number; bill: number };
       const prepped: Prep[] = [];
+      // Map: bill row id -> amount already covered by a green PAYMENT row.
+      // Each PAYMENT log stores alloc_detail.items = the exact bills it paid. We
+      // use it so the same money is never shown twice: the covered portion of a
+      // bill's paid_amount is represented by the green Payment row instead of
+      // being repeated in that bill's own Payment column.
+      const coveredByBill = new Map<string, number>();
+      for (const r of rows) {
+        if (String(r.service_type ?? "").toUpperCase() !== "PAYMENT") continue;
+        const det = (r as Record<string, unknown>).alloc_detail as
+          | { items?: Array<{ id?: string; amt?: number }> }
+          | null;
+        for (const it of det?.items ?? []) {
+          const bid = String(it?.id ?? "");
+          if (!bid) continue;
+          coveredByBill.set(bid, (coveredByBill.get(bid) ?? 0) + Number(it?.amt ?? 0));
+        }
+      }
       for (const r of rows) {
         const svc = String(r.service_type ?? "").toUpperCase();
         // 'PAYMENT' rows are summary/log lines only — the actual money is already
