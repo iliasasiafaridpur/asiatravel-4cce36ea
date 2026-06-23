@@ -503,32 +503,28 @@ export function PartyLedgerPage({
       for (const r of rows) {
         const svc = String(r.service_type ?? "").toUpperCase();
         // 'PAYMENT' rows are summary/log lines only — the actual money is already
-        // reflected in each bill's paid_amount. Counting them here double-counts
-        // the payment (e.g. Ashik's ৳1,00,000) and breaks reconciliation with the
-        // balance board (get_vendor_balances also ignores PAYMENT). Skip them so
-        // every vendor behaves uniformly (like TripLover, which only uses ADVANCE).
-        if (svc === "PAYMENT") continue;
+        // reflected in each bill's paid_amount. Show them for every vendor, but
+        // keep them neutral in the running balance so totals still reconcile.
+        const isPaymentLog = svc === "PAYMENT";
         const isDeposit = svc === "ADVANCE";
         const src = String(r.source_table ?? "");
         const sid = String(r.source_id ?? "");
         const info = srcMap.get(sid);
-        // Payments redirected to the MD deposit pool don't settle this vendor's
-        // due, so the balance RPC excludes them — skip to keep the ledger
-        // reconciled with the summary board.
-        const alloc = r.alloc_detail as { as_md_deposit?: boolean } | null;
-        if (src === "payment_log" && alloc?.as_md_deposit) continue;
         // Delivery items (BMET/Saudi/Kuwait) count only once received.
         const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
         const counts = !sourced || Boolean(info?.countDate);
-        if (!isDeposit && !counts) continue;
+        if (!isDeposit && !isPaymentLog && !counts) continue;
 
 
-        const cash = Number(r[paidCol] ?? 0);
-        const bill = isDeposit ? 0 : Number(r[billCol] ?? 0);
+        const displayPaid = Number(r[paidCol] ?? 0);
+        const cash = isPaymentLog ? 0 : displayPaid;
+        const bill = isDeposit || isPaymentLog ? 0 : Number(r[billCol] ?? 0);
 
         // Date: deposit -> payment date; delivery item -> received date; else entry date.
         const date = isDeposit
           ? String(r.payment_date ?? r.entry_date ?? "")
+          : isPaymentLog
+            ? String(r.payment_date ?? r.entry_date ?? "")
           : String(info?.countDate ?? r.entry_date ?? "");
 
         // Module id from the source record so the full id shows.
@@ -538,7 +534,7 @@ export function PartyLedgerPage({
 
         // Service type label.
         let service: string;
-        if (isDeposit) service = "Payment";
+        if (isDeposit || isPaymentLog) service = "Payment";
         else if (moduleLabel[src]) service = moduleLabel[src];
         else service = String(r.service_type ?? "—");
 
@@ -563,12 +559,12 @@ export function PartyLedgerPage({
           date,
           service,
           description: desc,
-          deposit: cash,
+          deposit: displayPaid,
           credit: bill,
           advance: 0,
           cash,
           bill,
-          isPayment: isDeposit,
+          isPayment: isDeposit || isPaymentLog,
           sortKey: `${date || "0000-00-00"}|${String(r.created_at ?? "")}`,
         });
       }
