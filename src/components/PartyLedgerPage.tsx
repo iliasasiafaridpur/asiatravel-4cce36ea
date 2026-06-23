@@ -70,9 +70,12 @@ function waNumber(raw: string): string {
 export function PartyLedgerPage({
   kind,
   name,
+  autoPayTarget,
 }: {
   kind: "customer" | "vendor";
   name: string;
+  /** When set, auto-open the payment dialog pre-targeting this party on mount. */
+  autoPayTarget?: string;
 }) {
   const isCustomer = kind === "customer";
   const table = isCustomer ? "agency_ledger" : "vendor_ledger";
