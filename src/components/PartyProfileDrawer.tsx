@@ -22,7 +22,7 @@ function waNumber(raw: string): string {
 }
 
 type LedgerRow = Record<string, unknown> & { id: string };
-type Contact = { phone?: string | null; address?: string | null; created_at?: string | null };
+type Contact = { phone?: string | null; address?: string | null; created_at?: string | null; settle_mode?: string | null };
 type ContactId = { id: string };
 
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
@@ -60,6 +60,45 @@ export function PartyProfileDrawer({
   const [displayName, setDisplayName] = useState<string | null>(partyName);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
+
+  const settleMode = (contact?.settle_mode ?? "total") === "one_by_one" ? "one_by_one" : "total";
+
+  const changeSettleMode = async (mode: "total" | "one_by_one") => {
+    const activeName = displayName ?? partyName;
+    if (!activeName || mode === settleMode) return;
+    setSavingMode(true);
+    const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    // Ensure a contact row exists, then save the preference.
+    const { data: existing } = await supabase
+      .from(contactsTable as never)
+      .select("id")
+      .eq("name", activeName)
+      .limit(1)
+      .maybeSingle();
+    const existingId = (existing as ContactId | null)?.id;
+    let err = null;
+    if (existingId) {
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .update({ settle_mode: mode } as never)
+        .eq("id", existingId);
+      err = error;
+    } else {
+      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .insert({ [codeCol]: code, name: activeName, settle_mode: mode } as never);
+      err = error;
+    }
+    setSavingMode(false);
+    if (err) {
+      toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
+      return;
+    }
+    setContact((c) => ({ ...(c ?? {}), settle_mode: mode }));
+    toast.success(mode === "one_by_one" ? "হিসাব: এক একটা বিল ধরে" : "হিসাব: মোটের উপর");
+  };
   const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({ name: "", phones: [""], address: "" });
 
   useEffect(() => {
@@ -181,7 +220,7 @@ export function PartyProfileDrawer({
           .limit(500),
         supabase
           .from(contactsTable as never)
-          .select("phone,address,created_at")
+          .select("phone,address,created_at,settle_mode")
           .eq("name", activeName)
           .maybeSingle(),
       ]);
@@ -450,8 +489,49 @@ export function PartyProfileDrawer({
               )}
             </section>
 
+            <Separator />
+
+            {/* Settlement method preference */}
+            <section>
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                হিসাবের ধরন {isCustomer ? "(পেমেন্ট গ্রহণ)" : "(পেমেন্ট পরিশোধ)"}
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={savingMode}
+                  onClick={() => changeSettleMode("total")}
+                  className={`rounded-lg border p-2.5 text-left transition-colors ${
+                    settleMode === "total"
+                      ? "border-primary bg-primary/10 ring-1 ring-primary"
+                      : "bg-background hover:bg-muted/50"
+                  }`}
+                >
+                  <div className="text-sm font-semibold">মোটের উপর</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    সব বিল একসাথে · Auto FIFO
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  disabled={savingMode}
+                  onClick={() => changeSettleMode("one_by_one")}
+                  className={`rounded-lg border p-2.5 text-left transition-colors ${
+                    settleMode === "one_by_one"
+                      ? "border-primary bg-primary/10 ring-1 ring-primary"
+                      : "bg-background hover:bg-muted/50"
+                  }`}
+                >
+                  <div className="text-sm font-semibold">এক একটা বিল</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    নির্দিষ্ট বিল ধরে · Bill-by-Bill
+                  </div>
+                </button>
+              </div>
+            </section>
 
             <Separator />
+
 
             {/* Lifetime Summary */}
             <section>

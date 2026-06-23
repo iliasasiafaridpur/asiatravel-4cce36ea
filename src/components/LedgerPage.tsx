@@ -168,6 +168,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   >(new Map());
 
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
+  // Per-party settlement preference: name -> "total" | "one_by_one".
+  const [settleModeMap, setSettleModeMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
@@ -241,6 +243,25 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   const payAmountLabel = isAgency ? "Received Amount" : "Paid Amount";
   const groupFieldLabel = isAgency ? "Agent Name" : "Vendor Name";
   const visiblePaymentMethods = isAgency ? [...DUE_RECEIVE_METHODS] : PAYMENT_METHODS;
+  const contactsTable = isAgency ? "agents" : "vendors";
+
+  // Load each party's saved settlement preference (total = Auto FIFO, one_by_one = Bill-by-Bill).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from(contactsTable as never)
+        .select("name,settle_mode")
+        .limit(5000);
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const r of ((data as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
+        if (r.name) map[r.name] = r.settle_mode === "one_by_one" ? "one_by_one" : "total";
+      }
+      setSettleModeMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [contactsTable]);
 
   // Form schema with country_route lookup switching based on selected service_type.
   const formMod = useMemo<ModuleSchema>(() => {
@@ -818,7 +839,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   const openPayment = (groupKey: string, dueAmount: number) => {
     const due = groupKey ? dueForGroup(groupKey) : dueAmount;
     setPayRow(null);
-    setPayMode("fifo");
+    // Default the allocation tab from the party's saved settlement preference.
+    setPayMode(settleModeMap[groupKey] === "one_by_one" ? "specific" : "fifo");
     setSelectedLines({});
     setPayAsAdvance(false);
     setPayAsMdDeposit(false);
@@ -2668,6 +2690,14 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
                 (payAsMdDeposit). Hidden only for manual adjustment. */}
             {!payRow && payTarget && !payAsAdjust && (
               <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
+                {settleModeMap[payTarget] && (
+                  <div className="mb-2 text-[11px] text-muted-foreground">
+                    এই {isAgency ? "Agent" : "Vendor"} এর সেট করা ধরন:{" "}
+                    <span className="font-semibold text-foreground">
+                      {settleModeMap[payTarget] === "one_by_one" ? "এক একটা বিল (Bill-by-Bill)" : "মোটের উপর (Auto FIFO)"}
+                    </span>
+                  </div>
+                )}
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
                   <TabsTrigger value="specific">Bill-by-Bill (নির্দিষ্ট)</TabsTrigger>

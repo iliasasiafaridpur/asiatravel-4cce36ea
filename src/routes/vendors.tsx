@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Eye, Wallet } from "lucide-react";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
+import { SettleModeBadge } from "@/components/SettleModeBadge";
 
 export const Route = createFileRoute("/vendors")({
   head: () => ({ meta: [{ title: "Vendor List — Travel Manager" }] }),
@@ -18,16 +19,26 @@ interface Bal { vendor_name: string; total_payable: number; total_paid: number; 
 
 function VendorsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
+  const [modes, setModes] = useState<Record<string, string>>({});
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
   const navigate = useNavigate();
   const load = async () => {
-    const { data } = await supabase.rpc("get_vendor_balances" as never);
+    const [{ data }, { data: vendors }] = await Promise.all([
+      supabase.rpc("get_vendor_balances" as never),
+      supabase.from("vendors").select("name,settle_mode").limit(5000),
+    ]);
     setBals(((data as unknown) as Bal[]) ?? []);
+    const map: Record<string, string> = {};
+    for (const v of ((vendors as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
+      if (v.name) map[v.name] = v.settle_mode === "one_by_one" ? "one_by_one" : "total";
+    }
+    setModes(map);
   };
   useEffect(() => {
     void load();
     const ch = supabase.channel("vendor_bal_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "vendor_ledger" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "vendors" }, () => void load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
@@ -38,12 +49,13 @@ function VendorsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.vendor_name} className={`row-tint-${idx % 4}`}>
                       <TableCell className="font-medium">{b.vendor_name}</TableCell>
+                      <TableCell><SettleModeBadge mode={modes[b.vendor_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_payable).toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums text-emerald-600">৳ {Number(b.total_paid).toLocaleString()}</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${b.balance_due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {Number(b.balance_due).toLocaleString()}</TableCell>

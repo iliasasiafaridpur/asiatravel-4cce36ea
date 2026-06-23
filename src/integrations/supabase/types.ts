@@ -146,6 +146,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          settle_mode: string
           updated_at: string
         }
         Insert: {
@@ -156,6 +157,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          settle_mode?: string
           updated_at?: string
         }
         Update: {
@@ -166,6 +168,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          settle_mode?: string
           updated_at?: string
         }
         Relationships: []
@@ -1326,6 +1329,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          settle_mode: string
           updated_at: string
           vendor_code: string
         }
@@ -1336,6 +1340,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          settle_mode?: string
           updated_at?: string
           vendor_code: string
         }
@@ -1346,6 +1351,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          settle_mode?: string
           updated_at?: string
           vendor_code?: string
         }
