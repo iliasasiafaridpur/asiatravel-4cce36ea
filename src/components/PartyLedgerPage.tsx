@@ -640,16 +640,31 @@ export function PartyLedgerPage({
 
   const totals = summary;
 
+  // Apply the per-ledger search + date-range filters.
+  const filteredStatement = useMemo(() => {
+    const q = stmtSearch.trim().toLowerCase();
+    if (!q && !stmtFrom && !stmtTo) return statement;
+    return statement.filter((s) => {
+      if (stmtFrom && (!s.date || s.date < stmtFrom)) return false;
+      if (stmtTo && (!s.date || s.date > stmtTo)) return false;
+      if (q) {
+        const hay = `${s.ledgerId} ${s.service} ${s.description}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [statement, stmtSearch, stmtFrom, stmtTo]);
+
   // Paginate the statement (latest entries already on top).
-  const totalPages = Math.max(1, Math.ceil(statement.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredStatement.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pagedStatement = useMemo(
-    () => statement.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [statement, currentPage, pageSize],
+    () => filteredStatement.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredStatement, currentPage, pageSize],
   );
   useEffect(() => {
     setPage(1);
-  }, [displayName, pageSize]);
+  }, [displayName, pageSize, stmtSearch, stmtFrom, stmtTo]);
 
   const pageTitle = isCustomer ? "Agency Ledger" : "Vendor Ledger";
 
