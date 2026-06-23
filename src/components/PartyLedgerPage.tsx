@@ -44,7 +44,6 @@ import {
   ArrowLeft,
   ChevronsUpDown,
   Receipt,
-  ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,8 +90,6 @@ export function PartyLedgerPage({
   const [partyList, setPartyList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
-  // Full management view (manual entry, row edit/delete, list filter + print/export).
-  const [manageOpen, setManageOpen] = useState(false);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
