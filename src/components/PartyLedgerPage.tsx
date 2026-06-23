@@ -42,6 +42,7 @@ import {
   Plus,
   ArrowLeft,
   ChevronsUpDown,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 
