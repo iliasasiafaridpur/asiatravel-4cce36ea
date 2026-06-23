@@ -57,8 +57,14 @@ import {
   ArrowLeft,
   ChevronsUpDown,
   Receipt,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateNextId } from "@/lib/idgen";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = { phone?: string | null; address?: string | null };
