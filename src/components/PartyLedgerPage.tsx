@@ -627,6 +627,7 @@ export function PartyLedgerPage({
 
 
       {!name ? (
+        <>
         <Card>
           <CardContent className="p-3 sm:p-4 space-y-3">
             <Input
@@ -687,6 +688,8 @@ export function PartyLedgerPage({
             </div>
           </CardContent>
         </Card>
+        <LedgerPage module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!} />
+        </>
       ) : (
         <>
 
