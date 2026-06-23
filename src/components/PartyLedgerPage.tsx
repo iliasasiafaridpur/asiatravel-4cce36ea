@@ -483,6 +483,7 @@ export function PartyLedgerPage({
       credit: number;
       balance: number;
       advance: number;
+      isPayment: boolean;
     };
 
     // VENDOR: uniform ledger for every vendor.
