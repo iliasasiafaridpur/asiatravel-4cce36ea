@@ -627,7 +627,6 @@ export function PartyLedgerPage({
         />
       )}
 
-      <>
 
 
       {!name ? (
@@ -996,7 +995,6 @@ export function PartyLedgerPage({
           )}
         </CardContent>
       </Card>
-        </>
       )}
     </div>
   );
