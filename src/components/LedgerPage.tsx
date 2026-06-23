@@ -2394,6 +2394,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         confirmClassName="bg-rose-600 hover:bg-rose-700 text-white"
         onConfirmed={confirmDelete}
       />
+      </>
+      )}
 
       {/* Payment entry dialog (Receive / Pay) */}
       <Dialog
