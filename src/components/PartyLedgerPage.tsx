@@ -90,6 +90,8 @@ export function PartyLedgerPage({
   const [partyList, setPartyList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
+  // Manual new-entry dialog (embedded full LedgerPage create flow).
+  const [createOpen, setCreateOpen] = useState(false);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
