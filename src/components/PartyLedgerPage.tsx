@@ -592,6 +592,7 @@ export function PartyLedgerPage({
           credit: p.credit,
           balance: bal,
           advance: 0,
+          isPayment: p.isPayment,
         };
       });
 
