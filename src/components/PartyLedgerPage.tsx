@@ -624,13 +624,14 @@ export function PartyLedgerPage({
         id: String(r.id),
         ledgerId: String(r.ledger_id ?? ""),
         date: String(r.entry_date ?? ""),
-        service: String(r.service_type ?? "—"),
+        service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
         previous: prev,
         deposit: advRow ? cash : cash + applied,
         credit: advRow ? 0 : bill,
         balance: bal,
         advance: Math.max(adv, 0),
+        isPayment: advRow,
       });
     }
     // Latest entry on top (same as the vendor ledger).
