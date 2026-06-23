@@ -60,46 +60,8 @@ export function PartyProfileDrawer({
   const [displayName, setDisplayName] = useState<string | null>(partyName);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [savingMode, setSavingMode] = useState(false);
-
-  const settleMode = (contact?.settle_mode ?? "total") === "one_by_one" ? "one_by_one" : "total";
-
-  const changeSettleMode = async (mode: "total" | "one_by_one") => {
-    const activeName = displayName ?? partyName;
-    if (!activeName || mode === settleMode) return;
-    setSavingMode(true);
-    const codeCol = isCustomer ? "agent_code" : "vendor_code";
-    // Ensure a contact row exists, then save the preference.
-    const { data: existing } = await supabase
-      .from(contactsTable as never)
-      .select("id")
-      .eq("name", activeName)
-      .limit(1)
-      .maybeSingle();
-    const existingId = (existing as ContactId | null)?.id;
-    let err = null;
-    if (existingId) {
-      const { error } = await supabase
-        .from(contactsTable as never)
-        .update({ settle_mode: mode } as never)
-        .eq("id", existingId);
-      err = error;
-    } else {
-      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
-      const { error } = await supabase
-        .from(contactsTable as never)
-        .insert({ [codeCol]: code, name: activeName, settle_mode: mode } as never);
-      err = error;
-    }
-    setSavingMode(false);
-    if (err) {
-      toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
-      return;
-    }
-    setContact((c) => ({ ...(c ?? {}), settle_mode: mode }));
-    toast.success(mode === "one_by_one" ? "হিসাব: এক একটা বিল ধরে" : "হিসাব: মোটের উপর");
-  };
   const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({ name: "", phones: [""], address: "" });
+
 
   useEffect(() => {
     setDisplayName(partyName);
