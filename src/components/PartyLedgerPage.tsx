@@ -1233,7 +1233,7 @@ export function PartyLedgerPage({
               </TableBody>
             </Table>
           </div>
-          {!loading && statement.length > 0 && (
+          {!loading && filteredStatement.length > 0 && (
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>প্রতি পৃষ্ঠায়</span>
