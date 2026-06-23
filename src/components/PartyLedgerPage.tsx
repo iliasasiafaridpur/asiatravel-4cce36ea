@@ -538,7 +538,7 @@ export function PartyLedgerPage({
 
         // Service type label.
         let service: string;
-        if (isDeposit) service = "Deposit";
+        if (isDeposit) service = "Payment";
         else if (moduleLabel[src]) service = moduleLabel[src];
         else service = String(r.service_type ?? "—");
 
