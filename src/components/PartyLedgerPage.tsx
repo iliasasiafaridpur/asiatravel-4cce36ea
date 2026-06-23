@@ -245,7 +245,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,address")
+        .select("phone,address,settle_mode")
         .eq("name", displayName)
         .maybeSingle(),
       supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
