@@ -806,7 +806,7 @@ export function PartyLedgerPage({
         <LedgerPage
           module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!}
           renderMode="payment-only"
-          autoPay={autoPayTarget || "__open__"}
+          autoPay={autoPayTarget || displayName || name || "__open__"}
           onPaymentClose={() => setPayOpen(false)}
         />
       )}
