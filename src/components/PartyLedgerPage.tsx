@@ -150,11 +150,14 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({
+  const [form, setForm] = useState<{ name: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     phones: [""],
     address: "",
+    settleMode: "total",
   });
+
+  const settleMode = (contact?.settle_mode ?? "total") === "one_by_one" ? "one_by_one" : "total";
 
   useEffect(() => {
     setDisplayName(name);
