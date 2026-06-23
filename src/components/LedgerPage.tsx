@@ -72,12 +72,17 @@ interface Props {
   onAutoPayHandled?: () => void;
   /**
    * "full" (default) renders the whole ledger page. "payment-only" renders just
-   * the payment entry dialog, letting another page (e.g. the Ledger pages) embed
-   * the payment flow without leaving the page.
+   * the payment entry dialog, and "create-only" renders just the manual new-entry
+   * dialog, letting another page (e.g. the Ledger pages) embed the flow without
+   * leaving the page.
    */
-  renderMode?: "full" | "payment-only";
+  renderMode?: "full" | "payment-only" | "create-only";
   /** In payment-only mode, called when the payment dialog is closed. */
   onPaymentClose?: () => void;
+  /** In create-only mode, auto-open the manual new-entry dialog on mount. */
+  autoCreate?: boolean;
+  /** In create-only mode, called when the new-entry dialog is closed. */
+  onCreateClose?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -130,7 +135,7 @@ function cleanAdvanceAdjustmentRemarks(value: string): string {
   return text;
 }
 
-export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose }: Props) {
+export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode = "full", onPaymentClose, autoCreate, onCreateClose }: Props) {
   const { user, profile } = useCurrentUser();
   const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
@@ -869,6 +874,30 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payOpen, renderMode]);
 
+  // Auto-open the manual new-entry dialog when embedded in create-only mode.
+  const autoCreateHandledRef = useRef(false);
+  useEffect(() => {
+    if (!autoCreate || loading) return;
+    if (autoCreateHandledRef.current) return;
+    autoCreateHandledRef.current = true;
+    startCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCreate, loading]);
+
+  // In create-only embed mode, notify the host when the dialog is closed so it
+  // can unmount this instance.
+  const formWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (renderMode !== "create-only") return;
+    if (openForm) {
+      formWasOpenRef.current = true;
+    } else if (formWasOpenRef.current) {
+      formWasOpenRef.current = false;
+      onCreateClose?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openForm, renderMode]);
+
   // Map source table -> column to bump for THIS ledger's payment side.
   // Agency receives: customer-received column on each service row.
   // Vendor pays: only saudi_visas tracks vendor-paid (received_vendor).
@@ -1548,6 +1577,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     <div className="relative z-10 space-y-4 print:space-y-2">
       {renderMode !== "payment-only" && (
       <>
+      {renderMode === "full" && (
+      <>
       <PageWatermark text={mod.label} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between print:hidden">
@@ -2161,6 +2192,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
           )}
         </CardContent>
       </Card>
+      </>
+      )}
 
       {/* Form dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
