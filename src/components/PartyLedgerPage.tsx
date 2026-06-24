@@ -974,11 +974,10 @@ export function PartyLedgerPage({
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground">তারিখ</label>
-                <Input
-                  type="date"
+                <DateInput
                   value={manualForm.date}
                   onChange={(e) => setManualForm((f) => ({ ...f, date: e.target.value }))}
-                  className="h-9 mt-0.5"
+                  className="mt-0.5"
                 />
               </div>
             </div>
