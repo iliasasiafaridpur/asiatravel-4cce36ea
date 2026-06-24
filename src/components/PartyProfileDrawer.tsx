@@ -184,7 +184,9 @@ export function PartyProfileDrawer({
           .from(contactsTable as never)
           .select("phone,address,created_at,settle_mode")
           .eq("name", activeName)
-          .maybeSingle(),
+          .order("settle_mode", { ascending: true })
+          .limit(10),
+
       ]);
       const ledgerRows = ((ledgerRes.data as unknown as LedgerRow[]) ?? []);
 
