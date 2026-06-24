@@ -960,13 +960,27 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     recv_col: string | null; // when set, the amount was applied to the source row column
   };
 
+  type AllocDetail = {
+    kind?: string;
+    method?: string;
+    as_md_deposit?: boolean;
+    as_user_balance?: boolean;
+    items?: AllocItem[];
+    advance_row_id?: string | null;
+  };
+
   // Apply `amt` to a single ledger row: update source row if linked (trigger refreshes ledger),
   // otherwise bump the ledger row's paidCol directly. Returns allocation metadata.
-  const applyAllocationToRow = async (row: Row, amt: number): Promise<AllocItem> => {
+  const applyAllocationToRow = async (
+    row: Row,
+    amt: number,
+    opts?: { date?: string; method?: string; asMdDeposit?: boolean },
+  ): Promise<AllocItem> => {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
     const recvCol = srcTable ? sourceRecvCol(srcTable) : null;
-    const effectiveMethod = payAsMdDeposit ? "MD Sir Deposit" : payMethod;
+    const effectiveDate = opts?.date ?? payDate;
+    const effectiveMethod = opts?.asMdDeposit ? "MD Sir Deposit" : (opts?.method ?? payMethod);
     // Vendor side: paying a vendor for a Saudi/Kuwait visa auto-marks it as
     // "Received from Vendor" (sets vendor_sent_date + received_date when empty)
     // so the bill + payment immediately count in the vendor balance/profile —
@@ -979,8 +993,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         .maybeSingle();
       const v = vRow as { vendor_sent_date: string | null; received_date: string | null } | null;
       if (v && !v.received_date) {
-        const recvUpd: Record<string, unknown> = { received_date: payDate };
-        if (!v.vendor_sent_date) recvUpd.vendor_sent_date = payDate;
+        const recvUpd: Record<string, unknown> = { received_date: effectiveDate };
+        if (!v.vendor_sent_date) recvUpd.vendor_sent_date = effectiveDate;
         await supabase
           .from(srcTable as never)
           .update(recvUpd as never)
@@ -998,7 +1012,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       const upd: Record<string, unknown> = { [recvCol]: cur + amt };
       if (isAgency && user?.id) upd.received_by = user.id;
       if (isAgency) {
-        upd.payment_date = payDate;
+        upd.payment_date = effectiveDate;
       }
       const { error: uErr } = await supabase
         .from(srcTable as never)
@@ -1011,7 +1025,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       // skips mirroring because source_table is set).
       await supabase
         .from(mod.table as never)
-        .update({ payment_method: effectiveMethod, payment_date: payDate } as never)
+        .update({ payment_method: effectiveMethod, payment_date: effectiveDate } as never)
         .eq("id", row.id);
     } else {
       // No source_table (direct vendor bill / Opening Due): bump paid_amount AND
@@ -1025,7 +1039,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       const cur = Number(row[paidCol] ?? 0);
       const { error: uErr } = await supabase
         .from(mod.table as never)
-        .update({ [paidCol]: cur + amt, payment_method: effectiveMethod, payment_date: payDate } as never)
+        .update({ [paidCol]: cur + amt, payment_method: effectiveMethod, payment_date: effectiveDate } as never)
         .eq("id", row.id);
       if (uErr) throw uErr;
     }
@@ -1082,9 +1096,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   // Reverse a PAYMENT log row's allocations, then return so the caller can
   // delete the log row itself. Admin-only (guarded at the call site).
   const reversePaymentLog = async (logRow: Row) => {
-    const detail = logRow.alloc_detail as
-      | { items?: AllocItem[]; advance_row_id?: string | null }
-      | null;
+    const detail = logRow.alloc_detail as AllocDetail | null;
     const items = detail?.items ?? [];
     for (const it of items) {
       if (!it || !it.amt) continue;
@@ -1186,6 +1198,149 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     if (isAgency) advPayload.received_by = user?.id ?? null;
     await resilientInsert(mod.table, advPayload as Record<string, unknown>);
     return advId;
+  };
+
+  const allocationDueOf = (r: Row) => {
+    if (isAdvanceRow(r) || isPaymentRow(r) || !countsForVendorDue(r)) return 0;
+    return Math.max(
+      Number(r[billCol] ?? 0) -
+        Number(r[paidCol] ?? 0) -
+        discountOf(r) -
+        Number(r.advance_applied ?? 0),
+      0,
+    );
+  };
+
+  const fetchAllocationRows = async (target: string): Promise<Row[]> => {
+    const { data, error } = await supabase
+      .from(mod.table as never)
+      .select(columns)
+      .eq(groupField, target)
+      .order("entry_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(5000);
+    if (error) throw error;
+    return (data as unknown as Row[]) ?? [];
+  };
+
+  const recordEditedLeftoverAdvance = async ({
+    target,
+    amount,
+    date,
+    method,
+    remarks,
+    asMdDeposit,
+  }: {
+    target: string;
+    amount: number;
+    date: string;
+    method: string;
+    remarks: string;
+    asMdDeposit: boolean;
+  }): Promise<string> => {
+    const advId = await generateNextId({
+      key: mod.key, label: "", short: "", table: mod.table,
+      idColumn: mod.idColumn, idPrefix: "VDL", monthlyId: true, fields: [],
+    });
+    const payload: Record<string, unknown> = {
+      [mod.idColumn]: advId,
+      entry_date: date,
+      payment_date: date,
+      [groupField]: target,
+      service_type: "ADVANCE",
+      [billCol]: 0,
+      [paidCol]: amount,
+      payment_method: asMdDeposit ? "MD Sir Deposit" : method,
+      remarks: asMdDeposit
+        ? `MD Sir External Deposit (edited payment leftover)${remarks ? " · " + remarks : ""}`
+        : `Advance Paid (edited payment leftover) · ${method}${remarks ? " · " + remarks : ""}`,
+      created_by: user?.id ?? null,
+    };
+    if (asMdDeposit) payload.source_table = "md_deposit";
+    await resilientInsert(mod.table, payload as Record<string, unknown>);
+    return advId;
+  };
+
+  const reapplyEditedVendorPaymentLog = async (editRow: Row, payload: Record<string, unknown>) => {
+    const oldDetail = (editRow.alloc_detail as AllocDetail | null) ?? {};
+    const target = String(payload[groupField] ?? editRow[groupField] ?? "").trim();
+    const amount = Number(payload[paidCol] ?? 0) || 0;
+    const method = String(payload.payment_method ?? editRow.payment_method ?? "Cash") || "Cash";
+    const date = String(payload.payment_date ?? editRow.payment_date ?? editRow.entry_date ?? todayIso());
+    const remarks = String(payload.remarks ?? editRow.remarks ?? "").trim();
+    const asMdDeposit = method.toLowerCase().includes("md") && method.toLowerCase().includes("deposit");
+
+    if (!target) throw new Error("Vendor Name খালি রাখা যাবে না");
+    if (amount < 0) throw new Error("Paid amount নেগেটিভ হতে পারবে না");
+
+    // The green PAYMENT row is only a visible log. Its money is actually stored
+    // on the bill rows listed in alloc_detail. So editing only the green row does
+    // not change due; first reverse the old bill allocations, then apply the new
+    // amount and rewrite alloc_detail so future delete/edit can reverse exactly.
+    await reversePaymentLog(editRow);
+
+    const freshRows = await fetchAllocationRows(target);
+    const byId = new Map(freshRows.map((r) => [r.id, r]));
+    const preferredIds = (oldDetail.items ?? []).map((it) => it.id).filter(Boolean);
+    const used = new Set<string>();
+    const candidates: Row[] = [];
+    for (const id of preferredIds) {
+      const row = byId.get(id);
+      if (row && allocationDueOf(row) > 0.0001) {
+        candidates.push(row);
+        used.add(id);
+      }
+    }
+    for (const row of freshRows) {
+      if (!used.has(row.id) && allocationDueOf(row) > 0.0001) candidates.push(row);
+    }
+
+    let remaining = amount;
+    const items: AllocItem[] = [];
+    for (const row of candidates) {
+      if (remaining <= 0.0001) break;
+      const take = Math.min(remaining, allocationDueOf(row));
+      if (take <= 0) continue;
+      items.push(await applyAllocationToRow(row, take, { date, method, asMdDeposit }));
+      remaining -= take;
+    }
+
+    let advanceRowId: string | null = null;
+    const oldHadAdvance = Boolean(oldDetail.advance_row_id || oldDetail.as_md_deposit || oldDetail.as_user_balance);
+    if (remaining > 0.0001) {
+      if (!oldHadAdvance) {
+        throw new Error(`Total Due-এর চেয়ে বেশি দেওয়া যাবে না (বাকি: ৳${remaining.toLocaleString()})`);
+      }
+      advanceRowId = await recordEditedLeftoverAdvance({ target, amount: remaining, date, method, remarks, asMdDeposit });
+      remaining = 0;
+    }
+
+    const detail: AllocDetail = {
+      ...oldDetail,
+      kind: "vendor_payment",
+      method,
+      as_md_deposit: asMdDeposit,
+      items,
+      advance_row_id: advanceRowId,
+    };
+
+    const logPayload: Record<string, unknown> = {
+      ...payload,
+      [groupField]: target,
+      service_type: "PAYMENT",
+      [billCol]: 0,
+      [paidCol]: amount,
+      payment_method: method,
+      payment_date: date,
+      source_table: "payment_log",
+      alloc_detail: detail,
+    };
+    delete logPayload.id;
+    const { error } = await supabase
+      .from(mod.table as never)
+      .update(logPayload as never)
+      .eq("id", editRow.id);
+    if (error) throw error;
   };
 
   const submitPayment = async () => {
@@ -1424,11 +1579,16 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
 
       if (isEdit && editId) {
         // STRICT: existing row — UPDATE only, never insert
-        const { error } = await supabase
-          .from(mod.table as never)
-          .update(payload as never)
-          .eq("id", editId);
-        if (error) throw error;
+        delete payload.id;
+        if (!isAgency && editRow && isPaymentRow(editRow) && editRow.alloc_detail) {
+          await reapplyEditedVendorPaymentLog(editRow, payload);
+        } else {
+          const { error } = await supabase
+            .from(mod.table as never)
+            .update(payload as never)
+            .eq("id", editId);
+          if (error) throw error;
+        }
         toast.success("আপডেট হয়েছে");
       } else {
         // No id → INSERT new
