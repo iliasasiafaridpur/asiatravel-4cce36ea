@@ -1093,12 +1093,12 @@ export function formatDate(d?: string | null): string {
   // Pure date input — format without TZ conversion to avoid day-shift.
   if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) {
     const [y, m, day] = d.trim().split("-");
-    return `${day}-${MONTHS[Number(m) - 1]}-${y}`;
+    return `${day}-${m}-${y}`;
   }
   const date = new Date(d);
   if (isNaN(date.getTime())) return String(d);
   const p = tzParts(date);
-  return `${p.dd}-${MONTHS[p.mm - 1]}-${p.yyyy}`;
+  return `${p.dd}-${String(p.mm).padStart(2, "0")}-${p.yyyy}`;
 }
 
 export function formatDateTime(d?: string | null): string {
@@ -1108,8 +1108,9 @@ export function formatDateTime(d?: string | null): string {
   const date = new Date(d);
   if (isNaN(date.getTime())) return String(d);
   const p = tzParts(date);
-  return `${p.dd}-${MONTHS[p.mm - 1]}-${p.yyyy} ${p.hh}:${p.mi} ${p.ampm}`;
+  return `${p.dd}-${String(p.mm).padStart(2, "0")}-${p.yyyy} ${p.hh}:${p.mi} ${p.ampm}`;
 }
+
 
 export function statusBadgeClass(status?: string | null): string {
   const s = String(status ?? "").toLowerCase();
