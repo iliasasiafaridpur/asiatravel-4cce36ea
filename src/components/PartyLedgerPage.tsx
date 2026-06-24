@@ -734,7 +734,8 @@ export function PartyLedgerPage({
       }
       const paid = isCustomer
         ? Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0) + Number(r.discount_amount ?? 0)
-        : Number(r[paidCol] ?? 0);
+        : Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0);
+
       const due = Math.max(0, bill - paid);
       const status: BillItem["status"] = due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
       const idText =
