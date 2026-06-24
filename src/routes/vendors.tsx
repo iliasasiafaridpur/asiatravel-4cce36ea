@@ -30,7 +30,11 @@ function VendorsPage() {
     setBals(((data as unknown) as Bal[]) ?? []);
     const map: Record<string, string> = {};
     for (const v of ((vendors as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
-      if (v.name) map[v.name] = v.settle_mode === "one_by_one" ? "one_by_one" : v.settle_mode === "total" ? "total" : "";
+      if (!v.name) continue;
+      // Defensive against legacy duplicate rows: "one_by_one" must never be
+      // overwritten by a sibling row's "total"/empty value.
+      if (v.settle_mode === "one_by_one") map[v.name] = "one_by_one";
+      else if (!map[v.name]) map[v.name] = v.settle_mode === "total" ? "total" : "";
     }
     setModes(map);
   };
