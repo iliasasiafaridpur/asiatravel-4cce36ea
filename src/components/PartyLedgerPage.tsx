@@ -1015,8 +1015,13 @@ export function PartyLedgerPage({
               placeholder={isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
               className="h-9 max-w-sm"
             />
-            <div className="text-xs text-muted-foreground">
-              মোট {balances.length} টি {isCustomer ? "Agency" : "Vendor"}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>মোট {balances.length} টি {isCustomer ? "Agency" : "Vendor"}</span>
+              {listFilter.trim() && (
+                <Badge className="text-[11px] font-medium">
+                  ফলাফল {balances.filter((b) => b.name.toLowerCase().includes(listFilter.trim().toLowerCase())).length} টি
+                </Badge>
+              )}
             </div>
             <div className="overflow-x-auto rounded-md border">
               <Table>
@@ -1459,7 +1464,17 @@ export function PartyLedgerPage({
         <CardContent className="p-3 sm:p-4">
           {/* Heading + inline search/date-range filter for this ledger statement. */}
           <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-            <h3 className="text-sm font-semibold lg:mb-1">{pageTitle}</h3>
+            <div className="flex items-center gap-2 lg:mb-1">
+              <h3 className="text-sm font-semibold">{pageTitle}</h3>
+              <Badge variant="secondary" className="text-[11px] font-medium">
+                মোট {statement.length} টি
+              </Badge>
+              {(stmtSearch || stmtFrom || stmtTo) && (
+                <Badge className="text-[11px] font-medium">
+                  ফলাফল {filteredStatement.length} টি
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
               <div className="flex-1 min-w-[160px]">
                 <label className="text-[11px] text-muted-foreground">খুঁজুন</label>
