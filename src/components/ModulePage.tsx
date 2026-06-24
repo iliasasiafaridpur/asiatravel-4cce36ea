@@ -706,11 +706,15 @@ export function ModulePage({ module: mod }: Props) {
 
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
-      if (err?.code === "23505" && /passport.*entry_date|entry_date.*passport|uniq_.*_passport_date/i.test(String(err?.message ?? ""))) {
+      const msg = String(err?.message ?? "");
+      if (err?.code === "23505" && /passport.*entry_date|entry_date.*passport|uniq_.*_passport_date/i.test(msg)) {
         toast.error("⛔ ডুপ্লিকেট এন্ট্রি! এই পাসপোর্টের জন্য আজকের তারিখে এই সার্ভিস ইতিমধ্যে বুক করা আছে।", { duration: 6000 });
+      } else if (err?.code === "23505" && /(agents|vendors)_name_unique/i.test(msg)) {
+        toast.error("⛔ এই নামে ইতিমধ্যে একটি এন্ট্রি আছে। একই নামে দুটি তৈরি করা যাবে না — আগের এন্ট্রিটি এডিট করুন।", { duration: 6000 });
       } else {
         toast.error("সমস্যা: " + errMsg(e));
       }
+
     } finally {
       setSaving(false);
     }
