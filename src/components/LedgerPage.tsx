@@ -2692,19 +2692,47 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
             {/* Bulk-mode: Tabs (Auto-FIFO / Bill-by-Bill). Shown for the normal flow,
                 "Payment from User Balance" (payAsAdvance) and "MD Sir Deposit"
                 (payAsMdDeposit). Hidden only for manual adjustment. */}
-            {!payRow && payTarget && !payAsAdjust && (
-              <Tabs value={payMode} onValueChange={(v) => setPayMode(v as "fifo" | "specific")}>
-                {settleModeMap[payTarget] && (
-                  <div className="mb-2 text-[11px] text-muted-foreground">
-                    এই {isAgency ? "Agent" : "Vendor"} এর সেট করা ধরন:{" "}
-                    <span className="font-semibold text-foreground">
-                      {settleModeMap[payTarget] === "one_by_one" ? "এক একটা বিল (Bill-by-Bill)" : "মোটের উপর (Auto FIFO)"}
-                    </span>
+            {!payRow && payTarget && !payAsAdjust && (() => {
+              const partyMode = settleModeMap[payTarget];
+              const recommended = partyMode === "one_by_one" ? "specific" : partyMode === "total" ? "fifo" : null;
+              const locked = !!recommended && !payTabUnlocked;
+              return (
+              <Tabs
+                value={payMode}
+                onValueChange={(v) => {
+                  if (locked && v !== recommended) return;
+                  setPayMode(v as "fifo" | "specific");
+                }}
+              >
+                {partyMode && (
+                  <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                    <div>
+                      এই {isAgency ? "Agent" : "Vendor"} এর সেট করা ধরন:{" "}
+                      <span className="font-semibold text-foreground">
+                        {partyMode === "one_by_one" ? "এক একটা বিল (Bill-by-Bill)" : "মোটের উপর (Auto FIFO)"}
+                      </span>
+                    </div>
+                    {locked ? (
+                      <button
+                        type="button"
+                        onClick={() => setPayTabUnlocked(true)}
+                        className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-1.5 py-0.5 text-amber-600 hover:bg-amber-500/10"
+                        title="অন্য পদ্ধতিতে পেমেন্ট দিতে আনলক করুন"
+                      >
+                        🔒 আনলক
+                      </button>
+                    ) : recommended ? (
+                      <span className="text-amber-600">🔓 আনলক করা</span>
+                    ) : null}
                   </div>
                 )}
                 <TabsList className="grid grid-cols-2 w-full">
-                  <TabsTrigger value="fifo">Auto FIFO (পুরাতন → নতুন)</TabsTrigger>
-                  <TabsTrigger value="specific">Bill-by-Bill (নির্দিষ্ট)</TabsTrigger>
+                  <TabsTrigger value="fifo" disabled={locked && recommended !== "fifo"}>
+                    Auto FIFO (পুরাতন → নতুন)
+                  </TabsTrigger>
+                  <TabsTrigger value="specific" disabled={locked && recommended !== "specific"}>
+                    Bill-by-Bill (নির্দিষ্ট)
+                  </TabsTrigger>
                 </TabsList>
 
 
