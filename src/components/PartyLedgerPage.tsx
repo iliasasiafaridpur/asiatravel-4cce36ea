@@ -1487,20 +1487,18 @@ export function PartyLedgerPage({
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
-                <Input
-                  type="date"
+                <DateInput
                   value={stmtFrom}
                   onChange={(e) => setStmtFrom(e.target.value)}
-                  className="h-9 mt-0.5"
+                  className="mt-0.5 sm:w-[150px]"
                 />
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
-                <Input
-                  type="date"
+                <DateInput
                   value={stmtTo}
                   onChange={(e) => setStmtTo(e.target.value)}
-                  className="h-9 mt-0.5"
+                  className="mt-0.5 sm:w-[150px]"
                 />
               </div>
               {(stmtSearch || stmtFrom || stmtTo) && (
