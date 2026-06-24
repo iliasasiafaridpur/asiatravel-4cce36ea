@@ -1068,7 +1068,7 @@ export const SERVICE_CATEGORIES = [
 ];
 
 const APP_TZ = "Asia/Dhaka";
-const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
 
 // Get tz-stable parts so SSR (UTC) and CSR (local) render identical strings.
 function tzParts(date: Date) {
