@@ -215,7 +215,7 @@ export function StaffHandoverDialog({
       }
 
       setReceipts(recs);
-      setExpenses(((e.data ?? []) as unknown) as Expense[]);
+      setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
     return () => {
