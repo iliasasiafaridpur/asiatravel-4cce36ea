@@ -259,7 +259,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       if (cancelled) return;
       const map: Record<string, string> = {};
       for (const r of ((data as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
-        if (r.name) map[r.name] = r.settle_mode === "one_by_one" ? "one_by_one" : "total";
+        if (!r.name) continue;
+        // Defensive against legacy duplicate party rows: once a name resolves to
+        // "one_by_one" never downgrade it (matches PartyLedgerPage's logic).
+        if (r.settle_mode === "one_by_one") map[r.name] = "one_by_one";
+        else if (!map[r.name]) map[r.name] = "total";
       }
       setSettleModeMap(map);
     })();
