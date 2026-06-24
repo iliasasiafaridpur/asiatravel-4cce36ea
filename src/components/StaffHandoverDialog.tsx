@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, BookOpen, Mail } from "lucide-react";
 import { HandoverLedgerBook } from "@/components/HandoverLedgerBook";
 import { formatDateTime, formatDate } from "@/lib/modules";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
@@ -29,7 +29,14 @@ type Receipt = {
   discount?: number;
   svc?: SvcDetail;
 };
-type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null };
+type Expense = { id: string; expense_id?: string | null; amount: number; category: string; purpose?: string | null; entry_date: string; created_at?: string | null; linked_source_table?: string | null };
+
+// Balance-neutral / non-cash vendor-ledger mirror rows (Opening Due, MD Sir
+// Deposit, Vendor Received, Adjustment) never left this staff member's drawer,
+// so they must be kept OUT of the cash-handover expense breakdown. Manual
+// expenses (no linked_source_table) always count.
+const expenseHitsBalance = (e: { category?: string | null; linked_source_table?: string | null }) =>
+  e.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(e.category) : true;
 
 const STATUS_EVENT_SOURCES = new Set(["status_event", "status_change", "status-delivery"]);
 const isStatusEvent = (r: Receipt) =>
@@ -133,7 +140,7 @@ export function StaffHandoverDialog({
           .order("entry_date", { ascending: false }),
         supabase
           .from("cash_expenses")
-          .select("id,expense_id,amount,category,purpose,entry_date,created_at")
+          .select("id,expense_id,amount,category,purpose,entry_date,created_at,linked_source_table")
           .eq("spent_by", user.id)
           .lte("entry_date", closingDate)
           .is("handover_id", null)
@@ -208,7 +215,7 @@ export function StaffHandoverDialog({
       }
 
       setReceipts(recs);
-      setExpenses(((e.data ?? []) as unknown) as Expense[]);
+      setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
     return () => {
