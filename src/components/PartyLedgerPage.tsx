@@ -1015,8 +1015,13 @@ export function PartyLedgerPage({
               placeholder={isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
               className="h-9 max-w-sm"
             />
-            <div className="text-xs text-muted-foreground">
-              মোট {balances.length} টি {isCustomer ? "Agency" : "Vendor"}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>মোট {balances.length} টি {isCustomer ? "Agency" : "Vendor"}</span>
+              {listFilter.trim() && (
+                <Badge className="text-[11px] font-medium">
+                  ফলাফল {balances.filter((b) => b.name.toLowerCase().includes(listFilter.trim().toLowerCase())).length} টি
+                </Badge>
+              )}
             </div>
             <div className="overflow-x-auto rounded-md border">
               <Table>
