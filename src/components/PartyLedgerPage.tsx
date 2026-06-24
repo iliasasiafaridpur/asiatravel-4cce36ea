@@ -682,7 +682,90 @@ export function PartyLedgerPage({
     return out.reverse();
   }, [rows, billCol, paidCol, isCustomer, srcMap]);
 
+  // Per-bill breakdown for "এক একটা বিল" (Bill-by-Bill) parties. Each booking is
+  // shown with its own বাকি / আংশিক / পরিশোধিত status so one-by-one settlement is
+  // crystal clear.
+  type BillItem = {
+    id: string;
+    ledgerId: string;
+    date: string;
+    service: string;
+    description: string;
+    bill: number;
+    paid: number;
+    due: number;
+    status: "due" | "partial" | "paid";
+  };
+  const bills = useMemo<BillItem[]>(() => {
+    const moduleLabel: Record<string, string> = {
+      bmet_cards: "BMET Card",
+      saudi_visas: "Saudi Visa",
+      kuwait_visas: "Kuwait Visa",
+      tickets: "Ticket",
+    };
+    const out: BillItem[] = [];
+    for (const r of rows) {
+      const svc = String(r.service_type ?? "").toUpperCase();
+      if (svc === "PAYMENT" || svc === "ADVANCE" || svc === "OPENING") continue;
+      const src = String(r.source_table ?? "");
+      const sid = String(r.source_id ?? "");
+      const info = srcMap.get(sid);
+      const bill = Number(r[billCol] ?? 0);
+      if (bill <= 0) continue;
+      if (!isCustomer) {
+        const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
+        if (sourced && !info?.countDate) continue; // not yet received -> not a due bill
+      }
+      const paid = isCustomer
+        ? Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0) + Number(r.discount_amount ?? 0)
+        : Number(r[paidCol] ?? 0);
+      const due = Math.max(0, bill - paid);
+      const status: BillItem["status"] = due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
+      const idText =
+        (src && (moduleLabel[src] || src === "extra_services")) && info?.displayId
+          ? String(info.displayId)
+          : String(r.ledger_id ?? "");
+      const date = String(info?.countDate ?? r.entry_date ?? "");
+      const pax = String(r.passenger_name ?? "").trim();
+      const route = String(r.country_route ?? "").trim();
+      const desc = [pax, route].filter(Boolean).join(" · ") || String(r.remarks ?? "").trim();
+      out.push({
+        id: String(r.id),
+        ledgerId: idText,
+        date,
+        service: moduleLabel[src] || String(r.service_type ?? "—"),
+        description: desc,
+        bill,
+        paid,
+        due,
+        status,
+      });
+    }
+    // Unpaid first, then partial, then paid; newest within each group on top.
+    const rank = { due: 0, partial: 1, paid: 2 } as const;
+    out.sort((a, b) => rank[a.status] - rank[b.status] || (b.date || "").localeCompare(a.date || ""));
+    return out;
+  }, [rows, billCol, paidCol, isCustomer, srcMap]);
+
+  const billStats = useMemo(() => {
+    let dueCount = 0,
+      paidCount = 0,
+      partialCount = 0,
+      dueAmount = 0;
+    for (const b of bills) {
+      if (b.status === "paid") paidCount++;
+      else {
+        if (b.status === "partial") partialCount++;
+        else dueCount++;
+        dueAmount += b.due;
+      }
+    }
+    return { dueCount, partialCount, paidCount, dueAmount, total: bills.length };
+  }, [bills]);
+
   const totals = summary;
+
+
 
   // Apply the per-ledger search + date-range filters.
   const filteredStatement = useMemo(() => {
@@ -1169,6 +1252,117 @@ export function PartyLedgerPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* হিসাব ধরন banner — explains how this party's accounting is read. */}
+      <div
+        className={`rounded-md border px-3 py-2 text-xs ${
+          settleMode === "one_by_one"
+            ? "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+            : "border-sky-500/40 bg-sky-500/5 text-sky-700 dark:text-sky-400"
+        }`}
+      >
+        {settleMode === "one_by_one" ? (
+          <span>
+            <b>এক একটা বিল (Bill-by-Bill)</b> — প্রতিটা বিল আলাদাভাবে পরিশোধ হয়। নিচের{" "}
+            <b>বিল-ভিত্তিক স্ট্যাটাস</b> দেখুন: কোন বিল বাকি, কোনটা পরিশোধিত।
+          </span>
+        ) : (
+          <span>
+            <b>মোটের উপর (Auto FIFO)</b> — সব বিল একসাথে ধরা হয়। নিচের স্টেটমেন্টের{" "}
+            <b>Balance</b> কলামই চলমান মোট ব্যালেন্স (পাসবইয়ের মত)।
+          </span>
+        )}
+      </div>
+
+      {/* Bill-by-Bill checklist — only for one_by_one parties. */}
+      {settleMode === "one_by_one" && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">বিল-ভিত্তিক স্ট্যাটাস</h3>
+              <Badge variant="outline" className="border-rose-500/50 text-rose-600">
+                বাকি {billStats.dueCount + billStats.partialCount}
+              </Badge>
+              <Badge variant="outline" className="border-emerald-500/50 text-emerald-600">
+                পরিশোধিত {billStats.paidCount}
+              </Badge>
+              {billStats.dueAmount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  মোট বাকি:{" "}
+                  <span className="font-semibold text-rose-600 tabular-nums">
+                    {fmtMoney(billStats.dueAmount)}
+                  </span>
+                </span>
+              )}
+            </div>
+            <div className="overflow-x-auto rounded-md border">
+              <Table className="w-full min-w-[640px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px] whitespace-nowrap">Date</TableHead>
+                    <TableHead className="w-[150px] whitespace-nowrap">ID</TableHead>
+                    <TableHead className="min-w-[140px]">বিবরণ</TableHead>
+                    <TableHead className="w-[96px] text-right">বিল</TableHead>
+                    <TableHead className="w-[96px] text-right text-emerald-600">পরিশোধ</TableHead>
+                    <TableHead className="w-[110px] text-right">স্ট্যাটাস</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bills.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                        কোনো বিল নেই
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    bills.map((b, idx) => (
+                      <TableRow key={b.id} className={`row-tint-${idx % 4}`}>
+                        <TableCell className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
+                        <TableCell className="truncate font-mono text-xs" title={b.ledgerId}>
+                          {b.ledgerId}
+                        </TableCell>
+                        <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
+                          <span className="text-muted-foreground">{b.service}</span>
+                          {b.description ? ` · ${b.description}` : ""}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
+                        <TableCell className="text-right tabular-nums text-emerald-600">
+                          {b.paid ? b.paid.toLocaleString() : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {b.status === "paid" ? (
+                            <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
+                              পরিশোধিত
+                            </Badge>
+                          ) : b.status === "partial" ? (
+                            <div className="leading-tight">
+                              <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
+                                আংশিক
+                              </Badge>
+                              <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
+                                বাকি {b.due.toLocaleString()}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="leading-tight">
+                              <Badge variant="outline" className="border-rose-500/50 text-rose-600 text-[10px]">
+                                বাকি
+                              </Badge>
+                              <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
+                                {b.due.toLocaleString()}
+                              </div>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Ledger statement */}
       <Card>
