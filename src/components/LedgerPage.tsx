@@ -844,6 +844,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     setPayRow(null);
     // Default the allocation tab from the party's saved settlement preference.
     setPayMode(settleModeMap[groupKey] === "one_by_one" ? "specific" : "fifo");
+    setPayTabUnlocked(false);
     setSelectedLines({});
     setPayAsAdvance(false);
     setPayAsMdDeposit(false);
