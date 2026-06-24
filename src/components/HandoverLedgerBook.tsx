@@ -77,6 +77,7 @@ type Expense = {
   spent_by_name: string | null;
   handover_id: string | null;
   created_at: string;
+  linked_source_table?: string | null;
 };
 
 type ServiceInfo = {
