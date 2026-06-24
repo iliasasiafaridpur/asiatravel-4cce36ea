@@ -25,7 +25,7 @@ function AgentsPage() {
     setBals(((data as unknown) as Bal[]) ?? []);
     const map: Record<string, string> = {};
     for (const a of ((agents as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
-      if (a.name) map[a.name] = a.settle_mode === "one_by_one" ? "one_by_one" : "total";
+      if (a.name) map[a.name] = a.settle_mode === "one_by_one" ? "one_by_one" : a.settle_mode === "total" ? "total" : "";
     }
     setModes(map);
   };
