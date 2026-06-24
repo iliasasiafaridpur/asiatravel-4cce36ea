@@ -200,6 +200,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   const [payRow, setPayRow] = useState<Row | null>(null);
   // Bulk allocation mode: "fifo" = oldest-first auto; "specific" = bill-by-bill checklist
   const [payMode, setPayMode] = useState<"fifo" | "specific">("fifo");
+  // When a party has a saved হিসাব ধরন, the non-matching tab is locked to avoid
+  // accidentally paying with the wrong method. User can manually unlock per dialog.
+  const [payTabUnlocked, setPayTabUnlocked] = useState(false);
   // For specific mode: rowId -> amount string
   const [selectedLines, setSelectedLines] = useState<Record<string, string>>({});
   // Advance payment toggle: when true, skip booking allocation and just record an ADVANCE entry
