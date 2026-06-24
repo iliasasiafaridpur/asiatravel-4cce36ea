@@ -682,7 +682,90 @@ export function PartyLedgerPage({
     return out.reverse();
   }, [rows, billCol, paidCol, isCustomer, srcMap]);
 
+  // Per-bill breakdown for "এক একটা বিল" (Bill-by-Bill) parties. Each booking is
+  // shown with its own বাকি / আংশিক / পরিশোধিত status so one-by-one settlement is
+  // crystal clear.
+  type BillItem = {
+    id: string;
+    ledgerId: string;
+    date: string;
+    service: string;
+    description: string;
+    bill: number;
+    paid: number;
+    due: number;
+    status: "due" | "partial" | "paid";
+  };
+  const bills = useMemo<BillItem[]>(() => {
+    const moduleLabel: Record<string, string> = {
+      bmet_cards: "BMET Card",
+      saudi_visas: "Saudi Visa",
+      kuwait_visas: "Kuwait Visa",
+      tickets: "Ticket",
+    };
+    const out: BillItem[] = [];
+    for (const r of rows) {
+      const svc = String(r.service_type ?? "").toUpperCase();
+      if (svc === "PAYMENT" || svc === "ADVANCE" || svc === "OPENING") continue;
+      const src = String(r.source_table ?? "");
+      const sid = String(r.source_id ?? "");
+      const info = srcMap.get(sid);
+      const bill = Number(r[billCol] ?? 0);
+      if (bill <= 0) continue;
+      if (!isCustomer) {
+        const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
+        if (sourced && !info?.countDate) continue; // not yet received -> not a due bill
+      }
+      const paid = isCustomer
+        ? Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0) + Number(r.discount_amount ?? 0)
+        : Number(r[paidCol] ?? 0);
+      const due = Math.max(0, bill - paid);
+      const status: BillItem["status"] = due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
+      const idText =
+        (src && (moduleLabel[src] || src === "extra_services")) && info?.displayId
+          ? String(info.displayId)
+          : String(r.ledger_id ?? "");
+      const date = String(info?.countDate ?? r.entry_date ?? "");
+      const pax = String(r.passenger_name ?? "").trim();
+      const route = String(r.country_route ?? "").trim();
+      const desc = [pax, route].filter(Boolean).join(" · ") || String(r.remarks ?? "").trim();
+      out.push({
+        id: String(r.id),
+        ledgerId: idText,
+        date,
+        service: moduleLabel[src] || String(r.service_type ?? "—"),
+        description: desc,
+        bill,
+        paid,
+        due,
+        status,
+      });
+    }
+    // Unpaid first, then partial, then paid; newest within each group on top.
+    const rank = { due: 0, partial: 1, paid: 2 } as const;
+    out.sort((a, b) => rank[a.status] - rank[b.status] || (b.date || "").localeCompare(a.date || ""));
+    return out;
+  }, [rows, billCol, paidCol, isCustomer, srcMap]);
+
+  const billStats = useMemo(() => {
+    let dueCount = 0,
+      paidCount = 0,
+      partialCount = 0,
+      dueAmount = 0;
+    for (const b of bills) {
+      if (b.status === "paid") paidCount++;
+      else {
+        if (b.status === "partial") partialCount++;
+        else dueCount++;
+        dueAmount += b.due;
+      }
+    }
+    return { dueCount, partialCount, paidCount, dueAmount, total: bills.length };
+  }, [bills]);
+
   const totals = summary;
+
+
 
   // Apply the per-ledger search + date-range filters.
   const filteredStatement = useMemo(() => {
