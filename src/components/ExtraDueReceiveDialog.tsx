@@ -291,9 +291,22 @@ export function ExtraDueReceiveDialog({
                                 onChange={(e) => {
                                   const v = e.target.value;
                                   const d = Math.max(0, Math.min(remainingDue, Number(v) || 0));
-                                  setRows((prev) => prev.map((x) => x.id === r.id
-                                    ? { ...x, payDiscount: v, payAmount: String(Math.max(0, remainingDue - d)) }
-                                    : x));
+                                  setRows((prev) => prev.map((x) => {
+                                    if (x.id !== r.id) return x;
+                                    // Only auto-fill "pay the rest" when the user
+                                    // hasn't manually customized the amount — i.e.
+                                    // it still equals the prior full-minus-discount
+                                    // value. Otherwise keep their partial entry so
+                                    // typing a discount can't inflate the payment.
+                                    const prevD = Math.max(0, Math.min(remainingDue, Number(x.payDiscount) || 0));
+                                    const prevFull = String(Math.max(0, remainingDue - prevD));
+                                    const customized = x.payAmount !== "" && x.payAmount !== prevFull;
+                                    return {
+                                      ...x,
+                                      payDiscount: v,
+                                      payAmount: customized ? x.payAmount : String(Math.max(0, remainingDue - d)),
+                                    };
+                                  }));
                                 }}
                                 className="mt-1 h-9"
                                 placeholder="0"

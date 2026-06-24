@@ -18,7 +18,7 @@ import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
@@ -77,6 +77,7 @@ type Expense = {
   spent_by_name: string | null;
   handover_id: string | null;
   created_at: string;
+  linked_source_table?: string | null;
 };
 
 type ServiceInfo = {
@@ -174,7 +175,7 @@ export function HandoverLedgerInline({
       if (ids.length > 0) {
         const { data: expData } = await supabase
           .from("cash_expenses")
-          .select("id,expense_id,entry_date,amount,category,purpose,spent_by_name,handover_id,created_at")
+          .select("id,expense_id,entry_date,amount,category,purpose,spent_by_name,handover_id,created_at,linked_source_table")
           .in("handover_id", ids)
           .order("created_at", { ascending: true });
         exps = (expData ?? []) as Expense[];
@@ -182,6 +183,10 @@ export function HandoverLedgerInline({
       const expByH: Record<string, Expense[]> = {};
       for (const e of exps) {
         if (!e.handover_id) continue;
+        // Skip balance-neutral vendor-ledger mirror rows (Opening Due / MD Sir
+        // Deposit / Vendor Received / Adjustment) — they never left the drawer,
+        // so they must not inflate a handover's expense total.
+        if (e.linked_source_table === "vendor_ledger" && !vendorExpenseHitsUserBalance(e.category)) continue;
         (expByH[e.handover_id] ??= []).push(e);
       }
 

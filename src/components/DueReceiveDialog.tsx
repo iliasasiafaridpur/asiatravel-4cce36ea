@@ -133,7 +133,7 @@ export function DueReceiveDialog({
       passenger: String(r.passenger_name ?? ""),
       passport: String(r.passport ?? ""),
       mobile: String(r.mobile ?? ""),
-      sold, received: recv, discount: disc, due: sold - recv - disc,
+      sold, received: recv, discount: disc, due: Math.max(0, sold - recv - disc),
       entryDate: String(r.entry_date ?? ""),
       extra: String(r[s.extraCol] ?? ""),
       agencySold: String(r.agency_sold ?? ""),
