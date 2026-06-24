@@ -1005,12 +1005,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       const cur = Number(row[paidCol] ?? 0);
       const { error: uErr } = await supabase
         .from(mod.table as never)
-        .update({ [paidCol]: cur + amt, payment_method: effectiveMethod, payment_date: payDate } as never)
+        .update({ [paidCol]: cur + amt } as never)
         .eq("id", row.id);
       if (uErr) throw uErr;
     }
     // Propagate the EFFECTIVE payment method to the ledger row so the
-    // cash-sync trigger records the right Cash/Bank category.
+    // cash-sync trigger records the right Cash/Bank category. This is the
+    // SINGLE source of truth for payment_method/payment_date on the bill row
+    // (H-2: previously written twice — the duplicate write was removed so the
+    // method can never become stale/inconsistent between the two updates).
     // CRITICAL: when paying as "MD Sir Deposit" (external money), the bill row
     // must carry "MD Sir Deposit" — otherwise a bill row with no source_table
     // (e.g. Opening Due / direct vendor bills) would mirror a cash_expense with
