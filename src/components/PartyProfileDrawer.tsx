@@ -224,7 +224,22 @@ export function PartyProfileDrawer({
       if (!cancelled) {
         setRows(ledgerRows);
         setReceivedSrcIds(received);
-        setContact((contactRes.data as Contact | null) ?? null);
+        // Duplicate-tolerant merge (same fix as PartyLedgerPage): never silently
+        // null the contact, and keep an explicit one_by_one settle_mode choice.
+        const cRows = (contactRes.data as Contact[] | null) ?? [];
+        setContact(
+          cRows.length
+            ? {
+                ...cRows[0],
+                phone: cRows.find((c) => c.phone)?.phone ?? null,
+                address: cRows.find((c) => c.address)?.address ?? null,
+                settle_mode: cRows.some((c) => c.settle_mode === "one_by_one")
+                  ? "one_by_one"
+                  : "total",
+              }
+            : null,
+        );
+
         setLoading(false);
       }
     })();
