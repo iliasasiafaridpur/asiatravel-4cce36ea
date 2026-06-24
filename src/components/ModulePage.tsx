@@ -495,7 +495,13 @@ export function ModulePage({ module: mod }: Props) {
       };
       if (ex.id && existingIds.has(ex.id)) {
         keepIds.add(ex.id);
-        await supabase.from("extra_services" as never).update(row as never).eq("id", ex.id);
+        // `received_amount` is owned exclusively by ExtraDueReceiveDialog and
+        // `created_by` defines delete-ownership — never overwrite them on a
+        // parent edit, or (a) payments collected after the form was opened get
+        // silently reverted and (b) the row's owner changes. Only the editable
+        // descriptive/price fields are updated here.
+        const { received_amount: _omitReceived, created_by: _omitCreator, ...updatable } = row;
+        await supabase.from("extra_services" as never).update(updatable as never).eq("id", ex.id);
       } else {
         await supabase.from("extra_services" as never).insert(row as never);
       }
