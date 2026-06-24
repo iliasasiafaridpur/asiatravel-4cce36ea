@@ -140,7 +140,7 @@ export function StaffHandoverDialog({
           .order("entry_date", { ascending: false }),
         supabase
           .from("cash_expenses")
-          .select("id,expense_id,amount,category,purpose,entry_date,created_at")
+          .select("id,expense_id,amount,category,purpose,entry_date,created_at,linked_source_table")
           .eq("spent_by", user.id)
           .lte("entry_date", closingDate)
           .is("handover_id", null)
