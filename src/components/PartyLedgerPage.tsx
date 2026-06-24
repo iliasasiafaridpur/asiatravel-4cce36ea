@@ -247,12 +247,28 @@ export function PartyLedgerPage({
         .from(contactsTable as never)
         .select("phone,address,settle_mode")
         .eq("name", displayName)
-        .maybeSingle(),
+        .order("settle_mode", { ascending: true })
+        .limit(10),
+
       supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
     ]);
     const ledgerRows = (ledgerRes.data as unknown as LedgerRow[]) ?? [];
     setRows(ledgerRows);
-    setContact((contactRes.data as Contact | null) ?? null);
+    // Duplicate-tolerant: a name should map to one contact, but if stale
+    // duplicates ever exist, merge them so an explicit "এক একটা বিল" choice
+    // and any saved phone/address are never lost (root cause of settings not sticking).
+    const contactRows = (contactRes.data as Contact[] | null) ?? [];
+    const mergedContact: Contact | null = contactRows.length
+      ? {
+          phone: contactRows.find((c) => c.phone)?.phone ?? null,
+          address: contactRows.find((c) => c.address)?.address ?? null,
+          settle_mode: contactRows.some((c) => c.settle_mode === "one_by_one")
+            ? "one_by_one"
+            : "total",
+        }
+      : null;
+    setContact(mergedContact);
+
 
     // Pick this party's authoritative balance row.
     const balRows = (balRes.data as unknown as Record<string, unknown>[]) ?? [];
