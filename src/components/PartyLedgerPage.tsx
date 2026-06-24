@@ -7,6 +7,7 @@ import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -973,11 +974,10 @@ export function PartyLedgerPage({
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground">তারিখ</label>
-                <Input
-                  type="date"
+                <DateInput
                   value={manualForm.date}
                   onChange={(e) => setManualForm((f) => ({ ...f, date: e.target.value }))}
-                  className="h-9 mt-0.5"
+                  className="mt-0.5"
                 />
               </div>
             </div>
@@ -1487,20 +1487,18 @@ export function PartyLedgerPage({
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
-                <Input
-                  type="date"
+                <DateInput
                   value={stmtFrom}
                   onChange={(e) => setStmtFrom(e.target.value)}
-                  className="h-9 mt-0.5"
+                  className="mt-0.5 sm:w-[150px]"
                 />
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
-                <Input
-                  type="date"
+                <DateInput
                   value={stmtTo}
                   onChange={(e) => setStmtTo(e.target.value)}
-                  className="h-9 mt-0.5"
+                  className="mt-0.5 sm:w-[150px]"
                 />
               </div>
               {(stmtSearch || stmtFrom || stmtTo) && (

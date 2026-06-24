@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -192,12 +193,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
               মোট {list.length} টি রেকর্ড পাওয়া গেছে · সিলেক্টেড: {selected.size}
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Input
-                type="date"
+              <DateInput
                 value={dateQuery}
                 onChange={(e) => setDateQuery(e.target.value)}
-                className="h-8 w-full sm:w-40 text-sm"
-                title="এন্ট্রি তারিখ সার্চ"
+                className="w-full sm:w-40 text-sm"
+                aria-label="এন্ট্রি তারিখ সার্চ"
               />
               <Input
                 value={nameQuery}
