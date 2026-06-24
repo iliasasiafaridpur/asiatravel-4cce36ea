@@ -1290,6 +1290,62 @@ export function PartyLedgerPage({
         )}
       </div>
 
+      {/* এক ঝলক সারাংশ কার্ড — মোডভেদে সবচেয়ে জরুরি সংখ্যাটা বড় করে দেখায়। */}
+      {(() => {
+        const hasDue = totals.due > 0.5;
+        const hasAdv = !hasDue && totals.advance > 0.5;
+        const tone = hasDue
+          ? "border-rose-500/40 bg-rose-500/5"
+          : hasAdv
+            ? "border-sky-500/40 bg-sky-500/5"
+            : "border-emerald-500/40 bg-emerald-500/5";
+        const headline = hasDue
+          ? isCustomer
+            ? "এই এজেন্টের কাছে আমরা পাবো"
+            : "এই ভেন্ডরকে আমরা দিবো"
+          : hasAdv
+            ? isCustomer
+              ? "এজেন্ট অগ্রিম জমা দিয়েছে"
+              : "ভেন্ডরকে অগ্রিম দেওয়া আছে"
+            : "সব হিসাব পরিশোধিত ✅";
+        const amount = hasDue ? totals.due : hasAdv ? totals.advance : 0;
+        const amtColor = hasDue ? "text-rose-600" : hasAdv ? "text-sky-600" : "text-emerald-600";
+        const remainingBills = billStats.dueCount + billStats.partialCount;
+        return (
+          <div className={`rounded-lg border px-4 py-3 ${tone}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground">{headline}</div>
+                <div className={`text-2xl font-bold tabular-nums ${amtColor}`}>
+                  {amount > 0 ? fmtMoney(amount) : "৳0"}
+                </div>
+              </div>
+              {settleMode === "one_by_one" ? (
+                <div className="text-right text-xs">
+                  <div className="text-muted-foreground">বিল-ভিত্তিক হিসাব</div>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <span className="font-semibold text-rose-600">{remainingBills} টি বাকি</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="font-semibold text-emerald-600">{billStats.paidCount} টি পরিশোধিত</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-right text-xs">
+                  <div className="text-muted-foreground">মোটের উপর হিসাব</div>
+                  <div className="mt-0.5">
+                    <span className="text-muted-foreground">মোট বিল </span>
+                    <span className="font-semibold tabular-nums">{fmtMoney(totals.bill)}</span>
+                    <span className="text-muted-foreground"> · পরিশোধ </span>
+                    <span className="font-semibold tabular-nums text-emerald-600">{fmtMoney(totals.paid)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+
       {/* Bill-by-Bill checklist — only for one_by_one parties. */}
       {settleMode === "one_by_one" && (
         <Card>
