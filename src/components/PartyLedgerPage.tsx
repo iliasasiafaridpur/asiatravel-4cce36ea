@@ -247,7 +247,9 @@ export function PartyLedgerPage({
         .from(contactsTable as never)
         .select("phone,address,settle_mode")
         .eq("name", displayName)
-        .maybeSingle(),
+        .order("settle_mode", { ascending: true })
+        .limit(10),
+
       supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
     ]);
     const ledgerRows = (ledgerRes.data as unknown as LedgerRow[]) ?? [];
