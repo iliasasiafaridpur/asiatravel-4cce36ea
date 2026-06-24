@@ -61,7 +61,7 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
             {...rest}
           >
 
-            <span>{display || placeholder || "DD/MM/YYYY"}</span>
+            <span>{display || placeholder || "DD-MM-YYYY"}</span>
             <CalendarIcon className="h-4 w-4 text-primary opacity-80" />
           </Button>
         </PopoverTrigger>
