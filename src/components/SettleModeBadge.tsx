@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
  * see at a glance which parties are silently defaulting to Auto FIFO (M-2).
  */
 export function SettleModeBadge({ mode }: { mode?: string | null }) {
-  if (mode == null) {
+  if (!mode) {
     return (
       <Badge
         variant="outline"
