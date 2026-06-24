@@ -9,7 +9,7 @@ function toDMY(iso: string | undefined | null): string {
   if (!iso) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return "";
-  return `${m[3]}/${m[2]}/${m[1]}`;
+  return `${m[3]}-${m[2]}-${m[1]}`;
 }
 
 function isoToDate(iso: string | undefined | null): Date | undefined {
