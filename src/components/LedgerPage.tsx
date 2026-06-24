@@ -1001,28 +1001,30 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         .update(upd as never)
         .eq("id", srcId);
       if (uErr) throw uErr;
+      // Source-backed ledger rows (bmet/saudi/kuwait/agency): the actual paid/
+      // received amount lives on the SOURCE row. The ledger row only needs its
+      // method propagated so the cash-sync trigger classifies correctly (it
+      // skips mirroring because source_table is set).
+      await supabase
+        .from(mod.table as never)
+        .update({ payment_method: effectiveMethod, payment_date: payDate } as never)
+        .eq("id", row.id);
     } else {
+      // No source_table (direct vendor bill / Opening Due): bump paid_amount AND
+      // set the method in a SINGLE update. Writing them separately fired the
+      // cash-sync trigger twice — the first fire (old/blank method → "Cash")
+      // briefly mirrored a real cash_expense and only the second fire
+      // reclassified it to a balance-neutral "Adjustment", leaving a phantom
+      // expense row + a transient wrong balance. One write fires the trigger
+      // once with the correct method, so MD Sir Deposit / Vendor Received never
+      // create a stray cash entry.
       const cur = Number(row[paidCol] ?? 0);
       const { error: uErr } = await supabase
         .from(mod.table as never)
-        .update({ [paidCol]: cur + amt } as never)
+        .update({ [paidCol]: cur + amt, payment_method: effectiveMethod, payment_date: payDate } as never)
         .eq("id", row.id);
       if (uErr) throw uErr;
     }
-    // Propagate the EFFECTIVE payment method to the ledger row so the
-    // cash-sync trigger records the right Cash/Bank category. This is the
-    // SINGLE source of truth for payment_method/payment_date on the bill row
-    // (H-2: previously written twice — the duplicate write was removed so the
-    // method can never become stale/inconsistent between the two updates).
-    // CRITICAL: when paying as "MD Sir Deposit" (external money), the bill row
-    // must carry "MD Sir Deposit" — otherwise a bill row with no source_table
-    // (e.g. Opening Due / direct vendor bills) would mirror a cash_expense with
-    // the underlying method (often "Cash") and wrongly reduce the staff's
-    // cash balance, even though the UI promises the user balance stays intact.
-    await supabase
-      .from(mod.table as never)
-        .update({ payment_method: effectiveMethod, payment_date: payDate } as never)
-      .eq("id", row.id);
     return {
       id: row.id,
       ledger_id: String(row[mod.idColumn] ?? ""),
