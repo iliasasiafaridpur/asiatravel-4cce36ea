@@ -1291,6 +1291,23 @@ export function PartyLedgerPage({
         )}
       </div>
 
+      {/* M-2: contact-card নেই → পার্টি নিরবে "মোটের উপর (Auto FIFO)"-তে চলছে।
+          ব্যবহারকারীকে জানানো হয় যেন ইচ্ছাকৃতভাবে ধরন বেছে নিতে পারে। */}
+      {!loading && !contact && rows.length > 0 && (
+        <div className="rounded-md border border-orange-500/50 bg-orange-500/5 px-3 py-2 text-xs text-orange-700 dark:text-orange-400">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              <b>⚠️ হিসাব ধরন সেট করা নেই</b> — এই {isCustomer ? "এজেন্টের" : "ভেন্ডরের"} কোনো
+              কার্ড/সেটিং নেই, তাই হিসাব নিরবে <b>মোটের উপর (Auto FIFO)</b>-তে ধরা হচ্ছে। সঠিক হিসাবের
+              জন্য ধরন বেছে নিন।
+            </span>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={beginEdit}>
+              ধরন সেট করুন
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* এক ঝলক সারাংশ কার্ড — মোডভেদে সবচেয়ে জরুরি সংখ্যাটা বড় করে দেখায়। */}
       {(() => {
         const hasDue = totals.due > 0.5;
