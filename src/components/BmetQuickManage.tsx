@@ -16,6 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { LookupSelect } from "@/components/LookupSelect";
 import { formatDate } from "@/lib/modules";
+import { useMobileColors, mobileColorTextClass, useSetMobileColor } from "@/hooks/useMobileColors";
 import { Zap, Phone, PhoneOff, PhoneCall } from "lucide-react";
 
 type Row = Record<string, unknown> & { id: string };
@@ -28,27 +29,31 @@ interface Props {
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
+const OPTIONS: { value: Mode; serial: string; title: string; sub: string; btn: string }[] = [
   {
     value: "send",
+    serial: "১",
     title: "একাধিক BMET, vendor কে Send করো",
     sub: '"NEW" Status থেকে "File Process" Status করা হবে।',
     btn: "Send",
   },
   {
     value: "ready",
+    serial: "২",
     title: "BMET, Vendor এর কাছে Ready হয়েছে।",
     sub: 'স্টাটাস পরিবর্তন - File Process থেকে Card Ready করা হবে।',
     btn: "Card Ready",
   },
   {
     value: "receive",
+    serial: "৩",
     title: "BMET, Vendor থেকে Receive করা হবে।",
     sub: 'স্টাটাস পরিবর্তন - Card Ready থেকে Pending Delivery করা হবে। ও খাতায় লেখা হয়েছে।',
     btn: "Receive BMET",
   },
   {
     value: "call",
+    serial: "৪",
     title: "📞 কল করা (Receive হওয়া passenger কে)",
     sub: 'Receive হওয়া তারিখ ধরে কল করুন। কথা হলে ✅, না ধরলে 📵 মার্ক করুন।',
     btn: "",
