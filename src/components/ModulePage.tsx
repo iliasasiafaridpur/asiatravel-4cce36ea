@@ -2128,25 +2128,40 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       return next;
     });
   };
-  const [agencyPhones, setAgencyPhones] = useState<{ name: string; phone: string }[]>([]);
+  const [agencyPhones, setAgencyPhones] = useState<{ name: string; phone: string; serial: number | null }[]>([]);
 
   useEffect(() => {
     if (!mod.fields.some((f) => f.lookup === "sub_agency" || f.name === "agency_sold")) return;
     let alive = true;
     void supabase
       .from("agents")
-      .select("name,phone")
+      .select("name,phone,serial_no")
       .limit(5000)
       .then(({ data }) => {
         if (!alive) return;
         setAgencyPhones(
-          ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
-            .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim() }))
+          ((data as { name?: string | null; phone?: string | null; serial_no?: number | null }[] | null) ?? [])
+            .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim(), serial: r.serial_no ?? null }))
             .filter((r) => r.name && r.name.toLowerCase() !== "self"),
         );
       });
     return () => { alive = false; };
   }, [mod]);
+
+  // Loosely match a chosen agency name to its পরিচিতি বোর্ড row (ignores
+  // spaces / dashes / case so "Future travel-Bhanga" still matches).
+  const matchAgency = (name: string) => {
+    const norm = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+    const selected = norm(name);
+    if (!selected || selected === "self") return undefined;
+    return (
+      agencyPhones.find((r) => norm(r.name) === selected) ??
+      agencyPhones.find((r) => {
+        const n = norm(r.name);
+        return Boolean(n) && (selected.includes(n) || n.includes(selected));
+      })
+    );
+  };
 
   // Enter → focus next input. Textarea/buttons keep native behavior.
   const onFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -2178,18 +2193,12 @@ export function FormSections({ mod, form, setForm, isEdit }: {
     ) {
       const name = v.trim();
       if (name && name.toLowerCase() !== "self") {
-        const norm = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
-        const selected = norm(name);
-        const exact = agencyPhones.find((r) => norm(r.name) === selected);
-        const loose = exact ?? agencyPhones.find((r) => {
-          const n = norm(r.name);
-          return Boolean(n) && (selected.includes(n) || n.includes(selected));
-        });
+        const loose = matchAgency(name);
         const first = String(loose?.phone ?? "")
           .split(/[,;\n|]+/)
           .map((p) => p.trim())
           .find((p) => normalizeMobileForColor(p));
-        if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
+        if (first) setForm((s) => ({ ...s, mobile: first }));
       }
     }
   };
@@ -2221,15 +2230,36 @@ export function FormSections({ mod, form, setForm, isEdit }: {
               className="grid gap-x-2 gap-y-1.5 p-2"
               style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
             >
-              {g.fields.map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={form[field.name]}
-                  onChange={(v) => onFieldChange(field, v)}
-                  disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
-                />
-              ))}
+              {g.fields.map((field) => {
+                const isAgencyField = field.lookup === "sub_agency" || field.name === "agency_sold";
+                const agencyVal = isAgencyField ? String(form[field.name] ?? "").trim() : "";
+                const matched = isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" ? matchAgency(agencyVal) : undefined;
+                return (
+                  <div key={field.name} className="space-y-0.5">
+                    <FormField
+                      field={field}
+                      value={form[field.name]}
+                      onChange={(v) => onFieldChange(field, v)}
+                      disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
+                    />
+                    {isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" && (
+                      <p className="text-[10px] leading-tight text-muted-foreground">
+                        {matched?.serial != null ? (
+                          <span className="font-mono font-semibold text-primary">AGT-{String(matched.serial).padStart(3, "0")}</span>
+                        ) : (
+                          <span className="text-amber-500">ID নেই</span>
+                        )}
+                        {" · "}
+                        {matched?.phone ? (
+                          <span className="text-emerald-500">📱 {matched.phone}</span>
+                        ) : (
+                          <span className="text-amber-500">এজেন্সির পরিচিতি বোর্ডে মোবাইল নেই</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
         );
