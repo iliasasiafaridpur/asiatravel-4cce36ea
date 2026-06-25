@@ -1327,20 +1327,25 @@ export function PartyLedgerPage({
                       phoneList.map((ph, i) => (
                         <div key={i} className="flex items-center gap-2 flex-wrap">
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{ph}</span>
+                          {ph.label && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {ph.label}
+                            </Badge>
+                          )}
+                          <span>{ph.phone}</span>
                           <a
-                            href={`tel:${ph.replace(/[^+\d]/g, "")}`}
+                            href={`tel:${ph.phone.replace(/[^+\d]/g, "")}`}
                             className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30 transition-colors hover:bg-emerald-500/25"
-                            aria-label={`Call ${ph}`}
+                            aria-label={`Call ${ph.phone}`}
                           >
                             <PhoneCall className="h-3.5 w-3.5" />
                           </a>
                           <a
-                            href={`https://wa.me/${waNumber(ph)}`}
+                            href={`https://wa.me/${waNumber(ph.phone)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30 transition-colors hover:bg-green-500/25"
-                            aria-label={`WhatsApp ${ph}`}
+                            aria-label={`WhatsApp ${ph.phone}`}
                           >
                             <MessageCircle className="h-3.5 w-3.5" />
                           </a>
