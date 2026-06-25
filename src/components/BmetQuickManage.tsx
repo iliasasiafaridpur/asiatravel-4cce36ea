@@ -380,7 +380,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                           type="number"
                           inputMode="decimal"
                           min={0}
-                          value={costPrices[r.id] ?? (r.cost_price != null ? String(r.cost_price) : "")}
+                          value={costPrices[r.id] ?? (r.cost_price ? String(r.cost_price) : "")}
                           onChange={(e) => setCostPrices((p) => ({ ...p, [r.id]: e.target.value }))}
                           className="h-8 w-28 text-sm"
                           placeholder="0"
