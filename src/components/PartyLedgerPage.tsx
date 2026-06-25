@@ -1263,7 +1263,12 @@ export function PartyLedgerPage({
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {serialCode && (
+                      <Badge variant="secondary" className="font-mono text-[11px] tabular-nums">
+                        {serialCode}
+                      </Badge>
+                    )}
                     <span className="text-lg font-semibold leading-tight">{displayName}</span>
                     <Badge
                       variant="outline"
@@ -1282,6 +1287,9 @@ export function PartyLedgerPage({
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </div>
+                  {contact?.full_name && (
+                    <div className="mt-1 text-sm text-muted-foreground">{contact.full_name}</div>
+                  )}
                   <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
                     {phoneList.length ? (
                       phoneList.map((ph, i) => (
