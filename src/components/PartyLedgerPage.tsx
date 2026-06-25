@@ -380,14 +380,16 @@ export function PartyLedgerPage({
 
 
   const beginEdit = () => {
-    const list = (contact?.phone ?? "")
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
+    const nums = (contact?.phone ?? "").split(",").map((p) => p.trim());
+    const labels = (contact?.phone_labels ?? "").split(",").map((l) => l.trim());
+    const pairs = nums
+      .map((ph, i) => ({ phone: ph, label: labels[i] ?? "" }))
+      .filter((x) => x.phone);
     setForm({
       name: displayName,
       fullName: contact?.full_name ?? "",
-      phones: list.length ? list : [""],
+      phones: pairs.length ? pairs.map((p) => p.phone) : [""],
+      phoneLabels: pairs.length ? pairs.map((p) => p.label) : [""],
       address: contact?.address ?? "",
       settleMode,
     });
