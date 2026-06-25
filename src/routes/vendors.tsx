@@ -27,7 +27,16 @@ function VendorsPage() {
       supabase.rpc("get_vendor_balances" as never),
       supabase.from("vendors").select("name,settle_mode").limit(5000),
     ]);
-    setBals(((data as unknown) as Bal[]) ?? []);
+    const rows = ((data as unknown) as Bal[]) ?? [];
+    const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
+    rows.sort((a, b) => {
+      const r = rank(a) - rank(b);
+      if (r !== 0) return r;
+      const av = Number(a.advance_balance ?? 0) > 0 ? Number(a.advance_balance) : Number(a.balance_due);
+      const bv = Number(b.advance_balance ?? 0) > 0 ? Number(b.advance_balance) : Number(b.balance_due);
+      return bv - av;
+    });
+    setBals(rows);
     const map: Record<string, string> = {};
     for (const v of ((vendors as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
       if (!v.name) continue;
