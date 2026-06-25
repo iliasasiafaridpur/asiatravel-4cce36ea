@@ -359,17 +359,19 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     )}
                     <TableCell>{formatDate((isCall ? r.received_date : r.entry_date) as string | null)}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
-                    {isCall && <TableCell className="text-muted-foreground">{String(r.agency_sold ?? "")}</TableCell>}
+                    {showAgent && <TableCell className="text-muted-foreground">{String(r.agency_sold ?? "")}</TableCell>}
                     <TableCell>{String(r.passport ?? "")}</TableCell>
-                    <TableCell>
-                      {isCall && mobile ? (
-                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(displayMobileColor) || "text-primary"}`}>
-                          <Phone className="h-3.5 w-3.5" /> {mobile}
-                        </a>
-                      ) : (
-                        <span className={mobileColorTextClass(displayMobileColor)}>{mobile}</span>
-                      )}
-                    </TableCell>
+                    {showMobile && (
+                      <TableCell>
+                        {mobile ? (
+                          <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(displayMobileColor) || "text-primary"}`}>
+                            <Phone className="h-3.5 w-3.5" /> {mobile}
+                          </a>
+                        ) : (
+                          <span className={mobileColorTextClass(displayMobileColor)}>{mobile}</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
                     {!isCall && <TableCell>{String(r.vendor_bought ?? "")}</TableCell>}
                     {!isCall && (
