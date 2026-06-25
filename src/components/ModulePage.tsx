@@ -1945,7 +1945,7 @@ export function ModulePage({ module: mod }: Props) {
                                 ) : f.type === "number" ? (
                                   <span className="tabular-nums">{(f.name === "received" || f.name === "received_amount") && Number(r[f.name] ?? 0) > 0 && mod.fields.some((x) => x.name === "delivery_date") && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{Number(r[f.name] ?? 0).toLocaleString()}</span>
                                 ) : f.format === "mobile" || f.name === "mobile" || f.name === "phone" ? (
-                                  <span className={mobileColorTextClass(colorFor(String(r[f.name] ?? "")))}>{String(r[f.name] ?? "")}</span>
+                                  <span className={mobileColorTextClass(mobileColorForRow(String(r[f.name] ?? ""), r))}>{String(r[f.name] ?? "")}</span>
                                 ) : (
                                   String(r[f.name] ?? "")
                                 )}
