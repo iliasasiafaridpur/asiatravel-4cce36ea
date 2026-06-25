@@ -244,7 +244,10 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
               >
                 <RadioGroupItem value={opt.value} id={`qm-${opt.value}`} className="mt-0.5" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-medium leading-tight">{opt.title}</span>
+                  <span className="text-xs font-medium leading-tight">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold mr-1 align-middle">{opt.serial}</span>
+                    {opt.title}
+                  </span>
                   <span className="text-[11px] text-muted-foreground leading-tight">{opt.sub}</span>
                 </div>
               </label>
