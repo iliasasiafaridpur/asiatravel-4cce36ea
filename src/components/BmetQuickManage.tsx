@@ -77,6 +77,12 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [localCallMarks, setLocalCallMarks] = useState<Record<string, { status: "talked" | "no_answer"; last_call_date: string }>>({});
 
   const isCall = mode === "call";
+  // Agent কলাম: ২ (ready), ৩ (receive) ও ৪ (call) মোডে দেখাবে
+  const showAgent = mode === "ready" || mode === "receive" || isCall;
+  // Mobile কলাম: শুধু ৪ নং (call) মোডে দরকার
+  const showMobile = isCall;
+  // টেবিল খালি থাকলে colSpan
+  const emptyColSpan = isCall ? 8 : 7 + (showAgent ? 1 : 0);
 
   const list = useMemo(() => {
     // বাতিল করা কার্ড চলমান কাজের তালিকায় আসবে না।
@@ -318,9 +324,9 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   )}
                   <TableHead>{isCall ? "Receive তারিখ" : "Date"}</TableHead>
                   <TableHead>Passenger</TableHead>
-                  {isCall && <TableHead>Agent</TableHead>}
+                  {showAgent && <TableHead>Agent</TableHead>}
                   <TableHead>Passport</TableHead>
-                  <TableHead>Mobile</TableHead>
+                  {showMobile && <TableHead>Mobile</TableHead>}
                   <TableHead>Country</TableHead>
                   {!isCall && <TableHead>Current Vendor</TableHead>}
                   {!isCall && <TableHead className="w-32">Cost Price</TableHead>}
@@ -331,7 +337,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
               <TableBody>
                 {list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isCall ? 8 : 9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={emptyColSpan} className="text-center text-muted-foreground py-8">
                       কোনো রেকর্ড পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
@@ -353,17 +359,19 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     )}
                     <TableCell>{formatDate((isCall ? r.received_date : r.entry_date) as string | null)}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
-                    {isCall && <TableCell className="text-muted-foreground">{String(r.agency_sold ?? "")}</TableCell>}
+                    {showAgent && <TableCell className="text-muted-foreground">{String(r.agency_sold ?? "")}</TableCell>}
                     <TableCell>{String(r.passport ?? "")}</TableCell>
-                    <TableCell>
-                      {isCall && mobile ? (
-                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(displayMobileColor) || "text-primary"}`}>
-                          <Phone className="h-3.5 w-3.5" /> {mobile}
-                        </a>
-                      ) : (
-                        <span className={mobileColorTextClass(displayMobileColor)}>{mobile}</span>
-                      )}
-                    </TableCell>
+                    {showMobile && (
+                      <TableCell>
+                        {mobile ? (
+                          <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(displayMobileColor) || "text-primary"}`}>
+                            <Phone className="h-3.5 w-3.5" /> {mobile}
+                          </a>
+                        ) : (
+                          <span className={mobileColorTextClass(displayMobileColor)}>{mobile}</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
                     {!isCall && <TableCell>{String(r.vendor_bought ?? "")}</TableCell>}
                     {!isCall && (
@@ -372,7 +380,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                           type="number"
                           inputMode="decimal"
                           min={0}
-                          value={costPrices[r.id] ?? (r.cost_price != null ? String(r.cost_price) : "")}
+                          value={costPrices[r.id] ?? (r.cost_price ? String(r.cost_price) : "")}
                           onChange={(e) => setCostPrices((p) => ({ ...p, [r.id]: e.target.value }))}
                           className="h-8 w-28 text-sm"
                           placeholder="0"
