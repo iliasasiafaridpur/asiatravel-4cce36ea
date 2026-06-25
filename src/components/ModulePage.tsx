@@ -237,6 +237,12 @@ export function ModulePage({ module: mod }: Props) {
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
   const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
+  const mobileColorForRow = useCallback((mobile: string, r?: Row) => {
+    const callStatus = String(r?.call_status ?? "");
+    if (callStatus === "talked") return "green";
+    if (callStatus === "no_answer") return "red";
+    return colorFor(mobile);
+  }, [colorFor]);
 
   // Preserve list scroll position when the add/edit dialog opens & closes.
   const saveScroll = useScrollRestore(openForm);
@@ -1073,17 +1079,11 @@ export function ModulePage({ module: mod }: Props) {
       );
     };
 
-    const rowMobileColor = (mobile: string, r?: Row) => {
-      const callStatus = String(r?.call_status ?? "");
-      if (callStatus === "talked") return "green";
-      if (callStatus === "no_answer") return "red";
-      return colorFor(mobile);
-    };
     // Mobile sub-line with per-number color tag applied.
     const mobileSub = (mobile: string, r?: Row) => (
       <div className="text-xs leading-tight">
         <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
-        <span className={mobileColorTextClass(rowMobileColor(mobile, r)) || "text-muted-foreground"}>{mobile}</span>
+        <span className={mobileColorTextClass(mobileColorForRow(mobile, r)) || "text-muted-foreground"}>{mobile}</span>
         <CopyInlineButton value={mobile} />
       </div>
     );
@@ -1419,7 +1419,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className={`text-sm ${mobileColorTextClass(rowMobileColor(String(r.phone), r))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.phone ? <div className={`text-sm ${mobileColorTextClass(mobileColorForRow(String(r.phone), r))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
               {r.address ? subLine("📍", String(r.address)) : null}
             </div>
           )},
@@ -1431,7 +1431,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
+  }, [mod, computeValue, handleStatusSelect, mobileColorForRow, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
 
 
   // After any action overlay (edit / due / status / view) closes, restore the
