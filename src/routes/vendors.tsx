@@ -66,11 +66,12 @@ function VendorsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Vendor</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.vendor_name} className={`row-tint-${idx % 4}`}>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">{serials[b.vendor_name] != null ? `VEN-${String(serials[b.vendor_name]).padStart(3, "0")}` : "—"}</TableCell>
                       <TableCell className="font-medium">{b.vendor_name}</TableCell>
                       <TableCell><SettleModeBadge mode={modes[b.vendor_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_payable).toLocaleString()}</TableCell>
