@@ -398,6 +398,11 @@ export function ModulePage({ module: mod }: Props) {
     }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
+    // তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার: নির্বাচিত স্টাটাসের তারিখ কলাম == নির্বাচিত তারিখ
+    if (supportsStatusChangeFilter && statusChangeStatus && statusChangeDate) {
+      const col = statusDateColMap[statusChangeStatus];
+      if (col) xs = xs.filter((r) => String(r[col] ?? "").slice(0, 10) === statusChangeDate);
+    }
     const q = search.trim().toLowerCase();
     if (q) {
       xs = xs.filter((r) =>
@@ -405,7 +410,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses, canCancel, showCancelled]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, canCancel, showCancelled]);
 
 
   const summary = useMemo(() => {
