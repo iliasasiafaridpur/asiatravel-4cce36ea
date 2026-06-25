@@ -1187,10 +1187,21 @@ export function PartyLedgerPage({
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-muted-foreground">Mobile</label>
-                    <div className="space-y-1.5 mt-0.5">
+                    <label className="text-[11px] text-muted-foreground">Mobile (প্রতিটি নাম্বারের নাম সহ)</label>
+                    <div className="space-y-2 mt-0.5">
                       {form.phones.map((p, i) => (
                         <div key={i} className="flex items-center gap-1.5">
+                          <Input
+                            value={form.phoneLabels[i] ?? ""}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                phoneLabels: f.phoneLabels.map((x, xi) => (xi === i ? e.target.value : x)),
+                              }))
+                            }
+                            placeholder="নাম (যেমন: অফিস)"
+                            className="h-8 w-28 shrink-0"
+                          />
                           <Input
                             value={p}
                             onChange={(e) =>
@@ -1209,7 +1220,11 @@ export function PartyLedgerPage({
                               variant="ghost"
                               className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                               onClick={() =>
-                                setForm((f) => ({ ...f, phones: f.phones.filter((_, xi) => xi !== i) }))
+                                setForm((f) => ({
+                                  ...f,
+                                  phones: f.phones.filter((_, xi) => xi !== i),
+                                  phoneLabels: f.phoneLabels.filter((_, xi) => xi !== i),
+                                }))
                               }
                               aria-label="Remove"
                             >
@@ -1222,7 +1237,7 @@ export function PartyLedgerPage({
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
-                        onClick={() => setForm((f) => ({ ...f, phones: [...f.phones, ""] }))}
+                        onClick={() => setForm((f) => ({ ...f, phones: [...f.phones, ""], phoneLabels: [...f.phoneLabels, ""] }))}
                       >
                         <Plus className="h-3.5 w-3.5 mr-1" /> আরেকটি নাম্বার
                       </Button>
