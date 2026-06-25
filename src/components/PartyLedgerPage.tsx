@@ -405,7 +405,14 @@ export function PartyLedgerPage({
     setSaving(true);
     const oldName = displayName;
     const codeCol = isCustomer ? "agent_code" : "vendor_code";
-    const phoneStr = form.phones.map((p) => p.trim()).filter(Boolean).join(", ") || null;
+    // Keep phone numbers and their labels aligned by index; drop empty numbers.
+    const phonePairs = form.phones
+      .map((p, i) => ({ phone: p.trim(), label: (form.phoneLabels[i] ?? "").replace(/,/g, " ").trim() }))
+      .filter((x) => x.phone);
+    const phoneStr = phonePairs.map((p) => p.phone).join(", ") || null;
+    const phoneLabelsStr = phonePairs.some((p) => p.label)
+      ? phonePairs.map((p) => p.label).join(", ")
+      : null;
     const { data: existingBeforeRename } = await supabase
       .from(contactsTable as never)
       .select("id")
