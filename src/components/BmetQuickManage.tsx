@@ -382,15 +382,15 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     {isCall ? (
                       <TableCell>
                         {callStatus === "talked" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium dark:bg-green-900/40 dark:text-green-300">
-                            ✅ কথা হয়েছে{lastCallDate ? ` · ${formatDate(lastCallDate as string)}` : ""}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-1.5 py-0.5 text-[11px] font-medium dark:bg-green-900/40 dark:text-green-300" title={lastCallDate ? `কথা হয়েছে · ${formatDate(lastCallDate as string)}` : "কথা হয়েছে"}>
+                            ✅{lastCallDate ? ` ${formatDate(lastCallDate as string)}` : ""}
                           </span>
                         ) : callStatus === "no_answer" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium dark:bg-red-900/40 dark:text-red-300">
-                            📵 ধরেনি{lastCallDate ? ` · ${formatDate(lastCallDate as string)}` : ""}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-1.5 py-0.5 text-[11px] font-medium dark:bg-red-900/40 dark:text-red-300" title={lastCallDate ? `ধরেনি · ${formatDate(lastCallDate as string)}` : "ধরেনি"}>
+                            📵{lastCallDate ? ` ${formatDate(lastCallDate as string)}` : ""}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">— বাকি —</span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                     ) : (
