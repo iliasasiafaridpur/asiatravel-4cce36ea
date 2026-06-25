@@ -303,6 +303,7 @@ export function PartyLedgerPage({
     const mergedContact: Contact | null = contactRows.length
       ? {
           phone: contactRows.find((c) => c.phone)?.phone ?? null,
+          phone_labels: contactRows.find((c) => c.phone)?.phone_labels ?? null,
           address: contactRows.find((c) => c.address)?.address ?? null,
           settle_mode: contactRows.some((c) => c.settle_mode === "one_by_one")
             ? "one_by_one"
