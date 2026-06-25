@@ -246,7 +246,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                         onCheckedChange={(v) => toggleOne(r.id, Boolean(v))}
                       />
                     </TableCell>
-                    <TableCell>{String(r.entry_date ?? "")}</TableCell>
+                    <TableCell>{formatDate(r.entry_date as string | null)}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>{String(r.mobile ?? "")}</TableCell>
