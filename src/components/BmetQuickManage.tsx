@@ -77,6 +77,12 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [localCallMarks, setLocalCallMarks] = useState<Record<string, { status: "talked" | "no_answer"; last_call_date: string }>>({});
 
   const isCall = mode === "call";
+  // Agent কলাম: ২ (ready), ৩ (receive) ও ৪ (call) মোডে দেখাবে
+  const showAgent = mode === "ready" || mode === "receive" || isCall;
+  // Mobile কলাম: শুধু ৪ নং (call) মোডে দরকার
+  const showMobile = isCall;
+  // টেবিল খালি থাকলে colSpan
+  const emptyColSpan = isCall ? 8 : 7 + (showAgent ? 1 : 0);
 
   const list = useMemo(() => {
     // বাতিল করা কার্ড চলমান কাজের তালিকায় আসবে না।
