@@ -140,7 +140,28 @@ export function ModulePage({ module: mod }: Props) {
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  // BMET: তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার — কোন তারিখে কোন স্টাটাসে গিয়েছে তা দেখায়
+  const [statusChangeDate, setStatusChangeDate] = useState<string>("");
+  const [statusChangeStatus, setStatusChangeStatus] = useState<string>("");
   const hasDateFilter = useMemo(() => mod.fields.some((f) => f.name === "entry_date"), [mod]);
+  // স্টাটাস → যে তারিখ কলামে ঐ স্টাটাস পরিবর্তন রেকর্ড হয় তার ম্যাপ (BMET)
+  const statusDateColMap = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {
+      "NEW": "entry_date",
+      "File Process": "vendor_sent_date",
+      "Pending Delivery": "received_date",
+      "Delivery But Due": "delivery_date",
+      "Delivered": "delivery_date",
+    };
+    // শুধু সেইসব স্টাটাস রাখি যাদের তারিখ কলাম এই মডিউলে আছে
+    const fieldNames = new Set(mod.fields.map((f) => f.name));
+    const filtered: Record<string, string> = {};
+    for (const [st, col] of Object.entries(map)) {
+      if (fieldNames.has(col) && (mod.statuses ?? []).includes(st)) filtered[st] = col;
+    }
+    return filtered;
+  }, [mod]);
+  const supportsStatusChangeFilter = mod.key === "bmet" && Object.keys(statusDateColMap).length > 0;
   const [showGroup, setShowGroup] = useState(true);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
