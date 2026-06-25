@@ -248,10 +248,15 @@ export function PartyLedgerPage({
 
 
 
-  const phoneList = (contact?.phone ?? "")
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
+  // Phone numbers with their per-number labels (aligned by index). The label
+  // string is comma-separated and aligned with the phone string by position.
+  const phoneList = (() => {
+    const nums = (contact?.phone ?? "").split(",").map((p) => p.trim());
+    const labels = (contact?.phone_labels ?? "").split(",").map((l) => l.trim());
+    return nums
+      .map((ph, i) => ({ phone: ph, label: labels[i] ?? "" }))
+      .filter((x) => x.phone);
+  })();
 
   // Last payment (পরিশোধ/গ্রহণ) — newest ledger row with a positive paid amount.
   const lastPayment = useMemo(() => {
