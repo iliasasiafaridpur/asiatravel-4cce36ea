@@ -1712,6 +1712,7 @@ export function ModulePage({ module: mod }: Props) {
                   onClick={() => {
                     setSearch(""); setStatusFilter("all"); setFieldFilters({});
                     setDueOnly(false); setStartDate(""); setEndDate(""); setShowCancelled(false);
+                    setStatusChangeDate(""); setStatusChangeStatus("");
                   }}
                   className="h-9 px-2.5 gap-1.5"
                   title="Reset"
