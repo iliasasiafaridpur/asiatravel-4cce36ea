@@ -1285,7 +1285,7 @@ export function PartyLedgerPage({
             </div>
 
             {/* Thin summary board */}
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:min-w-[420px]">
+            <div className="grid grid-cols-2 gap-2 md:min-w-[220px]">
               <div className="rounded-md border bg-muted/30 px-3 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {isCustomer ? "Total Bill" : "Total Payable"}
