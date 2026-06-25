@@ -1690,6 +1690,7 @@ export function ModulePage({ module: mod }: Props) {
                     )}
                   </div>
                 )}
+                {mod.computed?.some((c) => c.name === "balance") && (
                   <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 px-2.5 gap-1.5">
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
