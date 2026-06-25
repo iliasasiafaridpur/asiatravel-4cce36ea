@@ -263,7 +263,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,address,settle_mode")
+        .select("phone,address,settle_mode,serial_no,full_name")
         .eq("name", displayName)
         .order("settle_mode", { ascending: true })
         .limit(10),
@@ -283,6 +283,8 @@ export function PartyLedgerPage({
           settle_mode: contactRows.some((c) => c.settle_mode === "one_by_one")
             ? "one_by_one"
             : "total",
+          serial_no: contactRows.find((c) => c.serial_no != null)?.serial_no ?? null,
+          full_name: contactRows.find((c) => c.full_name)?.full_name ?? null,
         }
       : null;
     setContact(mergedContact);
