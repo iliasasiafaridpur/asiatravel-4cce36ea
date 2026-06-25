@@ -38,7 +38,7 @@ import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { RowDetailDrawer } from "@/components/RowDetailDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
-import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { useMobileColors, mobileColorTextClass, normalizeMobileForColor } from "@/hooks/useMobileColors";
 
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
 import { CopyInlineButton } from "@/components/CopyInlineButton";
@@ -2122,6 +2122,25 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       return next;
     });
   };
+  const [agencyPhones, setAgencyPhones] = useState<{ name: string; phone: string }[]>([]);
+
+  useEffect(() => {
+    if (!mod.fields.some((f) => f.lookup === "sub_agency" || f.name === "agency_sold")) return;
+    let alive = true;
+    void supabase
+      .from("agents")
+      .select("name,phone")
+      .limit(5000)
+      .then(({ data }) => {
+        if (!alive) return;
+        setAgencyPhones(
+          ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
+            .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim() }))
+            .filter((r) => r.name && r.name.toLowerCase() !== "self"),
+        );
+      });
+    return () => { alive = false; };
+  }, [mod]);
 
   // Enter → focus next input. Textarea/buttons keep native behavior.
   const onFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -2153,24 +2172,18 @@ export function FormSections({ mod, form, setForm, isEdit }: {
     ) {
       const name = v.trim();
       if (name && name.toLowerCase() !== "self") {
-        void supabase
-          .from("agents")
-          .select("name,phone")
-          .limit(5000)
-          .then(({ data }) => {
-            const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
-            const selected = norm(name);
-            const rows = ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
-              .filter((r) => String(r.name ?? "").trim().toLowerCase() !== "self");
-            const exact = rows.find((r) => norm(String(r.name ?? "")) === selected);
-            const loose = exact ?? rows.find((r) => {
-              const n = norm(String(r.name ?? ""));
-              return Boolean(n) && (selected.includes(n) || n.includes(selected));
-            });
-            const phone = loose?.phone;
-            const first = (phone ?? "").split(",")[0]?.trim();
-            if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
-          });
+        const norm = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+        const selected = norm(name);
+        const exact = agencyPhones.find((r) => norm(r.name) === selected);
+        const loose = exact ?? agencyPhones.find((r) => {
+          const n = norm(r.name);
+          return Boolean(n) && (selected.includes(n) || n.includes(selected));
+        });
+        const first = String(loose?.phone ?? "")
+          .split(/[,;\n|]+/)
+          .map((p) => p.trim())
+          .find((p) => normalizeMobileForColor(p));
+        if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
       }
     }
   };
