@@ -75,6 +75,7 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
           <Calendar
             mode="single"
             selected={selected}
+            defaultMonth={selected}
             onSelect={(d) => {
               onChange?.({ target: { value: d ? dateToIso(d) : "" } });
               if (d) setOpen(false);
@@ -87,6 +88,8 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
               return false;
             }}
             captionLayout="dropdown"
+            startMonth={new Date(1950, 0)}
+            endMonth={new Date(new Date().getFullYear() + 20, 11)}
             initialFocus
             className="p-3 pointer-events-auto"
           />

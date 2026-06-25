@@ -715,7 +715,7 @@ function DashboardPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={customDate} onSelect={setCustomDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                <Calendar mode="single" selected={customDate} onSelect={setCustomDate} defaultMonth={customDate} captionLayout="dropdown" startMonth={new Date(2015, 0)} endMonth={new Date(new Date().getFullYear() + 5, 11)} initialFocus className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
           )}
