@@ -17,10 +17,11 @@ interface Bal { agent_name: string; total_bill: number; total_received: number; 
 function AgentsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
   const [modes, setModes] = useState<Record<string, string>>({});
+  const [serials, setSerials] = useState<Record<string, number | null>>({});
   const load = async () => {
     const [{ data }, { data: agents }] = await Promise.all([
       supabase.rpc("get_agent_balances" as never),
-      supabase.from("agents").select("name,settle_mode").limit(5000),
+      supabase.from("agents").select("name,settle_mode,serial_no").limit(5000),
     ]);
     const rows = (((data as unknown) as Bal[]) ?? []).filter((b) => String(b.agent_name ?? "").trim().toLowerCase() !== "self");
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
@@ -33,10 +34,15 @@ function AgentsPage() {
     });
     setBals(rows);
     const map: Record<string, string> = {};
-    for (const a of ((agents as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
-      if (a.name) map[a.name] = a.settle_mode === "one_by_one" ? "one_by_one" : a.settle_mode === "total" ? "total" : "";
+    const smap: Record<string, number | null> = {};
+    for (const a of ((agents as unknown as { name: string; settle_mode: string | null; serial_no: number | null }[]) ?? [])) {
+      if (a.name) {
+        map[a.name] = a.settle_mode === "one_by_one" ? "one_by_one" : a.settle_mode === "total" ? "total" : "";
+        smap[a.name] = a.serial_no ?? null;
+      }
     }
     setModes(map);
+    setSerials(smap);
   };
   useEffect(() => {
     void load();
