@@ -353,6 +353,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     )}
                     <TableCell>{formatDate((isCall ? r.received_date : r.entry_date) as string | null)}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
+                    {isCall && <TableCell className="text-muted-foreground">{String(r.agency_sold ?? "")}</TableCell>}
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>
                       {isCall && mobile ? (
