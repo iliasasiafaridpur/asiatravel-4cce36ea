@@ -187,7 +187,11 @@ export function PartyLedgerPage({
         if (n) set.add(n);
       }
       if (!cancelled) {
-        setPartyList(Array.from(set).sort((a, b) => a.localeCompare(b)));
+        setPartyList(
+          Array.from(set)
+            .filter((n) => (isCustomer ? n.trim().toLowerCase() !== "self" : true))
+            .sort((a, b) => a.localeCompare(b)),
+        );
       }
     };
     void loadParties();
