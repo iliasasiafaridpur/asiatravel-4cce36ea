@@ -1073,11 +1073,17 @@ export function ModulePage({ module: mod }: Props) {
       );
     };
 
+    const rowMobileColor = (mobile: string, r?: Row) => {
+      const callStatus = String(r?.call_status ?? "");
+      if (callStatus === "talked") return "green";
+      if (callStatus === "no_answer") return "red";
+      return colorFor(mobile);
+    };
     // Mobile sub-line with per-number color tag applied.
-    const mobileSub = (mobile: string) => (
+    const mobileSub = (mobile: string, r?: Row) => (
       <div className="text-xs leading-tight">
         <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
-        <span className={mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}>{mobile}</span>
+        <span className={mobileColorTextClass(rowMobileColor(mobile, r)) || "text-muted-foreground"}>{mobile}</span>
         <CopyInlineButton value={mobile} />
       </div>
     );
@@ -1250,7 +1256,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
             </div>
           )},
           { key: "trip", header: "Trip", render: (r) => (
@@ -1290,7 +1296,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
           )},
@@ -1330,7 +1336,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
             </div>
           )},
           { key: "visa", header: "Visa Info", render: (r) => (
@@ -1371,7 +1377,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
             </div>
           )},
           { key: "service", header: "Service", render: (r) => (
@@ -1413,7 +1419,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className={`text-sm ${mobileColorTextClass(colorFor(String(r.phone)))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.phone ? <div className={`text-sm ${mobileColorTextClass(rowMobileColor(String(r.phone), r))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
               {r.address ? subLine("📍", String(r.address)) : null}
             </div>
           )},
