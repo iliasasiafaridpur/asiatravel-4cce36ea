@@ -125,6 +125,13 @@ function selectColumns(mod: ModuleSchema): string {
     columns.add("cancel_reason");
     columns.add("cancel_date");
   }
+  // BMET কল ফলো-আপ ফিল্ড (Quick Manage এর "কল করা" মোডে দরকার হয়)
+  if (mod.table === "bmet_cards") {
+    columns.add("received_date");
+    columns.add("call_status");
+    columns.add("last_call_date");
+    columns.add("called_by");
+  }
   mod.fields.forEach((field) => columns.add(field.name));
   return Array.from(columns).join(",");
 }
