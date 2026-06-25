@@ -70,7 +70,13 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 
 type LedgerRow = Record<string, unknown> & { id: string };
-type Contact = { phone?: string | null; address?: string | null; settle_mode?: string | null };
+type Contact = {
+  phone?: string | null;
+  address?: string | null;
+  settle_mode?: string | null;
+  serial_no?: number | null;
+  full_name?: string | null;
+};
 type ContactId = { id: string };
 type SrcInfo = {
   displayId?: string | null;
@@ -154,8 +160,9 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ name: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
+  const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
+    fullName: "",
     phones: [""],
     address: "",
     settleMode: "total",
