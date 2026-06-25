@@ -147,6 +147,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          phone_labels: string | null
           serial_no: number | null
           settle_mode: string
           updated_at: string
@@ -160,6 +161,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          phone_labels?: string | null
           serial_no?: number | null
           settle_mode?: string
           updated_at?: string
@@ -173,6 +175,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          phone_labels?: string | null
           serial_no?: number | null
           settle_mode?: string
           updated_at?: string
@@ -1345,6 +1348,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          phone_labels: string | null
           serial_no: number | null
           settle_mode: string
           updated_at: string
@@ -1358,6 +1362,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          phone_labels?: string | null
           serial_no?: number | null
           settle_mode?: string
           updated_at?: string
@@ -1371,6 +1376,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          phone_labels?: string | null
           serial_no?: number | null
           settle_mode?: string
           updated_at?: string
