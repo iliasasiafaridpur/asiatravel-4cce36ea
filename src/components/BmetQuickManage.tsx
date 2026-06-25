@@ -332,6 +332,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   const callStatus = localMark?.status ?? String(r.call_status ?? "");
                   const lastCallDate = localMark?.last_call_date ?? r.last_call_date;
                   const mobile = String(r.mobile ?? "").trim();
+                  const displayMobileColor = callStatus === "talked" ? "green" : callStatus === "no_answer" ? "red" : colorFor(mobile);
                   return (
                   <TableRow key={r.id} data-state={selected.has(r.id) ? "selected" : undefined}>
                     {!isCall && (
@@ -347,11 +348,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>
                       {isCall && mobile ? (
-                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(colorFor(mobile)) || "text-primary"}`}>
+                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(displayMobileColor) || "text-primary"}`}>
                           <Phone className="h-3.5 w-3.5" /> {mobile}
                         </a>
                       ) : (
-                        <span className={mobileColorTextClass(colorFor(mobile))}>{mobile}</span>
+                        <span className={mobileColorTextClass(displayMobileColor)}>{mobile}</span>
                       )}
                     </TableCell>
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
