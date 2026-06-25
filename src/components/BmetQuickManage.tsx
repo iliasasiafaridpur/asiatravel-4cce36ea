@@ -318,13 +318,14 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   )}
                   <TableHead>{isCall ? "Receive তারিখ" : "Date"}</TableHead>
                   <TableHead>Passenger</TableHead>
+                  {isCall && <TableHead>Agent</TableHead>}
                   <TableHead>Passport</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>Country</TableHead>
                   {!isCall && <TableHead>Current Vendor</TableHead>}
                   {!isCall && <TableHead className="w-32">Cost Price</TableHead>}
-                  {isCall ? <TableHead>কল অবস্থা</TableHead> : <TableHead>Status</TableHead>}
-                  {isCall && <TableHead className="text-right">কল করুন</TableHead>}
+                  {isCall ? <TableHead className="w-20">অবস্থা</TableHead> : <TableHead>Status</TableHead>}
+                  {isCall && <TableHead className="text-right w-24">কল</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
