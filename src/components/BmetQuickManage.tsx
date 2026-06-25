@@ -331,7 +331,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
               <TableBody>
                 {list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isCall ? 7 : 9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={isCall ? 8 : 9} className="text-center text-muted-foreground py-8">
                       কোনো রেকর্ড পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
