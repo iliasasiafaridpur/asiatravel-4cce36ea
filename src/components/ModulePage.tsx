@@ -2193,13 +2193,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
     ) {
       const name = v.trim();
       if (name && name.toLowerCase() !== "self") {
-        const norm = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
-        const selected = norm(name);
-        const exact = agencyPhones.find((r) => norm(r.name) === selected);
-        const loose = exact ?? agencyPhones.find((r) => {
-          const n = norm(r.name);
-          return Boolean(n) && (selected.includes(n) || n.includes(selected));
-        });
+        const loose = matchAgency(name);
         const first = String(loose?.phone ?? "")
           .split(/[,;\n|]+/)
           .map((p) => p.trim())
