@@ -398,28 +398,30 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     )}
                     {isCall && (
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             type="button"
-                            size="sm"
+                            size="icon"
                             variant="outline"
                             disabled={callingId === r.id}
                             onClick={() => markCall(r.id, "talked")}
-                            className="h-8 px-2 text-green-700 border-green-300 hover:bg-green-50 dark:text-green-300 dark:border-green-800"
+                            className="h-8 w-8 text-green-700 border-green-300 hover:bg-green-50 dark:text-green-300 dark:border-green-800"
                             title="কথা হয়েছে"
+                            aria-label="কথা হয়েছে"
                           >
-                            <PhoneCall className="h-3.5 w-3.5" /> কথা হয়েছে
+                            <PhoneCall className="h-4 w-4" />
                           </Button>
                           <Button
                             type="button"
-                            size="sm"
+                            size="icon"
                             variant="outline"
                             disabled={callingId === r.id}
                             onClick={() => markCall(r.id, "no_answer")}
-                            className="h-8 px-2 text-red-700 border-red-300 hover:bg-red-50 dark:text-red-300 dark:border-red-800"
+                            className="h-8 w-8 text-red-700 border-red-300 hover:bg-red-50 dark:text-red-300 dark:border-red-800"
                             title="ধরেনি"
+                            aria-label="ধরেনি"
                           >
-                            <PhoneOff className="h-3.5 w-3.5" /> ধরেনি
+                            <PhoneOff className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
