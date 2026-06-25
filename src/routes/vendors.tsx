@@ -20,12 +20,13 @@ interface Bal { vendor_name: string; total_payable: number; total_paid: number; 
 function VendorsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
   const [modes, setModes] = useState<Record<string, string>>({});
+  const [serials, setSerials] = useState<Record<string, number | null>>({});
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
   const navigate = useNavigate();
   const load = async () => {
     const [{ data }, { data: vendors }] = await Promise.all([
       supabase.rpc("get_vendor_balances" as never),
-      supabase.from("vendors").select("name,settle_mode").limit(5000),
+      supabase.from("vendors").select("name,settle_mode,serial_no").limit(5000),
     ]);
     const rows = ((data as unknown) as Bal[]) ?? [];
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
@@ -38,14 +39,17 @@ function VendorsPage() {
     });
     setBals(rows);
     const map: Record<string, string> = {};
-    for (const v of ((vendors as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
+    const smap: Record<string, number | null> = {};
+    for (const v of ((vendors as unknown as { name: string; settle_mode: string | null; serial_no: number | null }[]) ?? [])) {
       if (!v.name) continue;
       // Defensive against legacy duplicate rows: "one_by_one" must never be
       // overwritten by a sibling row's "total"/empty value.
       if (v.settle_mode === "one_by_one") map[v.name] = "one_by_one";
       else if (!map[v.name]) map[v.name] = v.settle_mode === "total" ? "total" : "";
+      if (v.serial_no != null && smap[v.name] == null) smap[v.name] = v.serial_no;
     }
     setModes(map);
+    setSerials(smap);
   };
   useEffect(() => {
     void load();
