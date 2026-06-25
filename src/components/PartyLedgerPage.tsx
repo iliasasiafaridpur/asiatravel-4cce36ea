@@ -436,7 +436,7 @@ export function PartyLedgerPage({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
+    setContact((c) => ({ ...(c ?? {}), full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
