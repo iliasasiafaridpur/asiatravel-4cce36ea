@@ -28,6 +28,8 @@ const normalize = (mobile: string) => {
   // Store/compare by digits only so 01711-123456, 01711123456, or spaced
   // versions all receive the same red/green mark everywhere in the project.
   const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("880") && digits.length === 13) return `0${digits.slice(3)}`;
+  if (digits.startsWith("88") && digits.length === 13) return `0${digits.slice(2)}`;
   return digits || raw;
 };
 
