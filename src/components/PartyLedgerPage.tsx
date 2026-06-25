@@ -287,7 +287,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,address,settle_mode,serial_no,full_name")
+        .select("phone,phone_labels,address,settle_mode,serial_no,full_name")
         .eq("name", displayName)
         .order("settle_mode", { ascending: true })
         .limit(10),
