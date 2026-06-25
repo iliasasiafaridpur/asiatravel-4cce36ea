@@ -84,6 +84,17 @@ interface Props {
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+function partySerialLabel(kind: "agent" | "vendor", serial: unknown, code?: unknown): string {
+  const prefix = kind === "agent" ? "AGT" : "VEN";
+  const n = Number(serial);
+  if (Number.isFinite(n) && n > 0) return `${prefix}-${String(Math.trunc(n)).padStart(3, "0")}`;
+  const raw = String(code ?? "").trim();
+  if (!raw) return "—";
+  const tail = raw.match(/(\d+)$/)?.[1];
+  if (tail) return `${prefix}-${tail.padStart(3, "0")}`;
+  return raw.replace(/^VND-/i, "VEN-");
+}
+
 function errMsg(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (e && typeof e === "object") {
@@ -131,6 +142,9 @@ function selectColumns(mod: ModuleSchema): string {
     columns.add("call_status");
     columns.add("last_call_date");
     columns.add("called_by");
+  }
+  if (mod.table === "agents" || mod.table === "vendors") {
+    columns.add("serial_no");
   }
   mod.fields.forEach((field) => columns.add(field.name));
   return Array.from(columns).join(",");
@@ -388,6 +402,9 @@ export function ModulePage({ module: mod }: Props) {
 
   const filtered = useMemo(() => {
     let xs = rows;
+    if (mod.key === "agents") {
+      xs = xs.filter((r) => String(r.name ?? "").trim().toLowerCase() !== "self");
+    }
     // বাতিল করা এন্ট্রি চলমান তালিকায়ও দেখানো হয় (ধূসর রঙে ও বিশেষ চিহ্নসহ),
     // সার্চ করা হোক বা না হোক। শুধু "বাতিল" বাটন চাপলে কেবল বাতিল এন্ট্রি দেখা যায়।
     if (canCancel && showCancelled) {
@@ -417,7 +434,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, canCancel, showCancelled]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, mod.key, canCancel, showCancelled]);
 
 
   const summary = useMemo(() => {
@@ -1379,8 +1396,15 @@ export function ModulePage({ module: mod }: Props) {
         ];
       case "agents":
 
-      case "vendors":
+      case "vendors": {
+        const isAgent = mod.key === "agents";
+        const kind = isAgent ? "agent" : "vendor";
         return [
+          { key: "serial", header: "ID", render: (r) => (
+            <div className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">
+              {partySerialLabel(kind, r.serial_no, r[mod.idColumn])}
+            </div>
+          )},
           { key: "name", header: "Name", render: (r) => (
             <div>
               <div className="font-medium">{String(r.name ?? "—")}</div>
@@ -1397,6 +1421,7 @@ export function ModulePage({ module: mod }: Props) {
             <div className="text-xs text-muted-foreground max-w-[260px] whitespace-pre-wrap">{String(r.notes ?? "")}</div>
           )},
         ];
+      }
       default:
         return null;
     }
@@ -2120,7 +2145,6 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   const onFieldChange = (field: Field, v: unknown) => {
     setForm((s) => ({ ...s, [field.name]: v }));
     if (
-      field.name === "agency_sold" &&
       field.lookup === "sub_agency" &&
       hasMobileField &&
       typeof v === "string"
@@ -2130,13 +2154,14 @@ export function FormSections({ mod, form, setForm, isEdit }: {
         void supabase
           .from("agents")
           .select("phone")
-          .eq("name", name)
+          .ilike("name", name)
+          .limit(20)
           .then(({ data }) => {
             const phone = ((data as { phone?: string | null }[] | null) ?? [])
               .map((r) => r.phone)
               .find(Boolean);
             const first = (phone ?? "").split(",")[0]?.trim();
-            if (first) setForm((s) => ({ ...s, mobile: first }));
+            if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
           });
       }
     }

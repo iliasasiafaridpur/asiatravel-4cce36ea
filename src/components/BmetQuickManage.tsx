@@ -74,6 +74,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [dateQuery, setDateQuery] = useState("");
   const [onlyPending, setOnlyPending] = useState(false);
   const [callingId, setCallingId] = useState<string | null>(null);
+  const [localCallMarks, setLocalCallMarks] = useState<Record<string, { status: "talked" | "no_answer"; last_call_date: string }>>({});
 
   const isCall = mode === "call";
 
@@ -90,7 +91,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     } else {
       // call: যাদের vendor থেকে receive হয়েছে (received_date আছে)
       base = active.filter((r) => !!r.received_date);
-      if (onlyPending) base = base.filter((r) => r.call_status !== "talked");
+      if (onlyPending) base = base.filter((r) => (localCallMarks[r.id]?.status ?? r.call_status) !== "talked");
     }
 
     const name = nameQuery.trim().toLowerCase();
@@ -101,15 +102,15 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
       if (date && !String(r[dateField] ?? "").includes(date)) return false;
       return true;
     });
-  }, [rows, mode, nameQuery, dateQuery, onlyPending, isCall]);
+  }, [rows, mode, nameQuery, dateQuery, onlyPending, isCall, localCallMarks]);
 
   // কল মোডের গণনা: মোট receive হওয়া এবং কথা বাকি কতজন
   const callStats = useMemo(() => {
     if (!isCall) return { total: 0, remaining: 0 };
     const received = rows.filter((r) => !r.cancelled && !!r.received_date);
-    const remaining = received.filter((r) => r.call_status !== "talked").length;
+    const remaining = received.filter((r) => (localCallMarks[r.id]?.status ?? r.call_status) !== "talked").length;
     return { total: received.length, remaining };
-  }, [rows, isCall]);
+  }, [rows, isCall, localCallMarks]);
 
   const allChecked = list.length > 0 && list.every((r) => selected.has(r.id));
   const someChecked = list.some((r) => selected.has(r.id));
@@ -132,7 +133,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
     setNameQuery(""); setDateQuery(""); setOnlyPending(false);
   };
 
-  const handleModeChange = (m: Mode) => { setMode(m); reset(); };
+  const handleModeChange = (m: Mode) => {
+    setMode(m);
+    reset();
+    if (m === "call") setDateQuery(todayIso());
+  };
 
   const currentOption = OPTIONS.find((o) => o.value === mode)!;
 
@@ -140,11 +145,12 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const markCall = async (id: string, status: "talked" | "no_answer") => {
     setCallingId(id);
     try {
+      const markedDate = todayIso();
       const { error } = await supabase
         .from("bmet_cards")
         .update({
           call_status: status,
-          last_call_date: todayIso(),
+          last_call_date: markedDate,
           called_by: profile?.full_name ?? null,
         })
         .eq("id", id);
@@ -154,6 +160,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
       if (mobile) {
         await setMobileColor(mobile, status === "talked" ? "green" : "red");
       }
+      setLocalCallMarks((p) => ({ ...p, [id]: { status, last_call_date: markedDate } }));
       toast.success(status === "talked" ? "✅ কথা হয়েছে — মার্ক করা হলো" : "📵 ধরেনি — মার্ক করা হলো");
       await onChanged();
     } catch (e: unknown) {
@@ -226,7 +233,14 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
         <Zap className="h-4 w-4" /> Quickly Manage Bmet
       </Button>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (v && mode === "call") setDateQuery(todayIso());
+          if (!v) reset();
+        }}
+      >
         <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Quickly Manage BMET</DialogTitle>
@@ -321,8 +335,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     </TableCell>
                   </TableRow>
                 ) : list.map((r) => {
-                  const callStatus = String(r.call_status ?? "");
+                  const localMark = localCallMarks[r.id];
+                  const callStatus = localMark?.status ?? String(r.call_status ?? "");
+                  const lastCallDate = localMark?.last_call_date ?? r.last_call_date;
                   const mobile = String(r.mobile ?? "").trim();
+                  const displayMobileColor = callStatus === "talked" ? "green" : callStatus === "no_answer" ? "red" : colorFor(mobile);
                   return (
                   <TableRow key={r.id} data-state={selected.has(r.id) ? "selected" : undefined}>
                     {!isCall && (
@@ -338,11 +355,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>
                       {isCall && mobile ? (
-                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(colorFor(mobile)) || "text-primary"}`}>
+                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(displayMobileColor) || "text-primary"}`}>
                           <Phone className="h-3.5 w-3.5" /> {mobile}
                         </a>
                       ) : (
-                        <span className={mobileColorTextClass(colorFor(mobile))}>{mobile}</span>
+                        <span className={mobileColorTextClass(displayMobileColor)}>{mobile}</span>
                       )}
                     </TableCell>
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
@@ -364,11 +381,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                       <TableCell>
                         {callStatus === "talked" ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium dark:bg-green-900/40 dark:text-green-300">
-                            ✅ কথা হয়েছে{r.last_call_date ? ` · ${formatDate(r.last_call_date as string)}` : ""}
+                            ✅ কথা হয়েছে{lastCallDate ? ` · ${formatDate(lastCallDate as string)}` : ""}
                           </span>
                         ) : callStatus === "no_answer" ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium dark:bg-red-900/40 dark:text-red-300">
-                            📵 ধরেনি{r.last_call_date ? ` · ${formatDate(r.last_call_date as string)}` : ""}
+                            📵 ধরেনি{lastCallDate ? ` · ${formatDate(lastCallDate as string)}` : ""}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">— বাকি —</span>

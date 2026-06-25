@@ -23,7 +23,15 @@ export function mobileColorTextClass(color: MobileColor | undefined): string {
   return "";
 }
 
-const normalize = (mobile: string) => mobile.trim();
+const normalize = (mobile: string) => {
+  const raw = mobile.trim();
+  // Store/compare by digits only so 01711-123456, 01711123456, or spaced
+  // versions all receive the same red/green mark everywhere in the project.
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("880") && digits.length === 13) return `0${digits.slice(3)}`;
+  if (digits.startsWith("88") && digits.length === 13) return `0${digits.slice(2)}`;
+  return digits || raw;
+};
 
 type Row = { mobile: string; color: string };
 
@@ -115,13 +123,15 @@ export function useSetMobileColor() {
     const m = normalize(mobile);
     if (!m) return;
     if (color === "default") {
-      await supabase.from("mobile_colors" as never).delete().eq("mobile", m);
+      const { error } = await supabase.from("mobile_colors" as never).delete().eq("mobile", m);
+      if (error) throw error;
     } else {
-      await supabase
+      const { error } = await supabase
         .from("mobile_colors" as never)
         .upsert({ mobile: m, color, updated_at: new Date().toISOString() } as never, {
           onConflict: "mobile",
         } as never);
+      if (error) throw error;
     }
     colorCache = { ...colorCache };
     if (color === "default") delete colorCache[m];

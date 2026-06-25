@@ -64,7 +64,7 @@ function AgentsPage() {
                 {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.agent_name} className={`row-tint-${idx % 4}`}>
-                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">{serials[b.agent_name] != null ? `AGT-${String(serials[b.agent_name]).padStart(3, "0")}` : "—"}</TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">AGT-{String(serials[b.agent_name] ?? (idx + 1)).padStart(3, "0")}</TableCell>
                       <TableCell className="font-medium">{b.agent_name}</TableCell>
                       <TableCell><SettleModeBadge mode={modes[b.agent_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_bill).toLocaleString()}</TableCell>

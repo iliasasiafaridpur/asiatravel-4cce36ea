@@ -71,7 +71,7 @@ function VendorsPage() {
                 {bals.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.vendor_name} className={`row-tint-${idx % 4}`}>
-                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">{serials[b.vendor_name] != null ? `VEN-${String(serials[b.vendor_name]).padStart(3, "0")}` : "—"}</TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">VEN-{String(serials[b.vendor_name] ?? (idx + 1)).padStart(3, "0")}</TableCell>
                       <TableCell className="font-medium">{b.vendor_name}</TableCell>
                       <TableCell><SettleModeBadge mode={modes[b.vendor_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_payable).toLocaleString()}</TableCell>
