@@ -233,7 +233,14 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
         <Zap className="h-4 w-4" /> Quickly Manage Bmet
       </Button>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (v && mode === "call") setDateQuery(todayIso());
+          if (!v) reset();
+        }}
+      >
         <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Quickly Manage BMET</DialogTitle>
