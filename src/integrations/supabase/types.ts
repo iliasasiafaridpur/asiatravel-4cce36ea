@@ -142,10 +142,12 @@ export type Database = {
           address: string | null
           agent_code: string
           created_at: string
+          full_name: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          serial_no: number | null
           settle_mode: string
           updated_at: string
         }
@@ -153,10 +155,12 @@ export type Database = {
           address?: string | null
           agent_code: string
           created_at?: string
+          full_name?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          serial_no?: number | null
           settle_mode?: string
           updated_at?: string
         }
@@ -164,10 +168,12 @@ export type Database = {
           address?: string | null
           agent_code?: string
           created_at?: string
+          full_name?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          serial_no?: number | null
           settle_mode?: string
           updated_at?: string
         }
@@ -1334,10 +1340,12 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          full_name: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          serial_no: number | null
           settle_mode: string
           updated_at: string
           vendor_code: string
@@ -1345,10 +1353,12 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          full_name?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          serial_no?: number | null
           settle_mode?: string
           updated_at?: string
           vendor_code: string
@@ -1356,10 +1366,12 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          full_name?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          serial_no?: number | null
           settle_mode?: string
           updated_at?: string
           vendor_code?: string

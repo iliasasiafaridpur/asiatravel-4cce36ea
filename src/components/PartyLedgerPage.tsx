@@ -70,7 +70,13 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 
 type LedgerRow = Record<string, unknown> & { id: string };
-type Contact = { phone?: string | null; address?: string | null; settle_mode?: string | null };
+type Contact = {
+  phone?: string | null;
+  address?: string | null;
+  settle_mode?: string | null;
+  serial_no?: number | null;
+  full_name?: string | null;
+};
 type ContactId = { id: string };
 type SrcInfo = {
   displayId?: string | null;
@@ -154,8 +160,9 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ name: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
+  const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
+    fullName: "",
     phones: [""],
     address: "",
     settleMode: "total",
@@ -244,6 +251,23 @@ export function PartyLedgerPage({
     .map((p) => p.trim())
     .filter(Boolean);
 
+  // Last payment (পরিশোধ/গ্রহণ) — newest ledger row with a positive paid amount.
+  const lastPayment = useMemo(() => {
+    let best: { date: string; amount: number } | null = null;
+    for (const r of rows) {
+      const amt = Number((r as Record<string, unknown>)[paidCol] ?? 0);
+      if (!(amt > 0)) continue;
+      const date = String((r as Record<string, unknown>).entry_date ?? "");
+      if (!best || date >= best.date) best = { date, amount: amt };
+    }
+    return best;
+  }, [rows, paidCol]);
+
+  const serialCode =
+    contact?.serial_no != null
+      ? `${isCustomer ? "AGT" : "VEN"}-${String(contact.serial_no).padStart(3, "0")}`
+      : null;
+
   const load = async () => {
     setLoading(true);
     const [ledgerRes, contactRes, balRes] = await Promise.all([
@@ -256,7 +280,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,address,settle_mode")
+        .select("phone,address,settle_mode,serial_no,full_name")
         .eq("name", displayName)
         .order("settle_mode", { ascending: true })
         .limit(10),
@@ -276,6 +300,8 @@ export function PartyLedgerPage({
           settle_mode: contactRows.some((c) => c.settle_mode === "one_by_one")
             ? "one_by_one"
             : "total",
+          serial_no: contactRows.find((c) => c.serial_no != null)?.serial_no ?? null,
+          full_name: contactRows.find((c) => c.full_name)?.full_name ?? null,
         }
       : null;
     setContact(mergedContact);
@@ -352,6 +378,7 @@ export function PartyLedgerPage({
       .filter(Boolean);
     setForm({
       name: displayName,
+      fullName: contact?.full_name ?? "",
       phones: list.length ? list : [""],
       address: contact?.address ?? "",
       settleMode,
@@ -390,11 +417,12 @@ export function PartyLedgerPage({
       }
     }
 
+    const fullNameVal = form.fullName.trim() || null;
     let err = null;
     if (existingId) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
+        .update({ name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
         .eq("id", existingId);
       err = error;
     } else {
@@ -408,14 +436,14 @@ export function PartyLedgerPage({
       if (newExistingId) {
         const { error } = await supabase
           .from(contactsTable as never)
-          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
+          .update({ name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
           .eq("id", newExistingId);
         err = error;
       } else {
         const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
         const { error } = await supabase
           .from(contactsTable as never)
-          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
+          .insert({ [codeCol]: code, name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
         err = error;
       }
     }
@@ -425,7 +453,7 @@ export function PartyLedgerPage({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
+    setContact((c) => ({ ...(c ?? {}), full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
@@ -1133,6 +1161,15 @@ export function PartyLedgerPage({
                     />
                   </div>
                   <div>
+                    <label className="text-[11px] text-muted-foreground">পুরো নাম (Full Name)</label>
+                    <Input
+                      value={form.fullName}
+                      onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                      placeholder="পুরো নাম (ঐচ্ছিক)"
+                      className="h-8 mt-0.5"
+                    />
+                  </div>
+                  <div>
                     <label className="text-[11px] text-muted-foreground">Mobile</label>
                     <div className="space-y-1.5 mt-0.5">
                       {form.phones.map((p, i) => (
@@ -1226,7 +1263,12 @@ export function PartyLedgerPage({
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {serialCode && (
+                      <Badge variant="secondary" className="font-mono text-[11px] tabular-nums">
+                        {serialCode}
+                      </Badge>
+                    )}
                     <span className="text-lg font-semibold leading-tight">{displayName}</span>
                     <Badge
                       variant="outline"
@@ -1245,6 +1287,9 @@ export function PartyLedgerPage({
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </div>
+                  {contact?.full_name && (
+                    <div className="mt-1 text-sm text-muted-foreground">{contact.full_name}</div>
+                  )}
                   <div className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
                     {phoneList.length ? (
                       phoneList.map((ph, i) => (
@@ -1278,6 +1323,20 @@ export function PartyLedgerPage({
                     <div className="flex items-start gap-2">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
                       <span className="text-muted-foreground">{contact?.address || "ঠিকানা নেই"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                      {lastPayment ? (
+                        <span>
+                          শেষ {isCustomer ? "গ্রহণ" : "পরিশোধ"}:{" "}
+                          <span className="font-semibold text-emerald-600 tabular-nums">{fmtMoney(lastPayment.amount)}</span>{" "}
+                          <span className="text-muted-foreground">· {formatDate(lastPayment.date)}</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          এখনো কোনো {isCustomer ? "গ্রহণ" : "পরিশোধ"} নেই
+                        </span>
+                      )}
                     </div>
                   </div>
                 </>
