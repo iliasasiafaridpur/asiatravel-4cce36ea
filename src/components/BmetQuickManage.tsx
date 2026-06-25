@@ -338,10 +338,12 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>
                       {isCall && mobile ? (
-                        <a href={`tel:${mobile}`} className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
+                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(colorFor(mobile)) || "text-primary"}`}>
                           <Phone className="h-3.5 w-3.5" /> {mobile}
                         </a>
-                      ) : mobile}
+                      ) : (
+                        <span className={mobileColorTextClass(colorFor(mobile))}>{mobile}</span>
+                      )}
                     </TableCell>
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
                     {!isCall && <TableCell>{String(r.vendor_bought ?? "")}</TableCell>}
