@@ -62,6 +62,8 @@ const OPTIONS: { value: Mode; serial: string; title: string; sub: string; btn: s
 
 export function BmetQuickManage({ rows, onChanged }: Props) {
   const { profile } = useCurrentUser();
+  const { colorFor } = useMobileColors();
+  const setMobileColor = useSetMobileColor();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("send");
   const [selected, setSelected] = useState<Set<string>>(new Set());
