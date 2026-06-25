@@ -140,7 +140,28 @@ export function ModulePage({ module: mod }: Props) {
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  // BMET: তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার — কোন তারিখে কোন স্টাটাসে গিয়েছে তা দেখায়
+  const [statusChangeDate, setStatusChangeDate] = useState<string>("");
+  const [statusChangeStatus, setStatusChangeStatus] = useState<string>("");
   const hasDateFilter = useMemo(() => mod.fields.some((f) => f.name === "entry_date"), [mod]);
+  // স্টাটাস → যে তারিখ কলামে ঐ স্টাটাস পরিবর্তন রেকর্ড হয় তার ম্যাপ (BMET)
+  const statusDateColMap = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {
+      "NEW": "entry_date",
+      "File Process": "vendor_sent_date",
+      "Pending Delivery": "received_date",
+      "Delivery But Due": "delivery_date",
+      "Delivered": "delivery_date",
+    };
+    // শুধু সেইসব স্টাটাস রাখি যাদের তারিখ কলাম এই মডিউলে আছে
+    const fieldNames = new Set(mod.fields.map((f) => f.name));
+    const filtered: Record<string, string> = {};
+    for (const [st, col] of Object.entries(map)) {
+      if (fieldNames.has(col) && (mod.statuses ?? []).includes(st)) filtered[st] = col;
+    }
+    return filtered;
+  }, [mod]);
+  const supportsStatusChangeFilter = mod.key === "bmet" && Object.keys(statusDateColMap).length > 0;
   const [showGroup, setShowGroup] = useState(true);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -377,6 +398,11 @@ export function ModulePage({ module: mod }: Props) {
     }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
+    // তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার: নির্বাচিত স্টাটাসের তারিখ কলাম == নির্বাচিত তারিখ
+    if (supportsStatusChangeFilter && statusChangeStatus && statusChangeDate) {
+      const col = statusDateColMap[statusChangeStatus];
+      if (col) xs = xs.filter((r) => String(r[col] ?? "").slice(0, 10) === statusChangeDate);
+    }
     const q = search.trim().toLowerCase();
     if (q) {
       xs = xs.filter((r) =>
@@ -384,7 +410,7 @@ export function ModulePage({ module: mod }: Props) {
       );
     }
     return xs;
-  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, computeValue, mod.statuses, canCancel, showCancelled]);
+  }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, canCancel, showCancelled]);
 
 
   const summary = useMemo(() => {
@@ -1634,6 +1660,36 @@ export function ModulePage({ module: mod }: Props) {
                     </Select>
                   </div>
                 )}
+                {supportsStatusChangeFilter && (
+                  <div className="flex flex-wrap gap-2 items-end rounded-md border border-sky-300 bg-sky-50 dark:bg-sky-950/30 px-2 py-1.5">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-medium text-sky-700 dark:text-sky-300">স্টাটাস পরিবর্তনের তারিখ</Label>
+                      <DateInput value={statusChangeDate} onChange={(e) => setStatusChangeDate(e.target.value)} className="h-9 px-2 text-sm w-36" />
+                    </div>
+                    <div className="space-y-1 w-36">
+                      <Label className="text-sm font-medium text-sky-700 dark:text-sky-300">যে স্টাটাসে গেছে</Label>
+                      <Select value={statusChangeStatus || "none"} onValueChange={(v) => setStatusChangeStatus(v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder="স্টাটাস" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">স্টাটাস নির্বাচন</SelectItem>
+                          {Object.keys(statusDateColMap).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {(statusChangeDate || statusChangeStatus) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setStatusChangeDate(""); setStatusChangeStatus(""); }}
+                        className="h-9 px-2 gap-1 text-sky-700 dark:text-sky-300"
+                        title="তারিখ-স্টাটাস ফিল্টার মুছুন"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {mod.computed?.some((c) => c.name === "balance") && (
                   <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 px-2.5 gap-1.5">
                     <Wallet className="h-4 w-4" /> শুধু Due
@@ -1656,6 +1712,7 @@ export function ModulePage({ module: mod }: Props) {
                   onClick={() => {
                     setSearch(""); setStatusFilter("all"); setFieldFilters({});
                     setDueOnly(false); setStartDate(""); setEndDate(""); setShowCancelled(false);
+                    setStatusChangeDate(""); setStatusChangeStatus("");
                   }}
                   className="h-9 px-2.5 gap-1.5"
                   title="Reset"
