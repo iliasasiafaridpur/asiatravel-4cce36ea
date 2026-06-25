@@ -1161,6 +1161,15 @@ export function PartyLedgerPage({
                     />
                   </div>
                   <div>
+                    <label className="text-[11px] text-muted-foreground">পুরো নাম (Full Name)</label>
+                    <Input
+                      value={form.fullName}
+                      onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                      placeholder="পুরো নাম (ঐচ্ছিক)"
+                      className="h-8 mt-0.5"
+                    />
+                  </div>
+                  <div>
                     <label className="text-[11px] text-muted-foreground">Mobile</label>
                     <div className="space-y-1.5 mt-0.5">
                       {form.phones.map((p, i) => (
