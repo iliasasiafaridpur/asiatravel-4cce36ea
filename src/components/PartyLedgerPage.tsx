@@ -136,6 +136,8 @@ export function PartyLedgerPage({
   const [stmtSearch, setStmtSearch] = useState("");
   const [stmtFrom, setStmtFrom] = useState("");
   const [stmtTo, setStmtTo] = useState("");
+  // Service-type filter for the ledger statement ("" = all).
+  const [stmtService, setStmtService] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
@@ -785,20 +787,31 @@ export function PartyLedgerPage({
 
 
 
-  // Apply the per-ledger search + date-range filters.
+  // Distinct service-type values present in this statement (for the dropdown).
+  const serviceTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of statement) {
+      const v = String(s.service ?? "").trim();
+      if (v && v !== "—") set.add(v);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [statement]);
+
+  // Apply the per-ledger search + date-range + service-type filters.
   const filteredStatement = useMemo(() => {
     const q = stmtSearch.trim().toLowerCase();
-    if (!q && !stmtFrom && !stmtTo) return statement;
+    if (!q && !stmtFrom && !stmtTo && !stmtService) return statement;
     return statement.filter((s) => {
       if (stmtFrom && (!s.date || s.date < stmtFrom)) return false;
       if (stmtTo && (!s.date || s.date > stmtTo)) return false;
+      if (stmtService && String(s.service ?? "") !== stmtService) return false;
       if (q) {
         const hay = `${s.ledgerId} ${s.service} ${s.description}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [statement, stmtSearch, stmtFrom, stmtTo]);
+  }, [statement, stmtSearch, stmtFrom, stmtTo, stmtService]);
 
   // Paginate the statement (latest entries already on top).
   const totalPages = Math.max(1, Math.ceil(filteredStatement.length / pageSize));
@@ -809,7 +822,7 @@ export function PartyLedgerPage({
   );
   useEffect(() => {
     setPage(1);
-  }, [displayName, pageSize, stmtSearch, stmtFrom, stmtTo]);
+  }, [displayName, pageSize, stmtSearch, stmtFrom, stmtTo, stmtService]);
 
   const pageTitle = isCustomer ? "Agency Ledger" : "Vendor Ledger";
 
@@ -874,6 +887,7 @@ export function PartyLedgerPage({
           </PopoverContent>
         </Popover>
 
+        {name && (
         <div className="ml-auto flex items-center gap-2">
           {!isCustomer && (
             <DropdownMenu>
@@ -905,6 +919,7 @@ export function PartyLedgerPage({
             {isCustomer ? "পেমেন্ট গ্রহণ এন্ট্রি" : "পেমেন্ট পরিশোধ এন্ট্রি"}
           </Button>
         </div>
+        )}
 
       </div>
 
@@ -1469,39 +1484,51 @@ export function PartyLedgerPage({
               <Badge variant="secondary" className="text-[11px] font-medium">
                 মোট {statement.length} টি
               </Badge>
-              {(stmtSearch || stmtFrom || stmtTo) && (
+              {(stmtSearch || stmtFrom || stmtTo || stmtService) && (
                 <Badge className="text-[11px] font-medium">
                   ফলাফল {filteredStatement.length} টি
                 </Badge>
               )}
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-              <div className="flex-1 min-w-[160px]">
-                <label className="text-[11px] text-muted-foreground">খুঁজুন</label>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-col w-full sm:w-[200px] sm:flex-1 sm:min-w-[160px]">
+                <label className="block text-[11px] text-muted-foreground mb-0.5">খুঁজুন</label>
                 <Input
                   value={stmtSearch}
                   onChange={(e) => setStmtSearch(e.target.value)}
                   placeholder="ID / Service / বিবরণ…"
-                  className="h-9 mt-0.5"
+                  className="h-9"
                 />
               </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground">শুরুর তারিখ</label>
+              {serviceTypes.length > 0 && (
+                <div className="flex flex-col w-[150px]">
+                  <label className="block text-[11px] text-muted-foreground mb-0.5">সার্ভিস টাইপ</label>
+                  <Select value={stmtService || "all"} onValueChange={(v) => setStmtService(v === "all" ? "" : v)}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="সব সার্ভিস" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">সব সার্ভিস</SelectItem>
+                      {serviceTypes.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="flex flex-col w-[150px]">
+                <label className="block text-[11px] text-muted-foreground mb-0.5">শুরুর তারিখ</label>
                 <DateInput
                   value={stmtFrom}
                   onChange={(e) => setStmtFrom(e.target.value)}
-                  className="mt-0.5 sm:w-[150px]"
+                  className="w-full"
                 />
               </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground">শেষ তারিখ</label>
+              <div className="flex flex-col w-[150px]">
+                <label className="block text-[11px] text-muted-foreground mb-0.5">শেষ তারিখ</label>
                 <DateInput
                   value={stmtTo}
                   onChange={(e) => setStmtTo(e.target.value)}
-                  className="mt-0.5 sm:w-[150px]"
+                  className="w-full"
                 />
               </div>
-              {(stmtSearch || stmtFrom || stmtTo) && (
+              {(stmtSearch || stmtFrom || stmtTo || stmtService) && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1510,6 +1537,7 @@ export function PartyLedgerPage({
                     setStmtSearch("");
                     setStmtFrom("");
                     setStmtTo("");
+                    setStmtService("");
                   }}
                 >
                   মুছুন
