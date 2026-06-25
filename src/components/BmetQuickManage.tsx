@@ -149,6 +149,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
         })
         .eq("id", id);
       if (error) throw error;
+      // মোবাইল নম্বরের রং: কথা হয়েছে → সবুজ, ধরেনি → লাল। সব মডিউল পেইজেও এই রং দেখা যাবে।
+      const mobile = String(rows.find((r) => r.id === id)?.mobile ?? "").trim();
+      if (mobile) {
+        await setMobileColor(mobile, status === "talked" ? "green" : "red");
+      }
       toast.success(status === "talked" ? "✅ কথা হয়েছে — মার্ক করা হলো" : "📵 ধরেনি — মার্ক করা হলো");
       await onChanged();
     } catch (e: unknown) {
