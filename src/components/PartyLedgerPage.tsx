@@ -251,6 +251,23 @@ export function PartyLedgerPage({
     .map((p) => p.trim())
     .filter(Boolean);
 
+  // Last payment (পরিশোধ/গ্রহণ) — newest ledger row with a positive paid amount.
+  const lastPayment = useMemo(() => {
+    let best: { date: string; amount: number } | null = null;
+    for (const r of rows) {
+      const amt = Number((r as Record<string, unknown>)[paidCol] ?? 0);
+      if (!(amt > 0)) continue;
+      const date = String((r as Record<string, unknown>).entry_date ?? "");
+      if (!best || date >= best.date) best = { date, amount: amt };
+    }
+    return best;
+  }, [rows, paidCol]);
+
+  const serialCode =
+    contact?.serial_no != null
+      ? `${isCustomer ? "AGT" : "VEN"}-${String(contact.serial_no).padStart(3, "0")}`
+      : null;
+
   const load = async () => {
     setLoading(true);
     const [ledgerRes, contactRes, balRes] = await Promise.all([
