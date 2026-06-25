@@ -1621,19 +1621,19 @@ export function ModulePage({ module: mod }: Props) {
 
 
       <Card>
-        <CardContent className="p-3 sm:p-4">
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 items-end justify-between">
-              <div className="flex flex-wrap gap-2 items-end">
+        <CardContent className="p-2 sm:p-2.5">
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1.5 items-end justify-between">
+              <div className="flex flex-wrap gap-1.5 items-end">
                 {hasDateFilter && (
                   <>
-                    <div className="space-y-1 w-32">
-                      <Label className="text-sm font-medium">Start Date</Label>
-                      <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 px-2 text-sm" />
+                    <div className="space-y-0.5 w-32">
+                      <Label className="text-xs font-medium">Start Date</Label>
+                      <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 px-2 text-sm" />
                     </div>
-                    <div className="space-y-1 w-32">
-                      <Label className="text-sm font-medium">End Date</Label>
-                      <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 px-2 text-sm" />
+                    <div className="space-y-0.5 w-32">
+                      <Label className="text-xs font-medium">End Date</Label>
+                      <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8 px-2 text-sm" />
                     </div>
                   </>
                 )}
@@ -1643,10 +1643,10 @@ export function ModulePage({ module: mod }: Props) {
                     ...rows.map((r) => String(r[f.name] ?? "")).filter(Boolean),
                   ])).sort();
                   return (
-                    <div key={f.name} className="space-y-1 w-32">
-                      <Label className="text-sm font-medium">{f.label}</Label>
+                    <div key={f.name} className="space-y-0.5 w-32">
+                      <Label className="text-xs font-medium">{f.label}</Label>
                       <Select value={fieldFilters[f.name] ?? "all"} onValueChange={(v) => setFieldFilters((s) => ({ ...s, [f.name]: v }))}>
-                        <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
+                        <SelectTrigger className="h-8 px-2 text-sm"><SelectValue placeholder={`সব ${f.label}`} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">সব {f.label}</SelectItem>
                           {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -1656,10 +1656,10 @@ export function ModulePage({ module: mod }: Props) {
                   );
                 })}
                 {mod.statuses && (
-                  <div className="space-y-1 w-32">
-                    <Label className="text-sm font-medium">Status</Label>
+                  <div className="space-y-0.5 w-32">
+                    <Label className="text-xs font-medium">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="h-9 px-2 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 px-2 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">সব Status</SelectItem>
                         {mod.statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -1668,15 +1668,15 @@ export function ModulePage({ module: mod }: Props) {
                   </div>
                 )}
                 {supportsStatusChangeFilter && (
-                  <div className="flex flex-wrap gap-2 items-end rounded-md border border-sky-300 bg-sky-50 dark:bg-sky-950/30 px-2 py-1.5">
-                    <div className="space-y-1">
-                      <Label className="text-sm font-medium text-sky-700 dark:text-sky-300">স্টাটাস পরিবর্তনের তারিখ</Label>
-                      <DateInput value={statusChangeDate} onChange={(e) => setStatusChangeDate(e.target.value)} className="h-9 px-2 text-sm w-36" />
+                  <div className="flex flex-wrap gap-1.5 items-end rounded-md border border-sky-300 bg-sky-50 dark:bg-sky-950/30 px-2 py-1">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-medium text-sky-700 dark:text-sky-300">স্টাটাস পরিবর্তনের তারিখ</Label>
+                      <DateInput value={statusChangeDate} onChange={(e) => setStatusChangeDate(e.target.value)} className="h-8 px-2 text-sm w-36" />
                     </div>
-                    <div className="space-y-1 w-36">
-                      <Label className="text-sm font-medium text-sky-700 dark:text-sky-300">যে স্টাটাসে গেছে</Label>
+                    <div className="space-y-0.5 w-36">
+                      <Label className="text-xs font-medium text-sky-700 dark:text-sky-300">যে স্টাটাসে গেছে</Label>
                       <Select value={statusChangeStatus || "none"} onValueChange={(v) => setStatusChangeStatus(v === "none" ? "" : v)}>
-                        <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder="স্টাটাস" /></SelectTrigger>
+                        <SelectTrigger className="h-8 px-2 text-sm"><SelectValue placeholder="স্টাটাস" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">স্টাটাস নির্বাচন</SelectItem>
                           {Object.keys(statusDateColMap).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -1689,7 +1689,7 @@ export function ModulePage({ module: mod }: Props) {
                         variant="ghost"
                         size="sm"
                         onClick={() => { setStatusChangeDate(""); setStatusChangeStatus(""); }}
-                        className="h-9 px-2 gap-1 text-sky-700 dark:text-sky-300"
+                        className="h-8 px-2 gap-1 text-sky-700 dark:text-sky-300"
                         title="তারিখ-স্টাটাস ফিল্টার মুছুন"
                       >
                         <X className="h-4 w-4" />
@@ -1698,7 +1698,7 @@ export function ModulePage({ module: mod }: Props) {
                   </div>
                 )}
                 {mod.computed?.some((c) => c.name === "balance" || c.name === "due") && (
-                  <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 px-2.5 gap-1.5">
+                  <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-8 px-2.5 gap-1.5">
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
                 )}
@@ -1707,7 +1707,7 @@ export function ModulePage({ module: mod }: Props) {
                     type="button"
                     variant={showCancelled ? "default" : "outline"}
                     onClick={() => setShowCancelled((v) => !v)}
-                    className="h-9 px-2.5 gap-1.5"
+                    className="h-8 px-2.5 gap-1.5"
                     title="বাতিল করা এন্ট্রি দেখুন"
                   >
                     <Ban className="h-4 w-4" /> বাতিল{cancelledCount > 0 ? ` (${cancelledCount})` : ""}
@@ -1721,7 +1721,7 @@ export function ModulePage({ module: mod }: Props) {
                     setDueOnly(false); setStartDate(""); setEndDate(""); setShowCancelled(false);
                     setStatusChangeDate(""); setStatusChangeStatus("");
                   }}
-                  className="h-9 px-2.5 gap-1.5"
+                  className="h-8 px-2.5 gap-1.5"
                   title="Reset"
                 >
                   <RotateCcw className="h-4 w-4" /> Reset
@@ -1740,7 +1740,7 @@ export function ModulePage({ module: mod }: Props) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="খুঁজুন…"
-                  className="pl-9 h-11 text-base"
+                  className="pl-9 h-9 text-sm"
                 />
               </div>
               <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">

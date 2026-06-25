@@ -223,21 +223,22 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
           <RadioGroup
             value={mode}
             onValueChange={(v) => handleModeChange(v as Mode)}
-            className="grid grid-cols-1 md:grid-cols-2 gap-3"
+            className="grid grid-cols-1 md:grid-cols-2 gap-1.5"
           >
             {OPTIONS.map((opt) => (
               <label
                 key={opt.value}
-                className={`flex items-start gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40 ${mode === opt.value ? "border-primary bg-muted/30" : ""}`}
+                className={`flex items-start gap-2 rounded-md border px-2.5 py-1.5 cursor-pointer hover:bg-muted/40 ${mode === opt.value ? "border-primary bg-muted/30" : ""}`}
               >
-                <RadioGroupItem value={opt.value} id={`qm-${opt.value}`} className="mt-1" />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium leading-snug">{opt.title}</span>
-                  <span className="text-xs text-muted-foreground leading-snug">{opt.sub}</span>
+                <RadioGroupItem value={opt.value} id={`qm-${opt.value}`} className="mt-0.5" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-medium leading-tight">{opt.title}</span>
+                  <span className="text-[11px] text-muted-foreground leading-tight">{opt.sub}</span>
                 </div>
               </label>
             ))}
           </RadioGroup>
+
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
