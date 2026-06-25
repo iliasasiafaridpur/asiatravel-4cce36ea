@@ -2147,7 +2147,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
   const onFieldChange = (field: Field, v: unknown) => {
     setForm((s) => ({ ...s, [field.name]: v }));
     if (
-      field.lookup === "sub_agency" &&
+      (field.lookup === "sub_agency" || field.name === "agency_sold") &&
       hasMobileField &&
       typeof v === "string"
     ) {
@@ -2155,13 +2155,19 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       if (name && name.toLowerCase() !== "self") {
         void supabase
           .from("agents")
-          .select("phone")
-          .ilike("name", name)
-          .limit(20)
+          .select("name,phone")
+          .limit(5000)
           .then(({ data }) => {
-            const phone = ((data as { phone?: string | null }[] | null) ?? [])
-              .map((r) => r.phone)
-              .find(Boolean);
+            const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+            const selected = norm(name);
+            const rows = ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
+              .filter((r) => String(r.name ?? "").trim().toLowerCase() !== "self");
+            const exact = rows.find((r) => norm(String(r.name ?? "")) === selected);
+            const loose = exact ?? rows.find((r) => {
+              const n = norm(String(r.name ?? ""));
+              return Boolean(n) && (selected.includes(n) || n.includes(selected));
+            });
+            const phone = loose?.phone;
             const first = (phone ?? "").split(",")[0]?.trim();
             if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
           });

@@ -135,7 +135,7 @@ export function PartyLedgerPage({
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
   const [balances, setBalances] = useState<
-    { name: string; bill: number; paid: number; due: number; advance: number }[]
+    { name: string; serial?: number | null; bill: number; paid: number; due: number; advance: number }[]
   >([]);
   // Pagination for the ledger statement table.
   const [page, setPage] = useState(1);
@@ -216,20 +216,30 @@ export function PartyLedgerPage({
     if (name) return;
     let cancelled = false;
     const loadBalances = async () => {
-      const { data } = await supabase.rpc(
-        (isCustomer ? "get_agent_balances" : "get_vendor_balances") as never,
+      const [{ data }, contactsRes] = await Promise.all([
+        supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
+        supabase.from(contactsTable as never).select("name,serial_no").limit(5000),
+      ]);
+      const serialByName = new Map(
+        (((contactsRes.data as unknown as { name?: string | null; serial_no?: number | null }[]) ?? [])
+          .map((c) => [String(c.name ?? "").trim().toLowerCase(), c.serial_no ?? null] as const)
+          .filter(([n]) => Boolean(n))),
       );
       const nameKey = isCustomer ? "agent_name" : "vendor_name";
       const billKey = isCustomer ? "total_bill" : "total_payable";
       const paidKey = isCustomer ? "total_received" : "total_paid";
       const list = ((data as unknown as Record<string, unknown>[]) ?? [])
-        .map((b) => ({
-          name: String(b[nameKey] ?? ""),
+        .map((b) => {
+          const partyName = String(b[nameKey] ?? "").trim();
+          return {
+          name: partyName,
+          serial: serialByName.get(partyName.toLowerCase()) ?? null,
           bill: Number(b[billKey] ?? 0),
           paid: Number(b[paidKey] ?? 0),
           due: Number(b.balance_due ?? 0),
           advance: Number(b.advance_balance ?? 0),
-        }))
+          };
+        })
         // "Self" is not a real agency/customer — never list it.
         .filter((b) => b.name.trim().toLowerCase() !== "self");
       if (!cancelled) setBalances(list);
@@ -1096,6 +1106,7 @@ export function PartyLedgerPage({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>ID</TableHead>
                     <TableHead>{isCustomer ? "Agent" : "Vendor"}</TableHead>
                     <TableHead className="text-right">{isCustomer ? "Total Bill" : "Total Payable"}</TableHead>
                     <TableHead className="text-right">{isCustomer ? "Received" : "Paid"}</TableHead>
@@ -1122,7 +1133,7 @@ export function PartyLedgerPage({
                     if (filtered.length === 0) {
                       return (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
                             কোনো হিসাব নেই
                           </TableCell>
                         </TableRow>
@@ -1139,6 +1150,9 @@ export function PartyLedgerPage({
                           })
                         }
                       >
+                        <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">
+                          {isCustomer ? "AGT" : "VEN"}-{String(b.serial ?? (idx + 1)).padStart(3, "0")}
+                        </TableCell>
                         <TableCell className="font-medium">{b.name}</TableCell>
                         <TableCell className="text-right tabular-nums">৳ {b.bill.toLocaleString()}</TableCell>
                         <TableCell className="text-right tabular-nums text-emerald-600">৳ {b.paid.toLocaleString()}</TableCell>
