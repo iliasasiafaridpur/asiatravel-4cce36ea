@@ -1660,7 +1660,36 @@ export function ModulePage({ module: mod }: Props) {
                     </Select>
                   </div>
                 )}
-                {mod.computed?.some((c) => c.name === "balance") && (
+                {supportsStatusChangeFilter && (
+                  <div className="flex flex-wrap gap-2 items-end rounded-md border border-sky-300 bg-sky-50 dark:bg-sky-950/30 px-2 py-1.5">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-medium text-sky-700 dark:text-sky-300">স্টাটাস পরিবর্তনের তারিখ</Label>
+                      <DateInput value={statusChangeDate} onChange={(e) => setStatusChangeDate(e.target.value)} className="h-9 px-2 text-sm w-36" />
+                    </div>
+                    <div className="space-y-1 w-36">
+                      <Label className="text-sm font-medium text-sky-700 dark:text-sky-300">যে স্টাটাসে গেছে</Label>
+                      <Select value={statusChangeStatus || "none"} onValueChange={(v) => setStatusChangeStatus(v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 px-2 text-sm"><SelectValue placeholder="স্টাটাস" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">স্টাটাস নির্বাচন</SelectItem>
+                          {Object.keys(statusDateColMap).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {(statusChangeDate || statusChangeStatus) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setStatusChangeDate(""); setStatusChangeStatus(""); }}
+                        className="h-9 px-2 gap-1 text-sky-700 dark:text-sky-300"
+                        title="তারিখ-স্টাটাস ফিল্টার মুছুন"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
                   <Button type="button" variant={dueOnly ? "default" : "outline"} onClick={() => setDueOnly((v) => !v)} className="h-9 px-2.5 gap-1.5">
                     <Wallet className="h-4 w-4" /> শুধু Due
                   </Button>
