@@ -16,6 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { LookupSelect } from "@/components/LookupSelect";
 import { formatDate } from "@/lib/modules";
+import { useMobileColors, mobileColorTextClass, useSetMobileColor } from "@/hooks/useMobileColors";
 import { Zap, Phone, PhoneOff, PhoneCall } from "lucide-react";
 
 type Row = Record<string, unknown> & { id: string };
@@ -28,27 +29,31 @@ interface Props {
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
+const OPTIONS: { value: Mode; serial: string; title: string; sub: string; btn: string }[] = [
   {
     value: "send",
+    serial: "১",
     title: "একাধিক BMET, vendor কে Send করো",
     sub: '"NEW" Status থেকে "File Process" Status করা হবে।',
     btn: "Send",
   },
   {
     value: "ready",
+    serial: "২",
     title: "BMET, Vendor এর কাছে Ready হয়েছে।",
     sub: 'স্টাটাস পরিবর্তন - File Process থেকে Card Ready করা হবে।',
     btn: "Card Ready",
   },
   {
     value: "receive",
+    serial: "৩",
     title: "BMET, Vendor থেকে Receive করা হবে।",
     sub: 'স্টাটাস পরিবর্তন - Card Ready থেকে Pending Delivery করা হবে। ও খাতায় লেখা হয়েছে।',
     btn: "Receive BMET",
   },
   {
     value: "call",
+    serial: "৪",
     title: "📞 কল করা (Receive হওয়া passenger কে)",
     sub: 'Receive হওয়া তারিখ ধরে কল করুন। কথা হলে ✅, না ধরলে 📵 মার্ক করুন।',
     btn: "",
@@ -57,6 +62,8 @@ const OPTIONS: { value: Mode; title: string; sub: string; btn: string }[] = [
 
 export function BmetQuickManage({ rows, onChanged }: Props) {
   const { profile } = useCurrentUser();
+  const { colorFor } = useMobileColors();
+  const setMobileColor = useSetMobileColor();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("send");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -142,6 +149,11 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
         })
         .eq("id", id);
       if (error) throw error;
+      // মোবাইল নম্বরের রং: কথা হয়েছে → সবুজ, ধরেনি → লাল। সব মডিউল পেইজেও এই রং দেখা যাবে।
+      const mobile = String(rows.find((r) => r.id === id)?.mobile ?? "").trim();
+      if (mobile) {
+        await setMobileColor(mobile, status === "talked" ? "green" : "red");
+      }
       toast.success(status === "talked" ? "✅ কথা হয়েছে — মার্ক করা হলো" : "📵 ধরেনি — মার্ক করা হলো");
       await onChanged();
     } catch (e: unknown) {
@@ -232,7 +244,10 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
               >
                 <RadioGroupItem value={opt.value} id={`qm-${opt.value}`} className="mt-0.5" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-medium leading-tight">{opt.title}</span>
+                  <span className="text-xs font-medium leading-tight">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold mr-1 align-middle">{opt.serial}</span>
+                    {opt.title}
+                  </span>
                   <span className="text-[11px] text-muted-foreground leading-tight">{opt.sub}</span>
                 </div>
               </label>
@@ -323,10 +338,12 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>
                       {isCall && mobile ? (
-                        <a href={`tel:${mobile}`} className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
+                        <a href={`tel:${mobile}`} className={`inline-flex items-center gap-1 hover:underline font-medium ${mobileColorTextClass(colorFor(mobile)) || "text-primary"}`}>
                           <Phone className="h-3.5 w-3.5" /> {mobile}
                         </a>
-                      ) : mobile}
+                      ) : (
+                        <span className={mobileColorTextClass(colorFor(mobile))}>{mobile}</span>
+                      )}
                     </TableCell>
                     <TableCell>{String(r.country_name ?? "")}</TableCell>
                     {!isCall && <TableCell>{String(r.vendor_bought ?? "")}</TableCell>}

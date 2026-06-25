@@ -2113,6 +2113,35 @@ export function FormSections({ mod, form, setForm, isEdit }: {
     if (next) next.focus();
   };
 
+  // Generic field setter. When an agency (sub_agency / agency_sold) is chosen —
+  // except "Self" — auto-fill the Mobile field with that agency's first phone
+  // number from its পরিচিতি বোর্ড (agents.phone). Other fields just set as-is.
+  const hasMobileField = mod.fields.some((f) => f.name === "mobile");
+  const onFieldChange = (field: Field, v: unknown) => {
+    setForm((s) => ({ ...s, [field.name]: v }));
+    if (
+      field.name === "agency_sold" &&
+      field.lookup === "sub_agency" &&
+      hasMobileField &&
+      typeof v === "string"
+    ) {
+      const name = v.trim();
+      if (name && name.toLowerCase() !== "self") {
+        void supabase
+          .from("agents")
+          .select("phone")
+          .eq("name", name)
+          .then(({ data }) => {
+            const phone = ((data as { phone?: string | null }[] | null) ?? [])
+              .map((r) => r.phone)
+              .find(Boolean);
+            const first = (phone ?? "").split(",")[0]?.trim();
+            if (first) setForm((s) => ({ ...s, mobile: first }));
+          });
+      }
+    }
+  };
+
   return (
     <div className="space-y-2 py-0.5" onKeyDown={onFormKeyDown}>
       {hasPassportFields && (
@@ -2145,7 +2174,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
                   key={field.name}
                   field={field}
                   value={form[field.name]}
-                  onChange={(v) => setForm((s) => ({ ...s, [field.name]: v }))}
+                  onChange={(v) => onFieldChange(field, v)}
                   disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
                 />
               ))}
