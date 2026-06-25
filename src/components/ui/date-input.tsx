@@ -5,11 +5,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
+const MONTHS_ABBR = [
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+];
+
 function toDMY(iso: string | undefined | null): string {
   if (!iso) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return "";
-  return `${m[3]}-${m[2]}-${m[1]}`;
+  const mon = MONTHS_ABBR[Number(m[2]) - 1] ?? m[2];
+  return `${m[3]}-${mon}-${m[1]}`;
 }
 
 function isoToDate(iso: string | undefined | null): Date | undefined {
