@@ -318,19 +318,20 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   )}
                   <TableHead>{isCall ? "Receive তারিখ" : "Date"}</TableHead>
                   <TableHead>Passenger</TableHead>
+                  {isCall && <TableHead>Agent</TableHead>}
                   <TableHead>Passport</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>Country</TableHead>
                   {!isCall && <TableHead>Current Vendor</TableHead>}
                   {!isCall && <TableHead className="w-32">Cost Price</TableHead>}
-                  {isCall ? <TableHead>কল অবস্থা</TableHead> : <TableHead>Status</TableHead>}
-                  {isCall && <TableHead className="text-right">কল করুন</TableHead>}
+                  {isCall ? <TableHead className="w-20">অবস্থা</TableHead> : <TableHead>Status</TableHead>}
+                  {isCall && <TableHead className="text-right w-24">কল</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isCall ? 7 : 9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={isCall ? 8 : 9} className="text-center text-muted-foreground py-8">
                       কোনো রেকর্ড পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
@@ -352,6 +353,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     )}
                     <TableCell>{formatDate((isCall ? r.received_date : r.entry_date) as string | null)}</TableCell>
                     <TableCell className="font-medium">{String(r.passenger_name ?? "")}</TableCell>
+                    {isCall && <TableCell className="text-muted-foreground">{String(r.agency_sold ?? "")}</TableCell>}
                     <TableCell>{String(r.passport ?? "")}</TableCell>
                     <TableCell>
                       {isCall && mobile ? (
@@ -380,15 +382,15 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     {isCall ? (
                       <TableCell>
                         {callStatus === "talked" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium dark:bg-green-900/40 dark:text-green-300">
-                            ✅ কথা হয়েছে{lastCallDate ? ` · ${formatDate(lastCallDate as string)}` : ""}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-1.5 py-0.5 text-[11px] font-medium dark:bg-green-900/40 dark:text-green-300" title={lastCallDate ? `কথা হয়েছে · ${formatDate(lastCallDate as string)}` : "কথা হয়েছে"}>
+                            ✅{lastCallDate ? ` ${formatDate(lastCallDate as string)}` : ""}
                           </span>
                         ) : callStatus === "no_answer" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium dark:bg-red-900/40 dark:text-red-300">
-                            📵 ধরেনি{lastCallDate ? ` · ${formatDate(lastCallDate as string)}` : ""}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-1.5 py-0.5 text-[11px] font-medium dark:bg-red-900/40 dark:text-red-300" title={lastCallDate ? `ধরেনি · ${formatDate(lastCallDate as string)}` : "ধরেনি"}>
+                            📵{lastCallDate ? ` ${formatDate(lastCallDate as string)}` : ""}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">— বাকি —</span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                     ) : (
@@ -396,28 +398,30 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                     )}
                     {isCall && (
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             type="button"
-                            size="sm"
+                            size="icon"
                             variant="outline"
                             disabled={callingId === r.id}
                             onClick={() => markCall(r.id, "talked")}
-                            className="h-8 px-2 text-green-700 border-green-300 hover:bg-green-50 dark:text-green-300 dark:border-green-800"
+                            className="h-8 w-8 text-green-700 border-green-300 hover:bg-green-50 dark:text-green-300 dark:border-green-800"
                             title="কথা হয়েছে"
+                            aria-label="কথা হয়েছে"
                           >
-                            <PhoneCall className="h-3.5 w-3.5" /> কথা হয়েছে
+                            <PhoneCall className="h-4 w-4" />
                           </Button>
                           <Button
                             type="button"
-                            size="sm"
+                            size="icon"
                             variant="outline"
                             disabled={callingId === r.id}
                             onClick={() => markCall(r.id, "no_answer")}
-                            className="h-8 px-2 text-red-700 border-red-300 hover:bg-red-50 dark:text-red-300 dark:border-red-800"
+                            className="h-8 w-8 text-red-700 border-red-300 hover:bg-red-50 dark:text-red-300 dark:border-red-800"
                             title="ধরেনি"
+                            aria-label="ধরেনি"
                           >
-                            <PhoneOff className="h-3.5 w-3.5" /> ধরেনি
+                            <PhoneOff className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
