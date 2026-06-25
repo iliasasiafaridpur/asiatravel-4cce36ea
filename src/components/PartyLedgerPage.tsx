@@ -1121,7 +1121,6 @@ export function PartyLedgerPage({
               <span className="absolute -top-2.5 left-3 bg-card px-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
                 পরিচিতি বোর্ড
               </span>
-              </span>
               {editing ? (
                 <div className="space-y-2 max-w-md">
                   <div>
