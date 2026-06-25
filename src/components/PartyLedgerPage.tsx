@@ -1053,9 +1053,20 @@ export function PartyLedgerPage({
                 </TableHeader>
                 <TableBody>
                   {(() => {
-                    const filtered = balances.filter((b) =>
-                      b.name.toLowerCase().includes(listFilter.trim().toLowerCase()),
-                    );
+                    const filtered = balances
+                      .filter((b) =>
+                        b.name.toLowerCase().includes(listFilter.trim().toLowerCase()),
+                      )
+                      .slice()
+                      .sort((a, b) => {
+                        const rank = (x: { due: number; advance: number }) =>
+                          Number(x.advance ?? 0) > 0 ? 0 : Number(x.due ?? 0) > 0 ? 1 : 2;
+                        const r = rank(a) - rank(b);
+                        if (r !== 0) return r;
+                        const av = Number(a.advance ?? 0) > 0 ? Number(a.advance) : Number(a.due);
+                        const bv = Number(b.advance ?? 0) > 0 ? Number(b.advance) : Number(b.due);
+                        return bv - av;
+                      });
                     if (filtered.length === 0) {
                       return (
                         <TableRow>
