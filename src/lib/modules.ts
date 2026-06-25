@@ -1088,17 +1088,26 @@ function tzParts(date: Date) {
   };
 }
 
+const MONTHS_ABBR = [
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+];
+
+function monAbbr(monthNum: number): string {
+  return MONTHS_ABBR[monthNum - 1] ?? String(monthNum).padStart(2, "0");
+}
+
 export function formatDate(d?: string | null): string {
   if (!d) return "";
   // Pure date input — format without TZ conversion to avoid day-shift.
   if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) {
     const [y, m, day] = d.trim().split("-");
-    return `${day}-${m}-${y}`;
+    return `${day}-${monAbbr(Number(m))}-${y}`;
   }
   const date = new Date(d);
   if (isNaN(date.getTime())) return String(d);
   const p = tzParts(date);
-  return `${p.dd}-${String(p.mm).padStart(2, "0")}-${p.yyyy}`;
+  return `${String(p.dd).padStart(2, "0")}-${monAbbr(Number(p.mm))}-${p.yyyy}`;
 }
 
 export function formatDateTime(d?: string | null): string {
@@ -1108,7 +1117,7 @@ export function formatDateTime(d?: string | null): string {
   const date = new Date(d);
   if (isNaN(date.getTime())) return String(d);
   const p = tzParts(date);
-  return `${p.dd}-${String(p.mm).padStart(2, "0")}-${p.yyyy} ${p.hh}:${p.mi} ${p.ampm}`;
+  return `${String(p.dd).padStart(2, "0")}-${monAbbr(Number(p.mm))}-${p.yyyy} ${p.hh}:${p.mi} ${p.ampm}`;
 }
 
 
