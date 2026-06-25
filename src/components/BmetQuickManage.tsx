@@ -324,9 +324,9 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   )}
                   <TableHead>{isCall ? "Receive তারিখ" : "Date"}</TableHead>
                   <TableHead>Passenger</TableHead>
-                  {isCall && <TableHead>Agent</TableHead>}
+                  {showAgent && <TableHead>Agent</TableHead>}
                   <TableHead>Passport</TableHead>
-                  <TableHead>Mobile</TableHead>
+                  {showMobile && <TableHead>Mobile</TableHead>}
                   <TableHead>Country</TableHead>
                   {!isCall && <TableHead>Current Vendor</TableHead>}
                   {!isCall && <TableHead className="w-32">Cost Price</TableHead>}
