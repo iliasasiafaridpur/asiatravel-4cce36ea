@@ -2198,7 +2198,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
           .split(/[,;\n|]+/)
           .map((p) => p.trim())
           .find((p) => normalizeMobileForColor(p));
-        if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
+        if (first) setForm((s) => ({ ...s, mobile: first }));
       }
     }
   };
