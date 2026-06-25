@@ -361,6 +361,7 @@ export function PartyLedgerPage({
       .filter(Boolean);
     setForm({
       name: displayName,
+      fullName: contact?.full_name ?? "",
       phones: list.length ? list : [""],
       address: contact?.address ?? "",
       settleMode,
