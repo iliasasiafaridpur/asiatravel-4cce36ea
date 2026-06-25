@@ -198,7 +198,7 @@ export function PartyLedgerPage({
     return () => {
       cancelled = true;
     };
-  }, [contactsTable, table, groupField]);
+  }, [contactsTable, table, groupField, isCustomer]);
 
   // Load live balances (same RPC the Agent/Vendor List pages use) for the
   // on-page list shown when no party is selected.
