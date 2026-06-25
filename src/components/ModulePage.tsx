@@ -2128,25 +2128,40 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       return next;
     });
   };
-  const [agencyPhones, setAgencyPhones] = useState<{ name: string; phone: string }[]>([]);
+  const [agencyPhones, setAgencyPhones] = useState<{ name: string; phone: string; serial: number | null }[]>([]);
 
   useEffect(() => {
     if (!mod.fields.some((f) => f.lookup === "sub_agency" || f.name === "agency_sold")) return;
     let alive = true;
     void supabase
       .from("agents")
-      .select("name,phone")
+      .select("name,phone,serial_no")
       .limit(5000)
       .then(({ data }) => {
         if (!alive) return;
         setAgencyPhones(
-          ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
-            .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim() }))
+          ((data as { name?: string | null; phone?: string | null; serial_no?: number | null }[] | null) ?? [])
+            .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim(), serial: r.serial_no ?? null }))
             .filter((r) => r.name && r.name.toLowerCase() !== "self"),
         );
       });
     return () => { alive = false; };
   }, [mod]);
+
+  // Loosely match a chosen agency name to its পরিচিতি বোর্ড row (ignores
+  // spaces / dashes / case so "Future travel-Bhanga" still matches).
+  const matchAgency = (name: string) => {
+    const norm = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+    const selected = norm(name);
+    if (!selected || selected === "self") return undefined;
+    return (
+      agencyPhones.find((r) => norm(r.name) === selected) ??
+      agencyPhones.find((r) => {
+        const n = norm(r.name);
+        return Boolean(n) && (selected.includes(n) || n.includes(selected));
+      })
+    );
+  };
 
   // Enter → focus next input. Textarea/buttons keep native behavior.
   const onFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
