@@ -22,7 +22,7 @@ function AgentsPage() {
       supabase.rpc("get_agent_balances" as never),
       supabase.from("agents").select("name,settle_mode").limit(5000),
     ]);
-    const rows = ((data as unknown) as Bal[]) ?? [];
+    const rows = (((data as unknown) as Bal[]) ?? []).filter((b) => String(b.agent_name ?? "").trim().toLowerCase() !== "self");
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
     rows.sort((a, b) => {
       const r = rank(a) - rank(b);

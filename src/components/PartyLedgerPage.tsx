@@ -187,14 +187,18 @@ export function PartyLedgerPage({
         if (n) set.add(n);
       }
       if (!cancelled) {
-        setPartyList(Array.from(set).sort((a, b) => a.localeCompare(b)));
+        setPartyList(
+          Array.from(set)
+            .filter((n) => (isCustomer ? n.trim().toLowerCase() !== "self" : true))
+            .sort((a, b) => a.localeCompare(b)),
+        );
       }
     };
     void loadParties();
     return () => {
       cancelled = true;
     };
-  }, [contactsTable, table, groupField]);
+  }, [contactsTable, table, groupField, isCustomer]);
 
   // Load live balances (same RPC the Agent/Vendor List pages use) for the
   // on-page list shown when no party is selected.
@@ -209,13 +213,16 @@ export function PartyLedgerPage({
       const nameKey = isCustomer ? "agent_name" : "vendor_name";
       const billKey = isCustomer ? "total_bill" : "total_payable";
       const paidKey = isCustomer ? "total_received" : "total_paid";
-      const list = ((data as unknown as Record<string, unknown>[]) ?? []).map((b) => ({
-        name: String(b[nameKey] ?? ""),
-        bill: Number(b[billKey] ?? 0),
-        paid: Number(b[paidKey] ?? 0),
-        due: Number(b.balance_due ?? 0),
-        advance: Number(b.advance_balance ?? 0),
-      }));
+      const list = ((data as unknown as Record<string, unknown>[]) ?? [])
+        .map((b) => ({
+          name: String(b[nameKey] ?? ""),
+          bill: Number(b[billKey] ?? 0),
+          paid: Number(b[paidKey] ?? 0),
+          due: Number(b.balance_due ?? 0),
+          advance: Number(b.advance_balance ?? 0),
+        }))
+        // "Self" is not a real agency/customer — never list it.
+        .filter((b) => b.name.trim().toLowerCase() !== "self");
       if (!cancelled) setBalances(list);
     };
     void loadBalances();
