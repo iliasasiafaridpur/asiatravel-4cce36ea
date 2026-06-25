@@ -161,10 +161,11 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
+  const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
     phones: [""],
+    phoneLabels: [""],
     address: "",
     settleMode: "total",
   });
