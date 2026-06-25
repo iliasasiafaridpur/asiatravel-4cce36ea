@@ -20,12 +20,13 @@ interface Bal { vendor_name: string; total_payable: number; total_paid: number; 
 function VendorsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
   const [modes, setModes] = useState<Record<string, string>>({});
+  const [serials, setSerials] = useState<Record<string, number | null>>({});
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
   const navigate = useNavigate();
   const load = async () => {
     const [{ data }, { data: vendors }] = await Promise.all([
       supabase.rpc("get_vendor_balances" as never),
-      supabase.from("vendors").select("name,settle_mode").limit(5000),
+      supabase.from("vendors").select("name,settle_mode,serial_no").limit(5000),
     ]);
     const rows = ((data as unknown) as Bal[]) ?? [];
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
@@ -38,14 +39,17 @@ function VendorsPage() {
     });
     setBals(rows);
     const map: Record<string, string> = {};
-    for (const v of ((vendors as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
+    const smap: Record<string, number | null> = {};
+    for (const v of ((vendors as unknown as { name: string; settle_mode: string | null; serial_no: number | null }[]) ?? [])) {
       if (!v.name) continue;
       // Defensive against legacy duplicate rows: "one_by_one" must never be
       // overwritten by a sibling row's "total"/empty value.
       if (v.settle_mode === "one_by_one") map[v.name] = "one_by_one";
       else if (!map[v.name]) map[v.name] = v.settle_mode === "total" ? "total" : "";
+      if (v.serial_no != null && smap[v.name] == null) smap[v.name] = v.serial_no;
     }
     setModes(map);
+    setSerials(smap);
   };
   useEffect(() => {
     void load();
@@ -62,11 +66,12 @@ function VendorsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Vendor</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Vendor</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Payable</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.vendor_name} className={`row-tint-${idx % 4}`}>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">{serials[b.vendor_name] != null ? `VEN-${String(serials[b.vendor_name]).padStart(3, "0")}` : "—"}</TableCell>
                       <TableCell className="font-medium">{b.vendor_name}</TableCell>
                       <TableCell><SettleModeBadge mode={modes[b.vendor_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_payable).toLocaleString()}</TableCell>

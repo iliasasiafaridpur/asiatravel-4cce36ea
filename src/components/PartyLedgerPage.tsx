@@ -72,6 +72,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 type LedgerRow = Record<string, unknown> & { id: string };
 type Contact = {
   phone?: string | null;
+  phone_labels?: string | null;
   address?: string | null;
   settle_mode?: string | null;
   serial_no?: number | null;
@@ -160,10 +161,11 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; address: string; settleMode: "total" | "one_by_one" }>({
+  const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
     phones: [""],
+    phoneLabels: [""],
     address: "",
     settleMode: "total",
   });
@@ -246,10 +248,15 @@ export function PartyLedgerPage({
 
 
 
-  const phoneList = (contact?.phone ?? "")
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
+  // Phone numbers with their per-number labels (aligned by index). The label
+  // string is comma-separated and aligned with the phone string by position.
+  const phoneList = (() => {
+    const nums = (contact?.phone ?? "").split(",").map((p) => p.trim());
+    const labels = (contact?.phone_labels ?? "").split(",").map((l) => l.trim());
+    return nums
+      .map((ph, i) => ({ phone: ph, label: labels[i] ?? "" }))
+      .filter((x) => x.phone);
+  })();
 
   // Last payment (পরিশোধ/গ্রহণ) — newest ledger row with a positive paid amount.
   const lastPayment = useMemo(() => {
@@ -280,7 +287,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,address,settle_mode,serial_no,full_name")
+        .select("phone,phone_labels,address,settle_mode,serial_no,full_name")
         .eq("name", displayName)
         .order("settle_mode", { ascending: true })
         .limit(10),
@@ -296,6 +303,7 @@ export function PartyLedgerPage({
     const mergedContact: Contact | null = contactRows.length
       ? {
           phone: contactRows.find((c) => c.phone)?.phone ?? null,
+          phone_labels: contactRows.find((c) => c.phone)?.phone_labels ?? null,
           address: contactRows.find((c) => c.address)?.address ?? null,
           settle_mode: contactRows.some((c) => c.settle_mode === "one_by_one")
             ? "one_by_one"
@@ -372,14 +380,16 @@ export function PartyLedgerPage({
 
 
   const beginEdit = () => {
-    const list = (contact?.phone ?? "")
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
+    const nums = (contact?.phone ?? "").split(",").map((p) => p.trim());
+    const labels = (contact?.phone_labels ?? "").split(",").map((l) => l.trim());
+    const pairs = nums
+      .map((ph, i) => ({ phone: ph, label: labels[i] ?? "" }))
+      .filter((x) => x.phone);
     setForm({
       name: displayName,
       fullName: contact?.full_name ?? "",
-      phones: list.length ? list : [""],
+      phones: pairs.length ? pairs.map((p) => p.phone) : [""],
+      phoneLabels: pairs.length ? pairs.map((p) => p.label) : [""],
       address: contact?.address ?? "",
       settleMode,
     });
@@ -395,7 +405,14 @@ export function PartyLedgerPage({
     setSaving(true);
     const oldName = displayName;
     const codeCol = isCustomer ? "agent_code" : "vendor_code";
-    const phoneStr = form.phones.map((p) => p.trim()).filter(Boolean).join(", ") || null;
+    // Keep phone numbers and their labels aligned by index; drop empty numbers.
+    const phonePairs = form.phones
+      .map((p, i) => ({ phone: p.trim(), label: (form.phoneLabels[i] ?? "").replace(/,/g, " ").trim() }))
+      .filter((x) => x.phone);
+    const phoneStr = phonePairs.map((p) => p.phone).join(", ") || null;
+    const phoneLabelsStr = phonePairs.some((p) => p.label)
+      ? phonePairs.map((p) => p.label).join(", ")
+      : null;
     const { data: existingBeforeRename } = await supabase
       .from(contactsTable as never)
       .select("id")
@@ -422,7 +439,7 @@ export function PartyLedgerPage({
     if (existingId) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
+        .update({ name: newName, full_name: fullNameVal, phone: phoneStr, phone_labels: phoneLabelsStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
         .eq("id", existingId);
       err = error;
     } else {
@@ -436,14 +453,14 @@ export function PartyLedgerPage({
       if (newExistingId) {
         const { error } = await supabase
           .from(contactsTable as never)
-          .update({ name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
+          .update({ name: newName, full_name: fullNameVal, phone: phoneStr, phone_labels: phoneLabelsStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
           .eq("id", newExistingId);
         err = error;
       } else {
         const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
         const { error } = await supabase
           .from(contactsTable as never)
-          .insert({ [codeCol]: code, name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
+          .insert({ [codeCol]: code, name: newName, full_name: fullNameVal, phone: phoneStr, phone_labels: phoneLabelsStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
         err = error;
       }
     }
@@ -453,7 +470,7 @@ export function PartyLedgerPage({
       toast.error("সংরক্ষণ ব্যর্থ: " + err.message);
       return;
     }
-    setContact((c) => ({ ...(c ?? {}), full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
+    setContact((c) => ({ ...(c ?? {}), full_name: fullNameVal, phone: phoneStr, phone_labels: phoneLabelsStr, address: form.address.trim() || null, settle_mode: form.settleMode }));
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
@@ -1170,10 +1187,21 @@ export function PartyLedgerPage({
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-muted-foreground">Mobile</label>
-                    <div className="space-y-1.5 mt-0.5">
+                    <label className="text-[11px] text-muted-foreground">Mobile (প্রতিটি নাম্বারের নাম সহ)</label>
+                    <div className="space-y-2 mt-0.5">
                       {form.phones.map((p, i) => (
                         <div key={i} className="flex items-center gap-1.5">
+                          <Input
+                            value={form.phoneLabels[i] ?? ""}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                phoneLabels: f.phoneLabels.map((x, xi) => (xi === i ? e.target.value : x)),
+                              }))
+                            }
+                            placeholder="নাম (যেমন: অফিস)"
+                            className="h-8 w-28 shrink-0"
+                          />
                           <Input
                             value={p}
                             onChange={(e) =>
@@ -1192,7 +1220,11 @@ export function PartyLedgerPage({
                               variant="ghost"
                               className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                               onClick={() =>
-                                setForm((f) => ({ ...f, phones: f.phones.filter((_, xi) => xi !== i) }))
+                                setForm((f) => ({
+                                  ...f,
+                                  phones: f.phones.filter((_, xi) => xi !== i),
+                                  phoneLabels: f.phoneLabels.filter((_, xi) => xi !== i),
+                                }))
                               }
                               aria-label="Remove"
                             >
@@ -1205,7 +1237,7 @@ export function PartyLedgerPage({
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
-                        onClick={() => setForm((f) => ({ ...f, phones: [...f.phones, ""] }))}
+                        onClick={() => setForm((f) => ({ ...f, phones: [...f.phones, ""], phoneLabels: [...f.phoneLabels, ""] }))}
                       >
                         <Plus className="h-3.5 w-3.5 mr-1" /> আরেকটি নাম্বার
                       </Button>
@@ -1295,20 +1327,25 @@ export function PartyLedgerPage({
                       phoneList.map((ph, i) => (
                         <div key={i} className="flex items-center gap-2 flex-wrap">
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{ph}</span>
+                          {ph.label && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {ph.label}
+                            </Badge>
+                          )}
+                          <span>{ph.phone}</span>
                           <a
-                            href={`tel:${ph.replace(/[^+\d]/g, "")}`}
+                            href={`tel:${ph.phone.replace(/[^+\d]/g, "")}`}
                             className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30 transition-colors hover:bg-emerald-500/25"
-                            aria-label={`Call ${ph}`}
+                            aria-label={`Call ${ph.phone}`}
                           >
                             <PhoneCall className="h-3.5 w-3.5" />
                           </a>
                           <a
-                            href={`https://wa.me/${waNumber(ph)}`}
+                            href={`https://wa.me/${waNumber(ph.phone)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30 transition-colors hover:bg-green-500/25"
-                            aria-label={`WhatsApp ${ph}`}
+                            aria-label={`WhatsApp ${ph.phone}`}
                           >
                             <MessageCircle className="h-3.5 w-3.5" />
                           </a>

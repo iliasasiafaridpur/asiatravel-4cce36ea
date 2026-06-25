@@ -17,10 +17,11 @@ interface Bal { agent_name: string; total_bill: number; total_received: number; 
 function AgentsPage() {
   const [bals, setBals] = useState<Bal[]>([]);
   const [modes, setModes] = useState<Record<string, string>>({});
+  const [serials, setSerials] = useState<Record<string, number | null>>({});
   const load = async () => {
     const [{ data }, { data: agents }] = await Promise.all([
       supabase.rpc("get_agent_balances" as never),
-      supabase.from("agents").select("name,settle_mode").limit(5000),
+      supabase.from("agents").select("name,settle_mode,serial_no").limit(5000),
     ]);
     const rows = (((data as unknown) as Bal[]) ?? []).filter((b) => String(b.agent_name ?? "").trim().toLowerCase() !== "self");
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
@@ -33,10 +34,15 @@ function AgentsPage() {
     });
     setBals(rows);
     const map: Record<string, string> = {};
-    for (const a of ((agents as unknown as { name: string; settle_mode: string | null }[]) ?? [])) {
-      if (a.name) map[a.name] = a.settle_mode === "one_by_one" ? "one_by_one" : a.settle_mode === "total" ? "total" : "";
+    const smap: Record<string, number | null> = {};
+    for (const a of ((agents as unknown as { name: string; settle_mode: string | null; serial_no: number | null }[]) ?? [])) {
+      if (a.name) {
+        map[a.name] = a.settle_mode === "one_by_one" ? "one_by_one" : a.settle_mode === "total" ? "total" : "";
+        smap[a.name] = a.serial_no ?? null;
+      }
     }
     setModes(map);
+    setSerials(smap);
   };
   useEffect(() => {
     void load();
@@ -53,11 +59,12 @@ function AgentsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Agent</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Agent</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead></TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.agent_name} className={`row-tint-${idx % 4}`}>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">{serials[b.agent_name] != null ? `AGT-${String(serials[b.agent_name]).padStart(3, "0")}` : "—"}</TableCell>
                       <TableCell className="font-medium">{b.agent_name}</TableCell>
                       <TableCell><SettleModeBadge mode={modes[b.agent_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_bill).toLocaleString()}</TableCell>
