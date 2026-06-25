@@ -1324,6 +1324,20 @@ export function PartyLedgerPage({
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
                       <span className="text-muted-foreground">{contact?.address || "ঠিকানা নেই"}</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                      {lastPayment ? (
+                        <span>
+                          শেষ {isCustomer ? "গ্রহণ" : "পরিশোধ"}:{" "}
+                          <span className="font-semibold text-emerald-600 tabular-nums">{fmtMoney(lastPayment.amount)}</span>{" "}
+                          <span className="text-muted-foreground">· {formatDate(lastPayment.date)}</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          এখনো কোনো {isCustomer ? "গ্রহণ" : "পরিশোধ"} নেই
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
