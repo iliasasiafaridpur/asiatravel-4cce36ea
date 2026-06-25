@@ -2230,15 +2230,36 @@ export function FormSections({ mod, form, setForm, isEdit }: {
               className="grid gap-x-2 gap-y-1.5 p-2"
               style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
             >
-              {g.fields.map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  value={form[field.name]}
-                  onChange={(v) => onFieldChange(field, v)}
-                  disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
-                />
-              ))}
+              {g.fields.map((field) => {
+                const isAgencyField = field.lookup === "sub_agency" || field.name === "agency_sold";
+                const agencyVal = isAgencyField ? String(form[field.name] ?? "").trim() : "";
+                const matched = isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" ? matchAgency(agencyVal) : undefined;
+                return (
+                  <div key={field.name} className="space-y-0.5">
+                    <FormField
+                      field={field}
+                      value={form[field.name]}
+                      onChange={(v) => onFieldChange(field, v)}
+                      disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
+                    />
+                    {isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" && (
+                      <p className="text-[10px] leading-tight text-muted-foreground">
+                        {matched?.serial != null ? (
+                          <span className="font-mono font-semibold text-primary">AGT-{String(matched.serial).padStart(3, "0")}</span>
+                        ) : (
+                          <span className="text-amber-500">ID নেই</span>
+                        )}
+                        {" · "}
+                        {matched?.phone ? (
+                          <span className="text-emerald-500">📱 {matched.phone}</span>
+                        ) : (
+                          <span className="text-amber-500">এজেন্সির পরিচিতি বোর্ডে মোবাইল নেই</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
         );
