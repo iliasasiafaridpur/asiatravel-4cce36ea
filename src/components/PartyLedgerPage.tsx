@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
 import { LedgerPage } from "@/components/LedgerPage";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { PageWatermark } from "@/components/PageWatermark";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -828,6 +829,7 @@ export function PartyLedgerPage({
 
   return (
     <div className="space-y-4">
+      {displayName && <PageWatermark text={displayName} />}
       <div className="flex items-center gap-2 flex-wrap">
         {name && (
           <Button asChild variant="ghost" size="sm" className="gap-1.5">
