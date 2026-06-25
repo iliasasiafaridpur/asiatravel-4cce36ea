@@ -38,7 +38,7 @@ import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { RowDetailDrawer } from "@/components/RowDetailDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
-import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { useMobileColors, mobileColorTextClass, normalizeMobileForColor } from "@/hooks/useMobileColors";
 
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
 import { CopyInlineButton } from "@/components/CopyInlineButton";
@@ -237,6 +237,12 @@ export function ModulePage({ module: mod }: Props) {
   const cacheKey = `cache_v2_${mod.table}`;
   const columns = useMemo(() => selectColumns(mod), [mod]);
   const filterFields = useMemo(() => mod.fields.filter((f) => f.filterable), [mod]);
+  const mobileColorForRow = useCallback((mobile: string, r?: Row) => {
+    const callStatus = String(r?.call_status ?? "");
+    if (callStatus === "talked") return "green";
+    if (callStatus === "no_answer") return "red";
+    return colorFor(mobile);
+  }, [colorFor]);
 
   // Preserve list scroll position when the add/edit dialog opens & closes.
   const saveScroll = useScrollRestore(openForm);
@@ -1074,10 +1080,10 @@ export function ModulePage({ module: mod }: Props) {
     };
 
     // Mobile sub-line with per-number color tag applied.
-    const mobileSub = (mobile: string) => (
+    const mobileSub = (mobile: string, r?: Row) => (
       <div className="text-xs leading-tight">
         <span className="opacity-60 text-muted-foreground">📱:</span>{" "}
-        <span className={mobileColorTextClass(colorFor(mobile)) || "text-muted-foreground"}>{mobile}</span>
+        <span className={mobileColorTextClass(mobileColorForRow(mobile, r)) || "text-muted-foreground"}>{mobile}</span>
         <CopyInlineButton value={mobile} />
       </div>
     );
@@ -1250,7 +1256,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
             </div>
           )},
           { key: "trip", header: "Trip", render: (r) => (
@@ -1290,7 +1296,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
               {r.country_name ? subLine("🌍", String(r.country_name)) : null}
             </div>
           )},
@@ -1330,7 +1336,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
             </div>
           )},
           { key: "visa", header: "Visa Info", render: (r) => (
@@ -1371,7 +1377,7 @@ export function ModulePage({ module: mod }: Props) {
               <div className="font-medium">{nameCopyBtn(r)}{String(r.passenger_name ?? "—")}{extraBadge(r)}</div>
               {extraNotesLine(r)}
               {r.passport ? subLine("PP", String(r.passport), String(r.passport)) : null}
-              {r.mobile ? mobileSub(String(r.mobile)) : null}
+              {r.mobile ? mobileSub(String(r.mobile), r) : null}
             </div>
           )},
           { key: "service", header: "Service", render: (r) => (
@@ -1413,7 +1419,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "contact", header: "Contact", render: (r) => (
             <div>
-              {r.phone ? <div className={`text-sm ${mobileColorTextClass(colorFor(String(r.phone)))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
+              {r.phone ? <div className={`text-sm ${mobileColorTextClass(mobileColorForRow(String(r.phone), r))}`}>📱 {String(r.phone)}</div> : <div className="text-xs text-muted-foreground">— no phone —</div>}
               {r.address ? subLine("📍", String(r.address)) : null}
             </div>
           )},
@@ -1425,7 +1431,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, colorFor, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
+  }, [mod, computeValue, handleStatusSelect, mobileColorForRow, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
 
 
   // After any action overlay (edit / due / status / view) closes, restore the
@@ -1939,7 +1945,7 @@ export function ModulePage({ module: mod }: Props) {
                                 ) : f.type === "number" ? (
                                   <span className="tabular-nums">{(f.name === "received" || f.name === "received_amount") && Number(r[f.name] ?? 0) > 0 && mod.fields.some((x) => x.name === "delivery_date") && isAdvancePayment(r.payment_date as string, r.delivery_date as string) ? <><AdvanceBadge advance /> </> : null}{Number(r[f.name] ?? 0).toLocaleString()}</span>
                                 ) : f.format === "mobile" || f.name === "mobile" || f.name === "phone" ? (
-                                  <span className={mobileColorTextClass(colorFor(String(r[f.name] ?? "")))}>{String(r[f.name] ?? "")}</span>
+                                  <span className={mobileColorTextClass(mobileColorForRow(String(r[f.name] ?? ""), r))}>{String(r[f.name] ?? "")}</span>
                                 ) : (
                                   String(r[f.name] ?? "")
                                 )}
@@ -2122,6 +2128,25 @@ export function FormSections({ mod, form, setForm, isEdit }: {
       return next;
     });
   };
+  const [agencyPhones, setAgencyPhones] = useState<{ name: string; phone: string }[]>([]);
+
+  useEffect(() => {
+    if (!mod.fields.some((f) => f.lookup === "sub_agency" || f.name === "agency_sold")) return;
+    let alive = true;
+    void supabase
+      .from("agents")
+      .select("name,phone")
+      .limit(5000)
+      .then(({ data }) => {
+        if (!alive) return;
+        setAgencyPhones(
+          ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
+            .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim() }))
+            .filter((r) => r.name && r.name.toLowerCase() !== "self"),
+        );
+      });
+    return () => { alive = false; };
+  }, [mod]);
 
   // Enter → focus next input. Textarea/buttons keep native behavior.
   const onFormKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -2153,24 +2178,18 @@ export function FormSections({ mod, form, setForm, isEdit }: {
     ) {
       const name = v.trim();
       if (name && name.toLowerCase() !== "self") {
-        void supabase
-          .from("agents")
-          .select("name,phone")
-          .limit(5000)
-          .then(({ data }) => {
-            const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
-            const selected = norm(name);
-            const rows = ((data as { name?: string | null; phone?: string | null }[] | null) ?? [])
-              .filter((r) => String(r.name ?? "").trim().toLowerCase() !== "self");
-            const exact = rows.find((r) => norm(String(r.name ?? "")) === selected);
-            const loose = exact ?? rows.find((r) => {
-              const n = norm(String(r.name ?? ""));
-              return Boolean(n) && (selected.includes(n) || n.includes(selected));
-            });
-            const phone = loose?.phone;
-            const first = (phone ?? "").split(",")[0]?.trim();
-            if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
-          });
+        const norm = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+        const selected = norm(name);
+        const exact = agencyPhones.find((r) => norm(r.name) === selected);
+        const loose = exact ?? agencyPhones.find((r) => {
+          const n = norm(r.name);
+          return Boolean(n) && (selected.includes(n) || n.includes(selected));
+        });
+        const first = String(loose?.phone ?? "")
+          .split(/[,;\n|]+/)
+          .map((p) => p.trim())
+          .find((p) => normalizeMobileForColor(p));
+        if (first) setForm((s) => ({ ...s, mobile: applyFormat("mobile", first) }));
       }
     }
   };

@@ -23,7 +23,7 @@ export function mobileColorTextClass(color: MobileColor | undefined): string {
   return "";
 }
 
-const normalize = (mobile: string) => {
+export const normalizeMobileForColor = (mobile: string) => {
   const raw = mobile.trim();
   // Store/compare by digits only so 01711-123456, 01711123456, or spaced
   // versions all receive the same red/green mark everywhere in the project.
@@ -32,6 +32,21 @@ const normalize = (mobile: string) => {
   if (digits.startsWith("88") && digits.length === 13) return `0${digits.slice(2)}`;
   return digits || raw;
 };
+
+const normalize = normalizeMobileForColor;
+
+function mobileCandidates(mobile: string): string[] {
+  const raw = String(mobile ?? "").trim();
+  if (!raw) return [];
+  const parts = raw
+    .split(/[,;\n|]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return [raw, ...parts]
+    .map(normalize)
+    .filter(Boolean)
+    .filter((v, i, arr) => arr.indexOf(v) === i);
+}
 
 type Row = { mobile: string; color: string };
 
@@ -111,7 +126,11 @@ export function useMobileColors() {
 
   const colorFor = (mobile: string | null | undefined): MobileColor => {
     if (!mobile) return "default";
-    return map[normalize(mobile)] ?? "default";
+    for (const key of mobileCandidates(mobile)) {
+      const color = map[key];
+      if (color && color !== "default") return color;
+    }
+    return "default";
   };
 
   return { map, colorFor };
