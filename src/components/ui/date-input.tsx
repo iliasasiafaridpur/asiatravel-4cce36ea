@@ -60,15 +60,15 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
             variant="outline"
             disabled={disabled}
             className={cn(
-              "h-9 w-full justify-between font-normal px-3 cursor-pointer",
+              "h-9 w-full min-w-0 justify-between font-normal px-3 cursor-pointer gap-2",
               !display && "text-muted-foreground",
               className,
             )}
             {...rest}
           >
 
-            <span>{display || placeholder || "DD-MMM-YYYY"}</span>
-            <CalendarIcon className="h-4 w-4 text-primary opacity-80" />
+            <span className="truncate min-w-0">{display || placeholder || "DD-MMM-YYYY"}</span>
+            <CalendarIcon className="h-4 w-4 shrink-0 text-primary opacity-80" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
