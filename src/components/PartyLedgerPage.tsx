@@ -400,11 +400,12 @@ export function PartyLedgerPage({
       }
     }
 
+    const fullNameVal = form.fullName.trim() || null;
     let err = null;
     if (existingId) {
       const { error } = await supabase
         .from(contactsTable as never)
-        .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
+        .update({ name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
         .eq("id", existingId);
       err = error;
     } else {
@@ -418,14 +419,14 @@ export function PartyLedgerPage({
       if (newExistingId) {
         const { error } = await supabase
           .from(contactsTable as never)
-          .update({ name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
+          .update({ name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never)
           .eq("id", newExistingId);
         err = error;
       } else {
         const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
         const { error } = await supabase
           .from(contactsTable as never)
-          .insert({ [codeCol]: code, name: newName, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
+          .insert({ [codeCol]: code, name: newName, full_name: fullNameVal, phone: phoneStr, address: form.address.trim() || null, settle_mode: form.settleMode } as never);
         err = error;
       }
     }
