@@ -178,6 +178,8 @@ export type Database = {
           agency_sold: string | null
           attested_date: string | null
           bmet_id: string
+          call_status: string | null
+          called_by: string | null
           cancel_date: string | null
           cancel_reason: string | null
           cancelled: boolean
@@ -190,6 +192,7 @@ export type Database = {
           entry_by: string | null
           entry_date: string
           id: string
+          last_call_date: string | null
           mobile: string | null
           notes: string | null
           passenger_name: string
@@ -209,6 +212,8 @@ export type Database = {
           agency_sold?: string | null
           attested_date?: string | null
           bmet_id: string
+          call_status?: string | null
+          called_by?: string | null
           cancel_date?: string | null
           cancel_reason?: string | null
           cancelled?: boolean
@@ -221,6 +226,7 @@ export type Database = {
           entry_by?: string | null
           entry_date?: string
           id?: string
+          last_call_date?: string | null
           mobile?: string | null
           notes?: string | null
           passenger_name: string
@@ -240,6 +246,8 @@ export type Database = {
           agency_sold?: string | null
           attested_date?: string | null
           bmet_id?: string
+          call_status?: string | null
+          called_by?: string | null
           cancel_date?: string | null
           cancel_reason?: string | null
           cancelled?: boolean
@@ -252,6 +260,7 @@ export type Database = {
           entry_by?: string | null
           entry_date?: string
           id?: string
+          last_call_date?: string | null
           mobile?: string | null
           notes?: string | null
           passenger_name?: string
