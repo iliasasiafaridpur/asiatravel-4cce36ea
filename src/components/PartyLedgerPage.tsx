@@ -77,6 +77,7 @@ type Contact = {
   settle_mode?: string | null;
   serial_no?: number | null;
   full_name?: string | null;
+  notes?: string | null;
 };
 type ContactId = { id: string };
 type SrcInfo = {
@@ -161,6 +162,9 @@ export function PartyLedgerPage({
   const [displayName, setDisplayName] = useState<string>(name);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteEditing, setNoteEditing] = useState(false);
+  const [noteSaving, setNoteSaving] = useState(false);
   const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
@@ -297,7 +301,7 @@ export function PartyLedgerPage({
         .limit(1000),
       supabase
         .from(contactsTable as never)
-        .select("phone,phone_labels,address,settle_mode,serial_no,full_name")
+        .select("phone,phone_labels,address,settle_mode,serial_no,full_name,notes")
         .eq("name", displayName)
         .order("settle_mode", { ascending: true })
         .limit(10),
@@ -320,6 +324,7 @@ export function PartyLedgerPage({
             : "total",
           serial_no: contactRows.find((c) => c.serial_no != null)?.serial_no ?? null,
           full_name: contactRows.find((c) => c.full_name)?.full_name ?? null,
+          notes: contactRows.find((c) => c.notes)?.notes ?? null,
         }
       : null;
     setContact(mergedContact);
@@ -484,6 +489,47 @@ export function PartyLedgerPage({
     setDisplayName(newName);
     setEditing(false);
     toast.success("তথ্য সংরক্ষণ হয়েছে");
+  };
+
+  // Keep the note draft in sync with the loaded contact (unless actively editing it).
+  useEffect(() => {
+    if (!noteEditing) setNoteDraft(contact?.notes ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contact?.notes]);
+
+  const saveNote = async () => {
+    setNoteSaving(true);
+    const noteVal = noteDraft.trim() || null;
+    const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    const { data: existing } = await supabase
+      .from(contactsTable as never)
+      .select("id")
+      .eq("name", displayName)
+      .limit(1)
+      .maybeSingle();
+    const existingId = (existing as ContactId | null)?.id;
+    let err = null;
+    if (existingId) {
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .update({ notes: noteVal } as never)
+        .eq("id", existingId);
+      err = error;
+    } else {
+      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .insert({ [codeCol]: code, name: displayName, notes: noteVal } as never);
+      err = error;
+    }
+    setNoteSaving(false);
+    if (err) {
+      toast.error("নোট সংরক্ষণ ব্যর্থ: " + err.message);
+      return;
+    }
+    setContact((c) => ({ ...(c ?? {}), notes: noteVal }));
+    setNoteEditing(false);
+    toast.success("নোট সংরক্ষণ হয়েছে");
   };
 
   const openManual = (k: "income" | "expense") => {
@@ -1174,9 +1220,9 @@ export function PartyLedgerPage({
       {/* Profile + summary */}
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,260px)_auto] md:items-start">
             {/* পরিচিতি বোর্ড (Profile Board) — নাম, ফোন, ঠিকানা ও হিসাবের ধরন সেটিং */}
-            <div className="relative rounded-lg border-2 border-primary/40 bg-muted/20 p-4 pt-5">
+            <div className="relative rounded-lg border border-primary/30 bg-muted/20 p-3 pt-4">
               <span className="absolute -top-2.5 left-3 bg-card px-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
                 পরিচিতি বোর্ড
               </span>
@@ -1393,6 +1439,65 @@ export function PartyLedgerPage({
                 </>
               )}
             </div>
+
+            {/* নোট বক্স (Note Box) — vendor/agency সম্পর্কে নোট */}
+            <div className="relative rounded-lg border border-amber-400/40 bg-amber-50/40 dark:bg-amber-500/5 p-3 pt-4">
+              <span className="absolute -top-2.5 left-3 bg-card px-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                নোট
+              </span>
+              {noteEditing ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    placeholder="এই পার্টি সম্পর্কে নোট লিখুন…"
+                    rows={5}
+                    className="text-sm"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" className="h-8" onClick={saveNote} disabled={noteSaving}>
+                      <Check className="h-3.5 w-3.5 mr-1" /> {noteSaving ? "Saving…" : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                      onClick={() => {
+                        setNoteDraft(contact?.notes ?? "");
+                        setNoteEditing(false);
+                      }}
+                      disabled={noteSaving}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNoteDraft(contact?.notes ?? "");
+                    setNoteEditing(true);
+                  }}
+                  className="group block w-full text-left"
+                  title="নোট সম্পাদনা করুন"
+                >
+                  {contact?.notes ? (
+                    <p className="whitespace-pre-wrap text-sm text-foreground/90">{contact.notes}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      নোট নেই — লিখতে ক্লিক করুন
+                    </p>
+                  )}
+                  <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Pencil className="h-3 w-3" /> সম্পাদনা
+                  </span>
+                </button>
+              )}
+            </div>
+
+
 
             {/* Thin summary board */}
             <div className="grid grid-cols-2 gap-2 md:min-w-[220px]">
