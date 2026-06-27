@@ -93,19 +93,19 @@ export function TicketRefundDialog({
 
   const onVendorRefund = (v: string) => {
     setVendorRefund(v);
-    setVendorFee(String(Math.max(0, cost - (n(v) || 0))));
+    setVendorFee(blank(Math.max(0, cost - (n(v) || 0))));
   };
   const onVendorFee = (v: string) => {
     setVendorFee(v);
-    setVendorRefund(String(Math.max(0, cost - (n(v) || 0))));
+    setVendorRefund(blank(Math.max(0, cost - (n(v) || 0))));
   };
   const onPaxRefund = (v: string) => {
     setPaxRefund(v);
-    setOfficeFee(String(Math.max(0, received - (n(v) || 0))));
+    setOfficeFee(blank(Math.max(0, received - (n(v) || 0))));
   };
   const onOfficeFee = (v: string) => {
     setOfficeFee(v);
-    setPaxRefund(String(Math.max(0, received - (n(v) || 0))));
+    setPaxRefund(blank(Math.max(0, received - (n(v) || 0))));
   };
 
   const close = () => {
