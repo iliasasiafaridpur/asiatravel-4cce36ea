@@ -204,7 +204,7 @@ export function TicketRefundDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>টিকেট ক্যানসেল ও রিফান্ড</DialogTitle>
           <DialogDescription>
