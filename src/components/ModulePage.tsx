@@ -2422,6 +2422,18 @@ function AutoGrowTextInput({
   );
 }
 
+// Grid-span/width for a field. Must be applied to the actual grid item
+// (the wrapper div in FormSections), not to a nested child — otherwise the
+// span has no effect and every field collapses to one 140px column.
+export function fieldGridStyle(field: Field): React.CSSProperties {
+  if (field.type === "textarea") return { gridColumn: "span 2" };
+  if (field.name === "passenger_name") return { gridColumn: "span 2" };
+  if (field.name === "airline") return { gridColumn: "span 2" };
+  if (field.type === "number") return { gridColumn: "span 1", maxWidth: 130 };
+  if (field.lookup) return { gridColumn: "span 2" };
+  return {};
+}
+
 function FormField({ field, value, onChange, disabled }: {
   field: Field;
   value: unknown;
@@ -2429,28 +2441,9 @@ function FormField({ field, value, onChange, disabled }: {
   disabled?: boolean;
 }) {
   const strVal = (value as string) ?? "";
-  // Compact fixed widths with flex-wrap; textareas take full row.
-  // Grid-based layout: each field fills one auto-fill column. Wide fields span more.
-  let widthStyle: React.CSSProperties = {};
-  const isAmount = field.type === "number";
-  if (field.type === "textarea") {
-    // Notes: half-width, single row height.
-    widthStyle = { gridColumn: "span 2" };
-  } else if (field.name === "passenger_name") {
-    // Passenger name: moderate width (half of before).
-    widthStyle = { gridColumn: "span 2" };
-  } else if (field.name === "airline") {
-    // Airline lookup needs room for its select + add/manage buttons.
-    widthStyle = { gridColumn: "span 2" };
-  } else if (isAmount) {
-    // Money fields: just wide enough for ~8 digits.
-    widthStyle = { gridColumn: "span 1", maxWidth: 130 };
-  } else if (field.lookup) {
-    widthStyle = { gridColumn: "span 2" };
-  }
   const isEntryBy = field.name === "entry_by";
   return (
-    <div className="space-y-0.5 min-w-0" style={widthStyle}>
+    <div className="space-y-0.5 min-w-0">
 
       <Label className="text-[11px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.lookup ? (
