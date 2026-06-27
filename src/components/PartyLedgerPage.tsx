@@ -491,7 +491,47 @@ export function PartyLedgerPage({
     toast.success("তথ্য সংরক্ষণ হয়েছে");
   };
 
-  const openManual = (k: "income" | "expense") => {
+  // Keep the note draft in sync with the loaded contact (unless actively editing it).
+  useEffect(() => {
+    if (!noteEditing) setNoteDraft(contact?.notes ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contact?.notes]);
+
+  const saveNote = async () => {
+    setNoteSaving(true);
+    const noteVal = noteDraft.trim() || null;
+    const codeCol = isCustomer ? "agent_code" : "vendor_code";
+    const { data: existing } = await supabase
+      .from(contactsTable as never)
+      .select("id")
+      .eq("name", displayName)
+      .limit(1)
+      .maybeSingle();
+    const existingId = (existing as ContactId | null)?.id;
+    let err = null;
+    if (existingId) {
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .update({ notes: noteVal } as never)
+        .eq("id", existingId);
+      err = error;
+    } else {
+      const code = `${isCustomer ? "AG" : "VN"}-${Date.now().toString().slice(-6)}`;
+      const { error } = await supabase
+        .from(contactsTable as never)
+        .insert({ [codeCol]: code, name: displayName, notes: noteVal } as never);
+      err = error;
+    }
+    setNoteSaving(false);
+    if (err) {
+      toast.error("নোট সংরক্ষণ ব্যর্থ: " + err.message);
+      return;
+    }
+    setContact((c) => ({ ...(c ?? {}), notes: noteVal }));
+    setNoteEditing(false);
+    toast.success("নোট সংরক্ষণ হয়েছে");
+  };
+
     setManualForm({
       vendor: name || "",
       amount: "",
