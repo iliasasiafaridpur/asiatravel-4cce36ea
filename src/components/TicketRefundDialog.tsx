@@ -146,19 +146,20 @@ export function TicketRefundDialog({
         .eq("id", row.id);
       if (upErr) throw upErr;
 
-      // 2) Clean up any previous refund side-entries (idempotent re-cancel).
+      // 2) Clean up any previous refund advance entry (idempotent re-cancel).
+      //    NOTE: Cash refunds do NOT create a cash_expenses row. The ticket update
+      //    nets `received` down to office_refund_fee, so the cash drawer mirror
+      //    automatically drops by the refunded amount — adding an expense too
+      //    would double-count the cash going out.
       await supabase
         .from("agency_ledger" as never)
         .delete()
         .eq("source_table", "ticket_refund_advance")
         .eq("source_id", row.id);
-      await supabase
-        .from("cash_expenses" as never)
-        .delete()
-        .eq("linked_source_table", "ticket_refund")
-        .eq("linked_source_id", row.id);
 
-      // 3a) Advance mode → keep passenger refund as agency advance (credit for next ticket).
+      // 3) Advance mode → keep passenger refund as agency advance (credit for next ticket).
+      //    This re-adds the kept cash to the drawer and gives the agent a credit,
+      //    instead of paying it out in cash.
       if (mode === "advance" && pRefundNum > 0 && agency) {
         const advId = await generateNextId({
           key: "_agl",
@@ -186,32 +187,6 @@ export function TicketRefundDialog({
           received_by: userId,
         } as never);
         if (advErr) throw advErr;
-      }
-
-      // 3b) Cash mode → record the cash going out to the passenger as an expense.
-      if (mode === "cash" && pRefundNum > 0) {
-        const expId = await generateNextId({
-          key: "_exp",
-          label: "",
-          short: "",
-          table: "cash_expenses",
-          idColumn: "expense_id",
-          idPrefix: "EXP",
-          monthlyId: true,
-          fields: [],
-        } as unknown as ModuleSchema);
-        const { error: expErr } = await supabase.from("cash_expenses" as never).insert({
-          expense_id: expId,
-          entry_date: cDate || todayIso(),
-          category: "টিকেট রিফান্ড",
-          amount: pRefundNum,
-          purpose: `টিকেট ক্যানসেল — passenger কে নগদ ফেরত · ${String(row.passenger_name ?? "")} (${String(row.ticket_id ?? "")})`,
-          spent_by: userId,
-          linked_source_table: "ticket_refund",
-          linked_source_id: row.id,
-          created_by: userId,
-        } as never);
-        if (expErr) throw expErr;
       }
 
       toast.success(`রিফান্ড সম্পন্ন: ${String(row.ticket_id ?? "")}`);
