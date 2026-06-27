@@ -27,6 +27,7 @@ import {
 import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye, UserRound, Users, Building2, X } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
+import { TicketRefundDialog } from "@/components/TicketRefundDialog";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { useScrollRestore } from "@/hooks/useScrollRestore";
@@ -53,7 +54,7 @@ const RECV_META: Record<string, { recvCol: string; serviceType: string }> = {
 };
 
 // টেবিল যেগুলোতে "কাজ বাতিল / ফেরত" (soft-cancel) সুবিধা আছে
-const CANCELABLE_TABLES = new Set(["bmet_cards", "saudi_visas", "kuwait_visas"]);
+const CANCELABLE_TABLES = new Set(["bmet_cards", "saudi_visas", "kuwait_visas", "tickets"]);
 
 // মডিউল কী → DueReceiveDialog এর serviceKey মিল
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
@@ -130,11 +131,19 @@ function selectColumns(mod: ModuleSchema): string {
   }
   // status_by only exists on the service tables that have a status workflow
   if (RECV_META[mod.table]) columns.add("status_by");
-  // soft-cancel columns (BMET / Saudi / Kuwait)
+  // soft-cancel columns (BMET / Saudi / Kuwait / Tickets)
   if (CANCELABLE_TABLES.has(mod.table)) {
     columns.add("cancelled");
     columns.add("cancel_reason");
     columns.add("cancel_date");
+  }
+  // Air Ticket cancel & refund figures
+  if (mod.table === "tickets") {
+    columns.add("vendor_refund");
+    columns.add("vendor_refund_fee");
+    columns.add("passenger_refund");
+    columns.add("passenger_refund_mode");
+    columns.add("office_refund_fee");
   }
   // BMET কল ফলো-আপ ফিল্ড (Quick Manage এর "কল করা" মোডে দরকার হয়)
   if (mod.table === "bmet_cards") {
@@ -197,6 +206,19 @@ export function ModulePage({ module: mod }: Props) {
   // কাজ বাতিল / ফেরত (soft-cancel)
   const canCancel = CANCELABLE_TABLES.has(mod.table);
   const [cancelRow, setCancelRow] = useState<Row | null>(null);
+  // Air Ticket uses a richer cancel + refund dialog instead of the generic one.
+  const [refundRow, setRefundRow] = useState<Row | null>(null);
+  const isTicketModule = mod.table === "tickets";
+  const openCancelOrRefund = (r: Row) => {
+    if (isTicketModule) {
+      setRefundRow(r);
+      return;
+    }
+    setCancelReason("");
+    setCancelDate(todayIso());
+    setCancelPw("");
+    setCancelRow(r);
+  };
   const [cancelReason, setCancelReason] = useState("");
   const [cancelDate, setCancelDate] = useState<string>(todayIso());
   const [cancelBusy, setCancelBusy] = useState(false);
@@ -818,11 +840,32 @@ export function ModulePage({ module: mod }: Props) {
   // বাতিল ফিরিয়ে আনা — আবার চলমান কাজে যুক্ত হবে। (পাসওয়ার্ড লাগবে)
   const restoreRow = async (r: Row) => {
     try {
+      // Air Ticket: also reset the refund figures and remove any refund side-entries.
+      const restorePatch: Record<string, unknown> = { cancelled: false, cancel_reason: null, cancel_date: null };
+      if (isTicketModule) {
+        restorePatch.vendor_refund = 0;
+        restorePatch.vendor_refund_fee = 0;
+        restorePatch.passenger_refund = 0;
+        restorePatch.passenger_refund_mode = "cash";
+        restorePatch.office_refund_fee = 0;
+      }
       const { error } = await supabase
         .from(mod.table as never)
-        .update({ cancelled: false, cancel_reason: null, cancel_date: null } as never)
+        .update(restorePatch as never)
         .eq("id", r.id);
       if (error) throw error;
+      if (isTicketModule) {
+        await supabase
+          .from("agency_ledger" as never)
+          .delete()
+          .eq("source_table", "ticket_refund_advance")
+          .eq("source_id", r.id);
+        await supabase
+          .from("cash_expenses" as never)
+          .delete()
+          .eq("linked_source_table", "ticket_refund")
+          .eq("linked_source_id", r.id);
+      }
       toast.success(`ফিরিয়ে আনা হয়েছে: ${String(r[mod.idColumn] ?? "")}`);
       await load(false);
     } catch (e) {
@@ -1438,7 +1481,7 @@ export function ModulePage({ module: mod }: Props) {
   // list scroll position and gently bring the worked row back into view.
   const anyOverlay =
     openForm || !!duePreselect || !!extraDuePreselect || !!statusChange ||
-    !!profileRow || !!detailRow || !!cancelRow || !!pwConfirm;
+    !!profileRow || !!detailRow || !!cancelRow || !!refundRow || !!pwConfirm;
   const prevOverlayRef = useRef(anyOverlay);
   useEffect(() => {
     if (prevOverlayRef.current && !anyOverlay) {
@@ -1597,10 +1640,7 @@ export function ModulePage({ module: mod }: Props) {
                             const r = editing;
                             setOpenForm(false);
                             setEditing(null);
-                            setCancelReason("");
-                            setCancelDate(todayIso());
-                            setCancelPw("");
-                            setCancelRow(r);
+                            openCancelOrRefund(r);
                           }}
                         >
                           <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
@@ -1631,10 +1671,7 @@ export function ModulePage({ module: mod }: Props) {
                         const r = editing;
                         setOpenForm(false);
                         setEditing(null);
-                        setCancelReason("");
-                        setCancelDate(todayIso());
-                        setCancelPw("");
-                        setCancelRow(r);
+                        openCancelOrRefund(r);
                       }}
                     >
                       <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
@@ -1990,6 +2027,15 @@ export function ModulePage({ module: mod }: Props) {
         confirmLabel={pwConfirm?.confirmLabel}
         confirmClassName={pwConfirm?.confirmClassName}
         onConfirmed={async () => { await pwConfirm?.action(); setPwConfirm(null); }}
+      />
+
+      {/* Air Ticket — ক্যানসেল ও রিফান্ড ডায়ালগ */}
+      <TicketRefundDialog
+        row={refundRow}
+        userEmail={user?.email ?? ""}
+        userId={user?.id ?? null}
+        onClose={() => setRefundRow(null)}
+        onDone={() => load(false)}
       />
 
       {/* কাজ বাতিল / ফেরত ডায়ালগ */}

@@ -1160,6 +1160,9 @@ export type Database = {
         Row: {
           agency_sold: string | null
           airline: string | null
+          cancel_date: string | null
+          cancel_reason: string | null
+          cancelled: boolean
           cost_price: number | null
           created_at: string
           created_by: string | null
@@ -1170,7 +1173,10 @@ export type Database = {
           id: string
           mobile: string | null
           notes: string | null
+          office_refund_fee: number
           passenger_name: string
+          passenger_refund: number
+          passenger_refund_mode: string
           passport: string | null
           payment_date: string | null
           pnr: string | null
@@ -1183,10 +1189,15 @@ export type Database = {
           trip_road: string | null
           updated_at: string
           vendor_bought: string | null
+          vendor_refund: number
+          vendor_refund_fee: number
         }
         Insert: {
           agency_sold?: string | null
           airline?: string | null
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -1197,7 +1208,10 @@ export type Database = {
           id?: string
           mobile?: string | null
           notes?: string | null
+          office_refund_fee?: number
           passenger_name: string
+          passenger_refund?: number
+          passenger_refund_mode?: string
           passport?: string | null
           payment_date?: string | null
           pnr?: string | null
@@ -1210,10 +1224,15 @@ export type Database = {
           trip_road?: string | null
           updated_at?: string
           vendor_bought?: string | null
+          vendor_refund?: number
+          vendor_refund_fee?: number
         }
         Update: {
           agency_sold?: string | null
           airline?: string | null
+          cancel_date?: string | null
+          cancel_reason?: string | null
+          cancelled?: boolean
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -1224,7 +1243,10 @@ export type Database = {
           id?: string
           mobile?: string | null
           notes?: string | null
+          office_refund_fee?: number
           passenger_name?: string
+          passenger_refund?: number
+          passenger_refund_mode?: string
           passport?: string | null
           payment_date?: string | null
           pnr?: string | null
@@ -1237,6 +1259,8 @@ export type Database = {
           trip_road?: string | null
           updated_at?: string
           vendor_bought?: string | null
+          vendor_refund?: number
+          vendor_refund_fee?: number
         }
         Relationships: []
       }
