@@ -532,6 +532,7 @@ export function PartyLedgerPage({
     toast.success("নোট সংরক্ষণ হয়েছে");
   };
 
+  const openManual = (k: "income" | "expense") => {
     setManualForm({
       vendor: name || "",
       amount: "",
