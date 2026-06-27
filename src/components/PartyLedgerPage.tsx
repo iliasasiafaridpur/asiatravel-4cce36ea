@@ -321,6 +321,7 @@ export function PartyLedgerPage({
             : "total",
           serial_no: contactRows.find((c) => c.serial_no != null)?.serial_no ?? null,
           full_name: contactRows.find((c) => c.full_name)?.full_name ?? null,
+          notes: contactRows.find((c) => c.notes)?.notes ?? null,
         }
       : null;
     setContact(mergedContact);
