@@ -22,6 +22,8 @@ type Row = Record<string, unknown> & { id: string };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const n = (v: unknown) => Number(v ?? 0) || 0;
+/** Show empty string instead of a sticky leading 0 in number inputs. */
+const blank = (v: number) => (v ? String(v) : "");
 const money = (v: number) =>
   (Math.round(v * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
