@@ -2235,7 +2235,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
                 const agencyVal = isAgencyField ? String(form[field.name] ?? "").trim() : "";
                 const matched = isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" ? matchAgency(agencyVal) : undefined;
                 return (
-                  <div key={field.name} className="space-y-0.5">
+                  <div key={field.name} className="space-y-0.5 min-w-0" style={fieldGridStyle(field)}>
                     <FormField
                       field={field}
                       value={form[field.name]}
