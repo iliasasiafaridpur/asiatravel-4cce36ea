@@ -22,6 +22,8 @@ type Row = Record<string, unknown> & { id: string };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const n = (v: unknown) => Number(v ?? 0) || 0;
+/** Show empty string instead of a sticky leading 0 in number inputs. */
+const blank = (v: number) => (v ? String(v) : "");
 const money = (v: number) =>
   (Math.round(v * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
@@ -62,19 +64,19 @@ export function TicketRefundDialog({
   if (row && seeded !== row.id) {
     setSeeded(row.id);
     if (alreadyCancelled) {
-      setVendorRefund(String(n(row.vendor_refund)));
-      setVendorFee(String(n(row.vendor_refund_fee)));
-      setPaxRefund(String(n(row.passenger_refund)));
-      setOfficeFee(String(n(row.office_refund_fee)));
+      setVendorRefund(blank(n(row.vendor_refund)));
+      setVendorFee(blank(n(row.vendor_refund_fee)));
+      setPaxRefund(blank(n(row.passenger_refund)));
+      setOfficeFee(blank(n(row.office_refund_fee)));
       setMode((String(row.passenger_refund_mode ?? "cash") === "advance" ? "advance" : "cash"));
       setCDate(String(row.cancel_date ?? todayIso()));
       setReason(String(row.cancel_reason ?? ""));
     } else {
       // default: vendor returns full cost (fee 0); passenger gets full received back (fee 0)
-      setVendorRefund(String(cost));
-      setVendorFee("0");
-      setPaxRefund(String(received));
-      setOfficeFee("0");
+      setVendorRefund(blank(cost));
+      setVendorFee("");
+      setPaxRefund(blank(received));
+      setOfficeFee("");
       setMode("cash");
       setCDate(todayIso());
       setReason("");
@@ -91,19 +93,19 @@ export function TicketRefundDialog({
 
   const onVendorRefund = (v: string) => {
     setVendorRefund(v);
-    setVendorFee(String(Math.max(0, cost - (n(v) || 0))));
+    setVendorFee(blank(Math.max(0, cost - (n(v) || 0))));
   };
   const onVendorFee = (v: string) => {
     setVendorFee(v);
-    setVendorRefund(String(Math.max(0, cost - (n(v) || 0))));
+    setVendorRefund(blank(Math.max(0, cost - (n(v) || 0))));
   };
   const onPaxRefund = (v: string) => {
     setPaxRefund(v);
-    setOfficeFee(String(Math.max(0, received - (n(v) || 0))));
+    setOfficeFee(blank(Math.max(0, received - (n(v) || 0))));
   };
   const onOfficeFee = (v: string) => {
     setOfficeFee(v);
-    setPaxRefund(String(Math.max(0, received - (n(v) || 0))));
+    setPaxRefund(blank(Math.max(0, received - (n(v) || 0))));
   };
 
   const close = () => {
@@ -202,7 +204,7 @@ export function TicketRefundDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>টিকেট ক্যানসেল ও রিফান্ড</DialogTitle>
           <DialogDescription>
