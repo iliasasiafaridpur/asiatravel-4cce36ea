@@ -77,6 +77,7 @@ type Contact = {
   settle_mode?: string | null;
   serial_no?: number | null;
   full_name?: string | null;
+  notes?: string | null;
 };
 type ContactId = { id: string };
 type SrcInfo = {
