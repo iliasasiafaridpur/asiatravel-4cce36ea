@@ -1220,9 +1220,9 @@ export function PartyLedgerPage({
       {/* Profile + summary */}
       <Card>
         <CardContent className="p-3 sm:p-4">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,260px)_auto] md:items-start">
             {/* পরিচিতি বোর্ড (Profile Board) — নাম, ফোন, ঠিকানা ও হিসাবের ধরন সেটিং */}
-            <div className="relative rounded-lg border-2 border-primary/40 bg-muted/20 p-4 pt-5">
+            <div className="relative rounded-lg border border-primary/30 bg-muted/20 p-3 pt-4">
               <span className="absolute -top-2.5 left-3 bg-card px-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
                 পরিচিতি বোর্ড
               </span>
