@@ -1620,7 +1620,24 @@ export function ModulePage({ module: mod }: Props) {
                   vendorName={String(form.vendor_bought ?? "")}
                   headerExtra={
                     editing && canCancel ? (
-                      editing.cancelled ? (
+                    editing.cancelled ? (
+                      <div className="flex items-center gap-2">
+                        {isTicketModule ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1 px-2 text-xs border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                            onClick={() => {
+                              const r = editing;
+                              setOpenForm(false);
+                              setEditing(null);
+                              openCancelOrRefund(r);
+                            }}
+                          >
+                            <Ban className="h-3 w-3" /> টিকেট ক্যানসেল ও রিফান্ড
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           variant="outline"
@@ -1630,6 +1647,7 @@ export function ModulePage({ module: mod }: Props) {
                         >
                           <RotateCcw className="h-3 w-3" /> ফেরত আনুন
                         </Button>
+                      </div>
                       ) : (
                         <Button
                           type="button"
@@ -1643,7 +1661,7 @@ export function ModulePage({ module: mod }: Props) {
                             openCancelOrRefund(r);
                           }}
                         >
-                          <Ban className="h-3 w-3" /> কাজ বাতিল / ফেরত
+                          <Ban className="h-3 w-3" /> {isTicketModule ? "টিকেট ক্যানসেল ও রিফান্ড" : "কাজ বাতিল / ফেরত"}
                         </Button>
                       )
                     ) : null
