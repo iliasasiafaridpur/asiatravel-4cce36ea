@@ -62,19 +62,19 @@ export function TicketRefundDialog({
   if (row && seeded !== row.id) {
     setSeeded(row.id);
     if (alreadyCancelled) {
-      setVendorRefund(String(n(row.vendor_refund)));
-      setVendorFee(String(n(row.vendor_refund_fee)));
-      setPaxRefund(String(n(row.passenger_refund)));
-      setOfficeFee(String(n(row.office_refund_fee)));
+      setVendorRefund(blank(n(row.vendor_refund)));
+      setVendorFee(blank(n(row.vendor_refund_fee)));
+      setPaxRefund(blank(n(row.passenger_refund)));
+      setOfficeFee(blank(n(row.office_refund_fee)));
       setMode((String(row.passenger_refund_mode ?? "cash") === "advance" ? "advance" : "cash"));
       setCDate(String(row.cancel_date ?? todayIso()));
       setReason(String(row.cancel_reason ?? ""));
     } else {
       // default: vendor returns full cost (fee 0); passenger gets full received back (fee 0)
-      setVendorRefund(String(cost));
-      setVendorFee("0");
-      setPaxRefund(String(received));
-      setOfficeFee("0");
+      setVendorRefund(blank(cost));
+      setVendorFee("");
+      setPaxRefund(blank(received));
+      setOfficeFee("");
       setMode("cash");
       setCDate(todayIso());
       setReason("");
