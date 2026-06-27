@@ -1440,6 +1440,65 @@ export function PartyLedgerPage({
               )}
             </div>
 
+            {/* নোট বক্স (Note Box) — vendor/agency সম্পর্কে নোট */}
+            <div className="relative rounded-lg border border-amber-400/40 bg-amber-50/40 dark:bg-amber-500/5 p-3 pt-4">
+              <span className="absolute -top-2.5 left-3 bg-card px-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                নোট
+              </span>
+              {noteEditing ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    placeholder="এই পার্টি সম্পর্কে নোট লিখুন…"
+                    rows={5}
+                    className="text-sm"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" className="h-8" onClick={saveNote} disabled={noteSaving}>
+                      <Check className="h-3.5 w-3.5 mr-1" /> {noteSaving ? "Saving…" : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                      onClick={() => {
+                        setNoteDraft(contact?.notes ?? "");
+                        setNoteEditing(false);
+                      }}
+                      disabled={noteSaving}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNoteDraft(contact?.notes ?? "");
+                    setNoteEditing(true);
+                  }}
+                  className="group block w-full text-left"
+                  title="নোট সম্পাদনা করুন"
+                >
+                  {contact?.notes ? (
+                    <p className="whitespace-pre-wrap text-sm text-foreground/90">{contact.notes}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      নোট নেই — লিখতে ক্লিক করুন
+                    </p>
+                  )}
+                  <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Pencil className="h-3 w-3" /> সম্পাদনা
+                  </span>
+                </button>
+              )}
+            </div>
+
+
+
             {/* Thin summary board */}
             <div className="grid grid-cols-2 gap-2 md:min-w-[220px]">
               <div className="rounded-md border bg-muted/30 px-3 py-2">
