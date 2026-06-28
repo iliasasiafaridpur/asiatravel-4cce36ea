@@ -79,10 +79,13 @@ export function DueReceiveDialog({
   open,
   onOpenChange,
   preselect,
+  onDone,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   preselect?: DueReceivePreselect | null;
+  /** Notify parent so the list (status badges, due amounts) can refresh. */
+  onDone?: () => void;
 }) {
   const { user, profile } = useCurrentUser();
   const [search, setSearch] = useState("");
