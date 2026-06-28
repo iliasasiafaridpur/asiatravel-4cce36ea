@@ -657,6 +657,10 @@ export function PartyLedgerPage({
       isPayment: boolean;
       // agency side: source work not yet received from vendor / not delivery-ready
       incomplete?: boolean;
+      // source booking soft-cancelled (বাতিল কাজ) — shown greyed, financials kept
+      cancelled?: boolean;
+      cancelReason?: string | null;
+      cancelDate?: string | null;
     };
 
     // VENDOR: uniform ledger for every vendor.
