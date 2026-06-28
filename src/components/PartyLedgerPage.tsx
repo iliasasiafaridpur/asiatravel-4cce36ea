@@ -171,6 +171,11 @@ export function PartyLedgerPage({
   const [stmtTo, setStmtTo] = useState("");
   // Service-type filter for the ledger statement ("" = all).
   const [stmtService, setStmtService] = useState("");
+  // Flexible ledger print dialog state.
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printMode, setPrintMode] = useState<"all" | "due" | "range">("all");
+  const [printFrom, setPrintFrom] = useState("");
+  const [printTo, setPrintTo] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
