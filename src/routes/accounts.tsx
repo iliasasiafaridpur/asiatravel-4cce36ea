@@ -84,6 +84,23 @@ const cleanServiceType = (text?: string | null) => {
   return s || "Service";
 };
 
+// Ledger rows store the underlying service as a raw table name ("bmet_cards").
+// Humanize it so column 3 reads like a real service name everywhere.
+const SERVICE_TYPE_LABELS: Record<string, string> = {
+  bmet_cards: "BMET Card",
+  tickets: "Ticket / টিকিট",
+  saudi_visas: "Saudi Visa",
+  kuwait_visas: "Kuwait Visa",
+  others: "Other Service",
+  extra_services: "Extra Service",
+};
+const humanizeServiceType = (text?: string | null) => {
+  const s = String(text ?? "").trim();
+  if (!s) return "";
+  return SERVICE_TYPE_LABELS[s] ?? s;
+};
+
+
 
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; from_name: string | null; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; approved_at?: string | null; approved_by?: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
@@ -230,6 +247,7 @@ function AccountsPage() {
      flight_date?: string | null; vendor?: string | null; cost?: number;
       sold?: number; received_total?: number; discount?: number; agent?: string | null;
       delivery_date?: string | null; has_delivery?: boolean;
+      srcTable?: string | null; srcId?: string | null;
    };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
 
@@ -260,6 +278,16 @@ function AccountsPage() {
         cols: "id,passport,service_name,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
         map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
       },
+      // Agency-ledger receipts: the receipt points at the ledger row, which holds
+      // the customer/agent/bill. Vendor + cost come from a 2nd hop (source_table).
+      agency_ledger: {
+        cols: "id,agent_name,passenger_name,service_type,country_route,passport,total_bill,received_amount,discount_amount,source_table,source_id",
+        map: (r) => ({ passport: r.passport as string, country: r.country_route as string, service_name: humanizeServiceType(r.service_type as string), agent: r.agent_name as string, sold: Number(r.total_bill ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false, srcTable: r.source_table as string, srcId: r.source_id as string }),
+      },
+      extra_services: {
+        cols: "id,passport,service_name,vendor_name,vendor_cost,agency_sold,service_price,received_amount,discount_amount",
+        map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, vendor: r.vendor_name as string, agent: r.agency_sold as string, cost: Number(r.vendor_cost ?? 0), sold: Number(r.service_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false }),
+      },
     };
     let cancelled = false;
     (async () => {
@@ -271,6 +299,29 @@ function AccountsPage() {
           out[String(row.id)] = cfg.map(row);
         }
       }));
+      // 2nd hop: agency-ledger rows reference an underlying booking; fetch its
+      // vendor + cost so column 5 (vendor / vendor cost) is filled for ledger receipts.
+      const srcByTable: Record<string, Set<string>> = {};
+      for (const det of Object.values(out)) {
+        if (det.srcTable && det.srcId && det.vendor == null) {
+          (srcByTable[det.srcTable] ||= new Set()).add(det.srcId);
+        }
+      }
+      if (Object.keys(srcByTable).length > 0) {
+        const vendorById: Record<string, { vendor?: string | null; cost?: number }> = {};
+        await Promise.all(Object.entries(srcByTable).map(async ([table, ids]) => {
+          const { data } = await supabase.from(table as never).select("id,vendor_bought,cost_price").in("id", Array.from(ids));
+          for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+            vendorById[String(row.id)] = { vendor: row.vendor_bought as string, cost: Number(row.cost_price ?? 0) };
+          }
+        }));
+        for (const det of Object.values(out)) {
+          if (det.srcTable && det.srcId && det.vendor == null) {
+            const v = vendorById[det.srcId];
+            if (v) { det.vendor = v.vendor; det.cost = v.cost; }
+          }
+        }
+      }
       if (!cancelled) setSvcMap(out);
     })();
     return () => { cancelled = true; };
@@ -1122,7 +1173,7 @@ ${node.innerHTML.replace(
                   const servicePrimary = isIn
                     ? (r.source === "manual"
                         ? (r.remarks || "ম্যানুয়াল আয়")
-                        : cleanServiceType(r.service_type))
+                        : (svc?.service_name || cleanServiceType(r.service_type)))
                     : isHand
                     ? "জমা / Handover"
                     : (e.purpose || "—");
@@ -1134,7 +1185,6 @@ ${node.innerHTML.replace(
                       if (svc.airline) svcLines.push(svc.airline);
                       if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (r.service_table === "others") {
-                      if (svc.service_name) svcLines.push(svc.service_name);
                       if (svc.airline) svcLines.push(svc.airline);
                       if (svc.route) svcLines.push(svc.route);
                       if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
