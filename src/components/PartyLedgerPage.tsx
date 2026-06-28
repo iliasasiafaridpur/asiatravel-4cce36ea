@@ -304,7 +304,9 @@ export function PartyLedgerPage({
     for (const r of rows) {
       const amt = Number((r as Record<string, unknown>)[paidCol] ?? 0);
       if (!(amt > 0)) continue;
-      const date = String((r as Record<string, unknown>).entry_date ?? "");
+      // গ্রহণ/পরিশোধের আসল তারিখ payment_date; না থাকলে entry_date।
+      const rec = r as Record<string, unknown>;
+      const date = String(rec.payment_date ?? rec.entry_date ?? "");
       if (!best || date >= best.date) best = { date, amount: amt };
     }
     return best;
