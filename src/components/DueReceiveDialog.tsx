@@ -285,6 +285,7 @@ export function DueReceiveDialog({
       const localDate = s.hasDelivery ? newDate : (next === "Delivered" ? todayIso() : null);
       setSelected({ ...selected, deliveryDate: localDate });
       setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: localDate } : r));
+      onDone?.();
       toast.success(next === "Delivered" ? "✓ Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
     } catch (e) {
       if (isNetworkError(e)) {
