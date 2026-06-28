@@ -1897,7 +1897,7 @@ export function PartyLedgerPage({
                       const open = expandedBill === b.id;
                       const ageInfo = ageBand(b.ageDays);
                       return (
-                        <React.Fragment key={b.id}>
+                        <Fragment key={b.id}>
                           <TableRow
                             className={`row-tint-${idx % 4} ${hasHist ? "cursor-pointer" : ""}`}
                             onClick={() => hasHist && setExpandedBill(open ? null : b.id)}
@@ -1996,7 +1996,7 @@ export function PartyLedgerPage({
                               </TableCell>
                             </TableRow>
                           )}
-                        </React.Fragment>
+                        </Fragment>
                       );
                     })
                   )}
