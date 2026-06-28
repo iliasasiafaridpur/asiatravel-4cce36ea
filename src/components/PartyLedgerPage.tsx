@@ -987,6 +987,9 @@ export function PartyLedgerPage({
         payDate,
         ageDays: status === "paid" ? null : daysBetween(date, t),
         paidInDays: status === "paid" ? daysBetween(date, payDate) : null,
+        cancelled: Boolean(info?.cancelled),
+        cancelReason: info?.cancelReason ?? null,
+        cancelDate: info?.cancelDate ?? null,
       });
     }
     // Unpaid first, then partial, then paid; oldest outstanding on top so the
