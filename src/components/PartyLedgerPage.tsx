@@ -2087,12 +2087,22 @@ export function PartyLedgerPage({
                   pagedStatement.map((s, idx) => (
                     <TableRow
                       key={s.id}
-                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""}`}
+                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""} ${s.incomplete ? "opacity-50 italic" : ""}`}
+                      title={s.incomplete ? "এই কাজটি এখনো সম্পন্ন হয়নি (ভেন্ডর থেকে আসেনি / ডেলিভারির উপযোগী নয়)" : undefined}
                     >
                       <TableCell className={`whitespace-nowrap pr-2 text-xs ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}>{formatDate(s.date)}</TableCell>
                       <TableCell className={`truncate font-mono text-xs pl-2 ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.service}>{s.service}</TableCell>
-                      <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.description}>{s.description || "—"}</TableCell>
+                      <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.description}>
+                        <span className="inline-flex items-center gap-1.5">
+                          {s.incomplete && (
+                            <span className="inline-block shrink-0 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium not-italic text-amber-600">
+                              ⏳ অসম্পূর্ণ
+                            </span>
+                          )}
+                          <span className="truncate">{s.description || "—"}</span>
+                        </span>
+                      </TableCell>
                       <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-muted-foreground"}`}>
                         {s.previous.toLocaleString()}
                       </TableCell>
