@@ -1312,6 +1312,76 @@ export function PartyLedgerPage({
 
       </div>
 
+      {/* প্রয়োজন অনুযায়ী লেজার প্রিন্ট — সম্পূর্ণ / শুধু বাকি / তারিখ অনুযায়ী */}
+      <Dialog open={printOpen} onOpenChange={setPrintOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-4 w-4" /> লেজার প্রিন্ট
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-1">
+            <p className="text-xs text-muted-foreground">কী প্রিন্ট করতে চান বেছে নিন:</p>
+            {([
+              { v: "all", t: "সম্পূর্ণ হিসাবের লেজার", d: "সব এন্ট্রি চলমান ব্যালেন্সসহ" },
+              { v: "due", t: "শুধু বাকি বিল সমূহ", d: "শুধু বকেয়া ও আংশিক বিল" },
+              { v: "range", t: "তারিখ অনুযায়ী হিসাব", d: "নির্দিষ্ট তারিখ থেকে চলতি ব্যালেন্স পর্যন্ত" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setPrintMode(opt.v)}
+                className={`w-full rounded-md border px-3 py-2 text-left transition-colors ${
+                  printMode === opt.v
+                    ? "border-primary bg-primary/10"
+                    : "border-input hover:bg-accent"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                      printMode === opt.v ? "border-primary" : "border-muted-foreground/40"
+                    }`}
+                  >
+                    {printMode === opt.v && <span className="h-2 w-2 rounded-full bg-primary" />}
+                  </span>
+                  <span className="text-sm font-medium">{opt.t}</span>
+                </div>
+                <div className="ml-6 text-[11px] text-muted-foreground">{opt.d}</div>
+              </button>
+            ))}
+            {printMode === "range" && (
+              <div className="flex gap-2 pt-1">
+                <div className="flex-1">
+                  <label className="block text-[11px] text-muted-foreground mb-0.5">শুরুর তারিখ</label>
+                  <DateInput value={printFrom} onChange={(e) => setPrintFrom(e.target.value)} className="w-full" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[11px] text-muted-foreground mb-0.5">শেষ তারিখ (ফাঁকা = চলতি)</label>
+                  <DateInput value={printTo} onChange={(e) => setPrintTo(e.target.value)} className="w-full" />
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
+              বাতিল
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                setPrintOpen(false);
+                runPrint(printMode, printFrom, printTo);
+              }}
+            >
+              <Printer className="h-4 w-4" /> প্রিন্ট করুন
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {payOpen && (
         <LedgerPage
           module={moduleByKey(isCustomer ? "agency-ledger" : "vendor-ledger")!}
