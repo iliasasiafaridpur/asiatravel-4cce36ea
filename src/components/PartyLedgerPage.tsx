@@ -185,6 +185,8 @@ export function PartyLedgerPage({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
+  // Bill-by-bill: which bill row's payment history is expanded ("" = none).
+  const [expandedBill, setExpandedBill] = useState<string | null>(null);
   const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
