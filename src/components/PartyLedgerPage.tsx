@@ -1028,56 +1028,127 @@ export function PartyLedgerPage({
 
   const totals = summary;
 
-  // Open a clean, self-contained print sheet of the bill-by-bill statement.
-  const printBills = () => {
+  // Flexible ledger print: চাইলে সম্পূর্ণ হিসাব, শুধু বাকি বিল, অথবা নির্দিষ্ট
+  // তারিখ থেকে শেষ চলতি ব্যালেন্স পর্যন্ত — প্রয়োজন অনুযায়ী প্রিন্ট করা যায়।
+  const runPrint = (mode: "all" | "due" | "range", from: string, to: string) => {
     const esc = (s: string) =>
       String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] || c));
-    const head = isCustomer ? "গ্রহণ" : "পরিশোধ";
-    const rowsHtml = bills
-      .map((b) => {
-        const st =
-          b.status === "paid"
-            ? "পরিশোধিত"
-            : b.status === "partial"
-              ? `আংশিক · বাকি ${b.due.toLocaleString()}`
-              : `বাকি ${b.due.toLocaleString()}`;
-        const age =
-          b.status === "paid"
-            ? b.paidInDays != null
-              ? `${b.paidInDays} দিনে`
-              : ""
-            : b.ageDays != null
-              ? `${b.ageDays} দিন`
-              : "";
-        return `<tr>
-          <td>${esc(formatDate(b.date))}</td>
-          <td>${esc(b.ledgerId)}</td>
-          <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}</td>
-          <td class="r">${b.bill.toLocaleString()}</td>
-          <td class="r">${b.paid ? b.paid.toLocaleString() : "—"}</td>
-          <td>${esc(b.payDate ? formatDate(b.payDate) : "—")}</td>
-          <td>${esc(st)}${age ? ` · ${esc(age)}` : ""}</td>
-        </tr>`;
-      })
-      .join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(displayName)} — বিল-ভিত্তিক হিসাব</title>
+    const num = (n: number) => Math.round(Number(n || 0)).toLocaleString();
+    const payHead = isCustomer ? "জমা/গ্রহণ" : "পরিশোধ";
+
+    // চলতি (current) ব্যালেন্স সারাংশ — সবসময় ফুটারে দেখাবো।
+    const curDue = totals.due > 0.5;
+    const curAdv = !curDue && totals.advance > 0.5;
+    const curLabel = curDue
+      ? isCustomer
+        ? "চলতি বকেয়া (এজেন্টের কাছে পাবো)"
+        : "চলতি বকেয়া (ভেন্ডরকে দিবো)"
+      : curAdv
+        ? isCustomer
+          ? "এজেন্ট অগ্রিম জমা"
+          : "ভেন্ডরকে অগ্রিম দেওয়া"
+        : "সব হিসাব পরিশোধিত";
+    const curAmt = curDue ? totals.due : curAdv ? totals.advance : 0;
+
+    let subtitle = "";
+    let summaryLine = "";
+    let theadHtml = "";
+    let bodyHtml = "";
+
+    if (mode === "due") {
+      subtitle = "শুধু বাকি বিল সমূহ";
+      const dueBills = bills.filter((b) => b.status !== "paid");
+      summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
+      theadHtml = `<tr>
+        <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
+        <th class="r">বিল</th><th class="r">${payHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
+      </tr>`;
+      bodyHtml = dueBills.length
+        ? dueBills
+            .map((b) => {
+              const st = b.status === "partial" ? "আংশিক" : "বাকি";
+              return `<tr>
+                <td>${esc(formatDate(b.date))}</td>
+                <td>${esc(b.ledgerId)}</td>
+                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}</td>
+                <td class="r">${num(b.bill)}</td>
+                <td class="r">${b.paid ? num(b.paid) : "—"}</td>
+                <td class="r due">${num(b.due)}</td>
+                <td>${st}</td>
+              </tr>`;
+            })
+            .join("")
+        : `<tr><td colspan="7" class="empty">কোনো বাকি বিল নেই</td></tr>`;
+    } else {
+      // all / range — চলমান ব্যালেন্সসহ পূর্ণ লেজার (পুরনো → নতুন)।
+      const chrono = [...statement].reverse();
+      let list = chrono;
+      let opening = 0;
+      if (mode === "range") {
+        subtitle = `তারিখ অনুযায়ী হিসাব${from ? ` · ${formatDate(from)}` : ""}${to ? ` — ${formatDate(to)}` : " — চলতি পর্যন্ত"}`;
+        const before = chrono.filter((s) => from && s.date && s.date < from);
+        opening = before.length ? before[before.length - 1].balance : 0;
+        list = chrono.filter((s) => {
+          if (from && (!s.date || s.date < from)) return false;
+          if (to && (!s.date || s.date > to)) return false;
+          return true;
+        });
+      } else {
+        subtitle = "সম্পূর্ণ হিসাবের লেজার";
+      }
+      summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
+      theadHtml = `<tr>
+        <th>তারিখ</th><th>ID</th><th>সার্ভিস</th><th>বিবরণ</th>
+        <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>${isCustomer ? '<th class="r">অগ্রিম</th>' : ""}
+      </tr>`;
+      const colSpan = isCustomer ? 8 : 7;
+      const openingRow =
+        mode === "range"
+          ? `<tr class="opening"><td colspan="${isCustomer ? 6 : 5}">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td>${isCustomer ? "<td></td>" : ""}</tr>`
+          : "";
+      bodyHtml =
+        openingRow +
+        (list.length
+          ? list
+              .map(
+                (s) => `<tr${s.isPayment ? ' class="pay"' : ""}>
+            <td>${esc(formatDate(s.date))}</td>
+            <td>${esc(s.ledgerId)}</td>
+            <td>${esc(s.service)}</td>
+            <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}</td>
+            <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
+            <td class="r">${s.credit ? num(s.credit) : "—"}</td>
+            <td class="r">${num(s.balance)}</td>${isCustomer ? `<td class="r">${s.advance ? num(s.advance) : "—"}</td>` : ""}
+          </tr>`,
+              )
+              .join("")
+          : `<tr><td colspan="${colSpan}" class="empty">কোনো হিসাব নেই</td></tr>`);
+    }
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(displayName)} — ${esc(subtitle)}</title>
       <style>
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:24px;color:#0f172a}
         h1{font-size:18px;margin:0 0 2px}
-        .sub{color:#64748b;font-size:12px;margin-bottom:12px}
-        .sum{font-size:13px;margin-bottom:12px}
+        .sub{color:#64748b;font-size:12px;margin-bottom:2px}
+        .meta{color:#64748b;font-size:11px;margin-bottom:10px}
+        .sum{font-size:13px;margin-bottom:12px;font-weight:600}
         table{width:100%;border-collapse:collapse;font-size:12px}
         th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}
         th{background:#f1f5f9}
         .r{text-align:right;font-variant-numeric:tabular-nums}
+        .due{color:#e11d48;font-weight:600}
+        .pay td{background:#ecfdf5;color:#047857}
+        .opening td{background:#fffbeb;font-weight:600}
+        .empty{text-align:center;color:#94a3b8;padding:16px}
+        .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
-      <h1>${esc(displayName)} — বিল-ভিত্তিক হিসাব</h1>
-      <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · প্রিন্ট: ${esc(formatDate(todayISO()))}</div>
-      <div class="sum">মোট বিল: ${bills.length} টি · বাকি: ${billStats.dueCount + billStats.partialCount} টি · পরিশোধিত: ${billStats.paidCount} টি · মোট বাকি: ৳${billStats.dueAmount.toLocaleString()}</div>
-      <table><thead><tr>
-        <th>তারিখ</th><th>ID</th><th>বিবরণ</th><th class="r">বিল</th><th class="r">${head}</th><th>${head} তারিখ</th><th>স্ট্যাটাস</th>
-      </tr></thead><tbody>${rowsHtml}</tbody></table>
+      <h1>${esc(displayName)}</h1>
+      <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
+      <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
+      <div class="sum">${esc(summaryLine)}</div>
+      <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
+      <div class="foot"><span>${esc(curLabel)}</span><span>৳${num(curAmt)}</span></div>
       <script>window.onload=function(){window.print()}</script>
       </body></html>`;
     const w = window.open("", "_blank");
@@ -1088,6 +1159,8 @@ export function PartyLedgerPage({
     w.document.write(html);
     w.document.close();
   };
+
+
 
 
 
