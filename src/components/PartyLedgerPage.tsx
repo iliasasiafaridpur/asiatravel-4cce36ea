@@ -1916,7 +1916,7 @@ export function PartyLedgerPage({
                 size="sm"
                 variant="outline"
                 className="ml-auto h-7 gap-1 text-xs"
-                onClick={printBills}
+                onClick={() => { setPrintMode("due"); setPrintOpen(true); }}
               >
                 <Printer className="h-3.5 w-3.5" /> প্রিন্ট
               </Button>
