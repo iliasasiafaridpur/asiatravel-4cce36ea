@@ -1820,68 +1820,185 @@ export function PartyLedgerPage({
                   </span>
                 </span>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto h-7 gap-1 text-xs"
+                onClick={printBills}
+              >
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+              </Button>
             </div>
+
+            {/* এক-নজর সারাংশ: বকেয়ার বয়স (aging) + দ্রুততা */}
+            {(billStats.dueAmount > 0 || billStats.avgPaidDays != null) && (
+              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2">
+                  <div className="text-[10px] text-muted-foreground">০–৩০ দিন</div>
+                  <div className="text-sm font-semibold tabular-nums text-emerald-700">
+                    {fmtMoney(billStats.bucketCurrent)}
+                  </div>
+                </div>
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2">
+                  <div className="text-[10px] text-muted-foreground">৩১–৬০ দিন</div>
+                  <div className="text-sm font-semibold tabular-nums text-amber-700">
+                    {fmtMoney(billStats.bucketMid)}
+                  </div>
+                </div>
+                <div className="rounded-md border border-rose-500/30 bg-rose-500/5 p-2">
+                  <div className="text-[10px] text-muted-foreground">৬০+ দিন (পুরনো)</div>
+                  <div className="text-sm font-semibold tabular-nums text-rose-700">
+                    {fmtMoney(billStats.bucketOld)}
+                  </div>
+                </div>
+                <div className="rounded-md border bg-muted/30 p-2">
+                  <div className="text-[10px] text-muted-foreground">
+                    {billStats.oldestDue ? "সবচেয়ে পুরনো বাকি" : "গড় পরিশোধ সময়"}
+                  </div>
+                  <div className="text-sm font-semibold tabular-nums">
+                    {billStats.oldestDue
+                      ? `${billStats.oldestDue.ageDays ?? 0} দিন`
+                      : billStats.avgPaidDays != null
+                        ? `${billStats.avgPaidDays} দিন`
+                        : "—"}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto rounded-md border">
-              <Table className="w-full min-w-[640px]">
+              <Table className="w-full min-w-[760px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px] whitespace-nowrap">Date</TableHead>
-                    <TableHead className="w-[150px] whitespace-nowrap">ID</TableHead>
+                    <TableHead className="w-[32px]"></TableHead>
+                    <TableHead className="w-[100px] whitespace-nowrap">বিল তারিখ</TableHead>
+                    <TableHead className="w-[140px] whitespace-nowrap">ID</TableHead>
                     <TableHead className="min-w-[140px]">বিবরণ</TableHead>
-                    <TableHead className="w-[96px] text-right">বিল</TableHead>
-                    <TableHead className="w-[96px] text-right text-emerald-600">পরিশোধ</TableHead>
-                    <TableHead className="w-[110px] text-right">স্ট্যাটাস</TableHead>
+                    <TableHead className="w-[90px] text-right">বিল</TableHead>
+                    <TableHead className="w-[90px] text-right text-emerald-600">
+                      {isCustomer ? "গ্রহণ" : "পরিশোধ"}
+                    </TableHead>
+                    <TableHead className="w-[100px] whitespace-nowrap">
+                      {isCustomer ? "গ্রহণ তারিখ" : "পরিশোধ তারিখ"}
+                    </TableHead>
+                    <TableHead className="w-[120px] text-right">স্ট্যাটাস</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bills.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                         কোনো বিল নেই
                       </TableCell>
                     </TableRow>
                   ) : (
-                    bills.map((b, idx) => (
-                      <TableRow key={b.id} className={`row-tint-${idx % 4}`}>
-                        <TableCell className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
-                        <TableCell className="truncate font-mono text-xs" title={b.ledgerId}>
-                          {b.ledgerId}
-                        </TableCell>
-                        <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
-                          <span className="text-muted-foreground">{b.service}</span>
-                          {b.description ? ` · ${b.description}` : ""}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
-                        <TableCell className="text-right tabular-nums text-emerald-600">
-                          {b.paid ? b.paid.toLocaleString() : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {b.status === "paid" ? (
-                            <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
-                              পরিশোধিত
-                            </Badge>
-                          ) : b.status === "partial" ? (
-                            <div className="leading-tight">
-                              <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
-                                আংশিক
-                              </Badge>
-                              <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
-                                বাকি {b.due.toLocaleString()}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="leading-tight">
-                              <Badge variant="outline" className="border-rose-500/50 text-rose-600 text-[10px]">
-                                বাকি
-                              </Badge>
-                              <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
-                                {b.due.toLocaleString()}
-                              </div>
-                            </div>
+                    bills.map((b, idx) => {
+                      const hasHist = b.payments.length > 0;
+                      const open = expandedBill === b.id;
+                      const ageInfo = ageBand(b.ageDays);
+                      return (
+                        <React.Fragment key={b.id}>
+                          <TableRow
+                            className={`row-tint-${idx % 4} ${hasHist ? "cursor-pointer" : ""}`}
+                            onClick={() => hasHist && setExpandedBill(open ? null : b.id)}
+                          >
+                            <TableCell className="px-1 text-center text-muted-foreground">
+                              {hasHist ? (
+                                open ? (
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5" />
+                                )
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
+                            <TableCell className="truncate font-mono text-xs" title={b.ledgerId}>
+                              {b.ledgerId}
+                            </TableCell>
+                            <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
+                              <span className="text-muted-foreground">{b.service}</span>
+                              {b.description ? ` · ${b.description}` : ""}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
+                            <TableCell className="text-right tabular-nums text-emerald-600">
+                              {b.paid ? b.paid.toLocaleString() : "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-xs">
+                              {b.payDate ? (
+                                formatDate(b.payDate)
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {b.status === "paid" ? (
+                                <div className="leading-tight">
+                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
+                                    পরিশোধিত
+                                  </Badge>
+                                  {b.paidInDays != null && (
+                                    <div className="text-[10px] text-muted-foreground tabular-nums mt-0.5">
+                                      {b.paidInDays} দিনে
+                                    </div>
+                                  )}
+                                </div>
+                              ) : b.status === "partial" ? (
+                                <div className="leading-tight">
+                                  <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
+                                    আংশিক
+                                  </Badge>
+                                  <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
+                                    বাকি {b.due.toLocaleString()}
+                                  </div>
+                                  <div className={`text-[10px] tabular-nums ${ageInfo.cls}`}>{ageInfo.text}</div>
+                                </div>
+                              ) : (
+                                <div className="leading-tight">
+                                  <Badge variant="outline" className="border-rose-500/50 text-rose-600 text-[10px]">
+                                    বাকি
+                                  </Badge>
+                                  <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
+                                    {b.due.toLocaleString()}
+                                  </div>
+                                  <div className={`text-[10px] tabular-nums ${ageInfo.cls}`}>{ageInfo.text}</div>
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {open && hasHist && (
+                            <TableRow className="bg-muted/30 hover:bg-muted/30">
+                              <TableCell colSpan={8} className="py-2">
+                                <div className="pl-6">
+                                  <div className="mb-1 flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                                    <Clock className="h-3 w-3" /> পেমেন্ট ইতিহাস
+                                  </div>
+                                  <div className="space-y-1">
+                                    {b.payments.map((p, i) => (
+                                      <div
+                                        key={i}
+                                        className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs"
+                                      >
+                                        <span className="w-[92px] whitespace-nowrap text-muted-foreground">
+                                          {p.date ? formatDate(p.date) : "তারিখ নেই"}
+                                        </span>
+                                        <span className="font-semibold tabular-nums text-emerald-600">
+                                          ৳{p.amt.toLocaleString()}
+                                        </span>
+                                        {p.method && (
+                                          <span className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                            {p.method}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                        </React.Fragment>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
