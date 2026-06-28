@@ -472,6 +472,8 @@ export function DueReceiveDialog({
         due: selected.sold - newRecv - newDiscount,
         deliveryDate: withDelivery ? today : (upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate),
       };
+      // Refresh the parent list so status badges / due amounts update immediately.
+      onDone?.();
       if (updated.due <= 0) {
         handleClose(false);
       } else {
