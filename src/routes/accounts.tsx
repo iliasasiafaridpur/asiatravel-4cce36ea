@@ -14,6 +14,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { LookupSelect } from "@/components/LookupSelect";
 import { toast } from "sonner";
 import { formatDate, isAdvancePayment } from "@/lib/modules";
@@ -502,9 +505,74 @@ ${node.innerHTML.replace(
     w.document.close();
   };
 
-  // Day-wise closing balance print: from a chosen date to an end date, show
-  // each day's income / out / and the running CLOSING balance at end of day.
-  const handleDayClosingPrint = () => {
+  // Detailed range print: SAME layout/columns/text as the normal print, but
+  // limited to a chosen date range AND with each day's CLOSING balance shown
+  // after that day's transactions, then the next date's transactions below.
+  const buildDetailRowHtml = (
+    it: TLItem & { running: number },
+    running: number,
+    i: number,
+  ): string => {
+    const isIn = it.kind === "received";
+    const isHand = it.kind === "handover";
+    const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
+    const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+    const statusEvt = isIn && isStatusEventReceipt(r);
+    const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
+    const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
+    const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
+    const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
+    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
+    let region = "";
+    if (isIn && svc) {
+      if (r.service_table === "tickets") {
+        region = [svc.route, svc.airline].filter(Boolean).join(" · ");
+      } else if (r.service_table === "others") {
+        region = [svc.service_name, svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
+      } else if (svc.country) {
+        region = svc.country;
+      }
+    }
+    const discAmt = isIn && svc ? Number(svc.discount ?? 0) : 0;
+    const grossBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
+    const totalBill = grossBill !== null ? grossBill : null;
+    const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
+    const advLines: string[] = [];
+    let sumPrev = 0;
+    let lastAdvDate = "";
+    if (isIn && r.service_row_id) {
+      const curDate = r.entry_date;
+      const prior = received.filter(p =>
+        p.service_row_id === r.service_row_id &&
+        p.id !== r.id &&
+        (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
+      );
+      for (const p of prior) {
+        const pv = Number(p.amount || 0);
+        sumPrev += pv;
+        if (!lastAdvDate || p.entry_date > lastAdvDate) lastAdvDate = p.entry_date;
+      }
+      if (sumPrev > 0.005) advLines.push(`${fmt(sumPrev)} (${formatDate(lastAdvDate)})`);
+    }
+    if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
+    const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
+    const cls = isHand ? "hand" : "out";
+    return `<tr class="row-tint-${i % 4}">` +
+      `<td>${i + 1}</td>` +
+      `<td>${formatDate(it.date)}</td>` +
+      `<td class="wrap">${name ?? ""}</td>` +
+      `<td class="wrap">${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>` +
+      `<td class="wrap">${region}${mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}${vendorRecv ? " · Vendor Rece (ব্যালেন্সে নয়)" : ""}</td>` +
+      `<td class="num">${totalBill !== null ? fmt(totalBill) : ""}</td>` +
+      `<td class="num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}">${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}</td>` +
+      `<td class="num due">${due !== null && due > 0.005 ? fmt(due) : ""}</td>` +
+      `<td class="wrap" style="white-space:nowrap">${advLines.map(t => `<div style="white-space:nowrap">${t}</div>`).join("")}</td>` +
+      `<td class="num ${cls}">${!isIn ? `− ${fmt(amt)}` : ""}</td>` +
+      `<td class="num">${fmt(running)}</td>` +
+      `</tr>`;
+  };
+
+  const handleRangeClosingPrint = () => {
     if (dayFrom && dayTo && dayFrom > dayTo) {
       toast.error("শুরুর তারিখ শেষ তারিখের পরে হতে পারে না");
       return;
@@ -512,90 +580,108 @@ ${node.innerHTML.replace(
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
 
-    // fullAsc carries the TRUE cumulative running balance from the very
-    // beginning, so closing of any day = running of its last entry.
-    type DayRow = { date: string; cashIn: number; mdIn: number; vendorIn: number; out: number; closing: number };
-    const byDay = new Map<string, DayRow>();
-    let opening = 0; // balance carried into dayFrom (closing of the last day before it)
+    // Collect ranged rows. Running balance is the TRUE cumulative balance from
+    // the very beginning (carried in via "আগের জের"), so each day's closing is
+    // the real cash in hand at end of that day.
+    const rows: (TLItem & { running: number })[] = [];
+    let opening = 0; // closing of the last day before dayFrom
     for (const it of fullAsc) {
-      if (dayFrom && it.date < dayFrom) {
-        opening = it.running; // keep updating until we cross dayFrom
-        continue;
-      }
-      if (dayTo && it.date > dayTo) continue;
-      const amt = Number((it.row as { amount: number }).amount || 0);
-      let row = byDay.get(it.date);
-      if (!row) { row = { date: it.date, cashIn: 0, mdIn: 0, vendorIn: 0, out: 0, closing: 0 }; byDay.set(it.date, row); }
       if (it.kind === "received") {
-        if (isCashMethod((it.row as Recv).method)) row.cashIn += amt;
-        else if (isVendorReceivedMethod((it.row as Recv).method)) row.vendorIn += amt;
-        else row.mdIn += amt;
-      } else if (it.kind === "handover") {
-        row.out += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
-      } else {
-        row.out += expenseHitsBalance(it.row as Exp) ? amt : 0;
+        const r = it.row as Recv;
+        if (isStatusEventReceipt(r) && r.service_table && r.service_row_id &&
+            hasMoneyReceiptForService.has(`${r.service_table}:${r.service_row_id}`)) continue;
       }
-      row.closing = it.running; // last entry of the day wins
+      if (dayFrom && it.date < dayFrom) { opening = it.running; continue; }
+      if (dayTo && it.date > dayTo) continue;
+      rows.push(it);
     }
-    const days = Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
-    const totalIn = days.reduce((s, d) => s + d.cashIn, 0);
-    const totalOut = days.reduce((s, d) => s + d.out, 0);
-    const finalClosing = days.length ? days[days.length - 1].closing : opening;
+
+    const totals = rows.reduce(
+      (acc, it) => {
+        const amt = Number((it.row as { amount: number }).amount || 0);
+        if (it.kind === "received") {
+          if (isCashMethod((it.row as Recv).method)) acc.inAmt += amt;
+          else if (isVendorReceivedMethod((it.row as Recv).method)) acc.vendorAmt += amt;
+          else acc.mdAmt += amt;
+        }
+        else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+        else acc.outAmt += expenseHitsBalance(it.row as Exp) ? amt : 0;
+        return acc;
+      },
+      { inAmt: 0, outAmt: 0, mdAmt: 0, vendorAmt: 0 },
+    );
+    const finalClosing = rows.length ? rows[rows.length - 1].running : opening;
     const periodLabel = `${dayFrom || "শুরু"} → ${dayTo || "এখন"}`;
 
-    const rowsHtml = days.map((d) => `
-      <tr>
-        <td>${formatDate(d.date)}</td>
-        <td class="num in">${d.cashIn ? "+ " + fmt(d.cashIn) : "—"}</td>
-        <td class="num out">${d.out ? "− " + fmt(d.out) : "—"}</td>
-        <td class="num">${(d.mdIn || d.vendorIn) ? fmt(d.mdIn + d.vendorIn) : "—"}</td>
-        <td class="num" style="font-weight:700">${fmt(d.closing)}</td>
-      </tr>`).join("");
+    // Body: each transaction row, plus a CLOSING row after the last entry of
+    // every distinct date, then the next date's rows continue below.
+    let bodyHtml = "";
+    if (rows.length === 0) {
+      bodyHtml = `<tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`;
+    } else {
+      for (let i = 0; i < rows.length; i++) {
+        const it = rows[i];
+        bodyHtml += buildDetailRowHtml(it, it.running, i);
+        const next = rows[i + 1];
+        if (!next || next.date !== it.date) {
+          bodyHtml += `<tr class="dayclose"><td colspan="10">📅 ${formatDate(it.date)} — দিনের ক্লোজিং ব্যালেন্স</td><td class="num">${fmt(it.running)}</td></tr>`;
+        }
+      }
+    }
 
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>দৈনিক ক্লোজিং ব্যালেন্স- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:A4 ${printOrientation};margin:6mm}
+  @page{size:A4 ${printOrientation};margin:5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0}
   h1{margin:0 0 2px;font-size:15px}
   .meta{color:#555;font-size:10.5px;margin-bottom:6px}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1}
-  table{width:100%;border-collapse:collapse;font-size:11px}
-  th,td{border-bottom:1px solid #e5e5e5;padding:4px 6px;text-align:left}
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word}
   th{background:#f5f5f5;font-weight:600}
-  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:right}
-  .in{color:#059669}.out{color:#b45309}
+  th.num{text-align:right}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.num.in{text-align:left}
+  .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
+  tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
   tfoot td{font-weight:700;background:#fafafa}
   @media print{body{padding:2px}}
 </style></head><body>
-<h1>দৈনিক ক্লোজিং ব্যালেন্স- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
-<div class="meta">${displayName(profile, user)} · প্রিন্ট: ${formatDate(today())} · সময়: ${periodLabel} · মোট ${days.length} দিন</div>
+<h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
+<div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${rows.length} এন্ট্রি</div>
 <div class="summary">
   <div>আগের জের: <b>${fmt(opening)}</b></div>
-  <div class="in">মোট নগদ আয়: <b>+ ${fmt(totalIn)}</b></div>
-  <div class="out">মোট খরচ/জমা: <b>− ${fmt(totalOut)}</b></div>
+  <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
+  ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
+  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece (ব্যালেন্সে নয়): <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
+  <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
   <div>সর্বশেষ ক্লোজিং: <b>${fmt(finalClosing)}</b></div>
 </div>
 <table>
   <thead>
     <tr>
-      <th>তারিখ</th>
-      <th class="num">নগদ আয়</th>
+      <th>#</th><th>তারিখ</th>
+      <th>নাম</th><th>সার্ভিস</th><th>দেশ/রোড</th>
+      <th class="num">মোট বিল</th>
+      <th class="num">আয়</th>
+      <th class="num">বাকি</th>
+      <th class="wrap">Adv:/ discu:</th>
       <th class="num">খরচ/জমা</th>
-      <th class="num">MD/Vendor</th>
-      <th class="num">ক্লোজিং ব্যালেন্স</th>
+      <th class="num">ব্যালেন্স</th>
     </tr>
   </thead>
   <tbody>
-    ${days.length ? rowsHtml : `<tr><td colspan="5" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`}
+    ${bodyHtml}
   </tbody>
   <tfoot>
     <tr>
-      <td>মোট</td>
-      <td class="num in">+ ${fmt(totalIn)}</td>
-      <td class="num out">− ${fmt(totalOut)}</td>
-      <td class="num">—</td>
+      <td colspan="6">Total</td>
+      <td class="num in">+ ${fmt(totals.inAmt)}</td>
+      <td></td>
+      <td></td>
+      <td class="num out">− ${fmt(totals.outAmt)}</td>
       <td class="num">${fmt(finalClosing)}</td>
     </tr>
   </tfoot>
@@ -868,18 +954,35 @@ ${node.innerHTML.replace(
                   <SelectItem value="landscape">Landscape</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
-                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setDayPrintOpen(true)} className="h-8 text-xs gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5" /> দৈনিক ক্লোজিং
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
+                    <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuItem onClick={handlePrint} className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    <div>
+                      <div className="text-sm font-medium">সাধারণ প্রিন্ট</div>
+                      <div className="text-[11px] text-muted-foreground">আগের মত — চলতি ফিল্টার অনুযায়ী</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    <div>
+                      <div className="text-sm font-medium">তারিখ অনুযায়ী + দৈনিক ক্লোজিং</div>
+                      <div className="text-[11px] text-muted-foreground">তারিখ বেছে নিন — প্রতি দিনের ক্লোজিং ব্যালেন্সসহ</div>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
                 <DialogContent className="max-w-sm">
                   <DialogHeader>
-                    <DialogTitle>দৈনিক ক্লোজিং ব্যালেন্স প্রিন্ট</DialogTitle>
+                    <DialogTitle>তারিখ অনুযায়ী প্রিন্ট (দৈনিক ক্লোজিংসহ)</DialogTitle>
                     <DialogDescription>
-                      নির্দিষ্ট তারিখ থেকে শেষ পর্যন্ত প্রতিদিনের ক্লোজিং ব্যালেন্স তারিখ অনুযায়ী প্রিন্ট হবে।
+                      নির্দিষ্ট তারিখ থেকে আজ পর্যন্ত — সাধারণ প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-3 py-1">
@@ -893,7 +996,7 @@ ${node.innerHTML.replace(
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleDayClosingPrint} className="gap-1.5">
+                    <Button onClick={handleRangeClosingPrint} className="gap-1.5">
                       <Printer className="h-4 w-4" /> প্রিন্ট করুন
                     </Button>
                   </DialogFooter>
