@@ -61,6 +61,29 @@ const cleanReceiptRemark = (text?: string | null) => {
   return raw;
 };
 
+// Uniform source labels so a receipt looks identical on the /accounts timeline
+// no matter where it was received from (booking popup, agency/vendor ledger,
+// extra service, manual). Without this the raw `source` string ("due",
+// "agency_ledger_payment", …) leaked into the UI and looked different per source.
+const SOURCE_LABELS: Record<string, string> = {
+  due: "বুকিং",
+  extra_due: "Extra",
+  service_form: "সার্ভিস",
+  agency_ledger: "এজেন্সি",
+  agency_ledger_payment: "এজেন্সি",
+};
+const friendlySource = (source?: string | null) => SOURCE_LABELS[String(source ?? "").trim()] ?? "";
+
+// Agency/vendor ledger mirror rows store verbose service_type strings like
+// "Service Receipt: Nazmul-G-gong" / "Agent Receipt: Jahangir QA". Strip the
+// bookkeeping prefix so the timeline shows the same clean shape as booking rows.
+const cleanServiceType = (text?: string | null) => {
+  const s = String(text ?? "").trim();
+  const m = s.match(/^(?:Service Receipt|Agent Receipt|Customer\/Sub-Agent[^:]*)\s*:\s*(.+)$/i);
+  if (m) return `এজেন্ট: ${m[1].trim()}`;
+  return s || "Service";
+};
+
 
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; from_name: string | null; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; approved_at?: string | null; approved_by?: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
@@ -544,7 +567,7 @@ ${node.innerHTML.replace(
     const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
     const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
     const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
+    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? cleanServiceType(r.service_type) : isHand ? "জমা" : "খরচ";
     let region = "";
     if (isIn && svc) {
       if (r.service_table === "tickets") {
@@ -1099,7 +1122,7 @@ ${node.innerHTML.replace(
                   const servicePrimary = isIn
                     ? (r.source === "manual"
                         ? (r.remarks || "ম্যানুয়াল আয়")
-                        : (r.service_type || "Service"))
+                        : cleanServiceType(r.service_type))
                     : isHand
                     ? "জমা / Handover"
                     : (e.purpose || "—");
@@ -1124,7 +1147,10 @@ ${node.innerHTML.replace(
                     : "";
                   const primaryBits: string[] = [];
                   if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
-                  if (isIn && !statusEvt && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
+                  if (isIn && !statusEvt && r.source && r.source !== "manual") {
+                    const sl = friendlySource(r.source);
+                    if (sl) primaryBits.push(`📒 ${sl}`);
+                  }
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
                   const discountTotal = isIn && svc && typeof svc.discount === "number" ? svc.discount : 0;
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
@@ -1274,7 +1300,7 @@ ${node.innerHTML.replace(
                   const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
                   const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
+                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? cleanServiceType(r.service_type) : isHand ? "জমা" : "খরচ";
                   let region = "";
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
@@ -1373,7 +1399,7 @@ ${node.innerHTML.replace(
                           <p className={`font-bold tabular-nums text-sm whitespace-nowrap ${statusEvt ? "text-violet-600" : vendorRecv ? "text-orange-600" : mdRecv ? "text-sky-600" : "text-emerald-600"}`}>{statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}+ {fmt(Number(r.amount))}</>}</p>
                         </div>
                          <p className="text-xs text-muted-foreground break-words">
-                           {r.service_type}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
+                           {cleanServiceType(r.service_type)}{!statusEvt && r.method ? <> · 💳 {r.method}</> : null}{bits.length > 0 && <> · {bits.join(" · ")}</>}
                          </p>
                          {mdRecv && (
                            <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ — ব্যালেন্সে যোগ হয়নি</p>
