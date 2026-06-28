@@ -371,11 +371,13 @@ export function PartyLedgerPage({
       advance: Number(mine?.advance_balance ?? 0),
     });
 
-    // For vendors: pull each source file's module id, the date it actually
-    // counted in the vendor balance (received_date for delivery items), and the
-    // extra description fields. bmet/saudi/kuwait only count once received.
+    // Pull each source file's module id, the date it actually counted
+    // (received_date for delivery items), and the extra description fields.
+    // bmet/saudi/kuwait only count once received. Built for BOTH vendor and
+    // agency ledgers — the agency side uses received_date to mark entries whose
+    // work is not yet complete (vendor delivery pending).
     const map = new Map<string, SrcInfo>();
-    if (!isCustomer) {
+    {
       // table -> [columns to select], with a normalizer for each row.
       const specs: Record<string, { cols: string; map: (r: Record<string, unknown>) => SrcInfo }> = {
         bmet_cards: {
