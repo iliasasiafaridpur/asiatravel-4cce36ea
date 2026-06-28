@@ -964,15 +964,15 @@ ${node.innerHTML.replace(
                   <DropdownMenuItem onClick={handlePrint} className="gap-2">
                     <Printer className="h-4 w-4" />
                     <div>
-                      <div className="text-sm font-medium">সাধারণ প্রিন্ট</div>
-                      <div className="text-[11px] text-muted-foreground">আগের মত — চলতি ফিল্টার অনুযায়ী</div>
+                      <div className="text-sm font-medium">সম্পূর্ণ হিসাব প্রিন্ট</div>
+                      <div className="text-[11px] text-muted-foreground">চলতি ফিল্টারের সব লেনদেন একসাথে</div>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
                     <CalendarDays className="h-4 w-4" />
                     <div>
-                      <div className="text-sm font-medium">তারিখ অনুযায়ী + দৈনিক ক্লোজিং</div>
-                      <div className="text-[11px] text-muted-foreground">তারিখ বেছে নিন — প্রতি দিনের ক্লোজিং ব্যালেন্সসহ</div>
+                      <div className="text-sm font-medium">তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</div>
+                      <div className="text-[11px] text-muted-foreground">শুরু–শেষ তারিখ বেছে নিন, প্রতিদিনের ক্লোজিং ব্যালেন্সসহ</div>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -980,9 +980,9 @@ ${node.innerHTML.replace(
               <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
                 <DialogContent className="max-w-sm">
                   <DialogHeader>
-                    <DialogTitle>তারিখ অনুযায়ী প্রিন্ট (দৈনিক ক্লোজিংসহ)</DialogTitle>
+                    <DialogTitle>তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</DialogTitle>
                     <DialogDescription>
-                      নির্দিষ্ট তারিখ থেকে আজ পর্যন্ত — সাধারণ প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
+                      শুরু থেকে শেষ তারিখ পর্যন্ত সম্পূর্ণ হিসাব প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-3 py-1">
