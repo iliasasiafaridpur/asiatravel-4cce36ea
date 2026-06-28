@@ -871,6 +871,34 @@ ${node.innerHTML.replace(
               <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
                 <Printer className="h-3.5 w-3.5" /> প্রিন্ট
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setDayPrintOpen(true)} className="h-8 text-xs gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5" /> দৈনিক ক্লোজিং
+              </Button>
+              <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>দৈনিক ক্লোজিং ব্যালেন্স প্রিন্ট</DialogTitle>
+                    <DialogDescription>
+                      নির্দিষ্ট তারিখ থেকে শেষ পর্যন্ত প্রতিদিনের ক্লোজিং ব্যালেন্স তারিখ অনুযায়ী প্রিন্ট হবে।
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-3 py-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">শুরুর তারিখ</Label>
+                      <DateInput value={dayFrom} onChange={(e) => setDayFrom(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">শেষ তারিখ</Label>
+                      <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleDayClosingPrint} className="gap-1.5">
+                      <Printer className="h-4 w-4" /> প্রিন্ট করুন
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
