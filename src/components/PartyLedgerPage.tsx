@@ -1757,7 +1757,7 @@ export function PartyLedgerPage({
             : "border-emerald-500/40 bg-emerald-500/5";
         const headline = hasDue
           ? isCustomer
-            ? "এই এজেন্টের কাছে আমরা পাবো"
+            ? "এই এজেন্টের কাছে মোট বকেয়া"
             : "এই ভেন্ডরকে আমরা দিবো"
           : hasAdv
             ? isCustomer
@@ -1770,14 +1770,8 @@ export function PartyLedgerPage({
         return (
           <div className={`rounded-lg border px-4 py-3 ${tone}`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground">{headline}</div>
-                <div className={`text-2xl font-bold tabular-nums ${amtColor}`}>
-                  {amount > 0 ? fmtMoney(amount) : "৳0"}
-                </div>
-              </div>
               {settleMode === "one_by_one" ? (
-                <div className="text-right text-xs">
+                <div className="text-left text-xs">
                   <div className="text-muted-foreground">বিল-ভিত্তিক হিসাব</div>
                   <div className="mt-0.5 flex items-center gap-2">
                     <span className="font-semibold text-rose-600">{remainingBills} টি বাকি</span>
@@ -1786,7 +1780,7 @@ export function PartyLedgerPage({
                   </div>
                 </div>
               ) : (
-                <div className="text-right text-xs">
+                <div className="text-left text-xs">
                   <div className="text-muted-foreground">মোটের উপর হিসাব</div>
                   <div className="mt-0.5">
                     <span className="text-muted-foreground">মোট বিল </span>
@@ -1796,6 +1790,12 @@ export function PartyLedgerPage({
                   </div>
                 </div>
               )}
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">{headline}</div>
+                <div className={`text-2xl font-bold tabular-nums ${amtColor}`}>
+                  {amount > 0 ? fmtMoney(amount) : "৳0"}
+                </div>
+              </div>
             </div>
           </div>
         );
