@@ -1053,11 +1053,12 @@ export function PartyLedgerPage({
 
   // Flexible ledger print: চাইলে সম্পূর্ণ হিসাব, শুধু বাকি বিল, অথবা নির্দিষ্ট
   // তারিখ থেকে শেষ চলতি ব্যালেন্স পর্যন্ত — প্রয়োজন অনুযায়ী প্রিন্ট করা যায়।
-  const runPrint = (mode: "all" | "due" | "range", from: string, to: string) => {
+  const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
     const esc = (s: string) =>
       String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] || c));
     const num = (n: number) => Math.round(Number(n || 0)).toLocaleString();
     const payHead = isCustomer ? "জমা/গ্রহণ" : "পরিশোধ";
+    const payDateHead = isCustomer ? "গ্রহণ তারিখ" : "পরিশোধ তারিখ";
 
     // চলতি (current) ব্যালেন্স সারাংশ — সবসময় ফুটারে দেখাবো।
     const curDue = totals.due > 0.5;
@@ -1073,35 +1074,82 @@ export function PartyLedgerPage({
         : "সব হিসাব পরিশোধিত";
     const curAmt = curDue ? totals.due : curAdv ? totals.advance : 0;
 
+    // প্রতিটি বিলের কিস্তি (তারিখ · পরিমাণ · মাধ্যম) ছোট করে দেখানোর হেল্পার।
+    const instLine = (b: (typeof bills)[number]) => {
+      const items = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
+      if (!items.length) return "";
+      const parts = items
+        .map((p) => `${p.date ? esc(formatDate(p.date)) : "—"} · ৳${num(p.amt)}${p.method ? ` · ${esc(p.method)}` : ""}`)
+        .join(" | ");
+      return `<div class="inst">কিস্তি: ${parts}</div>`;
+    };
+
     let subtitle = "";
     let summaryLine = "";
     let theadHtml = "";
     let bodyHtml = "";
 
-    if (mode === "due") {
+    if (mode === "bill") {
+      // বিল-বাই-বিল আন্তর্জাতিক স্টেটমেন্ট: প্রতিটি বিল, এর পরিশোধ/গ্রহণ তারিখসহ।
+      subtitle = "বিল-বাই-বিল হিসাব (প্রতিটি বিল আলাদা)";
+      const totBill = bills.reduce((s, b) => s + b.bill, 0);
+      const totPaid = bills.reduce((s, b) => s + b.paid, 0);
+      const totDue = bills.reduce((s, b) => s + b.due, 0);
+      summaryLine = `মোট বিল: ${bills.length} টি · মোট বিল মূল্য: ৳${num(totBill)} · মোট ${payHead}: ৳${num(totPaid)} · মোট বাকি: ৳${num(totDue)} · (পরিশোধিত ${billStats.paidCount} · আংশিক ${billStats.partialCount} · বাকি ${billStats.dueCount})`;
+      theadHtml = `<tr>
+        <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
+        <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
+      </tr>`;
+      bodyHtml = bills.length
+        ? bills
+            .map((b) => {
+              const st = b.cancelled
+                ? "বাতিল কাজ"
+                : b.status === "paid"
+                  ? "পরিশোধিত"
+                  : b.status === "partial"
+                    ? "আংশিক"
+                    : "বাকি";
+              const cls = b.cancelled ? ' class="cancel"' : "";
+              return `<tr${cls}>
+                <td>${esc(formatDate(b.date))}</td>
+                <td>${esc(b.ledgerId)}</td>
+                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
+                <td class="r">${num(b.bill)}</td>
+                <td class="r">${b.paid ? num(b.paid) : "—"}</td>
+                <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
+                <td class="r ${b.due > 0 ? "due" : ""}">${num(b.due)}</td>
+                <td>${st}</td>
+              </tr>`;
+            })
+            .join("")
+        : `<tr><td colspan="8" class="empty">কোনো বিল নেই</td></tr>`;
+    } else if (mode === "due") {
       subtitle = "শুধু বাকি বিল সমূহ";
       const dueBills = bills.filter((b) => b.status !== "paid");
       summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
       theadHtml = `<tr>
         <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
-        <th class="r">বিল</th><th class="r">${payHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
+        <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
       bodyHtml = dueBills.length
         ? dueBills
             .map((b) => {
-              const st = b.status === "partial" ? "আংশিক" : "বাকি";
-              return `<tr>
+              const st = b.cancelled ? "বাতিল কাজ" : b.status === "partial" ? "আংশিক" : "বাকি";
+              const cls = b.cancelled ? ' class="cancel"' : "";
+              return `<tr${cls}>
                 <td>${esc(formatDate(b.date))}</td>
                 <td>${esc(b.ledgerId)}</td>
-                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}</td>
+                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
+                <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
                 <td class="r due">${num(b.due)}</td>
                 <td>${st}</td>
               </tr>`;
             })
             .join("")
-        : `<tr><td colspan="7" class="empty">কোনো বাকি বিল নেই</td></tr>`;
+        : `<tr><td colspan="8" class="empty">কোনো বাকি বিল নেই</td></tr>`;
     } else {
       // all / range — চলমান ব্যালেন্সসহ পূর্ণ লেজার (পুরনো → নতুন)।
       const chrono = [...statement].reverse();
@@ -1134,11 +1182,11 @@ export function PartyLedgerPage({
         (list.length
           ? list
               .map(
-                (s) => `<tr${s.isPayment ? ' class="pay"' : ""}>
+                (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
             <td>${esc(formatDate(s.date))}</td>
             <td>${esc(s.ledgerId)}</td>
             <td>${esc(s.service)}</td>
-            <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}</td>
+            <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
             <td class="r">${s.credit ? num(s.credit) : "—"}</td>
             <td class="r">${num(s.balance)}</td>${isCustomer ? `<td class="r">${s.advance ? num(s.advance) : "—"}</td>` : ""}
