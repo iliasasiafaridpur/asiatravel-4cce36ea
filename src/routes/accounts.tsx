@@ -606,6 +606,7 @@ ${node.innerHTML.replace(
     setDayPrintOpen(false);
   };
 
+  if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   // TEMP: Admin has full master access — no redirect.
 
   return (
