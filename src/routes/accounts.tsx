@@ -51,6 +51,16 @@ const cleanStatusText = (text?: string | null) => {
   return cleaned || "Delivery";
 };
 
+// Internal accounting notes that should never be shown to the user as a "note".
+// e.g. "সার্ভিস/কাস্টমার পেমেন্ট রিসিভ · MD received via Bank Transfer — staff balance neutral"
+const INTERNAL_REMARK_RE = /balance[\s-]*neutral|MD received via|MD deposit|vendor received|account adjustment|opening due/i;
+const cleanReceiptRemark = (text?: string | null) => {
+  const raw = String(text ?? "").trim();
+  if (!raw) return "";
+  if (INTERNAL_REMARK_RE.test(raw)) return "";
+  return raw;
+};
+
 
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; from_name: string | null; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; approved_at?: string | null; approved_by?: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
@@ -1164,12 +1174,16 @@ ${node.innerHTML.replace(
                             MD approval pending
                           </p>
                         )}
-                        {(!statusEvt && (isIn ? r.remarks : isHand ? h.remarks : e.remarks)) && (
-                          <p className="text-xs text-muted-foreground/90 mt-1 flex items-start gap-1">
-                            <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
-                            <span className="break-words">{isIn ? r.remarks : isHand ? h.remarks : e.remarks}</span>
-                          </p>
-                        )}
+                        {(() => {
+                          const rawRemark = isIn ? r.remarks : isHand ? h.remarks : e.remarks;
+                          const shownRemark = isIn ? cleanReceiptRemark(rawRemark) : rawRemark;
+                          return !statusEvt && shownRemark ? (
+                            <p className="text-xs text-muted-foreground/90 mt-1 flex items-start gap-1">
+                              <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
+                              <span className="break-words">{shownRemark}</span>
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
 
                       {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
