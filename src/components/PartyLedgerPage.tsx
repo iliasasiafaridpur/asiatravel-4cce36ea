@@ -63,6 +63,10 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
+  Printer,
+  ChevronDown,
+  ChevronRight,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateNextId } from "@/lib/idgen";
