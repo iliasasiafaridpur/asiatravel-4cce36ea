@@ -278,6 +278,16 @@ function AccountsPage() {
         cols: "id,passport,service_name,airline,trip_road,flight_date,vendor_bought,agency_sold,sold_price,cost_price,received_amount,discount_amount,delivery_date",
         map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, vendor: r.vendor_bought as string, agent: r.agency_sold as string, cost: Number(r.cost_price ?? 0), sold: Number(r.sold_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), delivery_date: r.delivery_date as string, has_delivery: true }),
       },
+      // Agency-ledger receipts: the receipt points at the ledger row, which holds
+      // the customer/agent/bill. Vendor + cost come from a 2nd hop (source_table).
+      agency_ledger: {
+        cols: "id,agent_name,passenger_name,service_type,country_route,passport,total_bill,received_amount,discount_amount,source_table,source_id",
+        map: (r) => ({ passport: r.passport as string, country: r.country_route as string, service_name: humanizeServiceType(r.service_type as string), agent: r.agent_name as string, sold: Number(r.total_bill ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false, srcTable: r.source_table as string, srcId: r.source_id as string }),
+      },
+      extra_services: {
+        cols: "id,passport,service_name,vendor_name,vendor_cost,agency_sold,service_price,received_amount,discount_amount",
+        map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, vendor: r.vendor_name as string, agent: r.agency_sold as string, cost: Number(r.vendor_cost ?? 0), sold: Number(r.service_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false }),
+      },
     };
     let cancelled = false;
     (async () => {
@@ -289,6 +299,29 @@ function AccountsPage() {
           out[String(row.id)] = cfg.map(row);
         }
       }));
+      // 2nd hop: agency-ledger rows reference an underlying booking; fetch its
+      // vendor + cost so column 5 (vendor / vendor cost) is filled for ledger receipts.
+      const srcByTable: Record<string, Set<string>> = {};
+      for (const det of Object.values(out)) {
+        if (det.srcTable && det.srcId && det.vendor == null) {
+          (srcByTable[det.srcTable] ||= new Set()).add(det.srcId);
+        }
+      }
+      if (Object.keys(srcByTable).length > 0) {
+        const vendorById: Record<string, { vendor?: string | null; cost?: number }> = {};
+        await Promise.all(Object.entries(srcByTable).map(async ([table, ids]) => {
+          const { data } = await supabase.from(table as never).select("id,vendor_bought,cost_price").in("id", Array.from(ids));
+          for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+            vendorById[String(row.id)] = { vendor: row.vendor_bought as string, cost: Number(row.cost_price ?? 0) };
+          }
+        }));
+        for (const det of Object.values(out)) {
+          if (det.srcTable && det.srcId && det.vendor == null) {
+            const v = vendorById[det.srcId];
+            if (v) { det.vendor = v.vendor; det.cost = v.cost; }
+          }
+        }
+      }
       if (!cancelled) setSvcMap(out);
     })();
     return () => { cancelled = true; };
