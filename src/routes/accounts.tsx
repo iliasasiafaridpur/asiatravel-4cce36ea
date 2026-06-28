@@ -247,6 +247,7 @@ function AccountsPage() {
      flight_date?: string | null; vendor?: string | null; cost?: number;
       sold?: number; received_total?: number; discount?: number; agent?: string | null;
       delivery_date?: string | null; has_delivery?: boolean;
+      srcTable?: string | null; srcId?: string | null;
    };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
 
