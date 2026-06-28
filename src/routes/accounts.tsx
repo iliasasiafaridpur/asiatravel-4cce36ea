@@ -510,7 +510,7 @@ ${node.innerHTML.replace(
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
   `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
 )}
-<div class="finalbox">এই ${timeline.length} লেনদেনের নিট ব্যালেন্স: ${fmt(scopedBalance)}</div>
+<div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(scopedBalance)}</div>
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
@@ -728,7 +728,7 @@ ${node.innerHTML.replace(
     </tr>
   </tfoot>
 </table>
-<div class="finalbox">আগের জের ${fmt(opening)} + এই সময়ের নিট ⇒ সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
+<div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
