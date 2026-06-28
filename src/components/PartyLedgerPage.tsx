@@ -176,7 +176,7 @@ export function PartyLedgerPage({
   const [stmtService, setStmtService] = useState("");
   // Flexible ledger print dialog state.
   const [printOpen, setPrintOpen] = useState(false);
-  const [printMode, setPrintMode] = useState<"all" | "due" | "range">("all");
+  const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
