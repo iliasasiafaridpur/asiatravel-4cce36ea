@@ -79,10 +79,13 @@ export function DueReceiveDialog({
   open,
   onOpenChange,
   preselect,
+  onDone,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   preselect?: DueReceivePreselect | null;
+  /** Notify parent so the list (status badges, due amounts) can refresh. */
+  onDone?: () => void;
 }) {
   const { user, profile } = useCurrentUser();
   const [search, setSearch] = useState("");
@@ -282,6 +285,7 @@ export function DueReceiveDialog({
       const localDate = s.hasDelivery ? newDate : (next === "Delivered" ? todayIso() : null);
       setSelected({ ...selected, deliveryDate: localDate });
       setItems((prev) => prev.map((r) => r.id === selected.id ? { ...r, deliveryDate: localDate } : r));
+      onDone?.();
       toast.success(next === "Delivered" ? "✓ Delivered হিসেবে সংরক্ষিত" : "Pending Delivery হিসেবে আপডেট হয়েছে");
     } catch (e) {
       if (isNetworkError(e)) {
@@ -468,6 +472,8 @@ export function DueReceiveDialog({
         due: selected.sold - newRecv - newDiscount,
         deliveryDate: withDelivery ? today : (upd.delivery_date !== undefined ? (upd.delivery_date as string | null) : selected.deliveryDate),
       };
+      // Refresh the parent list so status badges / due amounts update immediately.
+      onDone?.();
       if (updated.due <= 0) {
         handleClose(false);
       } else {
