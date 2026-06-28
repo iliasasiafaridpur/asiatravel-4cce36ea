@@ -728,6 +728,8 @@ ${node.innerHTML.replace(
     </tr>
   </tfoot>
 </table>
+<div class="finalbox">আগের জের ${fmt(opening)} + এই সময়ের নিট ⇒ সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
+<div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
     w.document.close();
