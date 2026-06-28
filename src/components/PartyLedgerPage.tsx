@@ -1830,41 +1830,7 @@ export function PartyLedgerPage({
               </Button>
             </div>
 
-            {/* এক-নজর সারাংশ: বকেয়ার বয়স (aging) + দ্রুততা */}
-            {(billStats.dueAmount > 0 || billStats.avgPaidDays != null) && (
-              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2">
-                  <div className="text-[10px] text-muted-foreground">০–৩০ দিন</div>
-                  <div className="text-sm font-semibold tabular-nums text-emerald-700">
-                    {fmtMoney(billStats.bucketCurrent)}
-                  </div>
-                </div>
-                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2">
-                  <div className="text-[10px] text-muted-foreground">৩১–৬০ দিন</div>
-                  <div className="text-sm font-semibold tabular-nums text-amber-700">
-                    {fmtMoney(billStats.bucketMid)}
-                  </div>
-                </div>
-                <div className="rounded-md border border-rose-500/30 bg-rose-500/5 p-2">
-                  <div className="text-[10px] text-muted-foreground">৬০+ দিন (পুরনো)</div>
-                  <div className="text-sm font-semibold tabular-nums text-rose-700">
-                    {fmtMoney(billStats.bucketOld)}
-                  </div>
-                </div>
-                <div className="rounded-md border bg-muted/30 p-2">
-                  <div className="text-[10px] text-muted-foreground">
-                    {billStats.oldestDue ? "সবচেয়ে পুরনো বাকি" : "গড় পরিশোধ সময়"}
-                  </div>
-                  <div className="text-sm font-semibold tabular-nums">
-                    {billStats.oldestDue
-                      ? `${billStats.oldestDue.ageDays ?? 0} দিন`
-                      : billStats.avgPaidDays != null
-                        ? `${billStats.avgPaidDays} দিন`
-                        : "—"}
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             <div className="overflow-x-auto rounded-md border">
               <Table className="w-full min-w-[760px]">
