@@ -2123,6 +2123,7 @@ export function ModulePage({ module: mod }: Props) {
         open={!!duePreselect}
         onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
         preselect={duePreselect}
+        onDone={() => load(false)}
       />
 
       <ExtraDueReceiveDialog
