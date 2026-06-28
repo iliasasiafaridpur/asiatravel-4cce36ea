@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
@@ -63,6 +63,10 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
+  Printer,
+  ChevronDown,
+  ChevronRight,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateNextId } from "@/lib/idgen";
@@ -88,6 +92,26 @@ type SrcInfo = {
 };
 
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
+
+/** Today's date as a pure ISO (YYYY-MM-DD) string, no TZ conversion surprises. */
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/** Whole-day difference between two pure ISO dates (toISO − fromISO). */
+function daysBetween(fromISO?: string | null, toISO?: string | null): number | null {
+  if (!fromISO || !toISO) return null;
+  const a = new Date(`${fromISO}T00:00:00`);
+  const b = new Date(`${toISO}T00:00:00`);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return null;
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+/** Aging colour band for an outstanding bill: green ≤7, amber 8–30, red >30. */
+function ageBand(days: number | null): { text: string; cls: string } {
+  if (days == null) return { text: "—", cls: "text-muted-foreground" };
+  if (days <= 7) return { text: `${days} দিন`, cls: "text-emerald-600" };
+  if (days <= 30) return { text: `${days} দিন`, cls: "text-amber-600" };
+  return { text: `${days} দিন`, cls: "text-rose-600 font-semibold" };
+}
 
 /** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
 function waNumber(raw: string): string {
@@ -165,6 +189,8 @@ export function PartyLedgerPage({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
+  // Bill-by-bill: which bill row's payment history is expanded ("" = none).
+  const [expandedBill, setExpandedBill] = useState<string | null>(null);
   const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
@@ -813,6 +839,7 @@ export function PartyLedgerPage({
   // Per-bill breakdown for "এক একটা বিল" (Bill-by-Bill) parties. Each booking is
   // shown with its own বাকি / আংশিক / পরিশোধিত status so one-by-one settlement is
   // crystal clear.
+  type BillPay = { date: string; amt: number; method: string };
   type BillItem = {
     id: string;
     ledgerId: string;
@@ -823,6 +850,14 @@ export function PartyLedgerPage({
     paid: number;
     due: number;
     status: "due" | "partial" | "paid";
+    /** Each instalment that settled this bill (date · amount · method). */
+    payments: BillPay[];
+    /** Last payment date (latest dated instalment), "" if none dated. */
+    payDate: string;
+    /** Days a still-open bill has been outstanding (today − bill date). */
+    ageDays: number | null;
+    /** For settled bills: days taken to clear (payDate − bill date). */
+    paidInDays: number | null;
   };
   const bills = useMemo<BillItem[]>(() => {
     const moduleLabel: Record<string, string> = {
@@ -831,6 +866,27 @@ export function PartyLedgerPage({
       kuwait_visas: "Kuwait Visa",
       tickets: "Ticket",
     };
+    const t = todayISO();
+    // Vendor: map each bill row id -> dated payment instalments pulled from the
+    // green PAYMENT rows' alloc_detail (so every settlement carries its date).
+    const payByBill = new Map<string, BillPay[]>();
+    if (!isCustomer) {
+      for (const r of rows) {
+        if (String(r.service_type ?? "").toUpperCase() !== "PAYMENT") continue;
+        const det = (r as Record<string, unknown>).alloc_detail as
+          | { items?: Array<{ id?: string; amt?: number }> }
+          | null;
+        const pdate = String(r.payment_date ?? r.entry_date ?? "");
+        const method = String(r.payment_method ?? "");
+        for (const it of det?.items ?? []) {
+          const bid = String(it?.id ?? "");
+          if (!bid) continue;
+          const arr = payByBill.get(bid) ?? [];
+          arr.push({ date: pdate, amt: Number(it?.amt ?? 0), method });
+          payByBill.set(bid, arr);
+        }
+      }
+    }
     const out: BillItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
@@ -844,9 +900,29 @@ export function PartyLedgerPage({
         const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
         if (sourced && !info?.countDate) continue; // not yet received -> not a due bill
       }
-      const paid = isCustomer
-        ? Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0) + Number(r.discount_amount ?? 0)
-        : Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0);
+      const direct = Number(r[paidCol] ?? 0);
+      const adv = Number(r.advance_applied ?? 0);
+      const disc = Number(r.discount_amount ?? 0);
+      const paid = isCustomer ? direct + adv + disc : direct + adv;
+
+      // Build the instalment list (date · amount · method) for this bill.
+      const rowPayDate = String(r.payment_date ?? "");
+      const rowMethod = String(r.payment_method ?? "");
+      const payments: BillPay[] = [];
+      if (isCustomer) {
+        if (direct > 0) payments.push({ date: rowPayDate, amt: direct, method: rowMethod || "Cash" });
+        if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
+        if (disc > 0) payments.push({ date: rowPayDate, amt: disc, method: "ডিসকাউন্ট" });
+      } else {
+        const linked = payByBill.get(String(r.id)) ?? [];
+        for (const p of linked) payments.push(p);
+        const covered = linked.reduce((s, p) => s + p.amt, 0);
+        const directNet = Math.max(0, direct - covered);
+        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash" });
+        if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
+      }
+      const datedSorted = payments.map((p) => p.date).filter(Boolean).sort();
+      const payDate = datedSorted.length ? datedSorted[datedSorted.length - 1] : "";
 
       const due = Math.max(0, bill - paid);
       const status: BillItem["status"] = due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
@@ -868,11 +944,20 @@ export function PartyLedgerPage({
         paid,
         due,
         status,
+        payments,
+        payDate,
+        ageDays: status === "paid" ? null : daysBetween(date, t),
+        paidInDays: status === "paid" ? daysBetween(date, payDate) : null,
       });
     }
-    // Unpaid first, then partial, then paid; newest within each group on top.
+    // Unpaid first, then partial, then paid; oldest outstanding on top so the
+    // most overdue bill is the first thing seen.
     const rank = { due: 0, partial: 1, paid: 2 } as const;
-    out.sort((a, b) => rank[a.status] - rank[b.status] || (b.date || "").localeCompare(a.date || ""));
+    out.sort((a, b) => {
+      if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
+      if (a.status === "paid") return (b.payDate || b.date).localeCompare(a.payDate || a.date);
+      return (a.date || "9999").localeCompare(b.date || "9999"); // oldest due first
+    });
     return out;
   }, [rows, billCol, paidCol, isCustomer, srcMap]);
 
@@ -881,18 +966,111 @@ export function PartyLedgerPage({
       paidCount = 0,
       partialCount = 0,
       dueAmount = 0;
+    // AR/AP aging buckets on the outstanding amount.
+    let bucketCurrent = 0, // 0–30 days
+      bucketMid = 0, // 31–60 days
+      bucketOld = 0; // 60+ days
+    let oldestDue: BillItem | null = null;
+    let avgPaidDays: number | null = null;
+    let paidDaysSum = 0,
+      paidDaysCount = 0;
     for (const b of bills) {
-      if (b.status === "paid") paidCount++;
-      else {
+      if (b.status === "paid") {
+        paidCount++;
+        if (b.paidInDays != null && b.paidInDays >= 0) {
+          paidDaysSum += b.paidInDays;
+          paidDaysCount++;
+        }
+      } else {
         if (b.status === "partial") partialCount++;
         else dueCount++;
         dueAmount += b.due;
+        const age = b.ageDays ?? 0;
+        if (age <= 30) bucketCurrent += b.due;
+        else if (age <= 60) bucketMid += b.due;
+        else bucketOld += b.due;
+        if (!oldestDue || (b.date || "9999") < (oldestDue.date || "9999")) oldestDue = b;
       }
     }
-    return { dueCount, partialCount, paidCount, dueAmount, total: bills.length };
+    if (paidDaysCount > 0) avgPaidDays = Math.round(paidDaysSum / paidDaysCount);
+    return {
+      dueCount,
+      partialCount,
+      paidCount,
+      dueAmount,
+      total: bills.length,
+      bucketCurrent,
+      bucketMid,
+      bucketOld,
+      oldestDue,
+      avgPaidDays,
+    };
   }, [bills]);
 
   const totals = summary;
+
+  // Open a clean, self-contained print sheet of the bill-by-bill statement.
+  const printBills = () => {
+    const esc = (s: string) =>
+      String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] || c));
+    const head = isCustomer ? "গ্রহণ" : "পরিশোধ";
+    const rowsHtml = bills
+      .map((b) => {
+        const st =
+          b.status === "paid"
+            ? "পরিশোধিত"
+            : b.status === "partial"
+              ? `আংশিক · বাকি ${b.due.toLocaleString()}`
+              : `বাকি ${b.due.toLocaleString()}`;
+        const age =
+          b.status === "paid"
+            ? b.paidInDays != null
+              ? `${b.paidInDays} দিনে`
+              : ""
+            : b.ageDays != null
+              ? `${b.ageDays} দিন`
+              : "";
+        return `<tr>
+          <td>${esc(formatDate(b.date))}</td>
+          <td>${esc(b.ledgerId)}</td>
+          <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}</td>
+          <td class="r">${b.bill.toLocaleString()}</td>
+          <td class="r">${b.paid ? b.paid.toLocaleString() : "—"}</td>
+          <td>${esc(b.payDate ? formatDate(b.payDate) : "—")}</td>
+          <td>${esc(st)}${age ? ` · ${esc(age)}` : ""}</td>
+        </tr>`;
+      })
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(displayName)} — বিল-ভিত্তিক হিসাব</title>
+      <style>
+        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:24px;color:#0f172a}
+        h1{font-size:18px;margin:0 0 2px}
+        .sub{color:#64748b;font-size:12px;margin-bottom:12px}
+        .sum{font-size:13px;margin-bottom:12px}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}
+        th{background:#f1f5f9}
+        .r{text-align:right;font-variant-numeric:tabular-nums}
+        @media print{button{display:none}}
+      </style></head><body>
+      <h1>${esc(displayName)} — বিল-ভিত্তিক হিসাব</h1>
+      <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · প্রিন্ট: ${esc(formatDate(todayISO()))}</div>
+      <div class="sum">মোট বিল: ${bills.length} টি · বাকি: ${billStats.dueCount + billStats.partialCount} টি · পরিশোধিত: ${billStats.paidCount} টি · মোট বাকি: ৳${billStats.dueAmount.toLocaleString()}</div>
+      <table><thead><tr>
+        <th>তারিখ</th><th>ID</th><th>বিবরণ</th><th class="r">বিল</th><th class="r">${head}</th><th>${head} তারিখ</th><th>স্ট্যাটাস</th>
+      </tr></thead><tbody>${rowsHtml}</tbody></table>
+      <script>window.onload=function(){window.print()}</script>
+      </body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) {
+      toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+  };
+
+
 
 
 
@@ -1642,68 +1820,185 @@ export function PartyLedgerPage({
                   </span>
                 </span>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto h-7 gap-1 text-xs"
+                onClick={printBills}
+              >
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+              </Button>
             </div>
+
+            {/* এক-নজর সারাংশ: বকেয়ার বয়স (aging) + দ্রুততা */}
+            {(billStats.dueAmount > 0 || billStats.avgPaidDays != null) && (
+              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2">
+                  <div className="text-[10px] text-muted-foreground">০–৩০ দিন</div>
+                  <div className="text-sm font-semibold tabular-nums text-emerald-700">
+                    {fmtMoney(billStats.bucketCurrent)}
+                  </div>
+                </div>
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2">
+                  <div className="text-[10px] text-muted-foreground">৩১–৬০ দিন</div>
+                  <div className="text-sm font-semibold tabular-nums text-amber-700">
+                    {fmtMoney(billStats.bucketMid)}
+                  </div>
+                </div>
+                <div className="rounded-md border border-rose-500/30 bg-rose-500/5 p-2">
+                  <div className="text-[10px] text-muted-foreground">৬০+ দিন (পুরনো)</div>
+                  <div className="text-sm font-semibold tabular-nums text-rose-700">
+                    {fmtMoney(billStats.bucketOld)}
+                  </div>
+                </div>
+                <div className="rounded-md border bg-muted/30 p-2">
+                  <div className="text-[10px] text-muted-foreground">
+                    {billStats.oldestDue ? "সবচেয়ে পুরনো বাকি" : "গড় পরিশোধ সময়"}
+                  </div>
+                  <div className="text-sm font-semibold tabular-nums">
+                    {billStats.oldestDue
+                      ? `${billStats.oldestDue.ageDays ?? 0} দিন`
+                      : billStats.avgPaidDays != null
+                        ? `${billStats.avgPaidDays} দিন`
+                        : "—"}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto rounded-md border">
-              <Table className="w-full min-w-[640px]">
+              <Table className="w-full min-w-[760px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px] whitespace-nowrap">Date</TableHead>
-                    <TableHead className="w-[150px] whitespace-nowrap">ID</TableHead>
+                    <TableHead className="w-[32px]"></TableHead>
+                    <TableHead className="w-[100px] whitespace-nowrap">বিল তারিখ</TableHead>
+                    <TableHead className="w-[140px] whitespace-nowrap">ID</TableHead>
                     <TableHead className="min-w-[140px]">বিবরণ</TableHead>
-                    <TableHead className="w-[96px] text-right">বিল</TableHead>
-                    <TableHead className="w-[96px] text-right text-emerald-600">পরিশোধ</TableHead>
-                    <TableHead className="w-[110px] text-right">স্ট্যাটাস</TableHead>
+                    <TableHead className="w-[90px] text-right">বিল</TableHead>
+                    <TableHead className="w-[90px] text-right text-emerald-600">
+                      {isCustomer ? "গ্রহণ" : "পরিশোধ"}
+                    </TableHead>
+                    <TableHead className="w-[100px] whitespace-nowrap">
+                      {isCustomer ? "গ্রহণ তারিখ" : "পরিশোধ তারিখ"}
+                    </TableHead>
+                    <TableHead className="w-[120px] text-right">স্ট্যাটাস</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bills.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                         কোনো বিল নেই
                       </TableCell>
                     </TableRow>
                   ) : (
-                    bills.map((b, idx) => (
-                      <TableRow key={b.id} className={`row-tint-${idx % 4}`}>
-                        <TableCell className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
-                        <TableCell className="truncate font-mono text-xs" title={b.ledgerId}>
-                          {b.ledgerId}
-                        </TableCell>
-                        <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
-                          <span className="text-muted-foreground">{b.service}</span>
-                          {b.description ? ` · ${b.description}` : ""}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
-                        <TableCell className="text-right tabular-nums text-emerald-600">
-                          {b.paid ? b.paid.toLocaleString() : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {b.status === "paid" ? (
-                            <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
-                              পরিশোধিত
-                            </Badge>
-                          ) : b.status === "partial" ? (
-                            <div className="leading-tight">
-                              <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
-                                আংশিক
-                              </Badge>
-                              <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
-                                বাকি {b.due.toLocaleString()}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="leading-tight">
-                              <Badge variant="outline" className="border-rose-500/50 text-rose-600 text-[10px]">
-                                বাকি
-                              </Badge>
-                              <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
-                                {b.due.toLocaleString()}
-                              </div>
-                            </div>
+                    bills.map((b, idx) => {
+                      const hasHist = b.payments.length > 0;
+                      const open = expandedBill === b.id;
+                      const ageInfo = ageBand(b.ageDays);
+                      return (
+                        <Fragment key={b.id}>
+                          <TableRow
+                            className={`row-tint-${idx % 4} ${hasHist ? "cursor-pointer" : ""}`}
+                            onClick={() => hasHist && setExpandedBill(open ? null : b.id)}
+                          >
+                            <TableCell className="px-1 text-center text-muted-foreground">
+                              {hasHist ? (
+                                open ? (
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5" />
+                                )
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
+                            <TableCell className="truncate font-mono text-xs" title={b.ledgerId}>
+                              {b.ledgerId}
+                            </TableCell>
+                            <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
+                              <span className="text-muted-foreground">{b.service}</span>
+                              {b.description ? ` · ${b.description}` : ""}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
+                            <TableCell className="text-right tabular-nums text-emerald-600">
+                              {b.paid ? b.paid.toLocaleString() : "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-xs">
+                              {b.payDate ? (
+                                formatDate(b.payDate)
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {b.status === "paid" ? (
+                                <div className="leading-tight">
+                                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
+                                    পরিশোধিত
+                                  </Badge>
+                                  {b.paidInDays != null && (
+                                    <div className="text-[10px] text-muted-foreground tabular-nums mt-0.5">
+                                      {b.paidInDays} দিনে
+                                    </div>
+                                  )}
+                                </div>
+                              ) : b.status === "partial" ? (
+                                <div className="leading-tight">
+                                  <Badge variant="outline" className="border-amber-500/50 text-amber-600 text-[10px]">
+                                    আংশিক
+                                  </Badge>
+                                  <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
+                                    বাকি {b.due.toLocaleString()}
+                                  </div>
+                                  <div className={`text-[10px] tabular-nums ${ageInfo.cls}`}>{ageInfo.text}</div>
+                                </div>
+                              ) : (
+                                <div className="leading-tight">
+                                  <Badge variant="outline" className="border-rose-500/50 text-rose-600 text-[10px]">
+                                    বাকি
+                                  </Badge>
+                                  <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
+                                    {b.due.toLocaleString()}
+                                  </div>
+                                  <div className={`text-[10px] tabular-nums ${ageInfo.cls}`}>{ageInfo.text}</div>
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {open && hasHist && (
+                            <TableRow className="bg-muted/30 hover:bg-muted/30">
+                              <TableCell colSpan={8} className="py-2">
+                                <div className="pl-6">
+                                  <div className="mb-1 flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                                    <Clock className="h-3 w-3" /> পেমেন্ট ইতিহাস
+                                  </div>
+                                  <div className="space-y-1">
+                                    {b.payments.map((p, i) => (
+                                      <div
+                                        key={i}
+                                        className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs"
+                                      >
+                                        <span className="w-[92px] whitespace-nowrap text-muted-foreground">
+                                          {p.date ? formatDate(p.date) : "তারিখ নেই"}
+                                        </span>
+                                        <span className="font-semibold tabular-nums text-emerald-600">
+                                          ৳{p.amt.toLocaleString()}
+                                        </span>
+                                        {p.method && (
+                                          <span className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                            {p.method}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                        </Fragment>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
