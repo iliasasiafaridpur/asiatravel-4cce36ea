@@ -84,6 +84,23 @@ const cleanServiceType = (text?: string | null) => {
   return s || "Service";
 };
 
+// Ledger rows store the underlying service as a raw table name ("bmet_cards").
+// Humanize it so column 3 reads like a real service name everywhere.
+const SERVICE_TYPE_LABELS: Record<string, string> = {
+  bmet_cards: "BMET Card",
+  tickets: "Ticket / টিকিট",
+  saudi_visas: "Saudi Visa",
+  kuwait_visas: "Kuwait Visa",
+  others: "Other Service",
+  extra_services: "Extra Service",
+};
+const humanizeServiceType = (text?: string | null) => {
+  const s = String(text ?? "").trim();
+  if (!s) return "";
+  return SERVICE_TYPE_LABELS[s] ?? s;
+};
+
+
 
 interface Hand { id: string; handover_id: string; entry_date: string; to_name: string; from_name: string | null; amount: number; method: string; remarks: string | null; from_user: string | null; status?: string | null; submitted_amount?: number | null; confirmed_amount?: number | null; closing_date?: string | null; approved_at?: string | null; approved_by?: string | null; }
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
