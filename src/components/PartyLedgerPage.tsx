@@ -824,6 +824,13 @@ export function PartyLedgerPage({
         bal = prev + bill - cash - applied - discount;
         adv = Math.max(adv - applied, 0);
       }
+      // কাজ এখনো সম্পন্ন হয়নি? BMET/Saudi/Kuwait এন্ট্রি যা ভেন্ডর থেকে এখনো
+      // received হয়নি (received_date নেই) সেগুলো অসম্পূর্ণ — ধূসর দেখানো হবে।
+      const cSrc = String(r.source_table ?? "");
+      const cSourced =
+        cSrc === "bmet_cards" || cSrc === "saudi_visas" || cSrc === "kuwait_visas";
+      const cInfo = srcMap.get(String(r.source_id ?? ""));
+      const incomplete = !advRow && cSourced && !cInfo?.countDate;
       out.push({
         id: String(r.id),
         ledgerId: String(r.ledger_id ?? ""),
@@ -836,6 +843,7 @@ export function PartyLedgerPage({
         balance: bal,
         advance: Math.max(adv, 0),
         isPayment: advRow,
+        incomplete,
       });
     }
     // Latest entry on top (same as the vendor ledger).
