@@ -1173,7 +1173,7 @@ ${node.innerHTML.replace(
                   const servicePrimary = isIn
                     ? (r.source === "manual"
                         ? (r.remarks || "ম্যানুয়াল আয়")
-                        : cleanServiceType(r.service_type))
+                        : (svc?.service_name || cleanServiceType(r.service_type)))
                     : isHand
                     ? "জমা / Handover"
                     : (e.purpose || "—");
