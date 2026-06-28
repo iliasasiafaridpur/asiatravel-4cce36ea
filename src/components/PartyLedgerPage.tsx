@@ -893,6 +893,10 @@ export function PartyLedgerPage({
     ageDays: number | null;
     /** For settled bills: days taken to clear (payDate − bill date). */
     paidInDays: number | null;
+    /** Source booking soft-cancelled (বাতিল কাজ). */
+    cancelled?: boolean;
+    cancelReason?: string | null;
+    cancelDate?: string | null;
   };
   const bills = useMemo<BillItem[]>(() => {
     const moduleLabel: Record<string, string> = {
