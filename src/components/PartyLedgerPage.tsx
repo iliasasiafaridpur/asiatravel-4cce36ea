@@ -389,20 +389,20 @@ export function PartyLedgerPage({
       // table -> [columns to select], with a normalizer for each row.
       const specs: Record<string, { cols: string; map: (r: Record<string, unknown>) => SrcInfo }> = {
         bmet_cards: {
-          cols: "id,bmet_id,received_date,country_name",
-          map: (r) => ({ displayId: r.bmet_id as string, countDate: r.received_date as string, country: r.country_name as string }),
+          cols: "id,bmet_id,received_date,country_name,cancelled,cancel_reason,cancel_date",
+          map: (r) => ({ displayId: r.bmet_id as string, countDate: r.received_date as string, country: r.country_name as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
         },
         saudi_visas: {
-          cols: "id,saudi_id,received_date",
-          map: (r) => ({ displayId: r.saudi_id as string, countDate: r.received_date as string }),
+          cols: "id,saudi_id,received_date,cancelled,cancel_reason,cancel_date",
+          map: (r) => ({ displayId: r.saudi_id as string, countDate: r.received_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
         },
         kuwait_visas: {
-          cols: "id,kuwait_id,received_date",
-          map: (r) => ({ displayId: r.kuwait_id as string, countDate: r.received_date as string }),
+          cols: "id,kuwait_id,received_date,cancelled,cancel_reason,cancel_date",
+          map: (r) => ({ displayId: r.kuwait_id as string, countDate: r.received_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
         },
         tickets: {
-          cols: "id,ticket_id,airline,entry_date",
-          map: (r) => ({ displayId: r.ticket_id as string, airline: r.airline as string, countDate: r.entry_date as string }),
+          cols: "id,ticket_id,airline,entry_date,cancelled,cancel_reason,cancel_date",
+          map: (r) => ({ displayId: r.ticket_id as string, airline: r.airline as string, countDate: r.entry_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
         },
       };
       const byTable: Record<string, string[]> = {};
