@@ -964,15 +964,15 @@ ${node.innerHTML.replace(
                   <DropdownMenuItem onClick={handlePrint} className="gap-2">
                     <Printer className="h-4 w-4" />
                     <div>
-                      <div className="text-sm font-medium">সাধারণ প্রিন্ট</div>
-                      <div className="text-[11px] text-muted-foreground">আগের মত — চলতি ফিল্টার অনুযায়ী</div>
+                      <div className="text-sm font-medium">সম্পূর্ণ হিসাব প্রিন্ট</div>
+                      <div className="text-[11px] text-muted-foreground">চলতি ফিল্টারের সব লেনদেন একসাথে</div>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
                     <CalendarDays className="h-4 w-4" />
                     <div>
-                      <div className="text-sm font-medium">তারিখ অনুযায়ী + দৈনিক ক্লোজিং</div>
-                      <div className="text-[11px] text-muted-foreground">তারিখ বেছে নিন — প্রতি দিনের ক্লোজিং ব্যালেন্সসহ</div>
+                      <div className="text-sm font-medium">তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</div>
+                      <div className="text-[11px] text-muted-foreground">শুরু–শেষ তারিখ বেছে নিন, প্রতিদিনের ক্লোজিং ব্যালেন্সসহ</div>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
