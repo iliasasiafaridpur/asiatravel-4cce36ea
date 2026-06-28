@@ -951,18 +951,35 @@ ${node.innerHTML.replace(
                   <SelectItem value="landscape">Landscape</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" onClick={handlePrint} disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
-                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setDayPrintOpen(true)} className="h-8 text-xs gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5" /> দৈনিক ক্লোজিং
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
+                    <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuItem onClick={handlePrint} className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    <div>
+                      <div className="text-sm font-medium">সাধারণ প্রিন্ট</div>
+                      <div className="text-[11px] text-muted-foreground">আগের মত — চলতি ফিল্টার অনুযায়ী</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    <div>
+                      <div className="text-sm font-medium">তারিখ অনুযায়ী + দৈনিক ক্লোজিং</div>
+                      <div className="text-[11px] text-muted-foreground">তারিখ বেছে নিন — প্রতি দিনের ক্লোজিং ব্যালেন্সসহ</div>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
                 <DialogContent className="max-w-sm">
                   <DialogHeader>
-                    <DialogTitle>দৈনিক ক্লোজিং ব্যালেন্স প্রিন্ট</DialogTitle>
+                    <DialogTitle>তারিখ অনুযায়ী প্রিন্ট (দৈনিক ক্লোজিংসহ)</DialogTitle>
                     <DialogDescription>
-                      নির্দিষ্ট তারিখ থেকে শেষ পর্যন্ত প্রতিদিনের ক্লোজিং ব্যালেন্স তারিখ অনুযায়ী প্রিন্ট হবে।
+                      নির্দিষ্ট তারিখ থেকে আজ পর্যন্ত — সাধারণ প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-3 py-1">
@@ -976,7 +993,7 @@ ${node.innerHTML.replace(
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleDayClosingPrint} className="gap-1.5">
+                    <Button onClick={handleRangeClosingPrint} className="gap-1.5">
                       <Printer className="h-4 w-4" /> প্রিন্ট করুন
                     </Button>
                   </DialogFooter>
