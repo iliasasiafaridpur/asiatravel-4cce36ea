@@ -1861,7 +1861,7 @@ export function PartyLedgerPage({
                     bills.map((b, idx) => {
                       const hasHist = b.payments.length > 0;
                       const open = expandedBill === b.id;
-                      const ageInfo = ageBand(b.ageDays);
+                      
                       return (
                         <Fragment key={b.id}>
                           <TableRow
@@ -1902,11 +1902,6 @@ export function PartyLedgerPage({
                                   <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
                                     পরিশোধিত
                                   </Badge>
-                                  {b.paidInDays != null && (
-                                    <div className="text-[10px] text-muted-foreground tabular-nums mt-0.5">
-                                      {b.paidInDays} দিনে
-                                    </div>
-                                  )}
                                 </div>
                               ) : b.status === "partial" ? (
                                 <div className="leading-tight">
@@ -1916,7 +1911,6 @@ export function PartyLedgerPage({
                                   <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
                                     বাকি {b.due.toLocaleString()}
                                   </div>
-                                  <div className={`text-[10px] tabular-nums ${ageInfo.cls}`}>{ageInfo.text}</div>
                                 </div>
                               ) : (
                                 <div className="leading-tight">
@@ -1926,7 +1920,6 @@ export function PartyLedgerPage({
                                   <div className="text-[10px] text-rose-600 font-semibold tabular-nums mt-0.5">
                                     {b.due.toLocaleString()}
                                   </div>
-                                  <div className={`text-[10px] tabular-nums ${ageInfo.cls}`}>{ageInfo.text}</div>
                                 </div>
                               )}
                             </TableCell>
