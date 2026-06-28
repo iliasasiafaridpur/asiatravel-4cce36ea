@@ -463,14 +463,19 @@ function AccountsPage() {
     // Balance shown on the print is SCOPED to the filtered entries (net of the
     // printed lines only), so it never carries the historical 38,000 balance.
     const scopedBalance = totals.inAmt - totals.outAmt;
+    const printedAt = new Date();
+    const stamp = `${formatDate(today())} · ${printedAt.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}`;
+    const printedBy = displayName(profile, user);
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:A4 ${printOrientation};margin:5mm}
+  @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0}
-  h1{margin:0 0 2px;font-size:15px}
-  .meta{color:#555;font-size:10.5px;margin-bottom:6px}
-  .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700}
-  .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1}
+  .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
+  .brand .co{font-size:16px;font-weight:800}
+  .brand .tag{font-size:10px;color:#555}
+  .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
+  .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
+  .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
   table{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}
   th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
   td.wrap,th.wrap{white-space:normal;word-break:break-word}
@@ -480,16 +485,21 @@ function AccountsPage() {
   td.num.in{text-align:left}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
-  @media print{body{padding:2px}}
+  .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
+  .printfooter{position:fixed;bottom:0;left:0;right:0;font-size:9px;color:#666;border-top:1px solid #ddd;padding:2px 4px;display:flex;justify-content:space-between}
+  .printfooter .pageno::before{content:"পৃষ্ঠা " counter(page) " / " counter(pages)}
+  @media print{body{padding:2px;padding-bottom:16px}}
 </style></head><body>
-<h1>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
-<div class="meta">${displayName(profile, user)} · ${formatDate(today())} · সময়: ${periodLabel} · মোট ${timeline.length} এন্ট্রি</div>
+<div class="brand">
+  <div><div class="co">এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</div><div class="tag">আজকের হিসাব — সম্পূর্ণ হিসাব প্রিন্ট</div></div>
+  <div class="sub">সময়সীমা: ${periodLabel}<br>প্রিন্ট: ${stamp}<br>প্রিন্ট করেছেন: ${printedBy}<br>মোট ${timeline.length} এন্ট্রি</div>
+</div>
 <div class="summary">
-  <div>এই ${timeline.length} লেনদেনের নিট: <b>${fmt(scopedBalance)}</b></div>
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
   ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
   ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece (ব্যালেন্সে নয়): <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
+  <div>নিট ব্যালেন্স: <b>${fmt(scopedBalance)}</b></div>
 </div>
 ${node.innerHTML.replace(
   "</tbody>",
@@ -500,6 +510,8 @@ ${node.innerHTML.replace(
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
   `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
 )}
+<div class="finalbox">এই ${timeline.length} লেনদেনের নিট ব্যালেন্স: ${fmt(scopedBalance)}</div>
+<div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
 </body></html>`);
     w.document.close();
