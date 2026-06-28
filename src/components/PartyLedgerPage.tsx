@@ -785,6 +785,9 @@ export function PartyLedgerPage({
           cash,
           bill,
           isPayment: isDeposit || isPaymentLog,
+          cancelled: Boolean(info?.cancelled),
+          cancelReason: info?.cancelReason ?? null,
+          cancelDate: info?.cancelDate ?? null,
           sortKey: `${date || "0000-00-00"}|${String(r.created_at ?? "")}`,
         });
       }
