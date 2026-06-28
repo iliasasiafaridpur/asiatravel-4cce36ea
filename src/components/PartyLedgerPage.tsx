@@ -1005,6 +1005,69 @@ export function PartyLedgerPage({
 
   const totals = summary;
 
+  // Open a clean, self-contained print sheet of the bill-by-bill statement.
+  const printBills = () => {
+    const esc = (s: string) =>
+      String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] || c));
+    const head = isCustomer ? "গ্রহণ" : "পরিশোধ";
+    const rowsHtml = bills
+      .map((b) => {
+        const st =
+          b.status === "paid"
+            ? "পরিশোধিত"
+            : b.status === "partial"
+              ? `আংশিক · বাকি ${b.due.toLocaleString()}`
+              : `বাকি ${b.due.toLocaleString()}`;
+        const age =
+          b.status === "paid"
+            ? b.paidInDays != null
+              ? `${b.paidInDays} দিনে`
+              : ""
+            : b.ageDays != null
+              ? `${b.ageDays} দিন`
+              : "";
+        return `<tr>
+          <td>${esc(formatDate(b.date))}</td>
+          <td>${esc(b.ledgerId)}</td>
+          <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}</td>
+          <td class="r">${b.bill.toLocaleString()}</td>
+          <td class="r">${b.paid ? b.paid.toLocaleString() : "—"}</td>
+          <td>${esc(b.payDate ? formatDate(b.payDate) : "—")}</td>
+          <td>${esc(st)}${age ? ` · ${esc(age)}` : ""}</td>
+        </tr>`;
+      })
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(displayName)} — বিল-ভিত্তিক হিসাব</title>
+      <style>
+        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:24px;color:#0f172a}
+        h1{font-size:18px;margin:0 0 2px}
+        .sub{color:#64748b;font-size:12px;margin-bottom:12px}
+        .sum{font-size:13px;margin-bottom:12px}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}
+        th{background:#f1f5f9}
+        .r{text-align:right;font-variant-numeric:tabular-nums}
+        @media print{button{display:none}}
+      </style></head><body>
+      <h1>${esc(displayName)} — বিল-ভিত্তিক হিসাব</h1>
+      <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · প্রিন্ট: ${esc(formatDate(todayISO()))}</div>
+      <div class="sum">মোট বিল: ${bills.length} টি · বাকি: ${billStats.dueCount + billStats.partialCount} টি · পরিশোধিত: ${billStats.paidCount} টি · মোট বাকি: ৳${billStats.dueAmount.toLocaleString()}</div>
+      <table><thead><tr>
+        <th>তারিখ</th><th>ID</th><th>বিবরণ</th><th class="r">বিল</th><th class="r">${head}</th><th>${head} তারিখ</th><th>স্ট্যাটাস</th>
+      </tr></thead><tbody>${rowsHtml}</tbody></table>
+      <script>window.onload=function(){window.print()}</script>
+      </body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) {
+      toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+  };
+
+
+
 
 
   // Distinct service-type values present in this statement (for the dropdown).
