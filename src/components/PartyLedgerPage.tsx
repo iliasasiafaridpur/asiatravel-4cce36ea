@@ -1861,7 +1861,7 @@ export function PartyLedgerPage({
                     bills.map((b, idx) => {
                       const hasHist = b.payments.length > 0;
                       const open = expandedBill === b.id;
-                      const ageInfo = ageBand(b.ageDays);
+                      
                       return (
                         <Fragment key={b.id}>
                           <TableRow
