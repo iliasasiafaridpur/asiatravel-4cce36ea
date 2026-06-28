@@ -835,6 +835,7 @@ export function PartyLedgerPage({
   // Per-bill breakdown for "এক একটা বিল" (Bill-by-Bill) parties. Each booking is
   // shown with its own বাকি / আংশিক / পরিশোধিত status so one-by-one settlement is
   // crystal clear.
+  type BillPay = { date: string; amt: number; method: string };
   type BillItem = {
     id: string;
     ledgerId: string;
@@ -845,6 +846,14 @@ export function PartyLedgerPage({
     paid: number;
     due: number;
     status: "due" | "partial" | "paid";
+    /** Each instalment that settled this bill (date · amount · method). */
+    payments: BillPay[];
+    /** Last payment date (latest dated instalment), "" if none dated. */
+    payDate: string;
+    /** Days a still-open bill has been outstanding (today − bill date). */
+    ageDays: number | null;
+    /** For settled bills: days taken to clear (payDate − bill date). */
+    paidInDays: number | null;
   };
   const bills = useMemo<BillItem[]>(() => {
     const moduleLabel: Record<string, string> = {
@@ -853,6 +862,27 @@ export function PartyLedgerPage({
       kuwait_visas: "Kuwait Visa",
       tickets: "Ticket",
     };
+    const t = todayISO();
+    // Vendor: map each bill row id -> dated payment instalments pulled from the
+    // green PAYMENT rows' alloc_detail (so every settlement carries its date).
+    const payByBill = new Map<string, BillPay[]>();
+    if (!isCustomer) {
+      for (const r of rows) {
+        if (String(r.service_type ?? "").toUpperCase() !== "PAYMENT") continue;
+        const det = (r as Record<string, unknown>).alloc_detail as
+          | { items?: Array<{ id?: string; amt?: number }> }
+          | null;
+        const pdate = String(r.payment_date ?? r.entry_date ?? "");
+        const method = String(r.payment_method ?? "");
+        for (const it of det?.items ?? []) {
+          const bid = String(it?.id ?? "");
+          if (!bid) continue;
+          const arr = payByBill.get(bid) ?? [];
+          arr.push({ date: pdate, amt: Number(it?.amt ?? 0), method });
+          payByBill.set(bid, arr);
+        }
+      }
+    }
     const out: BillItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
@@ -866,9 +896,29 @@ export function PartyLedgerPage({
         const sourced = src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas";
         if (sourced && !info?.countDate) continue; // not yet received -> not a due bill
       }
-      const paid = isCustomer
-        ? Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0) + Number(r.discount_amount ?? 0)
-        : Number(r[paidCol] ?? 0) + Number(r.advance_applied ?? 0);
+      const direct = Number(r[paidCol] ?? 0);
+      const adv = Number(r.advance_applied ?? 0);
+      const disc = Number(r.discount_amount ?? 0);
+      const paid = isCustomer ? direct + adv + disc : direct + adv;
+
+      // Build the instalment list (date · amount · method) for this bill.
+      const rowPayDate = String(r.payment_date ?? "");
+      const rowMethod = String(r.payment_method ?? "");
+      const payments: BillPay[] = [];
+      if (isCustomer) {
+        if (direct > 0) payments.push({ date: rowPayDate, amt: direct, method: rowMethod || "Cash" });
+        if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
+        if (disc > 0) payments.push({ date: rowPayDate, amt: disc, method: "ডিসকাউন্ট" });
+      } else {
+        const linked = payByBill.get(String(r.id)) ?? [];
+        for (const p of linked) payments.push(p);
+        const covered = linked.reduce((s, p) => s + p.amt, 0);
+        const directNet = Math.max(0, direct - covered);
+        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash" });
+        if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
+      }
+      const datedSorted = payments.map((p) => p.date).filter(Boolean).sort();
+      const payDate = datedSorted.length ? datedSorted[datedSorted.length - 1] : "";
 
       const due = Math.max(0, bill - paid);
       const status: BillItem["status"] = due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
@@ -890,11 +940,20 @@ export function PartyLedgerPage({
         paid,
         due,
         status,
+        payments,
+        payDate,
+        ageDays: status === "paid" ? null : daysBetween(date, t),
+        paidInDays: status === "paid" ? daysBetween(date, payDate) : null,
       });
     }
-    // Unpaid first, then partial, then paid; newest within each group on top.
+    // Unpaid first, then partial, then paid; oldest outstanding on top so the
+    // most overdue bill is the first thing seen.
     const rank = { due: 0, partial: 1, paid: 2 } as const;
-    out.sort((a, b) => rank[a.status] - rank[b.status] || (b.date || "").localeCompare(a.date || ""));
+    out.sort((a, b) => {
+      if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
+      if (a.status === "paid") return (b.payDate || b.date).localeCompare(a.payDate || a.date);
+      return (a.date || "9999").localeCompare(b.date || "9999"); // oldest due first
+    });
     return out;
   }, [rows, billCol, paidCol, isCustomer, srcMap]);
 
@@ -903,15 +962,45 @@ export function PartyLedgerPage({
       paidCount = 0,
       partialCount = 0,
       dueAmount = 0;
+    // AR/AP aging buckets on the outstanding amount.
+    let bucketCurrent = 0, // 0–30 days
+      bucketMid = 0, // 31–60 days
+      bucketOld = 0; // 60+ days
+    let oldestDue: BillItem | null = null;
+    let avgPaidDays: number | null = null;
+    let paidDaysSum = 0,
+      paidDaysCount = 0;
     for (const b of bills) {
-      if (b.status === "paid") paidCount++;
-      else {
+      if (b.status === "paid") {
+        paidCount++;
+        if (b.paidInDays != null && b.paidInDays >= 0) {
+          paidDaysSum += b.paidInDays;
+          paidDaysCount++;
+        }
+      } else {
         if (b.status === "partial") partialCount++;
         else dueCount++;
         dueAmount += b.due;
+        const age = b.ageDays ?? 0;
+        if (age <= 30) bucketCurrent += b.due;
+        else if (age <= 60) bucketMid += b.due;
+        else bucketOld += b.due;
+        if (!oldestDue || (b.date || "9999") < (oldestDue.date || "9999")) oldestDue = b;
       }
     }
-    return { dueCount, partialCount, paidCount, dueAmount, total: bills.length };
+    if (paidDaysCount > 0) avgPaidDays = Math.round(paidDaysSum / paidDaysCount);
+    return {
+      dueCount,
+      partialCount,
+      paidCount,
+      dueAmount,
+      total: bills.length,
+      bucketCurrent,
+      bucketMid,
+      bucketOld,
+      oldestDue,
+      avgPaidDays,
+    };
   }, [bills]);
 
   const totals = summary;
