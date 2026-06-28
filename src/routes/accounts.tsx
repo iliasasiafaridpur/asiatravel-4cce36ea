@@ -502,7 +502,110 @@ ${node.innerHTML.replace(
     w.document.close();
   };
 
-  if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  // Day-wise closing balance print: from a chosen date to an end date, show
+  // each day's income / out / and the running CLOSING balance at end of day.
+  const handleDayClosingPrint = () => {
+    if (dayFrom && dayTo && dayFrom > dayTo) {
+      toast.error("শুরুর তারিখ শেষ তারিখের পরে হতে পারে না");
+      return;
+    }
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
+
+    // fullAsc carries the TRUE cumulative running balance from the very
+    // beginning, so closing of any day = running of its last entry.
+    type DayRow = { date: string; cashIn: number; mdIn: number; vendorIn: number; out: number; closing: number };
+    const byDay = new Map<string, DayRow>();
+    let opening = 0; // balance carried into dayFrom (closing of the last day before it)
+    for (const it of fullAsc) {
+      if (dayFrom && it.date < dayFrom) {
+        opening = it.running; // keep updating until we cross dayFrom
+        continue;
+      }
+      if (dayTo && it.date > dayTo) continue;
+      const amt = Number((it.row as { amount: number }).amount || 0);
+      let row = byDay.get(it.date);
+      if (!row) { row = { date: it.date, cashIn: 0, mdIn: 0, vendorIn: 0, out: 0, closing: 0 }; byDay.set(it.date, row); }
+      if (it.kind === "received") {
+        if (isCashMethod((it.row as Recv).method)) row.cashIn += amt;
+        else if (isVendorReceivedMethod((it.row as Recv).method)) row.vendorIn += amt;
+        else row.mdIn += amt;
+      } else if (it.kind === "handover") {
+        row.out += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+      } else {
+        row.out += expenseHitsBalance(it.row as Exp) ? amt : 0;
+      }
+      row.closing = it.running; // last entry of the day wins
+    }
+    const days = Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
+    const totalIn = days.reduce((s, d) => s + d.cashIn, 0);
+    const totalOut = days.reduce((s, d) => s + d.out, 0);
+    const finalClosing = days.length ? days[days.length - 1].closing : opening;
+    const periodLabel = `${dayFrom || "শুরু"} → ${dayTo || "এখন"}`;
+
+    const rowsHtml = days.map((d) => `
+      <tr>
+        <td>${formatDate(d.date)}</td>
+        <td class="num in">${d.cashIn ? "+ " + fmt(d.cashIn) : "—"}</td>
+        <td class="num out">${d.out ? "− " + fmt(d.out) : "—"}</td>
+        <td class="num">${(d.mdIn || d.vendorIn) ? fmt(d.mdIn + d.vendorIn) : "—"}</td>
+        <td class="num" style="font-weight:700">${fmt(d.closing)}</td>
+      </tr>`).join("");
+
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>দৈনিক ক্লোজিং ব্যালেন্স- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
+<style>
+  @page{size:A4 ${printOrientation};margin:6mm}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0}
+  h1{margin:0 0 2px;font-size:15px}
+  .meta{color:#555;font-size:10.5px;margin-bottom:6px}
+  .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700}
+  .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:4px 6px;text-align:left}
+  th{background:#f5f5f5;font-weight:600}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.num.in{text-align:right}
+  .in{color:#059669}.out{color:#b45309}
+  tfoot td{font-weight:700;background:#fafafa}
+  @media print{body{padding:2px}}
+</style></head><body>
+<h1>দৈনিক ক্লোজিং ব্যালেন্স- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</h1>
+<div class="meta">${displayName(profile, user)} · প্রিন্ট: ${formatDate(today())} · সময়: ${periodLabel} · মোট ${days.length} দিন</div>
+<div class="summary">
+  <div>আগের জের: <b>${fmt(opening)}</b></div>
+  <div class="in">মোট নগদ আয়: <b>+ ${fmt(totalIn)}</b></div>
+  <div class="out">মোট খরচ/জমা: <b>− ${fmt(totalOut)}</b></div>
+  <div>সর্বশেষ ক্লোজিং: <b>${fmt(finalClosing)}</b></div>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>তারিখ</th>
+      <th class="num">নগদ আয়</th>
+      <th class="num">খরচ/জমা</th>
+      <th class="num">MD/Vendor</th>
+      <th class="num">ক্লোজিং ব্যালেন্স</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${days.length ? rowsHtml : `<tr><td colspan="5" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>মোট</td>
+      <td class="num in">+ ${fmt(totalIn)}</td>
+      <td class="num out">− ${fmt(totalOut)}</td>
+      <td class="num">—</td>
+      <td class="num">${fmt(finalClosing)}</td>
+    </tr>
+  </tfoot>
+</table>
+<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
+</body></html>`);
+    w.document.close();
+    setDayPrintOpen(false);
+  };
+
   // TEMP: Admin has full master access — no redirect.
 
   return (
