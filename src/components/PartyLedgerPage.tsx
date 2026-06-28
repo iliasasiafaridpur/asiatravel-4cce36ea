@@ -862,6 +862,9 @@ export function PartyLedgerPage({
         advance: Math.max(adv, 0),
         isPayment: advRow,
         incomplete,
+        cancelled: !advRow && Boolean(cInfo?.cancelled),
+        cancelReason: cInfo?.cancelReason ?? null,
+        cancelDate: cInfo?.cancelDate ?? null,
       });
     }
     // Latest entry on top (same as the vendor ledger).
