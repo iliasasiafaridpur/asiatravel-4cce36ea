@@ -631,15 +631,38 @@ ${node.innerHTML.replace(
     if (rows.length === 0) {
       bodyHtml = `<tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`;
     } else {
+      let dayIn = 0;
+      let dayOut = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
+        const amt = Number((it.row as { amount: number }).amount || 0);
+        if (it.kind === "received") {
+          if (isCashMethod((it.row as Recv).method)) dayIn += amt;
+        } else if (it.kind === "handover") {
+          if (((it.row as Hand).status ?? "approved") === "approved") dayOut += amt;
+        } else if (expenseHitsBalance(it.row as Exp)) {
+          dayOut += amt;
+        }
         bodyHtml += buildDetailRowHtml(it, it.running, i);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
-          bodyHtml += `<tr class="dayclose"><td colspan="10">📅 ${formatDate(it.date)} — দিনের ক্লোজিং ব্যালেন্স</td><td class="num">${fmt(it.running)}</td></tr>`;
+          bodyHtml +=
+            `<tr class="dayclose">` +
+            `<td colspan="6">📅 ${formatDate(it.date)} — দিনের ক্লোজিং</td>` +
+            `<td class="num in">+ ${fmt(dayIn)}</td>` +
+            `<td></td><td></td>` +
+            `<td class="num out">− ${fmt(dayOut)}</td>` +
+            `<td class="num">${fmt(it.running)}</td>` +
+            `</tr>`;
+          dayIn = 0;
+          dayOut = 0;
         }
       }
     }
+
+    const printedAt = new Date();
+    const stamp = `${formatDate(today())} · ${printedAt.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}`;
+    const printedBy = displayName(profile, user);
 
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
