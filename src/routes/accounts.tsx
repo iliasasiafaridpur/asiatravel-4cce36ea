@@ -618,13 +618,13 @@ ${node.innerHTML.replace(
     const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
     const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
     const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? cleanServiceType(r.service_type) : isHand ? "জমা" : "খরচ";
+    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "জমা" : "খরচ";
     let region = "";
     if (isIn && svc) {
       if (r.service_table === "tickets") {
         region = [svc.route, svc.airline].filter(Boolean).join(" · ");
       } else if (r.service_table === "others") {
-        region = [svc.service_name, svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
+        region = [svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
       } else if (svc.country) {
         region = svc.country;
       }
@@ -1350,13 +1350,13 @@ ${node.innerHTML.replace(
                   const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
                   const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? cleanServiceType(r.service_type) : isHand ? "জমা" : "খরচ";
+                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "জমা" : "খরচ";
                   let region = "";
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
                       region = [svc.route, svc.airline].filter(Boolean).join(" · ");
                     } else if (r.service_table === "others") {
-                      region = [svc.service_name, svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
+                      region = [svc.airline, svc.route, svc.flight_date ? `✈ ${formatDate(svc.flight_date)}` : ""].filter(Boolean).join(" · ");
                     } else if (svc.country) {
                       region = svc.country;
                     }
