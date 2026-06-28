@@ -1174,12 +1174,16 @@ ${node.innerHTML.replace(
                             MD approval pending
                           </p>
                         )}
-                        {(!statusEvt && (isIn ? r.remarks : isHand ? h.remarks : e.remarks)) && (
-                          <p className="text-xs text-muted-foreground/90 mt-1 flex items-start gap-1">
-                            <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
-                            <span className="break-words">{isIn ? r.remarks : isHand ? h.remarks : e.remarks}</span>
-                          </p>
-                        )}
+                        {(() => {
+                          const rawRemark = isIn ? r.remarks : isHand ? h.remarks : e.remarks;
+                          const shownRemark = isIn ? cleanReceiptRemark(rawRemark) : rawRemark;
+                          return !statusEvt && shownRemark ? (
+                            <p className="text-xs text-muted-foreground/90 mt-1 flex items-start gap-1">
+                              <MessageSquare className="h-2.5 w-2.5 mt-0.5 shrink-0" />
+                              <span className="break-words">{shownRemark}</span>
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
 
                       {/* Col 3 (NEW): মোট বিল / মোট জমা / বাকি */}
