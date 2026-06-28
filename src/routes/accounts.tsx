@@ -92,6 +92,9 @@ function AccountsPage() {
   const [dateFrom, setDateFrom] = useState(today());
   const [dateTo, setDateTo] = useState(today());
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
+  const [dayPrintOpen, setDayPrintOpen] = useState(false);
+  const [dayFrom, setDayFrom] = useState(today());
+  const [dayTo, setDayTo] = useState(today());
 
   const printRef = useRef<HTMLDivElement>(null);
   const reloadSeqRef = useRef(0);
