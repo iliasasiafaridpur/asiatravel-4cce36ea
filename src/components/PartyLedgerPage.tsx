@@ -89,6 +89,26 @@ type SrcInfo = {
 
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
 
+/** Today's date as a pure ISO (YYYY-MM-DD) string, no TZ conversion surprises. */
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/** Whole-day difference between two pure ISO dates (toISO − fromISO). */
+function daysBetween(fromISO?: string | null, toISO?: string | null): number | null {
+  if (!fromISO || !toISO) return null;
+  const a = new Date(`${fromISO}T00:00:00`);
+  const b = new Date(`${toISO}T00:00:00`);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return null;
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+/** Aging colour band for an outstanding bill: green ≤7, amber 8–30, red >30. */
+function ageBand(days: number | null): { text: string; cls: string } {
+  if (days == null) return { text: "—", cls: "text-muted-foreground" };
+  if (days <= 7) return { text: `${days} দিন`, cls: "text-emerald-600" };
+  if (days <= 30) return { text: `${days} দিন`, cls: "text-amber-600" };
+  return { text: `${days} দিন`, cls: "text-rose-600 font-semibold" };
+}
+
 /** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
 function waNumber(raw: string): string {
   let d = (raw ?? "").replace(/\D/g, "");
