@@ -1211,6 +1211,9 @@ export function PartyLedgerPage({
         .pay td{background:#ecfdf5;color:#047857}
         .opening td{background:#fffbeb;font-weight:600}
         .empty{text-align:center;color:#94a3b8;padding:16px}
+        .cancel td{color:#94a3b8;text-decoration:line-through;background:#f8fafc}
+        .cancel td .inst{text-decoration:none}
+        .inst{font-size:10px;color:#64748b;margin-top:2px}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
