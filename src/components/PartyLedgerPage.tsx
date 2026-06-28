@@ -647,6 +647,8 @@ export function PartyLedgerPage({
       balance: number;
       advance: number;
       isPayment: boolean;
+      // agency side: source work not yet received from vendor / not delivery-ready
+      incomplete?: boolean;
     };
 
     // VENDOR: uniform ledger for every vendor.
