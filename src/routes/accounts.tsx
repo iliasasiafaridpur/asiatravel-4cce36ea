@@ -980,9 +980,9 @@ ${node.innerHTML.replace(
               <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
                 <DialogContent className="max-w-sm">
                   <DialogHeader>
-                    <DialogTitle>তারিখ অনুযায়ী প্রিন্ট (দৈনিক ক্লোজিংসহ)</DialogTitle>
+                    <DialogTitle>তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</DialogTitle>
                     <DialogDescription>
-                      নির্দিষ্ট তারিখ থেকে আজ পর্যন্ত — সাধারণ প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
+                      শুরু থেকে শেষ তারিখ পর্যন্ত সম্পূর্ণ হিসাব প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-3 py-1">
