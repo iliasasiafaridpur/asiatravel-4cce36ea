@@ -1300,7 +1300,7 @@ ${node.innerHTML.replace(
                   const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
                   const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? r.service_type : isHand ? "জমা" : "খরচ";
+                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? cleanServiceType(r.service_type) : isHand ? "জমা" : "খরচ";
                   let region = "";
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
