@@ -1147,7 +1147,10 @@ ${node.innerHTML.replace(
                     : "";
                   const primaryBits: string[] = [];
                   if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
-                  if (isIn && !statusEvt && r.source && r.source !== "manual") primaryBits.push(`📒 ${r.source}`);
+                  if (isIn && !statusEvt && r.source && r.source !== "manual") {
+                    const sl = friendlySource(r.source);
+                    if (sl) primaryBits.push(`📒 ${sl}`);
+                  }
                   if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
                   const discountTotal = isIn && svc && typeof svc.discount === "number" ? svc.discount : 0;
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
