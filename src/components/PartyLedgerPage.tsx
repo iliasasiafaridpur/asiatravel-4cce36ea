@@ -89,6 +89,9 @@ type SrcInfo = {
   countDate?: string | null;
   airline?: string | null;
   country?: string | null;
+  cancelled?: boolean;
+  cancelReason?: string | null;
+  cancelDate?: string | null;
 };
 
 const fmtMoney = (n: number) => `৳${Number(n || 0).toLocaleString()}`;
