@@ -812,6 +812,9 @@ export function PartyLedgerPage({
           balance: bal,
           advance: 0,
           isPayment: p.isPayment,
+          cancelled: p.cancelled,
+          cancelReason: p.cancelReason,
+          cancelDate: p.cancelDate,
         };
       });
 
