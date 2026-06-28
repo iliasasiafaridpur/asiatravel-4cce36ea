@@ -1290,6 +1290,15 @@ export function PartyLedgerPage({
             </DropdownMenu>
           )}
           <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => { setPrintMode("all"); setPrintOpen(true); }}
+          >
+            <Printer className="h-4 w-4" />
+            লেজার প্রিন্ট
+          </Button>
+          <Button
             variant="secondary"
             size="sm"
             className="gap-1.5"
