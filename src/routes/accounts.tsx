@@ -1185,7 +1185,6 @@ ${node.innerHTML.replace(
                       if (svc.airline) svcLines.push(svc.airline);
                       if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
                     } else if (r.service_table === "others") {
-                      if (svc.service_name) svcLines.push(svc.service_name);
                       if (svc.airline) svcLines.push(svc.airline);
                       if (svc.route) svcLines.push(svc.route);
                       if (svc.flight_date) svcLines.push(`✈ ${formatDate(svc.flight_date)}`);
