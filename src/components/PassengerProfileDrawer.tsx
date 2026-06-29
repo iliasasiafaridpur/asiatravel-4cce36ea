@@ -4,10 +4,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ReceiptDialog, type ReceiptInfo } from "@/components/ReceiptDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall, MessageCircle } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
@@ -89,7 +89,7 @@ export function PassengerProfileDrawer({
   const [related, setRelated] = useState<RelatedService[]>([]);
   // Which service's tracking timeline is shown — defaults to the current row.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
+  
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
 
@@ -275,29 +275,8 @@ export function PassengerProfileDrawer({
 
   const airline = String(row.airline ?? "");
   const flightDate = row.flight_date ? String(row.flight_date) : "";
-  const openReceipt = (r: Receipt) => {
-    const paid = Number(r.amount ?? 0);
-    setSelectedReceipt({
-      receiptId: r.receipt_id || "Receipt",
-      date: r.entry_date || "",
-      passengerName: String(row.passenger_name ?? ""),
-      mobile: String(row.mobile ?? ""),
-      refId: String(
-        row.ticket_id ?? row.bmet_id ?? row.kuwait_id ?? row.saudi_id ?? row.passenger_id ?? row.id,
-      ),
-      serviceType: serviceTable,
-      sold,
-      previouslyReceived: Math.max(0, totalReceived - paid),
-      paid,
-      discount: totalDiscount,
-      method: r.method || "Cash",
-      remarks: r.remarks || undefined,
-      receivedByName: r.received_by_name || "—",
-      airline: airline || undefined,
-      route: country || undefined,
-      flightDate: flightDate || undefined,
-    });
-  };
+
+
 
   // The tracking timeline follows whichever service is selected in the list
   // above. Default to the currently viewed service row.
@@ -328,11 +307,6 @@ export function PassengerProfileDrawer({
 
   return (
     <>
-      <ReceiptDialog
-        receipt={selectedReceipt}
-        open={!!selectedReceipt}
-        onClose={() => setSelectedReceipt(null)}
-      />
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
           <SheetHeader className="px-5 pt-5 pb-3 pr-14 border-b">
@@ -708,7 +682,6 @@ export function PassengerProfileDrawer({
                             <th className="px-2 py-1.5 font-medium text-right">Amount</th>
                             <th className="px-2 py-1.5 font-medium">Method</th>
                             <th className="px-2 py-1.5 font-medium">Received By / Status</th>
-                            <th className="px-2 py-1.5 font-medium text-right">Receipt</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -754,16 +727,6 @@ export function PassengerProfileDrawer({
                                       ) : null}
                                     </div>
                                   )}
-                                </td>
-                                <td className="px-2 py-1.5 text-right">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 px-2 text-[11px]"
-                                    onClick={() => openReceipt(r)}
-                                  >
-                                    <ReceiptText className="h-3.5 w-3.5" /> Receipt
-                                  </Button>
                                 </td>
                               </tr>
                             );
