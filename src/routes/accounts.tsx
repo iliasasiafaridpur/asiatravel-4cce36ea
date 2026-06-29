@@ -1267,7 +1267,7 @@ ${partySectionsHtml()}
                 variant="outline"
                 disabled={timeline.length === 0}
                 className="h-8 text-xs gap-1.5"
-                onClick={() => { setPrintOpen(true); void loadPartyBalances(); }}
+                onClick={() => { setPrintOpen(true); void loadPartyBalances(); setSelMethods(new Set(methodBreakdown.map((m) => m.method))); }}
               >
                 <Printer className="h-3.5 w-3.5" /> প্রিন্ট অপশন
               </Button>
