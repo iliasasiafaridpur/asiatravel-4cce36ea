@@ -6,7 +6,7 @@ import { LedgerPage } from "@/components/LedgerPage";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { PageWatermark } from "@/components/PageWatermark";
 import logoAsset from "@/assets/logo.png.asset.json";
-import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
+import { printDocHtml } from "@/lib/print-export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,6 @@ import {
   TrendingUp,
   TrendingDown,
   Printer,
-  ImageDown,
   ChevronDown,
   ChevronRight,
   Clock,
@@ -1241,17 +1240,6 @@ export function PartyLedgerPage({
     }
   };
 
-  const runExportJpeg = async (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
-    const html = buildPrintHtml(mode, from, to);
-    if (!html) return;
-    toast.info("ছবি তৈরি হচ্ছে…");
-    try {
-      await downloadDocHtmlAsJpeg(html, `${displayName}-ledger`.replace(/[^a-z0-9]+/gi, "_"));
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    }
-  };
 
 
 
@@ -1460,17 +1448,6 @@ export function PartyLedgerPage({
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                setPrintOpen(false);
-                void runExportJpeg(printMode, printFrom, printTo);
-              }}
-            >
-              <ImageDown className="h-4 w-4" /> JPEG ডাউনলোড
             </Button>
             <Button
               size="sm"

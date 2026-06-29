@@ -51,10 +51,9 @@ import {
   CreditCard,
   FileSpreadsheet,
   Printer,
-  ImageDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
+import { printDocHtml } from "@/lib/print-export";
 import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useScrollRestore } from "@/hooks/useScrollRestore";
@@ -1861,15 +1860,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     }
   };
 
-  const exportJpeg = async () => {
-    toast.info("ছবি তৈরি হচ্ছে…");
-    try {
-      await downloadDocHtmlAsJpeg(buildPrintHtml(), `${mod.key}-${todayIso()}`);
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    }
-  };
 
 
   const resetFilters = () => {
@@ -2072,15 +2062,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
                 title="Print / Save PDF"
               >
                 <Printer className="h-3.5 w-3.5" /> Print
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportJpeg}
-                className="gap-1.5 h-8"
-                title="JPEG ডাউনলোড"
-              >
-                <ImageDown className="h-3.5 w-3.5" /> JPEG
               </Button>
             </div>
           </div>

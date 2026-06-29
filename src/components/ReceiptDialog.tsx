@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Copy, Image as ImageIcon } from "lucide-react";
+import { Printer, X, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { toJpeg } from "html-to-image";
 import logoAsset from "@/assets/logo.png.asset.json";
 
 export interface ReceiptInfo {
@@ -41,7 +40,6 @@ export function ReceiptDialog({
   onClose: () => void;
 }) {
   const printRef = useRef<HTMLDivElement>(null);
-  const [busy, setBusy] = useState(false);
 
   if (!receipt) return null;
 
@@ -115,100 +113,6 @@ export function ReceiptDialog({
     }
   };
 
-  // Build an offscreen DOM that uses ONLY safe rgb/hex colors (no oklch),
-  // since html2canvas cannot parse oklch() values from Tailwind tokens.
-  const buildPrintableNode = (): HTMLDivElement => {
-    const wrap = document.createElement("div");
-    wrap.style.cssText =
-      "position:fixed;top:0;left:0;z-index:-1;opacity:0;pointer-events:none;width:520px;box-sizing:border-box;background:#ffffff;color:#111;padding:20px;font-family:ui-sans-serif,system-ui,sans-serif;";
-    wrap.innerHTML = `
-      <div style="text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px;">
-        <h1 style="margin:0;font-size:18px;font-weight:700;">Asia Travels &amp; Tours</h1>
-        <div style="font-size:11px;color:#555;">Bariplaza, Faridpur. 01721-399599</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Receipt #</b><span style="font-family:ui-monospace,monospace;">${receipt.receiptId}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Date</b><span>${receipt.date}</span></div>
-      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Passenger</b><span>${receipt.passengerName}</span></div>
-        ${receipt.mobile ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Mobile</b><span>${receipt.mobile}</span></div>` : ""}
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Ref ID</b><span style="font-family:ui-monospace,monospace;">${receipt.refId}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Service</b><span>${receipt.serviceType}</span></div>
-        ${receipt.airline ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Airline</b><span>${receipt.airline}</span></div>` : ""}
-        ${receipt.route ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Route</b><span>${receipt.route}</span></div>` : ""}
-        ${receipt.flightDate ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Flight Date</b><span>${receipt.flightDate}</span></div>` : ""}
-      </div>
-      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Sold Price</b><span>${fmt(receipt.sold)}</span></div>
-        ${receipt.discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Discount</b><span style="color:#d97706;">−${fmt(receipt.discount)}</span></div>` : ""}
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:2px solid #111;margin-top:8px;padding-top:6px;"><span>Net Payable Amount</span><span>${fmt(netPayable)}</span></div>
-        ${receipt.previouslyReceived > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Previously Received</b><span>${fmt(receipt.previouslyReceived)}</span></div>` : ""}
-        ${receipt.paid > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><b>Paid Now (${receipt.method})</b><span style="color:#059669;">+${fmt(receipt.paid)}</span></div>` : ""}
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;margin-top:4px;"><b>Remaining Due</b><span style="font-weight:600;color:${remaining > 0 ? "#e11d48" : "#059669"};">${fmt(remaining)}</span></div>
-      </div>
-      ${receipt.remarks ? `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #aaa;font-size:12px;"><b>Remarks:</b> ${receipt.remarks}</div>` : ""}
-      <div style="margin-top:30px;display:flex;justify-content:space-between;font-size:11px;">
-        <div style="border-top:1px solid #111;padding-top:4px;width:40%;text-align:center;">Received by<br/>${receipt.receivedByName}</div>
-        <div style="border-top:1px solid #111;padding-top:4px;width:40%;text-align:center;">Customer Signature</div>
-      </div>
-      <div style="margin-top:18px;font-size:10px;color:#666;text-align:center;">Thank you for choosing us. This is a computer generated receipt.</div>
-    `;
-    document.body.appendChild(wrap);
-    return wrap;
-  };
-
-  const renderJpegBlob = async (): Promise<Blob | null> => {
-    const node = buildPrintableNode();
-    try {
-      if (document.fonts?.ready) {
-        try { await document.fonts.ready; } catch { /* ignore */ }
-      }
-      const width = node.offsetWidth || 520;
-      const height = node.offsetHeight;
-      const dataUrl = await toJpeg(node, {
-        quality: 0.95,
-        pixelRatio: 2,
-        backgroundColor: "#ffffff",
-        cacheBust: true,
-        width,
-        height,
-        style: { transform: "none", opacity: "1" },
-      });
-      const res = await fetch(dataUrl);
-      return await res.blob();
-    } catch (e) {
-      console.error("renderJpegBlob failed", e);
-      return null;
-    } finally {
-      node.remove();
-    }
-  };
-
-
-  const jpgFileName = () =>
-    `Receipt-${receipt.receiptId}-${(receipt.passengerName || "").replace(/[^a-z0-9]+/gi, "_")}.jpg`;
-
-
-
-  const handleDownloadJpg = async () => {
-    setBusy(true);
-    try {
-      const blob = await renderJpegBlob();
-      if (!blob) throw new Error("blob");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = jpgFileName();
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast.success("JPG ডাউনলোড শুরু হয়েছে");
-    } catch {
-      toast.error("JPG তৈরি করা যায়নি");
-    } finally {
-      setBusy(false);
-    }
-  };
 
 
 
@@ -356,15 +260,6 @@ export function ReceiptDialog({
           </Button>
           <Button variant="outline" size="sm" className="flex-1 min-w-[7rem]" onClick={handlePrint}>
             <Printer className="h-4 w-4" /> Print / PDF
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 min-w-[5.5rem]"
-            onClick={handleDownloadJpg}
-            disabled={busy}
-          >
-            <ImageIcon className="h-4 w-4" /> JPG
           </Button>
         </div>
 
