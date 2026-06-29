@@ -317,6 +317,7 @@ export function ModulePage({ module: mod }: Props) {
       const { data, error } = result as { data: unknown; error: { message: string } | null };
       if (error) throw error;
       const list = ((data as unknown) as Row[]) ?? [];
+      resultList = list;
       setRows(list);
       setLoadError(null);
       try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* quota */ }
