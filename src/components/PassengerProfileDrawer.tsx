@@ -275,29 +275,8 @@ export function PassengerProfileDrawer({
 
   const airline = String(row.airline ?? "");
   const flightDate = row.flight_date ? String(row.flight_date) : "";
-  const openReceipt = (r: Receipt) => {
-    const paid = Number(r.amount ?? 0);
-    setSelectedReceipt({
-      receiptId: r.receipt_id || "Receipt",
-      date: r.entry_date || "",
-      passengerName: String(row.passenger_name ?? ""),
-      mobile: String(row.mobile ?? ""),
-      refId: String(
-        row.ticket_id ?? row.bmet_id ?? row.kuwait_id ?? row.saudi_id ?? row.passenger_id ?? row.id,
-      ),
-      serviceType: serviceTable,
-      sold,
-      previouslyReceived: Math.max(0, totalReceived - paid),
-      paid,
-      discount: totalDiscount,
-      method: r.method || "Cash",
-      remarks: r.remarks || undefined,
-      receivedByName: r.received_by_name || "—",
-      airline: airline || undefined,
-      route: country || undefined,
-      flightDate: flightDate || undefined,
-    });
-  };
+
+
 
   // The tracking timeline follows whichever service is selected in the list
   // above. Default to the currently viewed service row.
