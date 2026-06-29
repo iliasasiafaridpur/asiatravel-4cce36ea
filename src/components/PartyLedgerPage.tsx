@@ -66,7 +66,6 @@ import {
   TrendingUp,
   TrendingDown,
   Printer,
-  ImageDown,
   ChevronDown,
   ChevronRight,
   Clock,
