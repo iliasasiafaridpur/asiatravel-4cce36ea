@@ -1225,15 +1225,30 @@ export function PartyLedgerPage({
       <div class="sum">${esc(summaryLine)}</div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
       <div class="foot"><span>${esc(curLabel)}</span><span>৳${num(curAmt)}</span></div>
-      <script>window.onload=function(){window.print()}</script>
       </body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) {
+    return html;
+  };
+
+  const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
+    const html = buildPrintHtml(mode, from, to);
+    if (!html) return;
+    try {
+      printDocHtml(html);
+    } catch {
       toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
-      return;
     }
-    w.document.write(html);
-    w.document.close();
+  };
+
+  const runExportJpeg = async (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
+    const html = buildPrintHtml(mode, from, to);
+    if (!html) return;
+    toast.info("ছবি তৈরি হচ্ছে…");
+    try {
+      await downloadDocHtmlAsJpeg(html, `${displayName}-ledger`.replace(/[^a-z0-9]+/gi, "_"));
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    }
   };
 
 
