@@ -674,6 +674,7 @@ function AccountsPage() {
     let out = "";
     if (incVendors) out += buildBalanceSection("Vendor (ভেন্ডর) ব্যালেন্স", vendorBals.filter((r) => selVendors.has(r.name)));
     if (incAgencies) out += buildBalanceSection("Agency (এজেন্সি) ব্যালেন্স", agencyBals.filter((r) => selAgencies.has(r.name)));
+    if (incMethods) out += buildMethodSection();
     return out;
   };
 
