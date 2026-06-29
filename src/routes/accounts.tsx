@@ -2,6 +2,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { Card, CardContent } from "@/components/ui/card";
