@@ -238,11 +238,11 @@ export function PartyLedgerPage({
         ledgerData = ledgerRes.data as Record<string, unknown>[] | null;
       }
       const set = new Set<string>();
-      for (const r of (contactsRes.data as { name?: string }[] | null) ?? []) {
+      for (const r of contactsData ?? []) {
         const n = String(r.name ?? "").trim();
         if (n) set.add(n);
       }
-      for (const r of (ledgerRes.data as Record<string, unknown>[] | null) ?? []) {
+      for (const r of ledgerData ?? []) {
         const n = String(r[groupField] ?? "").trim();
         if (n) set.add(n);
       }
