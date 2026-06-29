@@ -4,7 +4,7 @@
 //   • Static assets (JS/CSS/fonts/images): StaleWhileRevalidate → instant + fresh.
 //   • Supabase / API: NetworkFirst with short timeout, fall back to cache when offline.
 
-const VERSION = "v7-perf-cache-refresh";
+const VERSION = "v8-fast-hashed-assets";
 const HTML_CACHE = `html-${VERSION}`;
 const ASSET_CACHE = `assets-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
@@ -65,8 +65,31 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || fetchPromise;
 }
 
+// Cache-first: serve instantly from cache, only hit the network on a miss.
+// Safe ONLY for immutable, content-hashed files (the filename changes on every
+// build), so there is no risk of serving stale app code after a new release.
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const resp = await fetch(request);
+  if (resp && resp.ok) {
+    try { cache.put(request, resp.clone()); } catch { /* ignore */ }
+  }
+  return resp;
+}
+
 function isAppBuildAsset(url) {
   return url.pathname.startsWith("/assets/") || url.pathname.includes("/@fs/") || url.pathname.includes("/src/");
+}
+
+// Vite production output: /assets/<name>-<hash>.<ext>. The hash makes each file
+// immutable, so it can be served cache-first for instant loads even on slow nets.
+function isImmutableHashedAsset(url) {
+  return (
+    url.pathname.startsWith("/assets/") &&
+    /-[A-Za-z0-9_]{8,}\.[a-z0-9]+$/i.test(url.pathname)
+  );
 }
 
 self.addEventListener("fetch", (event) => {
@@ -106,9 +129,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) Static same-origin assets → Network-first for app JS/CSS, SWR for media.
-  // App code must not be served stale after a hotfix, otherwise a fixed bug can
-  // keep crashing published data pages until the user manually clears storage.
+  // 2) Static same-origin assets.
+  // 2a) Immutable hashed build files (/assets/<name>-<hash>.<ext>) → CACHE-FIRST.
+  //     Instant from cache; no network wait even on slow connections. A new
+  //     release ships new filenames, so this can never serve stale app code.
+  if (isSameOrigin && isImmutableHashedAsset(url)) {
+    event.respondWith(cacheFirst(req, ASSET_CACHE));
+    return;
+  }
+  // 2b) Non-hashed app JS/CSS (dev /src/, /@fs/, root scripts) → Network-first,
+  //     so a fixed bug can't keep crashing published pages from a stale cache.
   if (isSameOrigin) {
     const dest = req.destination;
     if (isAppBuildAsset(url) || ["script", "style", "worker"].includes(dest) || /\.(?:js|mjs|css)$/i.test(url.pathname)) {
