@@ -692,13 +692,11 @@ ${node.innerHTML.replace(
       `</tr>`;
   };
 
-  const handleRangeClosingPrint = () => {
+  const buildRangeClosingHtml = (): string | null => {
     if (dayFrom && dayTo && dayFrom > dayTo) {
       toast.error("শুরুর তারিখ শেষ তারিখের পরে হতে পারে না");
-      return;
+      return null;
     }
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
 
     // Collect ranged rows. Running balance is the TRUE cumulative balance from
     // the very beginning (carried in via "আগের জের"), so each day's closing is
