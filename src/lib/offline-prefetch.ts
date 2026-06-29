@@ -1,15 +1,19 @@
 // One-tap offline pre-loader.
 //
-// Fetches roughly the last month of data for every main data module and writes
-// it into the SAME localStorage cache key each ModulePage reads on mount
-// (`cache_v2_<table>`). This means pages the user has NOT opened yet will still
-// have data available when the connection drops — they hydrate instantly from
-// this cache and skip the (failing) network load while offline.
+// Fetches data for every main data module AND the support tables that power
+// ledgers, accounts and balances, then writes them into localStorage so the
+// WHOLE app can be browsed offline:
+//   • module tables  -> `cache_v2_<table>` (read by ModulePage)
+//   • support tables -> `off_<key>`        (read by ledgers / accounts / balances)
+// Pages the user has NOT opened yet still hydrate instantly when the connection
+// drops.
 
 import { supabase } from "@/integrations/supabase/client";
+import { cacheWrite } from "@/lib/offline-cache";
 
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_ROWS = 1500;
+const SUPPORT_MAX_ROWS = 8000;
 
 // Tables backed by ModulePage (they all read `cache_v2_<table>`).
 const PRELOAD_TABLES = [
@@ -20,12 +24,25 @@ const PRELOAD_TABLES = [
   "others",
 ] as const;
 
+// Support tables read by ledgers / accounts / balances. Cached in FULL (no date
+// window) so running balances and bill-by-bill history stay correct offline.
+const SUPPORT_TABLES = [
+  "vendor_ledger",
+  "agency_ledger",
+  "payment_receipts",
+  "cash_handovers",
+  "cash_expenses",
+  "extra_services",
+  "agents",
+  "vendors",
+] as const;
+
 export type PrefetchResult = { ok: number; failed: number; rows: number };
 
 /**
- * Pre-load ~1 month of data for offline use.
- * @param days how far back to fetch (default 31)
- * @param onProgress called as each module finishes: (done, total)
+ * Pre-load data for offline use.
+ * @param days how far back to fetch module tables (default 31)
+ * @param onProgress called as each step finishes: (done, total)
  */
 export async function prefetchMonthData(
   days = 31,
@@ -35,10 +52,13 @@ export async function prefetchMonthData(
   let ok = 0;
   let failed = 0;
   let rows = 0;
-  const total = PRELOAD_TABLES.length;
+  // module tables + support tables + 2 balance RPCs
+  const total = PRELOAD_TABLES.length + SUPPORT_TABLES.length + 2;
+  let done = 0;
+  const step = () => onProgress?.(++done, total);
 
-  for (let i = 0; i < PRELOAD_TABLES.length; i++) {
-    const table = PRELOAD_TABLES[i];
+  // 1) Module tables (last ~month) -> cache_v2_<table>
+  for (const table of PRELOAD_TABLES) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.from(table as any) as any)
@@ -51,13 +71,50 @@ export async function prefetchMonthData(
       const list = (data as unknown[]) ?? [];
       try {
         localStorage.setItem(`cache_v2_${table}`, JSON.stringify(list));
-      } catch { /* quota — skip this table's cache */ }
+      } catch { /* quota */ }
       rows += list.length;
       ok += 1;
     } catch {
       failed += 1;
     }
-    onProgress?.(i + 1, total);
+    step();
+  }
+
+  // 2) Support tables (full) -> off_<table>
+  for (const table of SUPPORT_TABLES) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from(table as any) as any)
+        .select("*")
+        .limit(SUPPORT_MAX_ROWS);
+      if (error) throw error;
+      const list = (data as unknown[]) ?? [];
+      cacheWrite(table, list);
+      rows += list.length;
+      ok += 1;
+    } catch {
+      failed += 1;
+    }
+    step();
+  }
+
+  // 3) Balance summaries (RPC) -> off_bal_agent / off_bal_vendor
+  for (const [rpc, key] of [
+    ["get_agent_balances", "bal_agent"],
+    ["get_vendor_balances", "bal_vendor"],
+  ] as const) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc(rpc as any) as any);
+      if (error) throw error;
+      const list = (data as unknown[]) ?? [];
+      cacheWrite(key, list);
+      rows += list.length;
+      ok += 1;
+    } catch {
+      failed += 1;
+    }
+    step();
   }
 
   return { ok, failed, rows };
