@@ -25,7 +25,7 @@ import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { generateNextId } from "@/lib/idgen";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine, ImageDown,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
   Lock as LockIcon,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
