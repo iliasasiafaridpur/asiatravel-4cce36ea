@@ -440,6 +440,7 @@ function InvoicePage() {
             <p className="text-[11px] text-slate-400">Thank you for choosing {AGENCY.name}.</p>
           </div>
         </div>
+        </div>
       </div>
 
       <style>{`
