@@ -1820,7 +1820,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
 </tr>`;
       })
       .join("");
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${heading}</title>
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${heading}</title>
 <style>
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -1850,10 +1850,27 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
 <tbody>${rowsHtml}</tbody>
 <tfoot><tr><td colspan="5">Total</td><td class="num">${fmt(totals.bill)}</td><td class="num">${fmt(totals.paid)}</td><td class="num">${fmt(totals.due)}</td></tr></tfoot>
 </table>
-<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
-</body></html>`);
-    w.document.close();
+</body></html>`;
   };
+
+  const printPage = () => {
+    try {
+      printDocHtml(buildPrintHtml());
+    } catch {
+      toast.error("পপ-আপ ব্লক হয়েছে");
+    }
+  };
+
+  const exportJpeg = async () => {
+    toast.info("ছবি তৈরি হচ্ছে…");
+    try {
+      await downloadDocHtmlAsJpeg(buildPrintHtml(), `${mod.key}-${todayIso()}`);
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    }
+  };
+
 
   const resetFilters = () => {
     setSearch("");
