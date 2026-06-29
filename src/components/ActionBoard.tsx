@@ -28,6 +28,11 @@ export function ActionBoard() {
   const { data, isLoading } = useQuery({
     queryKey: ["passengers"],
     queryFn: async () => {
+      if (isOffline()) {
+        return (cacheRead<(PassengerRow & { created_at: string; created_by: string | null })[]>("passengers") ?? [])
+          .slice()
+          .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
+      }
       const { data, error } = await supabase
         .from("passengers")
         .select("*")
