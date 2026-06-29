@@ -193,6 +193,9 @@ function AccountsPage() {
   // Optional vendor / agency balance sections appended to the print
   const [incVendors, setIncVendors] = useState(false);
   const [incAgencies, setIncAgencies] = useState(false);
+  // Optional payment-method breakdown section
+  const [incMethods, setIncMethods] = useState(false);
+  const [selMethods, setSelMethods] = useState<Set<string>>(new Set());
   const [vendorBals, setVendorBals] = useState<{ name: string; due: number; advance: number }[]>([]);
   const [agencyBals, setAgencyBals] = useState<{ name: string; due: number; advance: number }[]>([]);
   const [selVendors, setSelVendors] = useState<Set<string>>(new Set());
