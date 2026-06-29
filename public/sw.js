@@ -129,9 +129,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) Static same-origin assets → Network-first for app JS/CSS, SWR for media.
-  // App code must not be served stale after a hotfix, otherwise a fixed bug can
-  // keep crashing published data pages until the user manually clears storage.
+  // 2) Static same-origin assets.
+  // 2a) Immutable hashed build files (/assets/<name>-<hash>.<ext>) → CACHE-FIRST.
+  //     Instant from cache; no network wait even on slow connections. A new
+  //     release ships new filenames, so this can never serve stale app code.
+  if (isSameOrigin && isImmutableHashedAsset(url)) {
+    event.respondWith(cacheFirst(req, ASSET_CACHE));
+    return;
+  }
+  // 2b) Non-hashed app JS/CSS (dev /src/, /@fs/, root scripts) → Network-first,
+  //     so a fixed bug can't keep crashing published pages from a stale cache.
   if (isSameOrigin) {
     const dest = req.destination;
     if (isAppBuildAsset(url) || ["script", "style", "worker"].includes(dest) || /\.(?:js|mjs|css)$/i.test(url.pathname)) {
