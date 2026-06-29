@@ -690,10 +690,12 @@ ${partySectionsHtml()}
     if (!html) return;
     try {
       printDocHtml(html);
+      setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
     }
   };
+
 
 
 
