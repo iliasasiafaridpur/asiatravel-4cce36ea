@@ -21,10 +21,19 @@ function AgentsPage() {
   const [modes, setModes] = useState<Record<string, string>>({});
   const [serials, setSerials] = useState<Record<string, number | null>>({});
   const load = async () => {
-    const [{ data }, { data: agents }] = await Promise.all([
-      supabase.rpc("get_agent_balances" as never),
-      supabase.from("agents").select("name,settle_mode,serial_no").limit(5000),
-    ]);
+    let data: unknown;
+    let agents: unknown;
+    if (isOffline()) {
+      data = cacheRead<Bal[]>("bal_agent") ?? [];
+      agents = cacheRead<{ name: string; settle_mode: string | null; serial_no: number | null }[]>("agents") ?? [];
+    } else {
+      const [balRes, agRes] = await Promise.all([
+        supabase.rpc("get_agent_balances" as never),
+        supabase.from("agents").select("name,settle_mode,serial_no").limit(5000),
+      ]);
+      data = balRes.data;
+      agents = agRes.data;
+    }
     const rows = (((data as unknown) as Bal[]) ?? []).filter((b) => String(b.agent_name ?? "").trim().toLowerCase() !== "self");
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
     rows.sort((a, b) => {
