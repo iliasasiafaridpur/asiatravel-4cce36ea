@@ -18,6 +18,7 @@ import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
@@ -186,6 +187,72 @@ function MyHandoverPage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
+
+      // ---- OFFLINE: hydrate everything from the saved snapshot (off_ / cache_v2_) ----
+      if (isOffline()) {
+        const allRec = (cacheRead<Receipt[]>("payment_receipts") ?? []);
+        const allExp = (cacheRead<Expense[]>("cash_expenses") ?? []) as (Expense & {
+          spent_by?: string | null; handover_id?: string | null;
+        })[];
+        // Mirror the live filters against the cached rows.
+        const recs = allRec.filter((row) => {
+          const x = row as Receipt & {
+            received_by?: string | null; approval_status?: string | null; handover_id?: string | null;
+          };
+          return (
+            x.received_by === user.id &&
+            x.approval_status === "pending_md" &&
+            (x.entry_date ?? "") <= closingDate &&
+            !x.handover_id &&
+            String(x.source ?? "") !== "discount" &&
+            String(x.method ?? "").toLowerCase() !== "discount"
+          );
+        }).sort((a, b) => (b.entry_date ?? "").localeCompare(a.entry_date ?? ""));
+        const exps = allExp.filter((x) =>
+          x.spent_by === user.id && (x.entry_date ?? "") <= closingDate && !x.handover_id,
+        ).filter(expenseHitsBalance);
+
+        // Enrich receipts with service info from the module snapshots.
+        const svcByTable: Record<string, Set<string>> = {};
+        for (const rec of recs) {
+          if (!rec.service_table || !rec.service_row_id) continue;
+          if (!SVC_CONFIGS[rec.service_table]) continue;
+          (svcByTable[rec.service_table] ??= new Set()).add(rec.service_row_id);
+        }
+        const svcMap: Record<string, SvcDetail> = {};
+        for (const [tbl, ids] of Object.entries(svcByTable)) {
+          const cfg = SVC_CONFIGS[tbl];
+          const rows = readModuleCache(tbl);
+          for (const row of rows as Array<Record<string, unknown>>) {
+            if (ids.has(String(row.id))) svcMap[`${tbl}:${String(row.id)}`] = cfg.map(row);
+          }
+        }
+        for (const rec of recs) {
+          const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
+          rec.svc = k ? svcMap[k] : undefined;
+          rec.discount = rec.svc?.discount ?? 0;
+        }
+
+        // Build পূর্বের জমা / বাকি history from the full cached receipts.
+        const byService: Record<string, Receipt[]> = {};
+        for (const row of allRec) {
+          if (!row.service_table || !row.service_row_id) continue;
+          if (String(row.source ?? "") === "discount") continue;
+          const k = `${row.service_table}:${row.service_row_id}`;
+          if (svcByTable[row.service_table]?.has(row.service_row_id)) {
+            (byService[k] ??= []).push(row);
+          }
+        }
+
+        if (cancelled) return;
+        setMdEmail("");
+        setRecByService(byService);
+        setReceipts(recs);
+        setExpenses(exps);
+        setLoading(false);
+        return;
+      }
+
       const [r, e, md] = await Promise.all([
         supabase
           .from("payment_receipts")
