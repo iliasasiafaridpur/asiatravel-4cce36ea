@@ -11,7 +11,7 @@ import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2 } from "lucide-react";
 import logoAsset from "@/assets/logo.png.asset.json";
-import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
