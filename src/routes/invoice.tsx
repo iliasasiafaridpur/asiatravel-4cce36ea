@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2 } from "lucide-react";
+import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2, FileText } from "lucide-react";
 import logoAsset from "@/assets/logo.png.asset.json";
+import { BlankPadDialog } from "@/components/BlankPadDialog";
 
 
 export const Route = createFileRoute("/invoice")({
@@ -172,6 +173,7 @@ function InvoicePage() {
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const [blankPadOpen, setBlankPadOpen] = useState(false);
 
 
 
@@ -311,10 +313,15 @@ function InvoicePage() {
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
       <div className="flex justify-end gap-2 print:hidden">
+        <Button variant="outline" onClick={() => setBlankPadOpen(true)} className="gap-2">
+          <FileText className="h-4 w-4" /> Blank Pad
+        </Button>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
       </div>
+      <BlankPadDialog open={blankPadOpen} onClose={() => setBlankPadOpen(false)} />
+
       <div ref={invoiceRef} className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
         {/* logo watermark */}
         <div
