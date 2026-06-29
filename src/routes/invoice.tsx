@@ -370,7 +370,7 @@ function InvoicePage() {
           <div className="mt-6 rounded-xl overflow-hidden border border-slate-200 ring-1 ring-slate-100">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#496a9d] text-white">
+                <tr className="bg-slate-100 text-[#1d3b6b] border-b-2 border-[#496a9d]">
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider w-8">#</th>
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider">Service Details</th>
                   <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Price</th>
