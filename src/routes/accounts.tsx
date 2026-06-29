@@ -193,6 +193,9 @@ function AccountsPage() {
   // Optional vendor / agency balance sections appended to the print
   const [incVendors, setIncVendors] = useState(false);
   const [incAgencies, setIncAgencies] = useState(false);
+  // Optional payment-method breakdown section
+  const [incMethods, setIncMethods] = useState(false);
+  const [selMethods, setSelMethods] = useState<Set<string>>(new Set());
   const [vendorBals, setVendorBals] = useState<{ name: string; due: number; advance: number }[]>([]);
   const [agencyBals, setAgencyBals] = useState<{ name: string; due: number; advance: number }[]>([]);
   const [selVendors, setSelVendors] = useState<Set<string>>(new Set());
@@ -408,6 +411,18 @@ function AccountsPage() {
   const periodIncome = fRecv.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodMdIncome = fRecv.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodVendorIncome = fRecv.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  // Method-wise receive breakdown for the current print scope (list of methods actually used)
+  const methodBreakdown = useMemo(() => {
+    const map = new Map<string, { method: string; count: number; total: number }>();
+    for (const r of fRecv) {
+      const m = (r.method ?? "").trim() || "Cash";
+      const cur = map.get(m) ?? { method: m, count: 0, total: 0 };
+      cur.count += 1;
+      cur.total += Number(r.amount || 0);
+      map.set(m, cur);
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  }, [fRecv]);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const expenseHitsBalance = (e: Exp) =>
     e.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(e.category) : true;
@@ -635,11 +650,31 @@ function AccountsPage() {
     </div>`;
   };
 
+  // Method-wise receive breakdown section for the print (selection-aware)
+  const buildMethodSection = (): string => {
+    const rows = methodBreakdown.filter((m) => selMethods.has(m.method));
+    if (!rows.length) return "";
+    const body = rows.map((r, i) =>
+      `<tr><td>${i + 1}</td><td class="wrap">${escHtml(r.method)}</td><td class="num">${r.count}</td><td class="num"><span class="in">${fmt(r.total)}</span></td></tr>`
+    ).join("");
+    const totalCount = rows.reduce((s, r) => s + r.count, 0);
+    const totalAmt = rows.reduce((s, r) => s + r.total, 0);
+    return `<div style="margin-top:12px;break-inside:avoid">
+      <div style="font-weight:800;font-size:12px;margin-bottom:3px;border-bottom:1.5px solid #111;padding-bottom:2px">পেমেন্ট রিসিভ মেথড অনুযায়ী হিসাব</div>
+      <table>
+        <thead><tr><th>#</th><th>মেথড</th><th class="num">সংখ্যা</th><th class="num">পরিমাণ</th></tr></thead>
+        <tbody>${body}</tbody>
+        <tfoot><tr><td colspan="2">মোট</td><td class="num">${totalCount}</td><td class="num"><span class="in">${fmt(totalAmt)}</span></td></tr></tfoot>
+      </table>
+    </div>`;
+  };
+
   // Combined optional vendor + agency sections (selection-aware)
   const partySectionsHtml = (): string => {
     let out = "";
     if (incVendors) out += buildBalanceSection("Vendor (ভেন্ডর) ব্যালেন্স", vendorBals.filter((r) => selVendors.has(r.name)));
     if (incAgencies) out += buildBalanceSection("Agency (এজেন্সি) ব্যালেন্স", agencyBals.filter((r) => selAgencies.has(r.name)));
+    if (incMethods) out += buildMethodSection();
     return out;
   };
 
@@ -1252,7 +1287,7 @@ ${partySectionsHtml()}
                 variant="outline"
                 disabled={timeline.length === 0}
                 className="h-8 text-xs gap-1.5"
-                onClick={() => { setPrintOpen(true); void loadPartyBalances(); }}
+                onClick={() => { setPrintOpen(true); void loadPartyBalances(); setSelMethods(new Set(methodBreakdown.map((m) => m.method))); }}
               >
                 <Printer className="h-3.5 w-3.5" /> প্রিন্ট অপশন
               </Button>
@@ -1331,6 +1366,41 @@ ${partySectionsHtml()}
                       />
                     )}
                   </div>
+
+                  {/* Payment receive method breakdown */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">পেমেন্ট রিসিভ মেথড যুক্ত করুন</Label>
+                      <Switch checked={incMethods} onCheckedChange={setIncMethods} />
+                    </div>
+                    {incMethods && (
+                      methodBreakdown.length === 0 ? (
+                        <div className="py-3 text-center text-xs text-muted-foreground">এই সময়ে কোনো রিসিভ নেই</div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setSelMethods(new Set(methodBreakdown.map((m) => m.method)))}>সব</Button>
+                            <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setSelMethods(new Set())}>কিছু না</Button>
+                            <span className="ml-auto text-[11px] text-muted-foreground">{selMethods.size}/{methodBreakdown.length} নির্বাচিত</span>
+                          </div>
+                          <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-md border p-1.5">
+                            {methodBreakdown.map((m) => (
+                              <label key={m.method} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/50">
+                                <Checkbox
+                                  checked={selMethods.has(m.method)}
+                                  onCheckedChange={() => setSelMethods((prev) => { const n = new Set(prev); if (n.has(m.method)) n.delete(m.method); else n.add(m.method); return n; })}
+                                />
+                                <span className="flex-1 truncate">{m.method}</span>
+                                <span className="text-muted-foreground tabular-nums">{m.count} টি</span>
+                                <span className="text-emerald-600 tabular-nums">৳{m.total.toLocaleString()}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+
 
                   {/* Full print */}
                   <Button onClick={handlePrint} disabled={timeline.length === 0} className="w-full gap-1.5">
