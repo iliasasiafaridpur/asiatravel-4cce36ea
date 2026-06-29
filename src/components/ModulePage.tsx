@@ -394,14 +394,22 @@ export function ModulePage({ module: mod }: Props) {
 
   useEffect(() => { void load(true); void loadExtraCounts(); void loadRecvInfo(); }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
 
-  // Realtime: auto-refresh on any change to this table
+  // Realtime: auto-refresh on any change to this table (debounced so a burst of
+  // edits triggers a single reload instead of a storm of network round-trips).
   const rtId = useId();
+  const rtTimerRef = useRef<number | null>(null);
   useEffect(() => {
+    const scheduleReload = (withRecv: boolean) => {
+      if (rtTimerRef.current) window.clearTimeout(rtTimerRef.current);
+      rtTimerRef.current = window.setTimeout(() => {
+        void load(false);
+        if (withRecv) void loadRecvInfo();
+      }, 600);
+    };
     const ch = supabase
       .channel(`rt_${mod.table}_${rtId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: mod.table }, () => {
-        void load(false);
-        void loadRecvInfo();
+        scheduleReload(true);
       })
       .subscribe();
     let chx: ReturnType<typeof supabase.channel> | null = null;
@@ -413,7 +421,11 @@ export function ModulePage({ module: mod }: Props) {
         })
         .subscribe();
     }
-    return () => { supabase.removeChannel(ch); if (chx) supabase.removeChannel(chx); };
+    return () => {
+      if (rtTimerRef.current) window.clearTimeout(rtTimerRef.current);
+      supabase.removeChannel(ch);
+      if (chx) supabase.removeChannel(chx);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mod.table]);
 
