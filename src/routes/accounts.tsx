@@ -1211,59 +1211,116 @@ ${partySectionsHtml()}
                 : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
             <div className="flex items-center gap-1.5">
-              <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
-                <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="portrait">Portrait</SelectItem>
-                  <SelectItem value="landscape">Landscape</SelectItem>
-                </SelectContent>
-              </Select>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
-                    <Printer className="h-3.5 w-3.5" /> প্রিন্ট
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuItem onClick={handlePrint} className="gap-2">
-                    <Printer className="h-4 w-4" />
-                    <div>
-                      <div className="text-sm font-medium">সম্পূর্ণ হিসাব প্রিন্ট</div>
-                      <div className="text-[11px] text-muted-foreground">চলতি ফিল্টারের সব লেনদেন একসাথে</div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    <div>
-                      <div className="text-sm font-medium">তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</div>
-                      <div className="text-[11px] text-muted-foreground">শুরু–শেষ তারিখ বেছে নিন, প্রতিদিনের ক্লোজিং ব্যালেন্সসহ</div>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
-                <DialogContent className="max-w-sm">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={timeline.length === 0}
+                className="h-8 text-xs gap-1.5"
+                onClick={() => { setPrintOpen(true); void loadPartyBalances(); }}
+              >
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট অপশন
+              </Button>
+
+              <Dialog open={printOpen} onOpenChange={setPrintOpen}>
+                <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                      <Printer className="h-4 w-4" /> প্রিন্ট অপশন — আয়-ব্যয়ের সারাংশ
+                    </DialogTitle>
                     <DialogDescription>
-                      শুরু থেকে শেষ তারিখ পর্যন্ত সম্পূর্ণ হিসাব প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
+                      পেপার সাইজ ও অরিয়েন্টেশন বেছে নিন। চাইলে নির্দিষ্ট Vendor ও Agency-র ব্যালেন্স মার্ক করে রিপোর্টের সাথে যুক্ত করুন।
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid grid-cols-2 gap-3 py-1">
+
+                  {/* paper + orientation */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">শুরুর তারিখ</Label>
-                      <DateInput value={dayFrom} onChange={(e) => setDayFrom(e.target.value)} />
+                      <Label className="text-xs">পেপার সাইজ</Label>
+                      <Select value={printPaper} onValueChange={(v) => setPrintPaper(v as typeof printPaper)}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A4">A4 (210×297mm)</SelectItem>
+                          <SelectItem value="A5">A5 (148×210mm)</SelectItem>
+                          <SelectItem value="Letter">Letter (8.5×11in)</SelectItem>
+                          <SelectItem value="Legal">Legal (8.5×14in)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">শেষ তারিখ</Label>
-                      <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
+                      <Label className="text-xs">অরিয়েন্টেশন</Label>
+                      <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="portrait">Portrait</SelectItem>
+                          <SelectItem value="landscape">Landscape</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <DialogFooter className="gap-2 sm:gap-2">
-                    <Button onClick={handleRangeClosingPrint} className="gap-1.5">
-                      <Printer className="h-4 w-4" /> প্রিন্ট করুন
+
+                  {/* Vendor balances */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Vendor ব্যালেন্স যুক্ত করুন</Label>
+                      <Switch checked={incVendors} onCheckedChange={setIncVendors} />
+                    </div>
+                    {incVendors && (
+                      <BalancePicker
+                        loading={balLoading}
+                        rows={vendorBals}
+                        selected={selVendors}
+                        onToggle={(name) => setSelVendors((prev) => { const n = new Set(prev); if (n.has(name)) n.delete(name); else n.add(name); return n; })}
+                        onAll={() => setSelVendors(new Set(vendorBals.map((r) => r.name)))}
+                        onNone={() => setSelVendors(new Set())}
+                        onDueOnly={() => setSelVendors(new Set(vendorBals.filter((r) => r.due > 0).map((r) => r.name)))}
+                      />
+                    )}
+                  </div>
+
+                  {/* Agency balances */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Agency ব্যালেন্স যুক্ত করুন</Label>
+                      <Switch checked={incAgencies} onCheckedChange={setIncAgencies} />
+                    </div>
+                    {incAgencies && (
+                      <BalancePicker
+                        loading={balLoading}
+                        rows={agencyBals}
+                        selected={selAgencies}
+                        onToggle={(name) => setSelAgencies((prev) => { const n = new Set(prev); if (n.has(name)) n.delete(name); else n.add(name); return n; })}
+                        onAll={() => setSelAgencies(new Set(agencyBals.map((r) => r.name)))}
+                        onNone={() => setSelAgencies(new Set())}
+                        onDueOnly={() => setSelAgencies(new Set(agencyBals.filter((r) => r.due > 0).map((r) => r.name)))}
+                      />
+                    )}
+                  </div>
+
+                  {/* Full print */}
+                  <Button onClick={handlePrint} disabled={timeline.length === 0} className="w-full gap-1.5">
+                    <Printer className="h-4 w-4" /> সম্পূর্ণ হিসাব প্রিন্ট
+                  </Button>
+
+                  {/* Daily closing range */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      <CalendarDays className="h-4 w-4" /> তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">প্রতিদিনের ক্লোজিং ব্যালেন্সসহ — উপরের পেপার/Vendor/Agency সেটিংস এতেও প্রযোজ্য।</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">শুরুর তারিখ</Label>
+                        <DateInput value={dayFrom} onChange={(e) => setDayFrom(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">শেষ তারিখ</Label>
+                        <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
+                      </div>
+                    </div>
+                    <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
+                      <Printer className="h-4 w-4" /> দৈনিক ক্লোজিং প্রিন্ট
                     </Button>
-                  </DialogFooter>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
