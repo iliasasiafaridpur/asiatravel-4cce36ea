@@ -167,10 +167,10 @@ function ForcePasswordChange({ onDone }: { onDone: () => void }) {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div
-            className="mx-auto h-16 w-16 rounded-xl bg-white ring-1 ring-primary/20 overflow-hidden flex items-center justify-center"
+            className="mx-auto h-24 w-24 rounded-full bg-white ring-1 ring-primary/20 overflow-hidden flex items-center justify-center"
             style={{ boxShadow: "var(--shadow-glow)" }}
           >
-            <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-contain" width={64} height={64} />
+            <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-contain" width={96} height={96} />
           </div>
           <CardTitle>নতুন পাসওয়ার্ড দিন</CardTitle>
           <p className="text-sm text-muted-foreground">
