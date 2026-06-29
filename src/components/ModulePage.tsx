@@ -409,7 +409,10 @@ export function ModulePage({ module: mod }: Props) {
   }, [mod.table]);
 
 
-  useEffect(() => { void load(true); void loadExtraCounts(); void loadRecvInfo(); }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
+  useEffect(() => {
+    void load(true).then((list) => loadRecvInfo(list.map((r) => String((r as { id?: string }).id ?? "")).filter(Boolean)));
+    void loadExtraCounts();
+  }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
 
   // Realtime: auto-refresh on any change to this table (debounced so a burst of
   // edits triggers a single reload instead of a storm of network round-trips).
