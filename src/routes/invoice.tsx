@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate } from "@/lib/modules";
