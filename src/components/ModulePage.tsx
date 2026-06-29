@@ -7,7 +7,7 @@ import { formatDate, statusBadgeClass, isAdvancePayment, type Field, type Module
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
 import { LookupSelect } from "@/components/LookupSelect";
-import { applyFormat, capitalizeWords } from "@/lib/format";
+import { applyFormat, capitalizeWords, partyCodePrefix, partySerialCode } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
