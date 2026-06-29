@@ -17,9 +17,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { LookupSelect } from "@/components/LookupSelect";
 import { toast } from "sonner";
 import { formatDate, isAdvancePayment } from "@/lib/modules";
