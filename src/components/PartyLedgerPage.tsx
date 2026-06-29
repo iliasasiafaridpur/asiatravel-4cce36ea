@@ -267,12 +267,21 @@ export function PartyLedgerPage({
     if (name) return;
     let cancelled = false;
     const loadBalances = async () => {
-      const [{ data }, contactsRes] = await Promise.all([
-        supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
-        supabase.from(contactsTable as never).select("name,serial_no").limit(5000),
-      ]);
+      let data: unknown;
+      let contactsRows: { name?: string | null; serial_no?: number | null }[];
+      if (isOffline()) {
+        data = cacheRead<Record<string, unknown>[]>(isCustomer ? "bal_agent" : "bal_vendor") ?? [];
+        contactsRows = cacheRead<{ name?: string | null; serial_no?: number | null }[]>(contactsTable) ?? [];
+      } else {
+        const [balRes, contactsRes] = await Promise.all([
+          supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
+          supabase.from(contactsTable as never).select("name,serial_no").limit(5000),
+        ]);
+        data = balRes.data;
+        contactsRows = (contactsRes.data as unknown as { name?: string | null; serial_no?: number | null }[]) ?? [];
+      }
       const serialByName = new Map(
-        (((contactsRes.data as unknown as { name?: string | null; serial_no?: number | null }[]) ?? [])
+        (contactsRows
           .map((c) => [String(c.name ?? "").trim().toLowerCase(), c.serial_no ?? null] as const)
           .filter(([n]) => Boolean(n))),
       );
