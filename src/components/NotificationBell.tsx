@@ -120,13 +120,13 @@ export function NotificationBell() {
       return;
     }
     setPrefetching(true);
-    toast.info("একমাসের ডাটা ডাউনলোড হচ্ছে…");
+    toast.info("সব ডাটা ডাউনলোড হচ্ছে… (মডিউল, লেজার, অ্যাকাউন্টস, ব্যালেন্স)");
     try {
       const { ok, failed, rows } = await prefetchMonthData(31);
       if (failed > 0) {
-        toast.warning(`${ok} মডিউল সেভ হয়েছে, ${failed} টি ব্যর্থ (${rows} এন্ট্রি)`);
+        toast.warning(`${ok} অংশ সেভ হয়েছে, ${failed} টি ব্যর্থ (${rows} এন্ট্রি)`);
       } else {
-        toast.success(`একমাসের ডাটা অফলাইনে সেভ হয়েছে (${rows} এন্ট্রি) — নেট ছাড়াও দেখা যাবে`);
+        toast.success(`পুরো হিসাব অফলাইনে সেভ হয়েছে (${rows} এন্ট্রি) — নেট ছাড়াও লেজার/অ্যাকাউন্টস/ব্যালেন্স দেখা যাবে`);
       }
     } catch {
       toast.error("ডাটা ডাউনলোড ব্যর্থ");
