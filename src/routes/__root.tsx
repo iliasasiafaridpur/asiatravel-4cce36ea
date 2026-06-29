@@ -32,6 +32,11 @@ import appCss from "../styles.css?url";
 
 function clearBrokenClientCaches() {
   if (typeof window === "undefined") return;
+  // NEVER wipe caches / unregister the service worker while offline. Offline
+  // route errors (failed network fetch) are expected — clearing here would
+  // destroy the saved offline data and kill the SW, forcing the browser's
+  // native "no internet" page on every navigation.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   try { window.localStorage.removeItem("rq_cache_v1"); } catch { /* ignore */ }
   try { window.localStorage.removeItem("rq_cache_v2"); } catch { /* ignore */ }
   try { window.localStorage.removeItem("rq_cache_v3"); } catch { /* ignore */ }
@@ -68,6 +73,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Offline: do NOT clear caches or reload — that wipes the offline data and
+    // shows the browser's "no internet" page. Let cached content render instead.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
     try {
       const key = "asia-travel:root-error-cache-recovered:v1";
       if (window.sessionStorage.getItem(key)) return;
@@ -84,6 +92,38 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       </div>
     );
   }
+
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (offline) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            আপনি এখন অফলাইনে আছেন
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            এই পেজের নতুন ডাটা ইন্টারনেট ছাড়া আনা যাচ্ছে না। আগে "অফলাইনে সেভ"
+            করা থাকলে অন্য পেজগুলো খুলে দেখা যাবে। ইন্টারনেট ফিরে এলে আবার চেষ্টা করুন।
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => { router.invalidate(); reset(); }}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              আবার চেষ্টা করুন
+            </button>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              হোমে যান
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
