@@ -1861,15 +1861,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     }
   };
 
-  const exportJpeg = async () => {
-    toast.info("ছবি তৈরি হচ্ছে…");
-    try {
-      await downloadDocHtmlAsJpeg(buildPrintHtml(), `${mod.key}-${todayIso()}`);
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    }
-  };
 
 
   const resetFilters = () => {
