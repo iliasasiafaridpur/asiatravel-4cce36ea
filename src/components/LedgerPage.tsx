@@ -1053,6 +1053,79 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     };
   };
 
+  // Mirror the *source-backed* portion of a vendor payment into the cash drawer.
+  //
+  // Why this is needed: bills that come from a source table (tickets / saudi /
+  // kuwait / bmet / others / extra services) apply the payment onto the SOURCE
+  // row, so their vendor_ledger mirror row keeps a non-empty source_table and
+  // `sync_vendor_payment_to_cash` deliberately SKIPS the cash-drawer expense for
+  // them. That left real Cash/Bank vendor payments (e.g. an "Other" module bill
+  // paid by Bank Transfer) completely invisible in /accounts and threw the
+  // staff member's balance/handover off. Here we create exactly one cash_expense
+  // for that source-backed amount, linked to the green PAYMENT log row.
+  //
+  // No double counting: direct (no source_table) bills — Opening Due — already
+  // get their own expense from the trigger, so they are excluded below.
+  // Lifecycle: the expense is linked to the PAYMENT log row, so the trigger's
+  // DELETE branch removes it automatically when the log is deleted; the edit
+  // path recreates it after its update (the trigger wipes it on every update of
+  // a source_table row). Balance-neutral methods (MD Sir Deposit / Vendor
+  // Received / Adjustment / User Balance) never create an expense — matching
+  // vendorExpenseHitsUserBalance().
+  const mirrorVendorPaymentExpense = async (opts: {
+    logId: string;
+    vendor: string;
+    items: AllocItem[];
+    method: string;
+    date: string;
+    remarks: string;
+    balanceNeutral: boolean;
+  }) => {
+    if (isAgency) return;
+    if (opts.balanceNeutral) return;
+    const m = opts.method.trim().toLowerCase();
+    if (["md sir deposit", "md deposit", "vendor received", "vendor receive", "adjustment"].includes(m)) return;
+    const srcBackedAmt = opts.items
+      .filter((it) => it.src_table && it.src_id && it.recv_col)
+      .reduce((s, it) => s + (Number(it.amt) || 0), 0);
+    if (srcBackedAmt <= 0.009) return;
+    try {
+      const { data: logRow } = await supabase
+        .from(mod.table as never)
+        .select("id")
+        .eq(mod.idColumn, opts.logId)
+        .limit(1)
+        .maybeSingle();
+      const logUuid = (logRow as { id?: string } | null)?.id ?? null;
+      if (!logUuid) return;
+      let expId = "";
+      try {
+        const { data: idData } = await supabase.rpc("next_module_id" as never, {
+          _prefix: "EXP", _table: "cash_expenses", _column: "expense_id",
+        } as never);
+        expId = (idData as unknown as string) ?? "";
+      } catch {
+        expId = "";
+      }
+      await resilientInsert("cash_expenses", {
+        expense_id: expId || `EXP-${Date.now()}`,
+        entry_date: opts.date,
+        spent_by: user?.id ?? null,
+        spent_by_name: profile?.full_name ?? null,
+        category: opts.method,
+        amount: srcBackedAmt,
+        purpose: `Vendor Payment: ${opts.vendor}`,
+        remarks: opts.remarks ? opts.remarks.trim() : null,
+        created_by: user?.id ?? null,
+        linked_source_table: "vendor_ledger",
+        linked_source_id: logUuid,
+      });
+    } catch (e) {
+      console.error("vendor cash expense mirror failed", e);
+    }
+  };
+
+
   // Insert a visible, deletable PAYMENT log row recording a vendor payment.
   // The money has already been applied into the bills (alloc items) so this row
   // is financially neutral (excluded from all totals; source_table='payment_log'
