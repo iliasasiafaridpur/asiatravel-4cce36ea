@@ -4,9 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, Plus, Settings2, Trash2, Check, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Pencil, Plus, Settings2, Trash2, Check, X, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { cn } from "@/lib/utils";
 
 export type LookupKind = string;
 
@@ -14,6 +19,53 @@ const PARTY_LOOKUP_KIND: Record<string, "customer" | "vendor"> = {
   sub_agency: "customer",
   vendor: "vendor",
 };
+
+// Lookup kinds backed by a পরিচিতি বোর্ড table that carries a serial / ID.
+// Their dropdowns show "AGT-001 · Name" / "VEN-003 · Name" and are searchable
+// by either the ID number or the name. (Agency "Self" has no ID.)
+const PARTY_SERIAL_KIND: Record<string, "agent" | "vendor"> = {
+  sub_agency: "agent",
+  vendor: "vendor",
+};
+
+const normName = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+
+// name(normalized) → serial_no, per party table. Loaded once, cached, and
+// shared across every party select on the page.
+const partyCache: Record<string, Record<string, number>> = {};
+const partyListeners: Record<string, Set<() => void>> = {};
+
+async function loadParty(pk: "agent" | "vendor"): Promise<void> {
+  const table = pk === "agent" ? "agents" : "vendors";
+  const { data } = await supabase.from(table).select("name,serial_no").limit(5000);
+  const map: Record<string, number> = {};
+  (((data as { name?: string | null; serial_no?: number | null }[] | null) ?? [])).forEach((r) => {
+    const n = String(r.name ?? "").trim();
+    if (n && r.serial_no != null) map[normName(n)] = Number(r.serial_no);
+  });
+  partyCache[pk] = map;
+  partyListeners[pk]?.forEach((fn) => fn());
+}
+
+function partyPrefix(pk: "agent" | "vendor"): string {
+  return pk === "agent" ? "AGT" : "VEN";
+}
+
+// "AGT-001" style ID for a party name (or "" when not found).
+function partyId(pk: "agent" | "vendor", name: string): string {
+  const serial = partyCache[pk]?.[normName(name)];
+  if (serial == null) return "";
+  return `${partyPrefix(pk)}-${String(serial).padStart(3, "0")}`;
+}
+
+// Display label "AGT-001 · Name" (plain name when no ID / for "Self").
+function partyDisplay(pk: "agent" | "vendor", name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return name;
+  if (pk === "agent" && trimmed.toLowerCase() === "self") return name;
+  const id = partyId(pk, trimmed);
+  return id ? `${id} · ${trimmed}` : trimmed;
+}
 
 const LABELS: Record<string, string> = {
   country: "দেশ",
@@ -80,6 +132,9 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
   const [renamingOrig, setRenamingOrig] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState("");
   const label = LABELS[kind] ?? kind;
+  const partyKind = PARTY_SERIAL_KIND[kind];
+  // re-render tick: bumped when the party serial cache loads
+  const [, setPartyTick] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -91,6 +146,18 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     listeners[kind].add(fn);
     return () => { alive = false; listeners[kind]?.delete(fn); };
   }, [kind]);
+
+  // Load + subscribe to the party serial map so labels show "ID · Name".
+  useEffect(() => {
+    if (!partyKind) return;
+    let alive = true;
+    if (partyCache[partyKind] === undefined) void loadParty(partyKind);
+    if (!partyListeners[partyKind]) partyListeners[partyKind] = new Set();
+    const fn = () => { if (alive) setPartyTick((t) => t + 1); };
+    partyListeners[partyKind].add(fn);
+    return () => { alive = false; partyListeners[partyKind]?.delete(fn); };
+  }, [partyKind]);
+
 
   const addNew = () => {
     const v = newVal.trim();
@@ -198,16 +265,27 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
   return (
     <>
       <div className="flex gap-1.5 min-w-0">
-        <Select value={value || ""} onValueChange={onChange}>
-          <SelectTrigger className="flex-1 min-w-0"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
-          <SelectContent>
-            {merged.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
-            ) : (
-              merged.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)
-            )}
-          </SelectContent>
-        </Select>
+        {partyKind ? (
+          <PartyCombobox
+            pk={partyKind}
+            label={label}
+            value={value}
+            options={merged}
+            onChange={onChange}
+          />
+        ) : (
+          <Select value={value || ""} onValueChange={onChange}>
+            <SelectTrigger className="flex-1 min-w-0"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
+            <SelectContent>
+              {merged.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
+              ) : (
+                merged.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)
+              )}
+            </SelectContent>
+          </Select>
+        )}
+
         {!compact && (
           <>
             <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
@@ -303,3 +381,70 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     </>
   );
 }
+
+// Searchable agency/vendor picker. Shows "AGT-001 · Name" and filters by either
+// the ID number or the name (any substring). Stores the plain name as value so
+// no other code / data changes are needed.
+function PartyCombobox({ pk, label, value, options, onChange }: {
+  pk: "agent" | "vendor";
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "flex-1 min-w-0 justify-between font-normal",
+            !value && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">
+            {value ? partyDisplay(pk, value) : `-- ${label} --`}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[min(22rem,90vw)]" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            // itemValue already contains both the ID and the name (see below).
+            return itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="ID বা নাম দিয়ে খুঁজুন…" />
+          <CommandList>
+            <CommandEmpty>কিছু পাওয়া যায়নি</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => {
+                const id = partyId(pk, o);
+                const selected = o === value;
+                return (
+                  <CommandItem
+                    key={o}
+                    value={`${id} ${o}`}
+                    onSelect={() => { onChange(o); setOpen(false); }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">
+                      {id && <span className="font-mono text-primary mr-1.5">{id}</span>}
+                      {o}
+                    </span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
