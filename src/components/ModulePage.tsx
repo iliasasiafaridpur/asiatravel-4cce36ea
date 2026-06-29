@@ -368,18 +368,27 @@ export function ModulePage({ module: mod }: Props) {
     } catch { /* ignore */ }
   }, [mod.table, supportsExtra]);
 
-  // Load latest receive method/receiver per row + a user_id→name map for the Recv badge
-  const loadRecvInfo = useCallback(async () => {
+  // Load latest receive method/receiver per row + a user_id→name map for the Recv badge.
+  // Scoped to the currently-loaded row ids so we never pull the whole receipts table.
+  const profilesLoadedRef = useRef(false);
+  const loadRecvInfo = useCallback(async (ids?: string[]) => {
     if (!RECV_META[mod.table]) return;
+    // Nothing visible yet → skip the receipts round-trip entirely.
+    if (ids && ids.length === 0) { setRecvInfo({}); return; }
     try {
-      const [{ data: receipts }, { data: profs }] = await Promise.all([
-        supabase
-          .from("payment_receipts")
-          .select("service_row_id,method,source,amount,received_by,received_by_name,created_at")
-          .eq("service_table", mod.table)
-          .order("created_at", { ascending: true }),
-        supabase.from("profiles").select("user_id,full_name"),
+      let recvQuery = supabase
+        .from("payment_receipts")
+        .select("service_row_id,method,source,amount,received_by,received_by_name,created_at")
+        .eq("service_table", mod.table)
+        .order("created_at", { ascending: true });
+      if (ids && ids.length > 0) recvQuery = recvQuery.in("service_row_id", ids);
+      // Profiles map rarely changes — fetch it once, then reuse.
+      const tasks: [ReturnType<typeof recvQuery.then> | typeof recvQuery, ReturnType<typeof supabase.from> | null] = [recvQuery, null];
+      const [{ data: receipts }, profsRes] = await Promise.all([
+        recvQuery,
+        profilesLoadedRef.current ? Promise.resolve({ data: null }) : supabase.from("profiles").select("user_id,full_name"),
       ]);
+      void tasks;
       const map: Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }> = {};
       ((receipts as { service_row_id: string; method: string | null; source: string | null; amount: number | null; received_by: string | null; received_by_name: string | null }[] | null) ?? []).forEach((rc) => {
         const isStatus = STATUS_EVENT_SOURCES.has(String(rc.source ?? "")) || String(rc.method ?? "").toLowerCase() === "status";
@@ -388,13 +397,16 @@ export function ModulePage({ module: mod }: Props) {
         if (rc.service_row_id) map[String(rc.service_row_id)] = { method: rc.method, received_by: rc.received_by, received_by_name: rc.received_by_name };
       });
       setRecvInfo(map);
-      const names: Record<string, string> = {};
-      ((profs as { user_id: string; full_name: string | null }[] | null) ?? []).forEach((p) => {
-        if (p.user_id) names[p.user_id] = String(p.full_name ?? "");
-      });
-      setProfileNames(names);
+      const profs = (profsRes as { data: { user_id: string; full_name: string | null }[] | null }).data;
+      if (profs) {
+        const names: Record<string, string> = {};
+        profs.forEach((p) => { if (p.user_id) names[p.user_id] = String(p.full_name ?? ""); });
+        setProfileNames(names);
+        profilesLoadedRef.current = true;
+      }
     } catch { /* ignore */ }
   }, [mod.table]);
+
 
   useEffect(() => { void load(true); void loadExtraCounts(); void loadRecvInfo(); }, [load, loadExtraCounts, loadRecvInfo, mod.key]);
 
