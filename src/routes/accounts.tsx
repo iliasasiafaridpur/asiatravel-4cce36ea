@@ -538,6 +538,75 @@ function AccountsPage() {
     void reload(true);
   };
 
+  // CSS @page size keyword for the chosen paper
+  const PAPER_CSS: Record<string, string> = { A4: "A4", A5: "A5", Letter: "letter", Legal: "legal" };
+  const escHtml = (s: string) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Load vendor + agency balances for the print selection list
+  const loadPartyBalances = useCallback(async () => {
+    setBalLoading(true);
+    try {
+      const [v, a] = await Promise.all([
+        supabase.rpc("get_vendor_balances" as never),
+        supabase.rpc("get_agent_balances" as never),
+      ]);
+      const rank = (r: { due: number; advance: number }) => (r.advance > 0 ? 0 : r.due > 0 ? 1 : 2);
+      const srt = (x: { name: string; due: number; advance: number }, y: { name: string; due: number; advance: number }) => {
+        const rr = rank(x) - rank(y);
+        if (rr !== 0) return rr;
+        const xv = x.advance > 0 ? x.advance : x.due;
+        const yv = y.advance > 0 ? y.advance : y.due;
+        return yv - xv;
+      };
+      const vrows = (((v.data as unknown) as { vendor_name: string; balance_due: number; advance_balance: number }[]) ?? [])
+        .map((r) => ({ name: String(r.vendor_name ?? ""), due: Number(r.balance_due ?? 0), advance: Number(r.advance_balance ?? 0) }))
+        .filter((r) => r.name && r.name.trim().toLowerCase() !== "self")
+        .sort(srt);
+      const arows = (((a.data as unknown) as { agent_name: string; balance_due: number; advance_balance: number }[]) ?? [])
+        .map((r) => ({ name: String(r.agent_name ?? ""), due: Number(r.balance_due ?? 0), advance: Number(r.advance_balance ?? 0) }))
+        .filter((r) => r.name && r.name.trim().toLowerCase() !== "self")
+        .sort(srt);
+      setVendorBals(vrows);
+      setAgencyBals(arows);
+      // default-select every party that has a non-zero balance
+      setSelVendors(new Set(vrows.filter((r) => r.due > 0 || r.advance > 0).map((r) => r.name)));
+      setSelAgencies(new Set(arows.filter((r) => r.due > 0 || r.advance > 0).map((r) => r.name)));
+    } finally {
+      setBalLoading(false);
+    }
+  }, []);
+
+  // Build an appended balance section (vendor / agency) for the print
+  const buildBalanceSection = (title: string, rows: { name: string; due: number; advance: number }[]): string => {
+    if (!rows.length) return "";
+    const body = rows.map((r, i) => {
+      const bal = r.advance > 0
+        ? `<span class="in">অগ্রিম ${fmt(r.advance)}</span>`
+        : r.due > 0
+          ? `<span class="due">বাকি ${fmt(r.due)}</span>`
+          : `<span style="color:#888">0</span>`;
+      return `<tr><td>${i + 1}</td><td class="wrap">${escHtml(r.name)}</td><td class="num">${bal}</td></tr>`;
+    }).join("");
+    const totalDue = rows.reduce((s, r) => s + (r.due > 0 ? r.due : 0), 0);
+    const totalAdv = rows.reduce((s, r) => s + (r.advance > 0 ? r.advance : 0), 0);
+    return `<div style="margin-top:12px;break-inside:avoid">
+      <div style="font-weight:800;font-size:12px;margin-bottom:3px;border-bottom:1.5px solid #111;padding-bottom:2px">${title}</div>
+      <table>
+        <thead><tr><th>#</th><th>নাম</th><th class="num">ব্যালেন্স</th></tr></thead>
+        <tbody>${body}</tbody>
+        <tfoot><tr><td colspan="2">মোট — বাকি / অগ্রিম</td><td class="num"><span class="due">${fmt(totalDue)}</span> / <span class="in">${fmt(totalAdv)}</span></td></tr></tfoot>
+      </table>
+    </div>`;
+  };
+
+  // Combined optional vendor + agency sections (selection-aware)
+  const partySectionsHtml = (): string => {
+    let out = "";
+    if (incVendors) out += buildBalanceSection("Vendor (ভেন্ডর) ব্যালেন্স", vendorBals.filter((r) => selVendors.has(r.name)));
+    if (incAgencies) out += buildBalanceSection("Agency (এজেন্সি) ব্যালেন্স", agencyBals.filter((r) => selAgencies.has(r.name)));
+    return out;
+  };
+
   // Print timeline
   const buildTimelineHtml = (): string | null => {
     const node = printRef.current;
