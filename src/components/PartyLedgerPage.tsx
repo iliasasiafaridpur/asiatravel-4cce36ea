@@ -1241,17 +1241,6 @@ export function PartyLedgerPage({
     }
   };
 
-  const runExportJpeg = async (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
-    const html = buildPrintHtml(mode, from, to);
-    if (!html) return;
-    toast.info("ছবি তৈরি হচ্ছে…");
-    try {
-      await downloadDocHtmlAsJpeg(html, `${displayName}-ledger`.replace(/[^a-z0-9]+/gi, "_"));
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    }
-  };
 
 
 
