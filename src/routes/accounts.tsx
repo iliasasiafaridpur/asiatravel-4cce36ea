@@ -1168,6 +1168,13 @@ ${node.innerHTML.replace(
                       <div className="text-[11px] text-muted-foreground">চলতি ফিল্টারের সব লেনদেন একসাথে</div>
                     </div>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportJpeg} className="gap-2">
+                    <ImageDown className="h-4 w-4" />
+                    <div>
+                      <div className="text-sm font-medium">সম্পূর্ণ হিসাব JPEG ডাউনলোড</div>
+                      <div className="text-[11px] text-muted-foreground">একই হিসাব ছবি (JPEG) হিসেবে সেভ</div>
+                    </div>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
                     <CalendarDays className="h-4 w-4" />
                     <div>
