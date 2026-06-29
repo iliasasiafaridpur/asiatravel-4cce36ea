@@ -5,6 +5,7 @@ import { formatDate, moduleByKey } from "@/lib/modules";
 import { LedgerPage } from "@/components/LedgerPage";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { PageWatermark } from "@/components/PageWatermark";
+import logoAsset from "@/assets/logo.png.asset.json";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1198,7 +1199,8 @@ export function PartyLedgerPage({
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(displayName)} — ${esc(subtitle)}</title>
       <style>
-        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:24px;color:#0f172a}
+        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:24px;color:#0f172a;position:relative}
+        body::before{content:"";position:fixed;inset:0;z-index:-1;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, X, Copy, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { toJpeg } from "html-to-image";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 export interface ReceiptInfo {
   receiptId: string;
@@ -56,7 +57,8 @@ export function ReceiptDialog({
     w.document.write(`<!doctype html><html><head><title>Receipt ${receipt.receiptId}</title>
       <style>
         @page { size: A5; margin: 10mm; }
-        body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:16px; }
+        body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:16px; position:relative; }
+        body::before { content:""; position:fixed; inset:0; z-index:-1; background-image:url("${window.location.origin}${logoAsset.url}"); background-repeat:no-repeat; background-position:center; background-size:70%; opacity:0.06; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
         .r { max-width:520px; margin:0 auto; }
         .h { text-align:center; border-bottom:2px solid #111; padding-bottom:8px; margin-bottom:12px; }
         .h h1 { margin:0; font-size:18px; }

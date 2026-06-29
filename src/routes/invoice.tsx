@@ -310,7 +310,19 @@ function InvoicePage() {
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
       </div>
-      <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
+      <div className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
+        {/* logo watermark */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+        >
+          <img
+            src={logoAsset.url}
+            alt=""
+            className="inv-watermark w-[70%] max-w-[420px] object-contain opacity-[0.06]"
+          />
+        </div>
+        <div className="relative z-10">
         {/* top banner — light / low-ink */}
         <div className="inv-banner relative bg-white border-b-2 border-[#496a9d] px-8 sm:px-10 py-6">
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
@@ -428,10 +440,12 @@ function InvoicePage() {
             <p className="text-[11px] text-slate-400">Thank you for choosing {AGENCY.name}.</p>
           </div>
         </div>
+        </div>
       </div>
 
       <style>{`
         .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 13pt; }
+        .invoice-print .inv-watermark { opacity: 0.06 !important; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 18pt; }
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }

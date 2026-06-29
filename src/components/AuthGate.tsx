@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plane, LogOut, Eye, EyeOff } from "lucide-react";
+import { LogOut, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 function phoneToEmail(phone: string) {
   const clean = phone.replace(/[^0-9]/g, "");
@@ -115,10 +116,10 @@ function LoginScreen() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div
-            className="mx-auto h-12 w-12 rounded-lg flex items-center justify-center text-primary-foreground"
-            style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}
+            className="mx-auto h-16 w-16 rounded-xl bg-white ring-1 ring-primary/20 overflow-hidden flex items-center justify-center"
+            style={{ boxShadow: "var(--shadow-glow)" }}
           >
-            <Plane className="h-6 w-6" />
+            <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-contain" width={64} height={64} />
           </div>
           <CardTitle>Asia Travel</CardTitle>
         </CardHeader>
@@ -166,10 +167,10 @@ function ForcePasswordChange({ onDone }: { onDone: () => void }) {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div
-            className="mx-auto h-12 w-12 rounded-lg flex items-center justify-center text-primary-foreground"
-            style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}
+            className="mx-auto h-16 w-16 rounded-xl bg-white ring-1 ring-primary/20 overflow-hidden flex items-center justify-center"
+            style={{ boxShadow: "var(--shadow-glow)" }}
           >
-            <Plane className="h-6 w-6" />
+            <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-contain" width={64} height={64} />
           </div>
           <CardTitle>নতুন পাসওয়ার্ড দিন</CardTitle>
           <p className="text-sm text-muted-foreground">
