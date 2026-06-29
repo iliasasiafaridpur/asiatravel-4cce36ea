@@ -323,7 +323,10 @@ function InvoicePage() {
 
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
-      <div className="flex justify-end print:hidden">
+      <div className="flex justify-end gap-2 print:hidden">
+        <Button variant="outline" onClick={handleDownloadJpeg} disabled={savingJpeg} className="gap-2">
+          <ImageDown className="h-4 w-4" /> {savingJpeg ? "তৈরি হচ্ছে…" : "JPEG ডাউনলোড"}
+        </Button>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
