@@ -2,6 +2,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { Card, CardContent } from "@/components/ui/card";
@@ -241,11 +242,31 @@ function AccountsPage() {
     handQuery = handQuery.limit(historyLimit);
     expQuery = expQuery.limit(historyLimit);
 
+    // Offline: hydrate from the cached snapshots written by "অফলাইনে সেভ".
+    if (isOffline()) {
+      const mineOnly = <T extends Record<string, unknown>>(rows: T[], cols: string[]) =>
+        seeAll ? rows : rows.filter((row) => cols.some((c) => String(row[c] ?? "") === user.id));
+      const byDate = <T extends Record<string, unknown>>(rows: T[]) =>
+        dateTo ? rows.filter((row) => String(row.entry_date ?? "") <= dateTo) : rows;
+      const recvCache = (cacheRead<Recv[]>("payment_receipts") ?? []).filter(
+        (row) => String((row as unknown as Record<string, unknown>).source ?? "") !== "discount" &&
+          !String((row as unknown as Record<string, unknown>).method ?? "").toLowerCase().includes("discount"),
+      );
+      if (seq !== reloadSeqRef.current) return;
+      setReceived(byDate(mineOnly(recvCache as unknown as Record<string, unknown>[], ["received_by", "created_by"])) as unknown as Recv[]);
+      setHandovers(byDate(mineOnly((cacheRead<Hand[]>("cash_handovers") ?? []) as unknown as Record<string, unknown>[], ["from_user", "created_by"])) as unknown as Hand[]);
+      setExpenses(byDate(mineOnly((cacheRead<Exp[]>("cash_expenses") ?? []) as unknown as Record<string, unknown>[], ["spent_by", "created_by"])) as unknown as Exp[]);
+      setSyncing(false);
+      setLoading(false);
+      return;
+    }
+
     const [r, h, e] = await Promise.all([
       seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
       seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`),
       seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`),
     ]);
+
 
     const err = r.error || h.error || e.error;
     if (seq !== reloadSeqRef.current) return;
@@ -343,12 +364,28 @@ function AccountsPage() {
       },
     };
     let cancelled = false;
+    const offline = isOffline();
+    // Pull rows by id either from the network or the offline snapshots.
+    const fetchRowsByIds = async (table: string, ids: string[]): Promise<Record<string, unknown>[]> => {
+      if (!ids.length) return [];
+      if (offline) {
+        // module tables -> cache_v2_<table>; agency_ledger/extra_services -> off_<table>
+        const snap = table === "agency_ledger" || table === "extra_services"
+          ? (cacheRead<Record<string, unknown>[]>(table) ?? [])
+          : readModuleCache(table);
+        const idSet = new Set(ids);
+        return snap.filter((row) => idSet.has(String((row as Record<string, unknown>).id ?? ""))) as Record<string, unknown>[];
+      }
+      return [];
+    };
     (async () => {
       const out: Record<string, SvcDetail> = {};
       await Promise.all(Object.entries(byTable).map(async ([table, ids]) => {
         const cfg = tableConfigs[table]; if (!cfg || ids.size === 0) return;
-        const { data } = await supabase.from(table as never).select(cfg.cols).in("id", Array.from(ids));
-        for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+        const rows = offline
+          ? await fetchRowsByIds(table, Array.from(ids))
+          : ((await supabase.from(table as never).select(cfg.cols).in("id", Array.from(ids))).data as unknown as Record<string, unknown>[] | null) ?? [];
+        for (const row of rows) {
           out[String(row.id)] = cfg.map(row);
         }
       }));
@@ -363,8 +400,10 @@ function AccountsPage() {
       if (Object.keys(srcByTable).length > 0) {
         const vendorById: Record<string, { vendor?: string | null; cost?: number }> = {};
         await Promise.all(Object.entries(srcByTable).map(async ([table, ids]) => {
-          const { data } = await supabase.from(table as never).select("id,vendor_bought,cost_price").in("id", Array.from(ids));
-          for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+          const rows = offline
+            ? await fetchRowsByIds(table, Array.from(ids))
+            : ((await supabase.from(table as never).select("id,vendor_bought,cost_price").in("id", Array.from(ids))).data as unknown as Record<string, unknown>[] | null) ?? [];
+          for (const row of rows) {
             vendorById[String(row.id)] = { vendor: row.vendor_bought as string, cost: Number(row.cost_price ?? 0) };
           }
         }));
@@ -597,10 +636,17 @@ function AccountsPage() {
   const loadPartyBalances = useCallback(async () => {
     setBalLoading(true);
     try {
-      const [v, a] = await Promise.all([
-        supabase.rpc("get_vendor_balances" as never),
-        supabase.rpc("get_agent_balances" as never),
-      ]);
+      let v: { data: unknown };
+      let a: { data: unknown };
+      if (isOffline()) {
+        v = { data: cacheRead("bal_vendor") ?? [] };
+        a = { data: cacheRead("bal_agent") ?? [] };
+      } else {
+        [v, a] = await Promise.all([
+          supabase.rpc("get_vendor_balances" as never),
+          supabase.rpc("get_agent_balances" as never),
+        ]);
+      }
       const rank = (r: { due: number; advance: number }) => (r.advance > 0 ? 0 : r.due > 0 ? 1 : 2);
       const srt = (x: { name: string; due: number; advance: number }, y: { name: string; due: number; advance: number }) => {
         const rr = rank(x) - rank(y);
