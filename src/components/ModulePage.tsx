@@ -1850,7 +1850,7 @@ export function ModulePage({ module: mod }: Props) {
               </div>
               {mod.key === "bmet" && (
                 <div className="shrink-0">
-                  <BmetQuickManage rows={rows} onChanged={() => load(true)} />
+                  <BmetQuickManage rows={rows} onChanged={() => { void load(true); }} />
                 </div>
               )}
             </div>
