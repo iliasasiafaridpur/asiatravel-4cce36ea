@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, X, Copy, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { toJpeg } from "html-to-image";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 export interface ReceiptInfo {
   receiptId: string;
