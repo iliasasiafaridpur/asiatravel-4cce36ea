@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cacheRead, isOffline } from "@/lib/offline-cache";
 import { STATUSES, statusStyle, formatDate, type Status } from "@/lib/passengers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
