@@ -1164,7 +1164,17 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       created_by: user?.id ?? null,
     };
     await resilientInsert(mod.table, payload as Record<string, unknown>);
+    await mirrorVendorPaymentExpense({
+      logId,
+      vendor: String(payTarget),
+      items,
+      method,
+      date: payDate,
+      remarks: payRemarks,
+      balanceNeutral: payAsMdDeposit || payAsAdvance,
+    });
   };
+
 
   // Reverse a PAYMENT log row's allocations, then return so the caller can
   // delete the log row itself. Admin-only (guarded at the call site).
