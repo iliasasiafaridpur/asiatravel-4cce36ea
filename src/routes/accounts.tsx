@@ -149,9 +149,19 @@ function AccountsPage() {
   const [dateFrom, setDateFrom] = useState(today());
   const [dateTo, setDateTo] = useState(today());
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
+  const [printPaper, setPrintPaper] = useState<"A4" | "A5" | "Letter" | "Legal">("A4");
+  const [printOpen, setPrintOpen] = useState(false);
   const [dayPrintOpen, setDayPrintOpen] = useState(false);
   const [dayFrom, setDayFrom] = useState(today());
   const [dayTo, setDayTo] = useState(today());
+  // Optional vendor / agency balance sections appended to the print
+  const [incVendors, setIncVendors] = useState(false);
+  const [incAgencies, setIncAgencies] = useState(false);
+  const [vendorBals, setVendorBals] = useState<{ name: string; due: number; advance: number }[]>([]);
+  const [agencyBals, setAgencyBals] = useState<{ name: string; due: number; advance: number }[]>([]);
+  const [selVendors, setSelVendors] = useState<Set<string>>(new Set());
+  const [selAgencies, setSelAgencies] = useState<Set<string>>(new Set());
+  const [balLoading, setBalLoading] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
   const reloadSeqRef = useRef(0);
