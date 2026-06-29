@@ -265,16 +265,27 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
   return (
     <>
       <div className="flex gap-1.5 min-w-0">
-        <Select value={value || ""} onValueChange={onChange}>
-          <SelectTrigger className="flex-1 min-w-0"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
-          <SelectContent>
-            {merged.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
-            ) : (
-              merged.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)
-            )}
-          </SelectContent>
-        </Select>
+        {partyKind ? (
+          <PartyCombobox
+            pk={partyKind}
+            label={label}
+            value={value}
+            options={merged}
+            onChange={onChange}
+          />
+        ) : (
+          <Select value={value || ""} onValueChange={onChange}>
+            <SelectTrigger className="flex-1 min-w-0"><SelectValue placeholder={`-- ${label} --`} /></SelectTrigger>
+            <SelectContent>
+              {merged.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">কোনো অপশন নেই</div>
+              ) : (
+                merged.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)
+              )}
+            </SelectContent>
+          </Select>
+        )}
+
         {!compact && (
           <>
             <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setOpenAdd(true)} title={`নতুন ${label} যোগ`}>
