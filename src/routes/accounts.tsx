@@ -190,7 +190,7 @@ function AccountsPage() {
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
   const [printPaper, setPrintPaper] = useState<"A4" | "A5" | "Letter" | "Legal">("A4");
   const [printOpen, setPrintOpen] = useState(false);
-  const [dayFromTo] = useState(false);
+  
   const [dayFrom, setDayFrom] = useState(today());
   const [dayTo, setDayTo] = useState(today());
   // Optional vendor / agency balance sections appended to the print
