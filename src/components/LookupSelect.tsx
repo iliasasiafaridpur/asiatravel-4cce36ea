@@ -421,7 +421,10 @@ function PartyCombobox({ pk, label, value, options, onChange }: {
           }}
         >
           <CommandInput placeholder="ID বা নাম দিয়ে খুঁজুন…" />
-          <CommandList>
+          <CommandList
+            className="max-h-[280px] overflow-y-auto overscroll-contain"
+            onWheel={(e) => e.stopPropagation()}
+          >
             <CommandEmpty>কিছু পাওয়া যায়নি</CommandEmpty>
             <CommandGroup>
               {options.map((o) => {
@@ -434,9 +437,13 @@ function PartyCombobox({ pk, label, value, options, onChange }: {
                     onSelect={() => { onChange(o); setOpen(false); }}
                   >
                     <Check className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")} />
-                    <span className="truncate">
-                      {id && <span className="font-mono text-primary mr-1.5">{id}</span>}
-                      {o}
+                    <span className="flex items-center gap-1.5 truncate">
+                      {id && (
+                        <span className="shrink-0 rounded bg-amber-500/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                          {id}
+                        </span>
+                      )}
+                      <span className="truncate">{o}</span>
                     </span>
                   </CommandItem>
                 );
