@@ -9,10 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2, ImageDown } from "lucide-react";
+import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2 } from "lucide-react";
 import logoAsset from "@/assets/logo.png.asset.json";
-import { downloadNodeAsJpeg } from "@/lib/print-export";
-import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -173,20 +172,8 @@ function InvoicePage() {
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const [savingJpeg, setSavingJpeg] = useState(false);
 
-  const handleDownloadJpeg = async () => {
-    if (!invoiceRef.current) return;
-    setSavingJpeg(true);
-    try {
-      await downloadNodeAsJpeg(invoiceRef.current, `invoice-${invoiceNo || invoiceDate}`);
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    } finally {
-      setSavingJpeg(false);
-    }
-  };
+
 
 
   const serviceModules = useMemo(
@@ -324,9 +311,6 @@ function InvoicePage() {
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
       <div className="flex justify-end gap-2 print:hidden">
-        <Button variant="outline" onClick={handleDownloadJpeg} disabled={savingJpeg} className="gap-2">
-          <ImageDown className="h-4 w-4" /> {savingJpeg ? "তৈরি হচ্ছে…" : "JPEG ডাউনলোড"}
-        </Button>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
