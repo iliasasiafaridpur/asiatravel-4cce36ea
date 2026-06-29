@@ -93,6 +93,38 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     );
   }
 
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (offline) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            আপনি এখন অফলাইনে আছেন
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            এই পেজের নতুন ডাটা ইন্টারনেট ছাড়া আনা যাচ্ছে না। আগে "অফলাইনে সেভ"
+            করা থাকলে অন্য পেজগুলো খুলে দেখা যাবে। ইন্টারনেট ফিরে এলে আবার চেষ্টা করুন।
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => { router.invalidate(); reset(); }}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              আবার চেষ্টা করুন
+            </button>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              হোমে যান
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
