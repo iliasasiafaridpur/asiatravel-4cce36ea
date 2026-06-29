@@ -32,7 +32,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
-import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
+import { printDocHtml } from "@/lib/print-export";
 
 
 export const Route = createFileRoute("/accounts")({
@@ -613,17 +613,7 @@ ${node.innerHTML.replace(
     }
   };
 
-  const handleExportJpeg = async () => {
-    const html = buildTimelineHtml();
-    if (!html) return;
-    toast.info("ছবি তৈরি হচ্ছে…");
-    try {
-      await downloadDocHtmlAsJpeg(html, `accounts-${today()}`);
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    }
-  };
+
 
   // Detailed range print: SAME layout/columns/text as the normal print, but
   // limited to a chosen date range AND with each day's CLOSING balance shown
@@ -879,18 +869,7 @@ ${node.innerHTML.replace(
     }
   };
 
-  const handleRangeClosingJpeg = async () => {
-    const html = buildRangeClosingHtml();
-    if (!html) return;
-    toast.info("ছবি তৈরি হচ্ছে…");
-    try {
-      await downloadDocHtmlAsJpeg(html, `daily-closing-${dayFrom || "start"}-${dayTo || "end"}`);
-      setDayPrintOpen(false);
-      toast.success("JPEG ডাউনলোড হয়েছে");
-    } catch {
-      toast.error("JPEG তৈরি ব্যর্থ");
-    }
-  };
+
 
   if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   // TEMP: Admin has full master access — no redirect.
