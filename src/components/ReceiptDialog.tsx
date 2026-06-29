@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { toJpeg } from "html-to-image";
 import logoAsset from "@/assets/logo.png.asset.json";
 
 export interface ReceiptInfo {
