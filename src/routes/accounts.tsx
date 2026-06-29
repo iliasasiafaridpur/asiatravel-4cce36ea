@@ -242,11 +242,31 @@ function AccountsPage() {
     handQuery = handQuery.limit(historyLimit);
     expQuery = expQuery.limit(historyLimit);
 
+    // Offline: hydrate from the cached snapshots written by "অফলাইনে সেভ".
+    if (isOffline()) {
+      const mineOnly = <T extends Record<string, unknown>>(rows: T[], cols: string[]) =>
+        seeAll ? rows : rows.filter((row) => cols.some((c) => String(row[c] ?? "") === user.id));
+      const byDate = <T extends Record<string, unknown>>(rows: T[]) =>
+        dateTo ? rows.filter((row) => String(row.entry_date ?? "") <= dateTo) : rows;
+      const recvCache = (cacheRead<Recv[]>("payment_receipts") ?? []).filter(
+        (row) => String((row as Record<string, unknown>).source ?? "") !== "discount" &&
+          !String((row as Record<string, unknown>).method ?? "").toLowerCase().includes("discount"),
+      );
+      if (seq !== reloadSeqRef.current) return;
+      setReceived(byDate(mineOnly(recvCache as unknown as Record<string, unknown>[], ["received_by", "created_by"])) as unknown as Recv[]);
+      setHandovers(byDate(mineOnly((cacheRead<Hand[]>("cash_handovers") ?? []) as unknown as Record<string, unknown>[], ["from_user", "created_by"])) as unknown as Hand[]);
+      setExpenses(byDate(mineOnly((cacheRead<Exp[]>("cash_expenses") ?? []) as unknown as Record<string, unknown>[], ["spent_by", "created_by"])) as unknown as Exp[]);
+      setSyncing(false);
+      setLoading(false);
+      return;
+    }
+
     const [r, h, e] = await Promise.all([
       seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
       seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`),
       seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`),
     ]);
+
 
     const err = r.error || h.error || e.error;
     if (seq !== reloadSeqRef.current) return;
