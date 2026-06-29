@@ -459,7 +459,7 @@ function InvoicePage() {
             line-height: 1.4 !important;
           }
           .invoice-print .invoice-agency-name { font-size: 22pt !important; }
-          .invoice-print .invoice-title { font-size: 26pt !important; }
+          .invoice-print .invoice-title { font-size: 18pt !important; }
           .invoice-print th { font-size: 12pt !important; }
           .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\], .invoice-print .text-\\[9px\\] { font-size: 10.5pt !important; }
         }
