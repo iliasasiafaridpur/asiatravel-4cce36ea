@@ -987,7 +987,7 @@ ${partySectionsHtml()}
     if (!html) return;
     try {
       printDocHtml(html);
-      setDayPrintOpen(false);
+      setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
     }
