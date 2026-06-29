@@ -2088,7 +2088,7 @@ export function ModulePage({ module: mod }: Props) {
         userEmail={user?.email ?? ""}
         userId={user?.id ?? null}
         onClose={() => setRefundRow(null)}
-        onDone={() => load(false)}
+        onDone={() => { void load(false); }}
       />
 
       {/* কাজ বাতিল / ফেরত ডায়ালগ */}
