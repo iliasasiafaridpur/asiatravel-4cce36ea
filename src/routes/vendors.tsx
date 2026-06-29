@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Wallet } from "lucide-react";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { partySerialCode } from "@/lib/format";
 
 export const Route = createFileRoute("/vendors")({
   head: () => ({ meta: [{ title: "Vendor List — Travel Manager" }] }),
