@@ -173,6 +173,7 @@ function InvoicePage() {
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const [blankPadOpen, setBlankPadOpen] = useState(false);
 
 
 
