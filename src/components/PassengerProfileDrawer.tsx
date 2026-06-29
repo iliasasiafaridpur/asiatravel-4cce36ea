@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, ReceiptText, Layers, PhoneCall, MessageCircle } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 
