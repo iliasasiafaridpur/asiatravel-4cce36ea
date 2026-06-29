@@ -409,13 +409,16 @@ function AccountsPage() {
     return desc.slice(0, latestN);
   }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptForService]);
 
-  // Print rows — running balance is SCOPED to the filtered entries only
-  // (starts from 0), so a "সর্বশেষ ৩" print shows exactly those 3 lines and
-  // does NOT carry the historical/actual balance (e.g. 38,000) into the table.
+  // Print rows — grouped: receipts (জমা) on top, then expenses/handovers (খরচ)
+  // below. Within each group, larger amount first (big top → small bottom).
+  // Running balance is SCOPED to these printed entries only (starts from 0).
   const printAscRows = useMemo<{ it: TLItem & { running: number }; running: number }[]>(() => {
-    const asc = [...timeline].reverse();
+    const amtOf = (it: TLItem) => Number((it.row as { amount?: number }).amount || 0);
+    const ins = timeline.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
+    const outs = timeline.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
+    const ordered = [...ins, ...outs];
     let bal = 0;
-    return asc.map((it) => {
+    return ordered.map((it) => {
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
       else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? Number((it.row as Hand).amount) : 0;
       else bal -= expenseHitsBalance(it.row as Exp) ? Number((it.row as Exp).amount) : 0;
