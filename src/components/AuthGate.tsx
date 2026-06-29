@@ -121,7 +121,7 @@ function LoginScreen() {
           >
             <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-contain" width={64} height={64} />
           </div>
-          <CardTitle>Asia Travel</CardTitle>
+          <CardTitle>Asia Travels Management System</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login">
