@@ -70,16 +70,24 @@ export async function downloadDocHtmlAsJpeg(html: string, filename: string) {
     await new Promise((r) => setTimeout(r, 350));
 
     const target = doc.body;
-    const width = Math.max(target.scrollWidth, 800);
-    const height = Math.max(target.scrollHeight, target.offsetHeight, 200);
+    const width = Math.max(target.scrollWidth, doc.documentElement.scrollWidth, 800);
+    const height = Math.max(
+      target.scrollHeight,
+      target.offsetHeight,
+      doc.documentElement.scrollHeight,
+      200,
+    );
+    // Make the iframe big enough so nothing is clipped during capture.
+    iframe.style.width = `${width}px`;
     iframe.style.height = `${height}px`;
+    await new Promise((r) => setTimeout(r, 50));
 
     const dataUrl = await toJpeg(target, {
       quality: 0.95,
       backgroundColor: "#ffffff",
       width,
       height,
-      pixelRatio: 2,
+      pixelRatio: safePixelRatio(width, height),
     });
     triggerDownload(dataUrl, filename);
   } finally {
@@ -88,14 +96,33 @@ export async function downloadDocHtmlAsJpeg(html: string, filename: string) {
 }
 
 /**
+ * Browsers cap canvas dimensions/area (~16384px per side on Chrome). For very
+ * tall documents a pixelRatio of 2 overflows that cap and the image comes out
+ * cropped. Scale the ratio down so width*ratio and height*ratio stay safe.
+ */
+function safePixelRatio(width: number, height: number): number {
+  const MAX_SIDE = 14000; // safety margin below the 16384 hard cap
+  const MAX_AREA = 120_000_000; // ~120MP to stay well within memory limits
+  let ratio = 2;
+  ratio = Math.min(ratio, MAX_SIDE / Math.max(width, 1), MAX_SIDE / Math.max(height, 1));
+  const areaRatio = Math.sqrt(MAX_AREA / Math.max(width * height, 1));
+  ratio = Math.min(ratio, areaRatio);
+  return Math.max(1, Math.min(2, ratio));
+}
+
+/**
  * Download a live on-screen element (e.g. the rendered invoice) as a JPEG.
  */
 export async function downloadNodeAsJpeg(node: HTMLElement, filename: string) {
   try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready; } catch { /* ignore */ }
+  const width = Math.max(node.scrollWidth, node.offsetWidth, 1);
+  const height = Math.max(node.scrollHeight, node.offsetHeight, 1);
   const dataUrl = await toJpeg(node, {
     quality: 0.95,
     backgroundColor: "#ffffff",
-    pixelRatio: 2,
+    width,
+    height,
+    pixelRatio: safePixelRatio(width, height),
   });
   triggerDownload(dataUrl, filename);
 }
