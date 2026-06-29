@@ -423,8 +423,7 @@ function InvoicePage() {
           </div>
 
           <div className="mt-8 pt-4 border-t border-slate-200 text-center">
-            <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
-            <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
+            <p className="text-[11px] text-slate-400">Thank you for choosing {AGENCY.name}.</p>
           </div>
         </div>
       </div>
