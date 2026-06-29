@@ -331,7 +331,7 @@ function InvoicePage() {
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
       </div>
-      <div className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
+      <div ref={invoiceRef} className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
         {/* logo watermark */}
         <div
           aria-hidden
