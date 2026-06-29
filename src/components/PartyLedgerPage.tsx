@@ -328,32 +328,72 @@ export function PartyLedgerPage({
       ? partySerialCode(isCustomer ? "agent" : "vendor", contact.serial_no)
       : null;
 
-  const load = async () => {
-    setLoading(true);
-    const [ledgerRes, contactRes, balRes] = await Promise.all([
-      supabase
-        .from(table as never)
-        .select("*")
-        .eq(groupField, displayName)
-        .order("entry_date", { ascending: true })
-        .order("created_at", { ascending: true })
-        .limit(1000),
-      supabase
-        .from(contactsTable as never)
-        .select("phone,phone_labels,address,settle_mode,serial_no,full_name,notes")
-        .eq("name", displayName)
-        .order("settle_mode", { ascending: true })
-        .limit(10),
+  const applySrcMap = async (ledgerRows: LedgerRow[], offline: boolean) => {
+    const map = new Map<string, SrcInfo>();
+    // table -> [columns to select], with a normalizer for each row.
+    const specs: Record<string, { cols: string; map: (r: Record<string, unknown>) => SrcInfo }> = {
+      bmet_cards: {
+        cols: "id,bmet_id,received_date,country_name,cancelled,cancel_reason,cancel_date",
+        map: (r) => ({ displayId: r.bmet_id as string, countDate: r.received_date as string, country: r.country_name as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
+      },
+      saudi_visas: {
+        cols: "id,saudi_id,received_date,cancelled,cancel_reason,cancel_date",
+        map: (r) => ({ displayId: r.saudi_id as string, countDate: r.received_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
+      },
+      kuwait_visas: {
+        cols: "id,kuwait_id,received_date,cancelled,cancel_reason,cancel_date",
+        map: (r) => ({ displayId: r.kuwait_id as string, countDate: r.received_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
+      },
+      tickets: {
+        cols: "id,ticket_id,airline,entry_date,cancelled,cancel_reason,cancel_date",
+        map: (r) => ({ displayId: r.ticket_id as string, airline: r.airline as string, countDate: r.entry_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
+      },
+    };
+    const byTable: Record<string, string[]> = {};
+    for (const r of ledgerRows) {
+      const src = String(r.source_table ?? "");
+      const sid = String(r.source_id ?? "");
+      if (sid && specs[src]) (byTable[src] ||= []).push(sid);
+    }
+    if (offline) {
+      // Hydrate source info from the offline module snapshots (cache_v2_<table>).
+      for (const [tbl, ids] of Object.entries(byTable)) {
+        const cached = readModuleCache(tbl);
+        const idSet = new Set(ids);
+        for (const row of cached) {
+          const rid = String((row as Record<string, unknown>).id ?? "");
+          if (idSet.has(rid)) map.set(rid, specs[tbl].map(row as Record<string, unknown>));
+        }
+      }
+    } else {
+      await Promise.all(
+        Object.entries(byTable).map(async ([tbl, ids]) => {
+          if (!ids.length) return;
+          const { data } = await supabase.from(tbl as never).select(specs[tbl].cols).in("id", ids);
+          for (const row of (data as Record<string, unknown>[] | null) ?? []) {
+            map.set(String(row.id), specs[tbl].map(row));
+          }
+        }),
+      );
+    }
+    setSrcMap(map);
+  };
 
-      supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
-    ]);
-    const ledgerRows = (ledgerRes.data as unknown as LedgerRow[]) ?? [];
-    setRows(ledgerRows);
-    // Duplicate-tolerant: a name should map to one contact, but if stale
-    // duplicates ever exist, merge them so an explicit "এক একটা বিল" choice
-    // and any saved phone/address are never lost (root cause of settings not sticking).
-    const contactRows = (contactRes.data as Contact[] | null) ?? [];
-    const mergedContact: Contact | null = contactRows.length
+  const setSummaryFromBalRows = (balRows: Record<string, unknown>[]) => {
+    const nameKey = isCustomer ? "agent_name" : "vendor_name";
+    const billKey = isCustomer ? "total_bill" : "total_payable";
+    const paidKey = isCustomer ? "total_received" : "total_paid";
+    const mine = balRows.find((b) => String(b[nameKey] ?? "") === displayName);
+    setSummary({
+      bill: Number(mine?.[billKey] ?? 0),
+      paid: Number(mine?.[paidKey] ?? 0),
+      due: Number(mine?.balance_due ?? 0),
+      advance: Number(mine?.advance_balance ?? 0),
+    });
+  };
+
+  const mergeContactRows = (contactRows: Contact[]): Contact | null =>
+    contactRows.length
       ? {
           phone: contactRows.find((c) => c.phone)?.phone ?? null,
           phone_labels: contactRows.find((c) => c.phone)?.phone_labels ?? null,
@@ -366,65 +406,78 @@ export function PartyLedgerPage({
           notes: contactRows.find((c) => c.notes)?.notes ?? null,
         }
       : null;
-    setContact(mergedContact);
 
+  // Offline fallback: rebuild everything from the cached snapshots written by
+  // the "অফলাইনে সেভ" button.
+  const loadFromCache = async () => {
+    const allLedger = cacheRead<LedgerRow[]>(table) ?? [];
+    const ledgerRows = allLedger
+      .filter((r) => String((r as Record<string, unknown>)[groupField] ?? "") === displayName)
+      .sort((a, b) => {
+        const da = String((a as Record<string, unknown>).entry_date ?? "");
+        const db = String((b as Record<string, unknown>).entry_date ?? "");
+        if (da !== db) return da < db ? -1 : 1;
+        const ca = String((a as Record<string, unknown>).created_at ?? "");
+        const cb = String((b as Record<string, unknown>).created_at ?? "");
+        return ca < cb ? -1 : ca > cb ? 1 : 0;
+      });
+    setRows(ledgerRows);
 
-    // Pick this party's authoritative balance row.
-    const balRows = (balRes.data as unknown as Record<string, unknown>[]) ?? [];
-    const nameKey = isCustomer ? "agent_name" : "vendor_name";
-    const billKey = isCustomer ? "total_bill" : "total_payable";
-    const paidKey = isCustomer ? "total_received" : "total_paid";
-    const mine = balRows.find((b) => String(b[nameKey] ?? "") === displayName);
-    setSummary({
-      bill: Number(mine?.[billKey] ?? 0),
-      paid: Number(mine?.[paidKey] ?? 0),
-      due: Number(mine?.balance_due ?? 0),
-      advance: Number(mine?.advance_balance ?? 0),
-    });
+    const allContacts = cacheRead<Contact[]>(contactsTable) ?? [];
+    const mine = allContacts.filter(
+      (c) => String((c as unknown as Record<string, unknown>).name ?? "") === displayName,
+    );
+    setContact(mergeContactRows(mine));
 
-    // Pull each source file's module id, the date it actually counted
-    // (received_date for delivery items), and the extra description fields.
-    // bmet/saudi/kuwait only count once received. Built for BOTH vendor and
-    // agency ledgers — the agency side uses received_date to mark entries whose
-    // work is not yet complete (vendor delivery pending).
-    const map = new Map<string, SrcInfo>();
-    {
-      // table -> [columns to select], with a normalizer for each row.
-      const specs: Record<string, { cols: string; map: (r: Record<string, unknown>) => SrcInfo }> = {
-        bmet_cards: {
-          cols: "id,bmet_id,received_date,country_name,cancelled,cancel_reason,cancel_date",
-          map: (r) => ({ displayId: r.bmet_id as string, countDate: r.received_date as string, country: r.country_name as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
-        },
-        saudi_visas: {
-          cols: "id,saudi_id,received_date,cancelled,cancel_reason,cancel_date",
-          map: (r) => ({ displayId: r.saudi_id as string, countDate: r.received_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
-        },
-        kuwait_visas: {
-          cols: "id,kuwait_id,received_date,cancelled,cancel_reason,cancel_date",
-          map: (r) => ({ displayId: r.kuwait_id as string, countDate: r.received_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
-        },
-        tickets: {
-          cols: "id,ticket_id,airline,entry_date,cancelled,cancel_reason,cancel_date",
-          map: (r) => ({ displayId: r.ticket_id as string, airline: r.airline as string, countDate: r.entry_date as string, cancelled: Boolean(r.cancelled), cancelReason: r.cancel_reason as string, cancelDate: r.cancel_date as string }),
-        },
-      };
-      const byTable: Record<string, string[]> = {};
-      for (const r of ledgerRows) {
-        const src = String(r.source_table ?? "");
-        const sid = String(r.source_id ?? "");
-        if (sid && specs[src]) (byTable[src] ||= []).push(sid);
-      }
-      await Promise.all(
-        Object.entries(byTable).map(async ([tbl, ids]) => {
-          if (!ids.length) return;
-          const { data } = await supabase.from(tbl as never).select(specs[tbl].cols).in("id", ids);
-          for (const row of (data as Record<string, unknown>[] | null) ?? []) {
-            map.set(String(row.id), specs[tbl].map(row));
-          }
-        }),
-      );
+    const balRows = cacheRead<Record<string, unknown>[]>(isCustomer ? "bal_agent" : "bal_vendor") ?? [];
+    setSummaryFromBalRows(balRows);
+
+    await applySrcMap(ledgerRows, true);
+  };
+
+  const load = async () => {
+    setLoading(true);
+    if (isOffline()) {
+      await loadFromCache();
+      setLoading(false);
+      return;
     }
-    setSrcMap(map);
+    try {
+      const [ledgerRes, contactRes, balRes] = await Promise.all([
+        supabase
+          .from(table as never)
+          .select("*")
+          .eq(groupField, displayName)
+          .order("entry_date", { ascending: true })
+          .order("created_at", { ascending: true })
+          .limit(1000),
+        supabase
+          .from(contactsTable as never)
+          .select("phone,phone_labels,address,settle_mode,serial_no,full_name,notes")
+          .eq("name", displayName)
+          .order("settle_mode", { ascending: true })
+          .limit(10),
+
+        supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
+      ]);
+      if (ledgerRes.error) throw ledgerRes.error;
+      const ledgerRows = (ledgerRes.data as unknown as LedgerRow[]) ?? [];
+      setRows(ledgerRows);
+      // Duplicate-tolerant: a name should map to one contact, but if stale
+      // duplicates ever exist, merge them so an explicit "এক একটা বিল" choice
+      // and any saved phone/address are never lost.
+      const contactRows = (contactRes.data as Contact[] | null) ?? [];
+      setContact(mergeContactRows(contactRows));
+
+      // Pick this party's authoritative balance row.
+      const balRows = (balRes.data as unknown as Record<string, unknown>[]) ?? [];
+      setSummaryFromBalRows(balRows);
+
+      await applySrcMap(ledgerRows, false);
+    } catch {
+      // Network failed mid-session — fall back to the offline snapshot.
+      await loadFromCache();
+    }
     setLoading(false);
   };
 
