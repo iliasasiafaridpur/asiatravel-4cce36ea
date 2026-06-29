@@ -314,7 +314,7 @@ function InvoicePage() {
         {/* logo watermark */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+          className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
         >
           <img
             src={logoAsset.url}
