@@ -224,10 +224,19 @@ export function PartyLedgerPage({
   useEffect(() => {
     let cancelled = false;
     const loadParties = async () => {
-      const [contactsRes, ledgerRes] = await Promise.all([
-        supabase.from(contactsTable as never).select("name").limit(5000),
-        supabase.from(table as never).select(groupField).limit(5000),
-      ]);
+      let contactsData: { name?: string }[] | null;
+      let ledgerData: Record<string, unknown>[] | null;
+      if (isOffline()) {
+        contactsData = cacheRead<{ name?: string }[]>(contactsTable) ?? [];
+        ledgerData = cacheRead<Record<string, unknown>[]>(table) ?? [];
+      } else {
+        const [contactsRes, ledgerRes] = await Promise.all([
+          supabase.from(contactsTable as never).select("name").limit(5000),
+          supabase.from(table as never).select(groupField).limit(5000),
+        ]);
+        contactsData = contactsRes.data as { name?: string }[] | null;
+        ledgerData = ledgerRes.data as Record<string, unknown>[] | null;
+      }
       const set = new Set<string>();
       for (const r of (contactsRes.data as { name?: string }[] | null) ?? []) {
         const n = String(r.name ?? "").trim();
