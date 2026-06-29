@@ -172,6 +172,22 @@ function InvoicePage() {
   const [items, setItems] = useState<InvoiceItem[]>(() => [blankItem("tickets")]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
+  const invoiceRef = useRef<HTMLDivElement>(null);
+  const [savingJpeg, setSavingJpeg] = useState(false);
+
+  const handleDownloadJpeg = async () => {
+    if (!invoiceRef.current) return;
+    setSavingJpeg(true);
+    try {
+      await downloadNodeAsJpeg(invoiceRef.current, `invoice-${invoiceNo || invoiceDate}`);
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    } finally {
+      setSavingJpeg(false);
+    }
+  };
+
 
   const serviceModules = useMemo(
     () => MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key)),
