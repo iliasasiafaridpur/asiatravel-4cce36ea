@@ -558,7 +558,7 @@ function AccountsPage() {
 <style>
   @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
-  body::before{content:"";position:fixed;inset:0;z-index:-1;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
   .brand .co{font-size:16px;font-weight:800}
   .brand .tag{font-size:10px;color:#555}
@@ -785,7 +785,7 @@ ${node.innerHTML.replace(
 <style>
   @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
-  body::before{content:"";position:fixed;inset:0;z-index:-1;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
   .brand .co{font-size:16px;font-weight:800}
   .brand .tag{font-size:10px;color:#555}
