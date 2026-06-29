@@ -25,10 +25,19 @@ function VendorsPage() {
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
   const navigate = useNavigate();
   const load = async () => {
-    const [{ data }, { data: vendors }] = await Promise.all([
-      supabase.rpc("get_vendor_balances" as never),
-      supabase.from("vendors").select("name,settle_mode,serial_no").limit(5000),
-    ]);
+    let data: unknown;
+    let vendors: unknown;
+    if (isOffline()) {
+      data = cacheRead<Bal[]>("bal_vendor") ?? [];
+      vendors = cacheRead<{ name: string; settle_mode: string | null; serial_no: number | null }[]>("vendors") ?? [];
+    } else {
+      const [balRes, venRes] = await Promise.all([
+        supabase.rpc("get_vendor_balances" as never),
+        supabase.from("vendors").select("name,settle_mode,serial_no").limit(5000),
+      ]);
+      data = balRes.data;
+      vendors = venRes.data;
+    }
     const rows = ((data as unknown) as Bal[]) ?? [];
     const rank = (b: Bal) => (Number(b.advance_balance ?? 0) > 0 ? 0 : Number(b.balance_due) > 0 ? 1 : 2);
     rows.sort((a, b) => {
