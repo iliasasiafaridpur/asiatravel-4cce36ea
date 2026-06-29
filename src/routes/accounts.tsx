@@ -134,6 +134,45 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
   return <div className="text-center py-12 text-muted-foreground text-sm">{children}</div>;
 }
 
+type BalRow = { name: string; due: number; advance: number };
+function BalancePicker({
+  loading, rows, selected, onToggle, onAll, onNone, onDueOnly,
+}: {
+  loading: boolean;
+  rows: BalRow[];
+  selected: Set<string>;
+  onToggle: (name: string) => void;
+  onAll: () => void;
+  onNone: () => void;
+  onDueOnly: () => void;
+}) {
+  if (loading) return <div className="py-3 text-center text-xs text-muted-foreground">ব্যালেন্স লোড হচ্ছে…</div>;
+  if (rows.length === 0) return <div className="py-3 text-center text-xs text-muted-foreground">কোনো হিসাব নেই</div>;
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={onAll}>সব</Button>
+        <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={onDueOnly}>শুধু বাকি</Button>
+        <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={onNone}>কিছু না</Button>
+        <span className="ml-auto text-[11px] text-muted-foreground">{selected.size}/{rows.length} নির্বাচিত</span>
+      </div>
+      <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-md border p-1.5">
+        {rows.map((r) => (
+          <label key={r.name} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/50">
+            <Checkbox checked={selected.has(r.name)} onCheckedChange={() => onToggle(r.name)} />
+            <span className="flex-1 truncate">{r.name}</span>
+            <span className={`tabular-nums ${r.advance > 0 ? "text-emerald-600" : r.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>
+              {r.advance > 0 ? `অগ্রিম ৳${r.advance.toLocaleString()}` : r.due > 0 ? `বাকি ৳${r.due.toLocaleString()}` : "0"}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
   const navigate = useNavigate();
