@@ -249,8 +249,8 @@ function AccountsPage() {
       const byDate = <T extends Record<string, unknown>>(rows: T[]) =>
         dateTo ? rows.filter((row) => String(row.entry_date ?? "") <= dateTo) : rows;
       const recvCache = (cacheRead<Recv[]>("payment_receipts") ?? []).filter(
-        (row) => String((row as Record<string, unknown>).source ?? "") !== "discount" &&
-          !String((row as Record<string, unknown>).method ?? "").toLowerCase().includes("discount"),
+        (row) => String((row as unknown as Record<string, unknown>).source ?? "") !== "discount" &&
+          !String((row as unknown as Record<string, unknown>).method ?? "").toLowerCase().includes("discount"),
       );
       if (seq !== reloadSeqRef.current) return;
       setReceived(byDate(mineOnly(recvCache as unknown as Record<string, unknown>[], ["received_by", "created_by"])) as unknown as Recv[]);
