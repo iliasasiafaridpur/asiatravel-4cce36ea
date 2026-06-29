@@ -314,9 +314,10 @@ function InvoicePage() {
         <div className="inv-banner relative bg-white border-b-2 border-[#496a9d] px-8 sm:px-10 py-6">
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
             <div className="min-w-0 flex items-center gap-3 flex-1">
-              <div className="h-12 w-12 rounded-xl bg-[#496a9d]/10 ring-1 ring-[#496a9d]/20 flex items-center justify-center shrink-0">
-                <Plane className="h-6 w-6 text-[#496a9d]" />
+              <div className="h-14 w-14 rounded-xl bg-white ring-1 ring-[#496a9d]/20 overflow-hidden flex items-center justify-center shrink-0">
+                <img src={logoAsset.url} alt={AGENCY.name} className="h-full w-full object-contain" width={56} height={56} />
               </div>
+
               <div className="min-w-0">
                 <h2 className="invoice-agency-name font-extrabold tracking-tight leading-tight whitespace-nowrap text-[#0b2545]">{AGENCY.name}</h2>
                 <p className="text-[11px] italic text-[#b08a3e] font-medium leading-tight mt-0.5">"{AGENCY.slogan}"</p>
