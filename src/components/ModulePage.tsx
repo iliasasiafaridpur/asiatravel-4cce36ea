@@ -2329,7 +2329,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
                     {isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" && (
                       <p className="text-[10px] leading-tight text-muted-foreground">
                         {matched?.serial != null ? (
-                          <span className="font-mono font-semibold text-primary">AGT-{String(matched.serial).padStart(3, "0")}</span>
+                          <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{partySerialCode("agent", matched.serial)}</span>
                         ) : (
                           <span className="text-amber-500">ID নেই</span>
                         )}
