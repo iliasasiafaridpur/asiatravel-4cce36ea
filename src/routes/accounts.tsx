@@ -408,6 +408,18 @@ function AccountsPage() {
   const periodIncome = fRecv.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodMdIncome = fRecv.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const periodVendorIncome = fRecv.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  // Method-wise receive breakdown for the current print scope (list of methods actually used)
+  const methodBreakdown = useMemo(() => {
+    const map = new Map<string, { method: string; count: number; total: number }>();
+    for (const r of fRecv) {
+      const m = (r.method ?? "").trim() || "Cash";
+      const cur = map.get(m) ?? { method: m, count: 0, total: 0 };
+      cur.count += 1;
+      cur.total += Number(r.amount || 0);
+      map.set(m, cur);
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  }, [fRecv]);
   const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
   const expenseHitsBalance = (e: Exp) =>
     e.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(e.category) : true;
