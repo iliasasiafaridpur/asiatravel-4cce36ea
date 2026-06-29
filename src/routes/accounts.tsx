@@ -695,6 +695,34 @@ ${node.innerHTML.replace(
       rows.push(it);
     }
 
+    // Within each date: receipts (জমা) first then খরচ/handover, larger amount
+    // first in each group. Recompute running balance from the carried opening
+    // (use fresh objects so the memoized fullAsc rows are never mutated).
+    {
+      const amtOf = (it: TLItem) => Number((it.row as { amount?: number }).amount || 0);
+      const dateOrder: string[] = [];
+      const byDate = new Map<string, (TLItem & { running: number })[]>();
+      for (const it of rows) {
+        if (!byDate.has(it.date)) { byDate.set(it.date, []); dateOrder.push(it.date); }
+        byDate.get(it.date)!.push(it);
+      }
+      const reordered: (TLItem & { running: number })[] = [];
+      for (const d of dateOrder) {
+        const grp = byDate.get(d)!;
+        const ins = grp.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
+        const outs = grp.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
+        for (const it of [...ins, ...outs]) reordered.push({ ...it });
+      }
+      let bal = opening;
+      for (const it of reordered) {
+        if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? amtOf(it) : 0;
+        else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? amtOf(it) : 0;
+        else bal -= expenseHitsBalance(it.row as Exp) ? amtOf(it) : 0;
+        it.running = bal;
+      }
+      rows.splice(0, rows.length, ...reordered);
+    }
+
     const totals = rows.reduce(
       (acc, it) => {
         const amt = Number((it.row as { amount: number }).amount || 0);
