@@ -708,7 +708,6 @@ export function PassengerProfileDrawer({
                             <th className="px-2 py-1.5 font-medium text-right">Amount</th>
                             <th className="px-2 py-1.5 font-medium">Method</th>
                             <th className="px-2 py-1.5 font-medium">Received By / Status</th>
-                            <th className="px-2 py-1.5 font-medium text-right">Receipt</th>
                           </tr>
                         </thead>
                         <tbody>
