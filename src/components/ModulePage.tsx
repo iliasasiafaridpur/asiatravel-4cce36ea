@@ -333,7 +333,9 @@ export function ModulePage({ module: mod }: Props) {
       reloadQueuedRef.current = false;
       window.setTimeout(() => void load(false), 250);
     }
+    return resultList;
   }, [mod.table, cacheKey, columns, hasDateFilter]);
+
 
   // Count of extra services per parent row (for the "+N" badge on the data list)
   const loadExtraCounts = useCallback(async () => {
