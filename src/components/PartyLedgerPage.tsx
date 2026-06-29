@@ -1457,9 +1457,20 @@ export function PartyLedgerPage({
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                setPrintOpen(false);
+                void runExportJpeg(printMode, printFrom, printTo);
+              }}
+            >
+              <ImageDown className="h-4 w-4" /> JPEG ডাউনলোড
             </Button>
             <Button
               size="sm"
