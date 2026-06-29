@@ -32,6 +32,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
+import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
 
 
 export const Route = createFileRoute("/accounts")({
