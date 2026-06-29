@@ -1202,7 +1202,10 @@ ${node.innerHTML.replace(
                       <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
                     </div>
                   </div>
-                  <DialogFooter>
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" onClick={handleRangeClosingJpeg} className="gap-1.5">
+                      <ImageDown className="h-4 w-4" /> JPEG ডাউনলোড
+                    </Button>
                     <Button onClick={handleRangeClosingPrint} className="gap-1.5">
                       <Printer className="h-4 w-4" /> প্রিন্ট করুন
                     </Button>
