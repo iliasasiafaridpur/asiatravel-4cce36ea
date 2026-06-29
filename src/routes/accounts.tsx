@@ -650,6 +650,25 @@ function AccountsPage() {
     </div>`;
   };
 
+  // Method-wise receive breakdown section for the print (selection-aware)
+  const buildMethodSection = (): string => {
+    const rows = methodBreakdown.filter((m) => selMethods.has(m.method));
+    if (!rows.length) return "";
+    const body = rows.map((r, i) =>
+      `<tr><td>${i + 1}</td><td class="wrap">${escHtml(r.method)}</td><td class="num">${r.count}</td><td class="num"><span class="in">${fmt(r.total)}</span></td></tr>`
+    ).join("");
+    const totalCount = rows.reduce((s, r) => s + r.count, 0);
+    const totalAmt = rows.reduce((s, r) => s + r.total, 0);
+    return `<div style="margin-top:12px;break-inside:avoid">
+      <div style="font-weight:800;font-size:12px;margin-bottom:3px;border-bottom:1.5px solid #111;padding-bottom:2px">পেমেন্ট রিসিভ মেথড অনুযায়ী হিসাব</div>
+      <table>
+        <thead><tr><th>#</th><th>মেথড</th><th class="num">সংখ্যা</th><th class="num">পরিমাণ</th></tr></thead>
+        <tbody>${body}</tbody>
+        <tfoot><tr><td colspan="2">মোট</td><td class="num">${totalCount}</td><td class="num"><span class="in">${fmt(totalAmt)}</span></td></tr></tfoot>
+      </table>
+    </div>`;
+  };
+
   // Combined optional vendor + agency sections (selection-aware)
   const partySectionsHtml = (): string => {
     let out = "";
