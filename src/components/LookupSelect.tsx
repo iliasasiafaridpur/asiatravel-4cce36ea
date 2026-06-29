@@ -48,14 +48,14 @@ async function loadParty(pk: "agent" | "vendor"): Promise<void> {
 }
 
 function partyPrefix(pk: "agent" | "vendor"): string {
-  return pk === "agent" ? "AGT" : "VEN";
+  return partyCodePrefix(pk);
 }
 
-// "AGT-001" style ID for a party name (or "" when not found).
+// "A-001" style ID for a party name (or "" when not found).
 function partyId(pk: "agent" | "vendor", name: string): string {
   const serial = partyCache[pk]?.[normName(name)];
   if (serial == null) return "";
-  return `${partyPrefix(pk)}-${String(serial).padStart(3, "0")}`;
+  return partySerialCode(pk, serial);
 }
 
 // Display label "AGT-001 · Name" (plain name when no ID / for "Self").
