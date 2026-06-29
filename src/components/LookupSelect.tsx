@@ -4,9 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, Plus, Settings2, Trash2, Check, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Pencil, Plus, Settings2, Trash2, Check, X, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { cn } from "@/lib/utils";
 
 export type LookupKind = string;
 
@@ -14,6 +19,53 @@ const PARTY_LOOKUP_KIND: Record<string, "customer" | "vendor"> = {
   sub_agency: "customer",
   vendor: "vendor",
 };
+
+// Lookup kinds backed by a পরিচিতি বোর্ড table that carries a serial / ID.
+// Their dropdowns show "AGT-001 · Name" / "VEN-003 · Name" and are searchable
+// by either the ID number or the name. (Agency "Self" has no ID.)
+const PARTY_SERIAL_KIND: Record<string, "agent" | "vendor"> = {
+  sub_agency: "agent",
+  vendor: "vendor",
+};
+
+const normName = (s: string) => s.trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+
+// name(normalized) → serial_no, per party table. Loaded once, cached, and
+// shared across every party select on the page.
+const partyCache: Record<string, Record<string, number>> = {};
+const partyListeners: Record<string, Set<() => void>> = {};
+
+async function loadParty(pk: "agent" | "vendor"): Promise<void> {
+  const table = pk === "agent" ? "agents" : "vendors";
+  const { data } = await supabase.from(table).select("name,serial_no").limit(5000);
+  const map: Record<string, number> = {};
+  (((data as { name?: string | null; serial_no?: number | null }[] | null) ?? [])).forEach((r) => {
+    const n = String(r.name ?? "").trim();
+    if (n && r.serial_no != null) map[normName(n)] = Number(r.serial_no);
+  });
+  partyCache[pk] = map;
+  partyListeners[pk]?.forEach((fn) => fn());
+}
+
+function partyPrefix(pk: "agent" | "vendor"): string {
+  return pk === "agent" ? "AGT" : "VEN";
+}
+
+// "AGT-001" style ID for a party name (or "" when not found).
+function partyId(pk: "agent" | "vendor", name: string): string {
+  const serial = partyCache[pk]?.[normName(name)];
+  if (serial == null) return "";
+  return `${partyPrefix(pk)}-${String(serial).padStart(3, "0")}`;
+}
+
+// Display label "AGT-001 · Name" (plain name when no ID / for "Self").
+function partyDisplay(pk: "agent" | "vendor", name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return name;
+  if (pk === "agent" && trimmed.toLowerCase() === "self") return name;
+  const id = partyId(pk, trimmed);
+  return id ? `${id} · ${trimmed}` : trimmed;
+}
 
 const LABELS: Record<string, string> = {
   country: "দেশ",
