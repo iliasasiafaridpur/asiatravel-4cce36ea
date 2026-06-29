@@ -680,6 +680,7 @@ ${node.innerHTML.replace(
   `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
 )}
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(scopedBalance)}</div>
+${partySectionsHtml()}
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 </body></html>`;
   };
