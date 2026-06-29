@@ -295,13 +295,14 @@ export function ModulePage({ module: mod }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mod.table]);
 
-  const load = useCallback(async (showSpinner = !hasLoadedRef.current) => {
+  const load = useCallback(async (showSpinner = !hasLoadedRef.current): Promise<Row[]> => {
     if (loadingRef.current) {
       reloadQueuedRef.current = true;
-      return;
+      return [];
     }
     loadingRef.current = true;
     if (showSpinner) setLoading(true);
+    let resultList: Row[] = [];
     try {
       const baseQuery = supabase.from(mod.table as never).select(columns);
       // Contact tables (agents/vendors) have no entry_date column — ordering by
