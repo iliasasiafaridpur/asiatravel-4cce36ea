@@ -445,6 +445,7 @@ function InvoicePage() {
 
       <style>{`
         .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 13pt; }
+        .invoice-print .inv-watermark { opacity: 0.06 !important; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 18pt; }
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
