@@ -11,13 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { LookupSelect } from "@/components/LookupSelect";
 import { toast } from "sonner";
 import { formatDate, isAdvancePayment } from "@/lib/modules";
@@ -132,6 +131,45 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
   return <div className="text-center py-12 text-muted-foreground text-sm">{children}</div>;
 }
 
+type BalRow = { name: string; due: number; advance: number };
+function BalancePicker({
+  loading, rows, selected, onToggle, onAll, onNone, onDueOnly,
+}: {
+  loading: boolean;
+  rows: BalRow[];
+  selected: Set<string>;
+  onToggle: (name: string) => void;
+  onAll: () => void;
+  onNone: () => void;
+  onDueOnly: () => void;
+}) {
+  if (loading) return <div className="py-3 text-center text-xs text-muted-foreground">ব্যালেন্স লোড হচ্ছে…</div>;
+  if (rows.length === 0) return <div className="py-3 text-center text-xs text-muted-foreground">কোনো হিসাব নেই</div>;
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={onAll}>সব</Button>
+        <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={onDueOnly}>শুধু বাকি</Button>
+        <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={onNone}>কিছু না</Button>
+        <span className="ml-auto text-[11px] text-muted-foreground">{selected.size}/{rows.length} নির্বাচিত</span>
+      </div>
+      <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-md border p-1.5">
+        {rows.map((r) => (
+          <label key={r.name} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/50">
+            <Checkbox checked={selected.has(r.name)} onCheckedChange={() => onToggle(r.name)} />
+            <span className="flex-1 truncate">{r.name}</span>
+            <span className={`tabular-nums ${r.advance > 0 ? "text-emerald-600" : r.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>
+              {r.advance > 0 ? `অগ্রিম ৳${r.advance.toLocaleString()}` : r.due > 0 ? `বাকি ৳${r.due.toLocaleString()}` : "0"}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
 function AccountsPage() {
   const { user, profile } = useCurrentUser();
   const navigate = useNavigate();
@@ -147,9 +185,19 @@ function AccountsPage() {
   const [dateFrom, setDateFrom] = useState(today());
   const [dateTo, setDateTo] = useState(today());
   const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
-  const [dayPrintOpen, setDayPrintOpen] = useState(false);
+  const [printPaper, setPrintPaper] = useState<"A4" | "A5" | "Letter" | "Legal">("A4");
+  const [printOpen, setPrintOpen] = useState(false);
+  
   const [dayFrom, setDayFrom] = useState(today());
   const [dayTo, setDayTo] = useState(today());
+  // Optional vendor / agency balance sections appended to the print
+  const [incVendors, setIncVendors] = useState(false);
+  const [incAgencies, setIncAgencies] = useState(false);
+  const [vendorBals, setVendorBals] = useState<{ name: string; due: number; advance: number }[]>([]);
+  const [agencyBals, setAgencyBals] = useState<{ name: string; due: number; advance: number }[]>([]);
+  const [selVendors, setSelVendors] = useState<Set<string>>(new Set());
+  const [selAgencies, setSelAgencies] = useState<Set<string>>(new Set());
+  const [balLoading, setBalLoading] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
   const reloadSeqRef = useRef(0);
@@ -526,6 +574,75 @@ function AccountsPage() {
     void reload(true);
   };
 
+  // CSS @page size keyword for the chosen paper
+  const PAPER_CSS: Record<string, string> = { A4: "A4", A5: "A5", Letter: "letter", Legal: "legal" };
+  const escHtml = (s: string) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Load vendor + agency balances for the print selection list
+  const loadPartyBalances = useCallback(async () => {
+    setBalLoading(true);
+    try {
+      const [v, a] = await Promise.all([
+        supabase.rpc("get_vendor_balances" as never),
+        supabase.rpc("get_agent_balances" as never),
+      ]);
+      const rank = (r: { due: number; advance: number }) => (r.advance > 0 ? 0 : r.due > 0 ? 1 : 2);
+      const srt = (x: { name: string; due: number; advance: number }, y: { name: string; due: number; advance: number }) => {
+        const rr = rank(x) - rank(y);
+        if (rr !== 0) return rr;
+        const xv = x.advance > 0 ? x.advance : x.due;
+        const yv = y.advance > 0 ? y.advance : y.due;
+        return yv - xv;
+      };
+      const vrows = (((v.data as unknown) as { vendor_name: string; balance_due: number; advance_balance: number }[]) ?? [])
+        .map((r) => ({ name: String(r.vendor_name ?? ""), due: Number(r.balance_due ?? 0), advance: Number(r.advance_balance ?? 0) }))
+        .filter((r) => r.name && r.name.trim().toLowerCase() !== "self")
+        .sort(srt);
+      const arows = (((a.data as unknown) as { agent_name: string; balance_due: number; advance_balance: number }[]) ?? [])
+        .map((r) => ({ name: String(r.agent_name ?? ""), due: Number(r.balance_due ?? 0), advance: Number(r.advance_balance ?? 0) }))
+        .filter((r) => r.name && r.name.trim().toLowerCase() !== "self")
+        .sort(srt);
+      setVendorBals(vrows);
+      setAgencyBals(arows);
+      // default-select every party that has a non-zero balance
+      setSelVendors(new Set(vrows.filter((r) => r.due > 0 || r.advance > 0).map((r) => r.name)));
+      setSelAgencies(new Set(arows.filter((r) => r.due > 0 || r.advance > 0).map((r) => r.name)));
+    } finally {
+      setBalLoading(false);
+    }
+  }, []);
+
+  // Build an appended balance section (vendor / agency) for the print
+  const buildBalanceSection = (title: string, rows: { name: string; due: number; advance: number }[]): string => {
+    if (!rows.length) return "";
+    const body = rows.map((r, i) => {
+      const bal = r.advance > 0
+        ? `<span class="in">অগ্রিম ${fmt(r.advance)}</span>`
+        : r.due > 0
+          ? `<span class="due">বাকি ${fmt(r.due)}</span>`
+          : `<span style="color:#888">0</span>`;
+      return `<tr><td>${i + 1}</td><td class="wrap">${escHtml(r.name)}</td><td class="num">${bal}</td></tr>`;
+    }).join("");
+    const totalDue = rows.reduce((s, r) => s + (r.due > 0 ? r.due : 0), 0);
+    const totalAdv = rows.reduce((s, r) => s + (r.advance > 0 ? r.advance : 0), 0);
+    return `<div style="margin-top:12px;break-inside:avoid">
+      <div style="font-weight:800;font-size:12px;margin-bottom:3px;border-bottom:1.5px solid #111;padding-bottom:2px">${title}</div>
+      <table>
+        <thead><tr><th>#</th><th>নাম</th><th class="num">ব্যালেন্স</th></tr></thead>
+        <tbody>${body}</tbody>
+        <tfoot><tr><td colspan="2">মোট — বাকি / অগ্রিম</td><td class="num"><span class="due">${fmt(totalDue)}</span> / <span class="in">${fmt(totalAdv)}</span></td></tr></tfoot>
+      </table>
+    </div>`;
+  };
+
+  // Combined optional vendor + agency sections (selection-aware)
+  const partySectionsHtml = (): string => {
+    let out = "";
+    if (incVendors) out += buildBalanceSection("Vendor (ভেন্ডর) ব্যালেন্স", vendorBals.filter((r) => selVendors.has(r.name)));
+    if (incAgencies) out += buildBalanceSection("Agency (এজেন্সি) ব্যালেন্স", agencyBals.filter((r) => selAgencies.has(r.name)));
+    return out;
+  };
+
   // Print timeline
   const buildTimelineHtml = (): string | null => {
     const node = printRef.current;
@@ -555,7 +672,7 @@ function AccountsPage() {
     const printedBy = displayName(profile, user);
     return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
+  @page{size:${PAPER_CSS[printPaper]} ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
@@ -599,6 +716,7 @@ ${node.innerHTML.replace(
   `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
 )}
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(scopedBalance)}</div>
+${partySectionsHtml()}
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 </body></html>`;
   };
@@ -608,10 +726,12 @@ ${node.innerHTML.replace(
     if (!html) return;
     try {
       printDocHtml(html);
+      setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
     }
   };
+
 
 
 
@@ -790,7 +910,7 @@ ${node.innerHTML.replace(
 
     return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
+  @page{size:${PAPER_CSS[printPaper]} ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
@@ -854,6 +974,7 @@ ${node.innerHTML.replace(
   </tfoot>
 </table>
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
+${partySectionsHtml()}
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 </body></html>`;
   };
@@ -863,7 +984,7 @@ ${node.innerHTML.replace(
     if (!html) return;
     try {
       printDocHtml(html);
-      setDayPrintOpen(false);
+      setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
     }
@@ -1126,59 +1247,116 @@ ${node.innerHTML.replace(
                 : <>সর্বশেষ <b className="text-foreground">{timeline.length}</b> লেনদেন</>}
             </div>
             <div className="flex items-center gap-1.5">
-              <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
-                <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="portrait">Portrait</SelectItem>
-                  <SelectItem value="landscape">Landscape</SelectItem>
-                </SelectContent>
-              </Select>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" disabled={timeline.length === 0} className="h-8 text-xs gap-1.5">
-                    <Printer className="h-3.5 w-3.5" /> প্রিন্ট
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuItem onClick={handlePrint} className="gap-2">
-                    <Printer className="h-4 w-4" />
-                    <div>
-                      <div className="text-sm font-medium">সম্পূর্ণ হিসাব প্রিন্ট</div>
-                      <div className="text-[11px] text-muted-foreground">চলতি ফিল্টারের সব লেনদেন একসাথে</div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    <div>
-                      <div className="text-sm font-medium">তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</div>
-                      <div className="text-[11px] text-muted-foreground">শুরু–শেষ তারিখ বেছে নিন, প্রতিদিনের ক্লোজিং ব্যালেন্সসহ</div>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Dialog open={dayPrintOpen} onOpenChange={setDayPrintOpen}>
-                <DialogContent className="max-w-sm">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={timeline.length === 0}
+                className="h-8 text-xs gap-1.5"
+                onClick={() => { setPrintOpen(true); void loadPartyBalances(); }}
+              >
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট অপশন
+              </Button>
+
+              <Dialog open={printOpen} onOpenChange={setPrintOpen}>
+                <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                      <Printer className="h-4 w-4" /> প্রিন্ট অপশন — আয়-ব্যয়ের সারাংশ
+                    </DialogTitle>
                     <DialogDescription>
-                      শুরু থেকে শেষ তারিখ পর্যন্ত সম্পূর্ণ হিসাব প্রিন্টের মত সব তথ্য থাকবে, সাথে প্রতি তারিখের হিসাব শেষে ঐ দিনের ক্লোজিং ব্যালেন্স দেখাবে।
+                      পেপার সাইজ ও অরিয়েন্টেশন বেছে নিন। চাইলে নির্দিষ্ট Vendor ও Agency-র ব্যালেন্স মার্ক করে রিপোর্টের সাথে যুক্ত করুন।
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid grid-cols-2 gap-3 py-1">
+
+                  {/* paper + orientation */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">শুরুর তারিখ</Label>
-                      <DateInput value={dayFrom} onChange={(e) => setDayFrom(e.target.value)} />
+                      <Label className="text-xs">পেপার সাইজ</Label>
+                      <Select value={printPaper} onValueChange={(v) => setPrintPaper(v as typeof printPaper)}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A4">A4 (210×297mm)</SelectItem>
+                          <SelectItem value="A5">A5 (148×210mm)</SelectItem>
+                          <SelectItem value="Letter">Letter (8.5×11in)</SelectItem>
+                          <SelectItem value="Legal">Legal (8.5×14in)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">শেষ তারিখ</Label>
-                      <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
+                      <Label className="text-xs">অরিয়েন্টেশন</Label>
+                      <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="portrait">Portrait</SelectItem>
+                          <SelectItem value="landscape">Landscape</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <DialogFooter className="gap-2 sm:gap-2">
-                    <Button onClick={handleRangeClosingPrint} className="gap-1.5">
-                      <Printer className="h-4 w-4" /> প্রিন্ট করুন
+
+                  {/* Vendor balances */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Vendor ব্যালেন্স যুক্ত করুন</Label>
+                      <Switch checked={incVendors} onCheckedChange={setIncVendors} />
+                    </div>
+                    {incVendors && (
+                      <BalancePicker
+                        loading={balLoading}
+                        rows={vendorBals}
+                        selected={selVendors}
+                        onToggle={(name) => setSelVendors((prev) => { const n = new Set(prev); if (n.has(name)) n.delete(name); else n.add(name); return n; })}
+                        onAll={() => setSelVendors(new Set(vendorBals.map((r) => r.name)))}
+                        onNone={() => setSelVendors(new Set())}
+                        onDueOnly={() => setSelVendors(new Set(vendorBals.filter((r) => r.due > 0).map((r) => r.name)))}
+                      />
+                    )}
+                  </div>
+
+                  {/* Agency balances */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Agency ব্যালেন্স যুক্ত করুন</Label>
+                      <Switch checked={incAgencies} onCheckedChange={setIncAgencies} />
+                    </div>
+                    {incAgencies && (
+                      <BalancePicker
+                        loading={balLoading}
+                        rows={agencyBals}
+                        selected={selAgencies}
+                        onToggle={(name) => setSelAgencies((prev) => { const n = new Set(prev); if (n.has(name)) n.delete(name); else n.add(name); return n; })}
+                        onAll={() => setSelAgencies(new Set(agencyBals.map((r) => r.name)))}
+                        onNone={() => setSelAgencies(new Set())}
+                        onDueOnly={() => setSelAgencies(new Set(agencyBals.filter((r) => r.due > 0).map((r) => r.name)))}
+                      />
+                    )}
+                  </div>
+
+                  {/* Full print */}
+                  <Button onClick={handlePrint} disabled={timeline.length === 0} className="w-full gap-1.5">
+                    <Printer className="h-4 w-4" /> সম্পূর্ণ হিসাব প্রিন্ট
+                  </Button>
+
+                  {/* Daily closing range */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      <CalendarDays className="h-4 w-4" /> তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">প্রতিদিনের ক্লোজিং ব্যালেন্সসহ — উপরের পেপার/Vendor/Agency সেটিংস এতেও প্রযোজ্য।</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">শুরুর তারিখ</Label>
+                        <DateInput value={dayFrom} onChange={(e) => setDayFrom(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">শেষ তারিখ</Label>
+                        <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
+                      </div>
+                    </div>
+                    <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
+                      <Printer className="h-4 w-4" /> দৈনিক ক্লোজিং প্রিন্ট
                     </Button>
-                  </DialogFooter>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
