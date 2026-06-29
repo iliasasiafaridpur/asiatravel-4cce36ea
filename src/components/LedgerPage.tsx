@@ -2073,15 +2073,6 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
               >
                 <Printer className="h-3.5 w-3.5" /> Print
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportJpeg}
-                className="gap-1.5 h-8"
-                title="JPEG ডাউনলোড"
-              >
-                <ImageDown className="h-3.5 w-3.5" /> JPEG
-              </Button>
             </div>
           </div>
           <div className="overflow-x-auto -mx-2 px-2">
