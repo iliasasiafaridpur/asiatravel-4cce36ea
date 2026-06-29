@@ -12,6 +12,7 @@ import { Pencil, Plus, Settings2, Trash2, Check, X, ChevronsUpDown } from "lucid
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
+import { partyCodePrefix, partySerialCode } from "@/lib/format";
 
 export type LookupKind = string;
 
