@@ -381,3 +381,70 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     </>
   );
 }
+
+// Searchable agency/vendor picker. Shows "AGT-001 · Name" and filters by either
+// the ID number or the name (any substring). Stores the plain name as value so
+// no other code / data changes are needed.
+function PartyCombobox({ pk, label, value, options, onChange }: {
+  pk: "agent" | "vendor";
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "flex-1 min-w-0 justify-between font-normal",
+            !value && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">
+            {value ? partyDisplay(pk, value) : `-- ${label} --`}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[min(22rem,90vw)]" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            // itemValue already contains both the ID and the name (see below).
+            return itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="ID বা নাম দিয়ে খুঁজুন…" />
+          <CommandList>
+            <CommandEmpty>কিছু পাওয়া যায়নি</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => {
+                const id = partyId(pk, o);
+                const selected = o === value;
+                return (
+                  <CommandItem
+                    key={o}
+                    value={`${id} ${o}`}
+                    onSelect={() => { onChange(o); setOpen(false); }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">
+                      {id && <span className="font-mono text-primary mr-1.5">{id}</span>}
+                      {o}
+                    </span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
