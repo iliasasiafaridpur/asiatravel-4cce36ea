@@ -1826,7 +1826,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       .join("");
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${heading}</title>
 <style>
-  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111}
+  body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:24px;color:#111;position:relative}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   h1{margin:0 0 4px;font-size:20px}
   .meta{color:#555;font-size:12px;margin-bottom:14px}
   .summary{display:flex;gap:12px;margin-bottom:14px;font-size:14px;font-weight:700}
