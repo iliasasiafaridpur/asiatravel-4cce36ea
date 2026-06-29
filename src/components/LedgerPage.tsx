@@ -1775,12 +1775,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     URL.revokeObjectURL(url);
   };
 
-  const printPage = () => {
-    const w = window.open("", "_blank", "width=1000,height=700");
-    if (!w) {
-      toast.error("পপ-আপ ব্লক হয়েছে");
-      return;
-    }
+  const buildPrintHtml = () => {
     const heading = isAgency
       ? "সাব এজেন্সি হিসাব - এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্"
       : "Vendor Ledger - এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্";
