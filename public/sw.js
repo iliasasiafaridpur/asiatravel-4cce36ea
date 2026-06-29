@@ -65,8 +65,31 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || fetchPromise;
 }
 
+// Cache-first: serve instantly from cache, only hit the network on a miss.
+// Safe ONLY for immutable, content-hashed files (the filename changes on every
+// build), so there is no risk of serving stale app code after a new release.
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const resp = await fetch(request);
+  if (resp && resp.ok) {
+    try { cache.put(request, resp.clone()); } catch { /* ignore */ }
+  }
+  return resp;
+}
+
 function isAppBuildAsset(url) {
   return url.pathname.startsWith("/assets/") || url.pathname.includes("/@fs/") || url.pathname.includes("/src/");
+}
+
+// Vite production output: /assets/<name>-<hash>.<ext>. The hash makes each file
+// immutable, so it can be served cache-first for instant loads even on slow nets.
+function isImmutableHashedAsset(url) {
+  return (
+    url.pathname.startsWith("/assets/") &&
+    /-[A-Za-z0-9_]{8,}\.[a-z0-9]+$/i.test(url.pathname)
+  );
 }
 
 self.addEventListener("fetch", (event) => {
