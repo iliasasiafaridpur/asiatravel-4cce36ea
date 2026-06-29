@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { partySerialCode } from "@/lib/format";
 
 export const Route = createFileRoute("/agents")({
   head: () => ({ meta: [{ title: "Agent List — Travel Manager" }] }),
