@@ -35,6 +35,7 @@ const SUPPORT_TABLES = [
   "extra_services",
   "agents",
   "vendors",
+  "passengers",
 ] as const;
 
 export type PrefetchResult = { ok: number; failed: number; rows: number };
