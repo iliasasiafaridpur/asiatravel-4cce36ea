@@ -1054,7 +1054,7 @@ export function PartyLedgerPage({
 
   // Flexible ledger print: চাইলে সম্পূর্ণ হিসাব, শুধু বাকি বিল, অথবা নির্দিষ্ট
   // তারিখ থেকে শেষ চলতি ব্যালেন্স পর্যন্ত — প্রয়োজন অনুযায়ী প্রিন্ট করা যায়।
-  const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
+  const buildPrintHtml = (mode: "all" | "due" | "range" | "bill", from: string, to: string): string | null => {
     const esc = (s: string) =>
       String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] || c));
     const num = (n: number) => Math.round(Number(n || 0)).toLocaleString();
