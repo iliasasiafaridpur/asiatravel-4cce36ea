@@ -364,12 +364,28 @@ function AccountsPage() {
       },
     };
     let cancelled = false;
+    const offline = isOffline();
+    // Pull rows by id either from the network or the offline snapshots.
+    const fetchRowsByIds = async (table: string, ids: string[]): Promise<Record<string, unknown>[]> => {
+      if (!ids.length) return [];
+      if (offline) {
+        // module tables -> cache_v2_<table>; agency_ledger/extra_services -> off_<table>
+        const snap = table === "agency_ledger" || table === "extra_services"
+          ? (cacheRead<Record<string, unknown>[]>(table) ?? [])
+          : readModuleCache(table);
+        const idSet = new Set(ids);
+        return snap.filter((row) => idSet.has(String((row as Record<string, unknown>).id ?? ""))) as Record<string, unknown>[];
+      }
+      return [];
+    };
     (async () => {
       const out: Record<string, SvcDetail> = {};
       await Promise.all(Object.entries(byTable).map(async ([table, ids]) => {
         const cfg = tableConfigs[table]; if (!cfg || ids.size === 0) return;
-        const { data } = await supabase.from(table as never).select(cfg.cols).in("id", Array.from(ids));
-        for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+        const rows = offline
+          ? await fetchRowsByIds(table, Array.from(ids))
+          : ((await supabase.from(table as never).select(cfg.cols).in("id", Array.from(ids))).data as unknown as Record<string, unknown>[] | null) ?? [];
+        for (const row of rows) {
           out[String(row.id)] = cfg.map(row);
         }
       }));
@@ -384,8 +400,10 @@ function AccountsPage() {
       if (Object.keys(srcByTable).length > 0) {
         const vendorById: Record<string, { vendor?: string | null; cost?: number }> = {};
         await Promise.all(Object.entries(srcByTable).map(async ([table, ids]) => {
-          const { data } = await supabase.from(table as never).select("id,vendor_bought,cost_price").in("id", Array.from(ids));
-          for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+          const rows = offline
+            ? await fetchRowsByIds(table, Array.from(ids))
+            : ((await supabase.from(table as never).select("id,vendor_bought,cost_price").in("id", Array.from(ids))).data as unknown as Record<string, unknown>[] | null) ?? [];
+          for (const row of rows) {
             vendorById[String(row.id)] = { vendor: row.vendor_bought as string, cost: Number(row.cost_price ?? 0) };
           }
         }));
