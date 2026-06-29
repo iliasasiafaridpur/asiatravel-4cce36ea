@@ -1367,6 +1367,41 @@ ${partySectionsHtml()}
                     )}
                   </div>
 
+                  {/* Payment receive method breakdown */}
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">পেমেন্ট রিসিভ মেথড যুক্ত করুন</Label>
+                      <Switch checked={incMethods} onCheckedChange={setIncMethods} />
+                    </div>
+                    {incMethods && (
+                      methodBreakdown.length === 0 ? (
+                        <div className="py-3 text-center text-xs text-muted-foreground">এই সময়ে কোনো রিসিভ নেই</div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setSelMethods(new Set(methodBreakdown.map((m) => m.method)))}>সব</Button>
+                            <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setSelMethods(new Set())}>কিছু না</Button>
+                            <span className="ml-auto text-[11px] text-muted-foreground">{selMethods.size}/{methodBreakdown.length} নির্বাচিত</span>
+                          </div>
+                          <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-md border p-1.5">
+                            {methodBreakdown.map((m) => (
+                              <label key={m.method} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/50">
+                                <Checkbox
+                                  checked={selMethods.has(m.method)}
+                                  onCheckedChange={() => setSelMethods((prev) => { const n = new Set(prev); if (n.has(m.method)) n.delete(m.method); else n.add(m.method); return n; })}
+                                />
+                                <span className="flex-1 truncate">{m.method}</span>
+                                <span className="text-muted-foreground tabular-nums">{m.count} টি</span>
+                                <span className="text-emerald-600 tabular-nums">৳{m.total.toLocaleString()}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+
+
                   {/* Full print */}
                   <Button onClick={handlePrint} disabled={timeline.length === 0} className="w-full gap-1.5">
                     <Printer className="h-4 w-4" /> সম্পূর্ণ হিসাব প্রিন্ট
