@@ -1424,7 +1424,20 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       .update(logPayload as never)
       .eq("id", editRow.id);
     if (error) throw error;
+    // The update above re-fired sync_vendor_payment_to_cash, which wipes the
+    // cash-drawer mirror for this PAYMENT log row. Recreate it for the new
+    // amount/method so an edited vendor payment keeps its drawer impact.
+    await mirrorVendorPaymentExpense({
+      logId: String(editRow[mod.idColumn] ?? ""),
+      vendor: target,
+      items,
+      method,
+      date,
+      remarks,
+      balanceNeutral: asMdDeposit || Boolean(oldDetail.as_user_balance),
+    });
   };
+
 
   const submitPayment = async () => {
     if (!payTarget) return toast.error(`${groupFieldLabel} নির্বাচন করুন`);
