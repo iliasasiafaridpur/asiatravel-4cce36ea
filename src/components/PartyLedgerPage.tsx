@@ -324,7 +324,7 @@ export function PartyLedgerPage({
 
   const serialCode =
     contact?.serial_no != null
-      ? `${isCustomer ? "AGT" : "VEN"}-${String(contact.serial_no).padStart(3, "0")}`
+      ? partySerialCode(isCustomer ? "agent" : "vendor", contact.serial_no)
       : null;
 
   const load = async () => {
