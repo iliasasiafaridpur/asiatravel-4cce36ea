@@ -10,6 +10,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { cacheWrite } from "@/lib/offline-cache";
+import { registerOfflineSW } from "@/lib/register-sw";
 
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_ROWS = 1500;
@@ -49,6 +50,11 @@ export async function prefetchMonthData(
   days = 31,
   onProgress?: (done: number, total: number) => void,
 ): Promise<PrefetchResult> {
+  // Make sure the offline app shell is actually installed before saving data.
+  // Without an active service worker, localStorage snapshots exist but browser
+  // navigation can still fall through to the native "No internet" page.
+  await registerOfflineSW({ force: true });
+
   const cutoff = new Date(Date.now() - days * DAY).toISOString().slice(0, 10);
   let ok = 0;
   let failed = 0;
@@ -117,6 +123,14 @@ export async function prefetchMonthData(
     }
     step();
   }
+
+  cacheWrite("meta", {
+    saved_at: new Date().toISOString(),
+    days,
+    ok,
+    failed,
+    rows,
+  });
 
   return { ok, failed, rows };
 }
