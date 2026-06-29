@@ -32,6 +32,11 @@ import appCss from "../styles.css?url";
 
 function clearBrokenClientCaches() {
   if (typeof window === "undefined") return;
+  // NEVER wipe caches / unregister the service worker while offline. Offline
+  // route errors (failed network fetch) are expected — clearing here would
+  // destroy the saved offline data and kill the SW, forcing the browser's
+  // native "no internet" page on every navigation.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   try { window.localStorage.removeItem("rq_cache_v1"); } catch { /* ignore */ }
   try { window.localStorage.removeItem("rq_cache_v2"); } catch { /* ignore */ }
   try { window.localStorage.removeItem("rq_cache_v3"); } catch { /* ignore */ }
@@ -68,6 +73,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Offline: do NOT clear caches or reload — that wipes the offline data and
+    // shows the browser's "no internet" page. Let cached content render instead.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
     try {
       const key = "asia-travel:root-error-cache-recovered:v1";
       if (window.sessionStorage.getItem(key)) return;
