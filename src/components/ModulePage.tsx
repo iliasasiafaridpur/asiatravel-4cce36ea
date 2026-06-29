@@ -422,8 +422,9 @@ export function ModulePage({ module: mod }: Props) {
     const scheduleReload = (withRecv: boolean) => {
       if (rtTimerRef.current) window.clearTimeout(rtTimerRef.current);
       rtTimerRef.current = window.setTimeout(() => {
-        void load(false);
-        if (withRecv) void loadRecvInfo();
+        void load(false).then((list) => {
+          if (withRecv) void loadRecvInfo(list.map((r) => String((r as { id?: string }).id ?? "")).filter(Boolean));
+        });
       }, 600);
     };
     const ch = supabase
