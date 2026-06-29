@@ -310,43 +310,41 @@ function InvoicePage() {
         </Button>
       </div>
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
-        {/* top banner */}
-        <div className="inv-banner relative bg-gradient-to-br from-[#3f5f92] via-[#496a9d] to-[#5274a8] text-white px-8 sm:px-10 py-7 overflow-hidden">
-          <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-[#c8a45c]/20 blur-2xl" />
-          <div className="absolute right-24 -bottom-20 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
+        {/* top banner — light / low-ink */}
+        <div className="inv-banner relative bg-white border-b-2 border-[#496a9d] px-8 sm:px-10 py-6">
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
             <div className="min-w-0 flex items-center gap-3 flex-1">
-              <div className="h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/25 flex items-center justify-center shrink-0 backdrop-blur">
-                <Plane className="h-6 w-6 text-[#e7c98a]" />
+              <div className="h-12 w-12 rounded-xl bg-[#496a9d]/10 ring-1 ring-[#496a9d]/20 flex items-center justify-center shrink-0">
+                <Plane className="h-6 w-6 text-[#496a9d]" />
               </div>
               <div className="min-w-0">
-                <h2 className="invoice-agency-name font-extrabold tracking-tight leading-tight whitespace-nowrap">{AGENCY.name}</h2>
-                <p className="text-[11px] italic text-[#e7c98a] font-medium leading-tight mt-0.5">"{AGENCY.slogan}"</p>
+                <h2 className="invoice-agency-name font-extrabold tracking-tight leading-tight whitespace-nowrap text-[#0b2545]">{AGENCY.name}</h2>
+                <p className="text-[11px] italic text-[#b08a3e] font-medium leading-tight mt-0.5">"{AGENCY.slogan}"</p>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="invoice-title font-black tracking-[0.25em] leading-none whitespace-nowrap text-[#e7c98a]">INVOICE</p>
-              <p className="font-mono text-xs mt-1.5 text-white/80">{invoiceNo}</p>
+              <p className="invoice-title font-black tracking-[0.22em] leading-none whitespace-nowrap text-[#496a9d]">INVOICE</p>
+              <p className="font-mono text-xs mt-1.5 text-slate-500">{invoiceNo}</p>
             </div>
           </div>
-          <div className="relative flex justify-between items-end text-white/85 mt-4 gap-4 border-t border-white/10 pt-3">
+          <div className="relative flex justify-between items-end text-slate-600 mt-4 gap-4 border-t border-slate-200 pt-3">
             <div className="inv-contact space-y-1.5">
               <p className="flex items-center gap-2">
-                <span className="inv-ico h-6 w-6 rounded-lg bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0">
-                  <MapPin className="h-3.5 w-3.5 text-[#e7c98a]" />
+                <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-[#496a9d]" />
                 </span>
                 <span>{AGENCY.address}, Bangladesh</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="inv-ico h-6 w-6 rounded-lg bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0">
-                  <Phone className="h-3.5 w-3.5 text-[#e7c98a]" />
+                <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
+                  <Phone className="h-3.5 w-3.5 text-[#496a9d]" />
                 </span>
                 <span>{AGENCY.phone}</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="uppercase tracking-widest text-white/60 text-[9px]">Issue Date</p>
-              <p className="font-semibold text-white/90 text-xs">{formatDate(invoiceDate)}</p>
+              <p className="uppercase tracking-widest text-slate-400 text-[9px]">Issue Date</p>
+              <p className="font-semibold text-slate-700 text-xs">{formatDate(invoiceDate)}</p>
             </div>
           </div>
         </div>
