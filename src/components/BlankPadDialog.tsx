@@ -16,7 +16,7 @@ const AGENCY = {
   slogan: "Customer satisfaction is our primary goal.",
   address: "Bariplaza 4th Floor, Thana Road, Faridpur",
   phone: "+8801721-399599",
-  email: "asiatoursandtravels@gmail.com",
+  email: "kaiumkhan449@gmail.com",
 };
 
 type PaperKey = "A4" | "A5" | "Letter" | "Legal";
