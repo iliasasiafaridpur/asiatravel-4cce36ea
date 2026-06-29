@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoAsset from "@/assets/brand-mark.png.asset.json";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -129,10 +129,10 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-1.5">
           <div
-            className="h-9 w-9 shrink-0 rounded-lg overflow-hidden flex items-center justify-center bg-white ring-1 ring-sidebar-border"
+            className="h-9 w-9 shrink-0 rounded-lg overflow-hidden flex items-center justify-center ring-1 ring-sidebar-border"
             style={{ boxShadow: "var(--shadow-glow)" }}
           >
-            <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-contain" width={36} height={36} />
+            <img src={logoAsset.url} alt="Asia Tours and Travel" className="h-full w-full object-cover" width={36} height={36} />
           </div>
 
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
