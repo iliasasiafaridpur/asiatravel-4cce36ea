@@ -865,10 +865,31 @@ ${node.innerHTML.replace(
 </table>
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
-<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
-</body></html>`);
-    w.document.close();
-    setDayPrintOpen(false);
+</body></html>`;
+  };
+
+  const handleRangeClosingPrint = () => {
+    const html = buildRangeClosingHtml();
+    if (!html) return;
+    try {
+      printDocHtml(html);
+      setDayPrintOpen(false);
+    } catch {
+      toast.error("পপ-আপ ব্লক হয়েছে");
+    }
+  };
+
+  const handleRangeClosingJpeg = async () => {
+    const html = buildRangeClosingHtml();
+    if (!html) return;
+    toast.info("ছবি তৈরি হচ্ছে…");
+    try {
+      await downloadDocHtmlAsJpeg(html, `daily-closing-${dayFrom || "start"}-${dayTo || "end"}`);
+      setDayPrintOpen(false);
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    }
   };
 
   if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
