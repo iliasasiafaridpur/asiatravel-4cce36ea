@@ -89,7 +89,7 @@ export function PassengerProfileDrawer({
   const [related, setRelated] = useState<RelatedService[]>([]);
   // Which service's tracking timeline is shown — defaults to the current row.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptInfo | null>(null);
+  
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
 
