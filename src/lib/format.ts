@@ -36,3 +36,18 @@ export function applyFormat(format: string | undefined, value: string): string {
       return value;
   }
 }
+
+// ============= Party (agency / vendor) serial codes =============
+// Agency  → "A-001"  (kind: "agent")
+// Vendor  → "V-001"  (kind: "vendor")
+export type PartyKind = "agent" | "vendor";
+
+export function partyCodePrefix(kind: PartyKind): string {
+  return kind === "agent" ? "A" : "V";
+}
+
+// Build a display code from a serial number, e.g. partySerialCode("agent", 1) → "A-001".
+export function partySerialCode(kind: PartyKind, serial: number | null | undefined): string {
+  if (serial == null || !Number.isFinite(Number(serial))) return "";
+  return `${partyCodePrefix(kind)}-${String(Math.trunc(Number(serial))).padStart(3, "0")}`;
+}

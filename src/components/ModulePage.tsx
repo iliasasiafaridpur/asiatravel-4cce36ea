@@ -7,7 +7,7 @@ import { formatDate, statusBadgeClass, isAdvancePayment, type Field, type Module
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
 import { LookupSelect } from "@/components/LookupSelect";
-import { applyFormat, capitalizeWords } from "@/lib/format";
+import { applyFormat, capitalizeWords, partyCodePrefix, partySerialCode } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,14 +87,14 @@ interface Props {
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 function partySerialLabel(kind: "agent" | "vendor", serial: unknown, code?: unknown): string {
-  const prefix = kind === "agent" ? "AGT" : "VEN";
+  const prefix = partyCodePrefix(kind);
   const n = Number(serial);
-  if (Number.isFinite(n) && n > 0) return `${prefix}-${String(Math.trunc(n)).padStart(3, "0")}`;
+  if (Number.isFinite(n) && n > 0) return partySerialCode(kind, Math.trunc(n));
   const raw = String(code ?? "").trim();
   if (!raw) return "—";
   const tail = raw.match(/(\d+)$/)?.[1];
   if (tail) return `${prefix}-${tail.padStart(3, "0")}`;
-  return raw.replace(/^VND-/i, "VEN-");
+  return raw.replace(/^(VND|VEN)-/i, "V-").replace(/^AGT-/i, "A-");
 }
 
 function errMsg(e: unknown): string {
@@ -2329,7 +2329,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
                     {isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" && (
                       <p className="text-[10px] leading-tight text-muted-foreground">
                         {matched?.serial != null ? (
-                          <span className="font-mono font-semibold text-primary">AGT-{String(matched.serial).padStart(3, "0")}</span>
+                          <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{partySerialCode("agent", matched.serial)}</span>
                         ) : (
                           <span className="text-amber-500">ID নেই</span>
                         )}

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { partySerialCode } from "@/lib/format";
 
 export const Route = createFileRoute("/agents")({
   head: () => ({ meta: [{ title: "Agent List — Travel Manager" }] }),
@@ -64,7 +65,7 @@ function AgentsPage() {
                 {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.agent_name} className={`row-tint-${idx % 4}`}>
-                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">AGT-{String(serials[b.agent_name] ?? (idx + 1)).padStart(3, "0")}</TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">{partySerialCode("agent", serials[b.agent_name] ?? (idx + 1))}</TableCell>
                       <TableCell className="font-medium">{b.agent_name}</TableCell>
                       <TableCell><SettleModeBadge mode={modes[b.agent_name]} /></TableCell>
                       <TableCell className="text-right tabular-nums">৳ {Number(b.total_bill).toLocaleString()}</TableCell>

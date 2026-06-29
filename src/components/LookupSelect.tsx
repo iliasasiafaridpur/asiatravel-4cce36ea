@@ -12,6 +12,7 @@ import { Pencil, Plus, Settings2, Trash2, Check, X, ChevronsUpDown } from "lucid
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
+import { partyCodePrefix, partySerialCode } from "@/lib/format";
 
 export type LookupKind = string;
 
@@ -48,14 +49,14 @@ async function loadParty(pk: "agent" | "vendor"): Promise<void> {
 }
 
 function partyPrefix(pk: "agent" | "vendor"): string {
-  return pk === "agent" ? "AGT" : "VEN";
+  return partyCodePrefix(pk);
 }
 
-// "AGT-001" style ID for a party name (or "" when not found).
+// "A-001" style ID for a party name (or "" when not found).
 function partyId(pk: "agent" | "vendor", name: string): string {
   const serial = partyCache[pk]?.[normName(name)];
   if (serial == null) return "";
-  return `${partyPrefix(pk)}-${String(serial).padStart(3, "0")}`;
+  return partySerialCode(pk, serial);
 }
 
 // Display label "AGT-001 · Name" (plain name when no ID / for "Self").
@@ -420,7 +421,10 @@ function PartyCombobox({ pk, label, value, options, onChange }: {
           }}
         >
           <CommandInput placeholder="ID বা নাম দিয়ে খুঁজুন…" />
-          <CommandList>
+          <CommandList
+            className="max-h-[280px] overflow-y-auto overscroll-contain"
+            onWheel={(e) => e.stopPropagation()}
+          >
             <CommandEmpty>কিছু পাওয়া যায়নি</CommandEmpty>
             <CommandGroup>
               {options.map((o) => {
@@ -433,9 +437,13 @@ function PartyCombobox({ pk, label, value, options, onChange }: {
                     onSelect={() => { onChange(o); setOpen(false); }}
                   >
                     <Check className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")} />
-                    <span className="truncate">
-                      {id && <span className="font-mono text-primary mr-1.5">{id}</span>}
-                      {o}
+                    <span className="flex items-center gap-1.5 truncate">
+                      {id && (
+                        <span className="shrink-0 rounded bg-amber-500/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                          {id}
+                        </span>
+                      )}
+                      <span className="truncate">{o}</span>
                     </span>
                   </CommandItem>
                 );

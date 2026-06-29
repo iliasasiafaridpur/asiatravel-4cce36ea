@@ -2,6 +2,7 @@ import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
+import { partySerialCode } from "@/lib/format";
 import { LedgerPage } from "@/components/LedgerPage";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { PageWatermark } from "@/components/PageWatermark";
@@ -324,7 +325,7 @@ export function PartyLedgerPage({
 
   const serialCode =
     contact?.serial_no != null
-      ? `${isCustomer ? "AGT" : "VEN"}-${String(contact.serial_no).padStart(3, "0")}`
+      ? partySerialCode(isCustomer ? "agent" : "vendor", contact.serial_no)
       : null;
 
   const load = async () => {
@@ -1627,8 +1628,8 @@ export function PartyLedgerPage({
                           })
                         }
                       >
-                        <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">
-                          {isCustomer ? "AGT" : "VEN"}-{String(b.serial ?? (idx + 1)).padStart(3, "0")}
+                        <TableCell className="font-mono text-xs tabular-nums font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          {partySerialCode(isCustomer ? "agent" : "vendor", b.serial ?? (idx + 1))}
                         </TableCell>
                         <TableCell className="font-medium">{b.name}</TableCell>
                         <TableCell className="text-right tabular-nums">৳ {b.bill.toLocaleString()}</TableCell>
