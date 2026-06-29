@@ -310,43 +310,41 @@ function InvoicePage() {
         </Button>
       </div>
       <div className="invoice-print bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
-        {/* top banner */}
-        <div className="inv-banner relative bg-gradient-to-br from-[#3f5f92] via-[#496a9d] to-[#5274a8] text-white px-8 sm:px-10 py-7 overflow-hidden">
-          <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-[#c8a45c]/20 blur-2xl" />
-          <div className="absolute right-24 -bottom-20 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
+        {/* top banner — light / low-ink */}
+        <div className="inv-banner relative bg-white border-b-2 border-[#496a9d] px-8 sm:px-10 py-6">
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
             <div className="min-w-0 flex items-center gap-3 flex-1">
-              <div className="h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/25 flex items-center justify-center shrink-0 backdrop-blur">
-                <Plane className="h-6 w-6 text-[#e7c98a]" />
+              <div className="h-12 w-12 rounded-xl bg-[#496a9d]/10 ring-1 ring-[#496a9d]/20 flex items-center justify-center shrink-0">
+                <Plane className="h-6 w-6 text-[#496a9d]" />
               </div>
               <div className="min-w-0">
-                <h2 className="invoice-agency-name font-extrabold tracking-tight leading-tight whitespace-nowrap">{AGENCY.name}</h2>
-                <p className="text-[11px] italic text-[#e7c98a] font-medium leading-tight mt-0.5">"{AGENCY.slogan}"</p>
+                <h2 className="invoice-agency-name font-extrabold tracking-tight leading-tight whitespace-nowrap text-[#0b2545]">{AGENCY.name}</h2>
+                <p className="text-[11px] italic text-[#b08a3e] font-medium leading-tight mt-0.5">"{AGENCY.slogan}"</p>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="invoice-title font-black tracking-[0.25em] leading-none whitespace-nowrap text-[#e7c98a]">INVOICE</p>
-              <p className="font-mono text-xs mt-1.5 text-white/80">{invoiceNo}</p>
+              <p className="invoice-title font-black tracking-[0.22em] leading-none whitespace-nowrap text-[#496a9d]">INVOICE</p>
+              <p className="font-mono text-xs mt-1.5 text-slate-500">{invoiceNo}</p>
             </div>
           </div>
-          <div className="relative flex justify-between items-end text-white/85 mt-4 gap-4 border-t border-white/10 pt-3">
+          <div className="relative flex justify-between items-end text-slate-600 mt-4 gap-4 border-t border-slate-200 pt-3">
             <div className="inv-contact space-y-1.5">
               <p className="flex items-center gap-2">
-                <span className="inv-ico h-6 w-6 rounded-lg bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0">
-                  <MapPin className="h-3.5 w-3.5 text-[#e7c98a]" />
+                <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-[#496a9d]" />
                 </span>
                 <span>{AGENCY.address}, Bangladesh</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="inv-ico h-6 w-6 rounded-lg bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0">
-                  <Phone className="h-3.5 w-3.5 text-[#e7c98a]" />
+                <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
+                  <Phone className="h-3.5 w-3.5 text-[#496a9d]" />
                 </span>
                 <span>{AGENCY.phone}</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="uppercase tracking-widest text-white/60 text-[9px]">Issue Date</p>
-              <p className="font-semibold text-white/90 text-xs">{formatDate(invoiceDate)}</p>
+              <p className="uppercase tracking-widest text-slate-400 text-[9px]">Issue Date</p>
+              <p className="font-semibold text-slate-700 text-xs">{formatDate(invoiceDate)}</p>
             </div>
           </div>
         </div>
@@ -372,7 +370,7 @@ function InvoicePage() {
           <div className="mt-6 rounded-xl overflow-hidden border border-slate-200 ring-1 ring-slate-100">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#496a9d] text-white">
+                <tr className="bg-slate-100 text-[#1d3b6b] border-b-2 border-[#496a9d]">
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider w-8">#</th>
                   <th className="text-left p-3 text-[11px] font-semibold uppercase tracking-wider">Service Details</th>
                   <th className="text-right p-3 text-[11px] font-semibold uppercase tracking-wider">Price</th>
@@ -409,9 +407,9 @@ function InvoicePage() {
             <div className="w-full sm:w-80 rounded-xl border border-slate-200 p-4 space-y-2.5 bg-white">
               <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="tabular-nums font-medium">{subtotal.toLocaleString()}৳</span></div>
               {discount > 0 && (<div className="flex justify-between text-sm"><span className="text-slate-500">Discount</span><span className="tabular-nums text-[#b91c1c] font-medium">- {discount.toLocaleString()}৳</span></div>)}
-              <div className="flex justify-between items-center bg-gradient-to-r from-[#496a9d] to-[#5274a8] text-white px-4 py-3 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center bg-[#496a9d]/10 text-[#0b2545] px-4 py-3 rounded-lg border border-[#496a9d]/30">
                 <span className="text-[11px] uppercase tracking-widest font-semibold">Grand Total</span>
-                <span className="text-xl font-black tabular-nums">{grandTotal.toLocaleString()}৳</span>
+                <span className="text-xl font-black tabular-nums text-[#0b2545]">{grandTotal.toLocaleString()}৳</span>
               </div>
               <div className="flex justify-between text-sm pt-0.5"><span className="text-slate-500">Received</span><span className="tabular-nums font-medium text-emerald-600">{received.toLocaleString()}৳</span></div>
               <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-2.5"><span className="text-slate-700">Due Balance</span><span className="tabular-nums text-[#b91c1c]">{due.toLocaleString()}৳</span></div>
@@ -425,8 +423,7 @@ function InvoicePage() {
           </div>
 
           <div className="mt-8 pt-4 border-t border-slate-200 text-center">
-            <p className="text-xs text-slate-500 italic">This is a system-generated document and requires no physical signature.</p>
-            <p className="text-[11px] text-slate-400 mt-1">Thank you for choosing {AGENCY.name}.</p>
+            <p className="text-[11px] text-slate-400">Thank you for choosing {AGENCY.name}.</p>
           </div>
         </div>
       </div>
@@ -434,7 +431,7 @@ function InvoicePage() {
       <style>{`
         .invoice-print { width: 100%; max-width: 210mm; min-height: 297mm; font-size: 13pt; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
-        .invoice-print .invoice-title { font-size: 24pt; }
+        .invoice-print .invoice-title { font-size: 18pt; }
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
         .invoice-print .inv-ico { height: 22pt; width: 22pt; }
         .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
@@ -462,7 +459,7 @@ function InvoicePage() {
             line-height: 1.4 !important;
           }
           .invoice-print .invoice-agency-name { font-size: 22pt !important; }
-          .invoice-print .invoice-title { font-size: 26pt !important; }
+          .invoice-print .invoice-title { font-size: 18pt !important; }
           .invoice-print th { font-size: 12pt !important; }
           .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\], .invoice-print .text-\\[9px\\] { font-size: 10.5pt !important; }
         }
