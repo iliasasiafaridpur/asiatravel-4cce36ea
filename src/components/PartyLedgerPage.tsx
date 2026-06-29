@@ -5,6 +5,7 @@ import { formatDate, moduleByKey } from "@/lib/modules";
 import { LedgerPage } from "@/components/LedgerPage";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { PageWatermark } from "@/components/PageWatermark";
+import logoAsset from "@/assets/logo.png.asset.json";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
