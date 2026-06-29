@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES, formatDate } from "@/lib/modules";
@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2 } from "lucide-react";
+import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2, ImageDown } from "lucide-react";
 import logoAsset from "@/assets/logo.png.asset.json";
+import { downloadNodeAsJpeg } from "@/lib/print-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/invoice")({
   head: () => ({ meta: [{ title: "Invoice — Asia Tours and Travels" }] }),
@@ -170,6 +172,22 @@ function InvoicePage() {
   const [items, setItems] = useState<InvoiceItem[]>(() => [blankItem("tickets")]);
   const [received, setReceived] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
+  const invoiceRef = useRef<HTMLDivElement>(null);
+  const [savingJpeg, setSavingJpeg] = useState(false);
+
+  const handleDownloadJpeg = async () => {
+    if (!invoiceRef.current) return;
+    setSavingJpeg(true);
+    try {
+      await downloadNodeAsJpeg(invoiceRef.current, `invoice-${invoiceNo || invoiceDate}`);
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    } finally {
+      setSavingJpeg(false);
+    }
+  };
+
 
   const serviceModules = useMemo(
     () => MODULES.filter((m) => !["agents", "vendors", "agency-ledger", "vendor-ledger"].includes(m.key)),
@@ -305,12 +323,15 @@ function InvoicePage() {
 
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
-      <div className="flex justify-end print:hidden">
+      <div className="flex justify-end gap-2 print:hidden">
+        <Button variant="outline" onClick={handleDownloadJpeg} disabled={savingJpeg} className="gap-2">
+          <ImageDown className="h-4 w-4" /> {savingJpeg ? "তৈরি হচ্ছে…" : "JPEG ডাউনলোড"}
+        </Button>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
       </div>
-      <div className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
+      <div ref={invoiceRef} className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
         {/* logo watermark */}
         <div
           aria-hidden

@@ -6,6 +6,7 @@ import { LedgerPage } from "@/components/LedgerPage";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { PageWatermark } from "@/components/PageWatermark";
 import logoAsset from "@/assets/logo.png.asset.json";
+import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ import {
   TrendingUp,
   TrendingDown,
   Printer,
+  ImageDown,
   ChevronDown,
   ChevronRight,
   Clock,
@@ -1054,7 +1056,7 @@ export function PartyLedgerPage({
 
   // Flexible ledger print: চাইলে সম্পূর্ণ হিসাব, শুধু বাকি বিল, অথবা নির্দিষ্ট
   // তারিখ থেকে শেষ চলতি ব্যালেন্স পর্যন্ত — প্রয়োজন অনুযায়ী প্রিন্ট করা যায়।
-  const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
+  const buildPrintHtml = (mode: "all" | "due" | "range" | "bill", from: string, to: string): string | null => {
     const esc = (s: string) =>
       String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] || c));
     const num = (n: number) => Math.round(Number(n || 0)).toLocaleString();
@@ -1225,15 +1227,30 @@ export function PartyLedgerPage({
       <div class="sum">${esc(summaryLine)}</div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
       <div class="foot"><span>${esc(curLabel)}</span><span>৳${num(curAmt)}</span></div>
-      <script>window.onload=function(){window.print()}</script>
       </body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) {
+    return html;
+  };
+
+  const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
+    const html = buildPrintHtml(mode, from, to);
+    if (!html) return;
+    try {
+      printDocHtml(html);
+    } catch {
       toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
-      return;
     }
-    w.document.write(html);
-    w.document.close();
+  };
+
+  const runExportJpeg = async (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
+    const html = buildPrintHtml(mode, from, to);
+    if (!html) return;
+    toast.info("ছবি তৈরি হচ্ছে…");
+    try {
+      await downloadDocHtmlAsJpeg(html, `${displayName}-ledger`.replace(/[^a-z0-9]+/gi, "_"));
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    }
   };
 
 
@@ -1440,9 +1457,20 @@ export function PartyLedgerPage({
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                setPrintOpen(false);
+                void runExportJpeg(printMode, printFrom, printTo);
+              }}
+            >
+              <ImageDown className="h-4 w-4" /> JPEG ডাউনলোড
             </Button>
             <Button
               size="sm"

@@ -25,13 +25,14 @@ import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { generateNextId } from "@/lib/idgen";
 import {
   Wallet, ArrowDownLeft, ArrowUpRight, Receipt, Plus, RefreshCw, Send, Banknote,
-  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine,
+  CalendarDays, TrendingUp, TrendingDown, Layers, Printer, MessageSquare, Search, History, X, PencilLine, ImageDown,
   Lock as LockIcon,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
+import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
 
 
 export const Route = createFileRoute("/accounts")({
@@ -526,11 +527,9 @@ function AccountsPage() {
   };
 
   // Print timeline
-  const handlePrint = () => {
+  const buildTimelineHtml = (): string | null => {
     const node = printRef.current;
-    if (!node) return;
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
+    if (!node) return null;
     const periodLabel = useDateFilter
       ? `${dateFrom || "শুরু"} → ${dateTo || "এখন"}`
       : `সর্বশেষ ${latestN} লেনদেন`;
@@ -554,7 +553,7 @@ function AccountsPage() {
     const printedAt = new Date();
     const stamp = `${formatDate(today())} · ${printedAt.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}`;
     const printedBy = displayName(profile, user);
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
+    return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
   @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
@@ -601,9 +600,29 @@ ${node.innerHTML.replace(
 )}
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(scopedBalance)}</div>
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
-<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
-</body></html>`);
-    w.document.close();
+</body></html>`;
+  };
+
+  const handlePrint = () => {
+    const html = buildTimelineHtml();
+    if (!html) return;
+    try {
+      printDocHtml(html);
+    } catch {
+      toast.error("পপ-আপ ব্লক হয়েছে");
+    }
+  };
+
+  const handleExportJpeg = async () => {
+    const html = buildTimelineHtml();
+    if (!html) return;
+    toast.info("ছবি তৈরি হচ্ছে…");
+    try {
+      await downloadDocHtmlAsJpeg(html, `accounts-${today()}`);
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    }
   };
 
   // Detailed range print: SAME layout/columns/text as the normal print, but
@@ -673,13 +692,11 @@ ${node.innerHTML.replace(
       `</tr>`;
   };
 
-  const handleRangeClosingPrint = () => {
+  const buildRangeClosingHtml = (): string | null => {
     if (dayFrom && dayTo && dayFrom > dayTo) {
       toast.error("শুরুর তারিখ শেষ তারিখের পরে হতে পারে না");
-      return;
+      return null;
     }
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
 
     // Collect ranged rows. Running balance is the TRUE cumulative balance from
     // the very beginning (carried in via "আগের জের"), so each day's closing is
@@ -781,7 +798,7 @@ ${node.innerHTML.replace(
     const stamp = `${formatDate(today())} · ${printedAt.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}`;
     const printedBy = displayName(profile, user);
 
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
+    return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
   @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
@@ -848,10 +865,31 @@ ${node.innerHTML.replace(
 </table>
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
-<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300)}</script>
-</body></html>`);
-    w.document.close();
-    setDayPrintOpen(false);
+</body></html>`;
+  };
+
+  const handleRangeClosingPrint = () => {
+    const html = buildRangeClosingHtml();
+    if (!html) return;
+    try {
+      printDocHtml(html);
+      setDayPrintOpen(false);
+    } catch {
+      toast.error("পপ-আপ ব্লক হয়েছে");
+    }
+  };
+
+  const handleRangeClosingJpeg = async () => {
+    const html = buildRangeClosingHtml();
+    if (!html) return;
+    toast.info("ছবি তৈরি হচ্ছে…");
+    try {
+      await downloadDocHtmlAsJpeg(html, `daily-closing-${dayFrom || "start"}-${dayTo || "end"}`);
+      setDayPrintOpen(false);
+      toast.success("JPEG ডাউনলোড হয়েছে");
+    } catch {
+      toast.error("JPEG তৈরি ব্যর্থ");
+    }
   };
 
   if (roleLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
@@ -1130,6 +1168,13 @@ ${node.innerHTML.replace(
                       <div className="text-[11px] text-muted-foreground">চলতি ফিল্টারের সব লেনদেন একসাথে</div>
                     </div>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportJpeg} className="gap-2">
+                    <ImageDown className="h-4 w-4" />
+                    <div>
+                      <div className="text-sm font-medium">সম্পূর্ণ হিসাব JPEG ডাউনলোড</div>
+                      <div className="text-[11px] text-muted-foreground">একই হিসাব ছবি (JPEG) হিসেবে সেভ</div>
+                    </div>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setDayPrintOpen(true)} className="gap-2">
                     <CalendarDays className="h-4 w-4" />
                     <div>
@@ -1157,7 +1202,10 @@ ${node.innerHTML.replace(
                       <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
                     </div>
                   </div>
-                  <DialogFooter>
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" onClick={handleRangeClosingJpeg} className="gap-1.5">
+                      <ImageDown className="h-4 w-4" /> JPEG ডাউনলোড
+                    </Button>
                     <Button onClick={handleRangeClosingPrint} className="gap-1.5">
                       <Printer className="h-4 w-4" /> প্রিন্ট করুন
                     </Button>
