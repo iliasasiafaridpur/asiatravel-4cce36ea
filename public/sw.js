@@ -4,7 +4,7 @@
 //   • Static assets (JS/CSS/fonts/images): StaleWhileRevalidate → instant + fresh.
 //   • Supabase / API: NetworkFirst with short timeout, fall back to cache when offline.
 
-const VERSION = "v7-perf-cache-refresh";
+const VERSION = "v8-fast-hashed-assets";
 const HTML_CACHE = `html-${VERSION}`;
 const ASSET_CACHE = `assets-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
