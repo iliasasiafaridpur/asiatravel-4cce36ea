@@ -526,11 +526,9 @@ function AccountsPage() {
   };
 
   // Print timeline
-  const handlePrint = () => {
+  const buildTimelineHtml = (): string | null => {
     const node = printRef.current;
-    if (!node) return;
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (!w) { toast.error("পপ-আপ ব্লক হয়েছে"); return; }
+    if (!node) return null;
     const periodLabel = useDateFilter
       ? `${dateFrom || "শুরু"} → ${dateTo || "এখন"}`
       : `সর্বশেষ ${latestN} লেনদেন`;
