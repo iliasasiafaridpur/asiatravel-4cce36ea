@@ -132,6 +132,9 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
   const [renamingOrig, setRenamingOrig] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState("");
   const label = LABELS[kind] ?? kind;
+  const partyKind = PARTY_SERIAL_KIND[kind];
+  // re-render tick: bumped when the party serial cache loads
+  const [, setPartyTick] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -143,6 +146,18 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     listeners[kind].add(fn);
     return () => { alive = false; listeners[kind]?.delete(fn); };
   }, [kind]);
+
+  // Load + subscribe to the party serial map so labels show "ID · Name".
+  useEffect(() => {
+    if (!partyKind) return;
+    let alive = true;
+    if (partyCache[partyKind] === undefined) void loadParty(partyKind);
+    if (!partyListeners[partyKind]) partyListeners[partyKind] = new Set();
+    const fn = () => { if (alive) setPartyTick((t) => t + 1); };
+    partyListeners[partyKind].add(fn);
+    return () => { alive = false; partyListeners[partyKind]?.delete(fn); };
+  }, [partyKind]);
+
 
   const addNew = () => {
     const v = newVal.trim();
