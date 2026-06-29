@@ -62,6 +62,7 @@ const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
   bmet: "bmet",
   "saudi-visa": "saudi-visa",
   "kuwait-visa": "kuwait-visa",
+  other: "other",
 };
 
 // মডিউল যেগুলোতে Extra Service যুক্ত করা যাবে (passenger + vendor সহ সার্ভিস মডিউল)
