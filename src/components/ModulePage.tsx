@@ -383,12 +383,13 @@ export function ModulePage({ module: mod }: Props) {
         .order("created_at", { ascending: true });
       if (ids && ids.length > 0) recvQuery = recvQuery.in("service_row_id", ids);
       // Profiles map rarely changes — fetch it once, then reuse.
-      const tasks: [ReturnType<typeof recvQuery.then> | typeof recvQuery, ReturnType<typeof supabase.from> | null] = [recvQuery, null];
       const [{ data: receipts }, profsRes] = await Promise.all([
         recvQuery,
-        profilesLoadedRef.current ? Promise.resolve({ data: null }) : supabase.from("profiles").select("user_id,full_name"),
+        profilesLoadedRef.current
+          ? Promise.resolve({ data: null })
+          : supabase.from("profiles").select("user_id,full_name"),
       ]);
-      void tasks;
+
       const map: Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }> = {};
       ((receipts as { service_row_id: string; method: string | null; source: string | null; amount: number | null; received_by: string | null; received_by_name: string | null }[] | null) ?? []).forEach((rc) => {
         const isStatus = STATUS_EVENT_SOURCES.has(String(rc.source ?? "")) || String(rc.method ?? "").toLowerCase() === "status";
