@@ -4,7 +4,7 @@
 //   • Static assets (JS/CSS/fonts/images): StaleWhileRevalidate → instant + fresh.
 //   • Supabase / API: NetworkFirst with short timeout, fall back to cache when offline.
 
-const VERSION = "v8-fast-hashed-assets";
+const VERSION = "v9-offline-shell-control";
 const HTML_CACHE = `html-${VERSION}`;
 const ASSET_CACHE = `assets-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
@@ -113,12 +113,15 @@ self.addEventListener("fetch", (event) => {
       const cache = await caches.open(HTML_CACHE);
       const fresh = await fetch(req).then((resp) => {
         if (resp && resp.ok) {
+          try { cache.put(req, resp.clone()); } catch { /* ignore */ }
           try { cache.put(APP_SHELL, resp.clone()); } catch { /* ignore */ }
         }
         return resp;
       }).catch(() => null);
 
       if (fresh) return fresh;
+      const cachedPage = await cache.match(req);
+      if (cachedPage) return cachedPage;
       const cachedShell = await cache.match(APP_SHELL);
       if (cachedShell) return cachedShell;
       return new Response(
