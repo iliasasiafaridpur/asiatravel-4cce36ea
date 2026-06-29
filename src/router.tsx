@@ -10,6 +10,10 @@ import {
 
 function clearBrokenClientCaches() {
   if (typeof window === "undefined") return;
+  // Offline route/data errors are expected. Never clear caches or unregister
+  // the service worker while offline, otherwise the saved offline app shell is
+  // destroyed and the browser falls through to its native "no internet" page.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   try { window.localStorage.removeItem("rq_cache_v1"); } catch { /* ignore */ }
   try { window.localStorage.removeItem("rq_cache_v2"); } catch { /* ignore */ }
   try { window.localStorage.removeItem("rq_cache_v3"); } catch { /* ignore */ }
@@ -23,6 +27,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
   console.error(error);
 
   useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
     try {
       const key = "asia-travel:error-cache-recovered:v1";
       if (window.sessionStorage.getItem(key)) return;
@@ -36,6 +41,34 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4 text-sm text-muted-foreground">
         অ্যাপ আপডেট হচ্ছে…
+      </div>
+    );
+  }
+
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (offline) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">আপনি এখন অফলাইনে আছেন</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            আগে "অফলাইনে সেভ" করা থাকলে সংরক্ষিত পেজগুলো দেখা যাবে। ইন্টারনেট ফিরে এলে আবার চেষ্টা করুন।
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => reset()}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              আবার চেষ্টা করুন
+            </button>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              হোমে যান
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
