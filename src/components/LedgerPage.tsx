@@ -51,10 +51,9 @@ import {
   CreditCard,
   FileSpreadsheet,
   Printer,
-  ImageDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import { printDocHtml, downloadDocHtmlAsJpeg } from "@/lib/print-export";
+import { printDocHtml } from "@/lib/print-export";
 import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useScrollRestore } from "@/hooks/useScrollRestore";
