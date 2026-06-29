@@ -263,15 +263,6 @@ export function ReceiptDialog({
           <Button variant="outline" size="sm" className="flex-1 min-w-[7rem]" onClick={handlePrint}>
             <Printer className="h-4 w-4" /> Print / PDF
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 min-w-[5.5rem]"
-            onClick={handleDownloadJpg}
-            disabled={busy}
-          >
-            <ImageIcon className="h-4 w-4" /> JPG
-          </Button>
         </div>
 
       </DialogContent>
