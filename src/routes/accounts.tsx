@@ -636,10 +636,17 @@ function AccountsPage() {
   const loadPartyBalances = useCallback(async () => {
     setBalLoading(true);
     try {
-      const [v, a] = await Promise.all([
-        supabase.rpc("get_vendor_balances" as never),
-        supabase.rpc("get_agent_balances" as never),
-      ]);
+      let v: { data: unknown };
+      let a: { data: unknown };
+      if (isOffline()) {
+        v = { data: cacheRead("bal_vendor") ?? [] };
+        a = { data: cacheRead("bal_agent") ?? [] };
+      } else {
+        [v, a] = await Promise.all([
+          supabase.rpc("get_vendor_balances" as never),
+          supabase.rpc("get_agent_balances" as never),
+        ]);
+      }
       const rank = (r: { due: number; advance: number }) => (r.advance > 0 ? 0 : r.due > 0 ? 1 : 2);
       const srt = (x: { name: string; due: number; advance: number }, y: { name: string; due: number; advance: number }) => {
         const rr = rank(x) - rank(y);
