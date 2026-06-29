@@ -798,7 +798,7 @@ ${node.innerHTML.replace(
     const stamp = `${formatDate(today())} · ${printedAt.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}`;
     const printedBy = displayName(profile, user);
 
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
+    return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
   @page{size:A4 ${printOrientation};margin:8mm 5mm 12mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
