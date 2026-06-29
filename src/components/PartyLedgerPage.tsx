@@ -1627,8 +1627,8 @@ export function PartyLedgerPage({
                           })
                         }
                       >
-                        <TableCell className="font-mono text-xs tabular-nums text-muted-foreground whitespace-nowrap">
-                          {isCustomer ? "AGT" : "VEN"}-{String(b.serial ?? (idx + 1)).padStart(3, "0")}
+                        <TableCell className="font-mono text-xs tabular-nums font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          {partySerialCode(isCustomer ? "agent" : "vendor", b.serial ?? (idx + 1))}
                         </TableCell>
                         <TableCell className="font-medium">{b.name}</TableCell>
                         <TableCell className="text-right tabular-nums">৳ {b.bill.toLocaleString()}</TableCell>
