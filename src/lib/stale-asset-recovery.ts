@@ -15,6 +15,10 @@ export function isRecoverableAssetError(error: unknown) {
 
 export function tryRecoverFromStaleAssets() {
   if (typeof window === "undefined") return false;
+  // A dynamic import can fail simply because the device is offline. In that
+  // case clearing caches/unregistering the service worker makes offline mode
+  // worse by deleting the very shell needed to keep the app open.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
   try {
     if (window.sessionStorage.getItem(STALE_ASSET_RECOVERY_KEY)) return false;
     window.sessionStorage.setItem(STALE_ASSET_RECOVERY_KEY, String(Date.now()));
