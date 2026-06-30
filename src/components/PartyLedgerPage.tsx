@@ -1258,8 +1258,8 @@ export function PartyLedgerPage({
           ? list
               .map(
                 (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
-            <td>${esc(formatDate(s.date))}</td>
-            <td>${esc(s.ledgerId)}</td>
+            <td class="nw">${esc(formatDate(s.date))}</td>
+            <td class="nw">${esc(s.ledgerId)}</td>
             <td>${esc(s.service)}</td>
             <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
