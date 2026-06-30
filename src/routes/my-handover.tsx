@@ -76,6 +76,16 @@ const TABLE_LABELS: Record<string, string> = {
   agency_ledger: "Agency Ledger",
 };
 
+// Agency-ledger collective payments store service_type like
+// "Service Receipt: <agent>" / "Agent Receipt: <agent>". The agent name is
+// already shown in the name/first column, so just label it as an agency payment.
+const cleanSvcType = (text?: string | null) => {
+  const s = (text ?? "").trim();
+  if (!s) return "";
+  if (/^(?:Service Receipt|Agent Receipt|Customer\/Sub-Agent[^:]*)\s*:/i.test(s)) return "এজেন্সি পেমেন্ট";
+  return s;
+};
+
 // Emoji icon per service table for the report's service-info block.
 
 // Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
@@ -141,7 +151,7 @@ function svcLine(rec: Receipt): string {
   const tbl = rec.service_table ?? "";
   const svc = rec.svc ?? {};
   const bits: string[] = [];
-  const label = svc.service_name || TABLE_LABELS[tbl] || rec.service_type || "Service";
+  const label = svc.service_name || cleanSvcType(rec.service_type) || TABLE_LABELS[tbl] || "Service";
   if (label) bits.push(label);
   if (svc.country) bits.push(String(svc.country));
   if (svc.airline) bits.push(String(svc.airline));
@@ -396,7 +406,7 @@ function MyHandoverPage() {
         const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
 
         const tbl = r.service_table ?? "";
-        const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
+        const svcTitle = info.service_name || cleanSvcType(r.service_type) || TABLE_LABELS[tbl] || "Service";
         const region = [
           info.country || "",
           info.airline ? `${info.airline}${info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}` : "",
