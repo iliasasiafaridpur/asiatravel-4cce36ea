@@ -68,6 +68,12 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
 
   const cellValue = (r: Row, key: string, date?: boolean, num?: boolean) => {
     if (key === "__id") return String(r[idColumn] ?? "");
+    if (key === "mobile") {
+      // agency (self ব্যতীত) থাকলে Mobile কলামে agency নাম শো করবে, mobile নং নয়।
+      const agency = String(r.agency_sold ?? "").trim();
+      if (agency && agency.toLowerCase() !== "self") return agency;
+      return String(r.mobile ?? "");
+    }
     const v = r[key];
     if (date) return v ? formatDate(v as string) : "—";
     if (num) return Number(v ?? 0).toLocaleString();
