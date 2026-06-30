@@ -28,7 +28,14 @@ function VendorsPage() {
   const [modes, setModes] = useState<Record<string, string>>({});
   const [serials, setSerials] = useState<Record<string, number | null>>({});
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
+  const { isAdmin } = useRole();
   const navigate = useNavigate();
+  const handleDelete = async (name: string) => {
+    const { error } = await supabase.from("vendors").delete().eq("name", name);
+    if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`Vendor "${name}" তালিকা থেকে মুছে ফেলা হয়েছে`);
+    void load();
+  };
   const load = async () => {
     let data: unknown;
     let vendors: unknown;
