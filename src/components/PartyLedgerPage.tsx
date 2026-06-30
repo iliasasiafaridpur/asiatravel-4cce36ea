@@ -1476,7 +1476,7 @@ export function PartyLedgerPage({
           </DialogHeader>
           <div className="space-y-2 py-1">
             <p className="text-xs text-muted-foreground">
-              এই {isAgent ? "agency" : "vendor"}-এর হিসাবের ধরন:{" "}
+              এই {isCustomer ? "agency" : "vendor"}-এর হিসাবের ধরন:{" "}
               <span className="font-semibold text-foreground">
                 {settleMode === "one_by_one" ? "বিল-বাই-বিল" : "সম্পূর্ণ (চলমান ব্যালেন্স)"}
               </span>
