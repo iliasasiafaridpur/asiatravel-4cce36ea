@@ -299,8 +299,8 @@ function DashboardPage() {
       const totalReceivedToday = cashReceipts.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpenses = expenses.reduce((s, r) => s + (expenseHitsBalance(r) ? Number(r.amount || 0) : 0), 0);
       const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + (expenseHitsBalance(r) ? Number(r.amount || 0) : 0), 0);
-      // Match /accounts "হাতে আছে": only approved handovers reduce the shown cash balance.
-      const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
+      // Match /accounts "হাতে আছে": a handover reduces the shown cash balance as soon as it is submitted (pending), not only after MD approval.
+      const totalHandedOver = handovers.filter((h) => handoverReducesBalance(h.status)).reduce((s, h) => s + Number(h.amount || 0), 0);
       const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
       return {
         currentBalance: totalReceived - totalExpenses - totalHandedOver,
