@@ -1866,8 +1866,9 @@ export function ModulePage({ module: mod }: Props) {
                 </Button>
               </div>
               {mod.key === "bmet" && (
-                <div className="shrink-0">
+                <div className="shrink-0 flex items-center gap-2">
                   <BmetQuickManage rows={rows} onChanged={() => { void load(true); }} />
+                  <BmetMonthlyPrint rows={rows} idColumn={mod.idColumn} />
                 </div>
               )}
             </div>
