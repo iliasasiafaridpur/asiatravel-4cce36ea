@@ -1626,6 +1626,59 @@ export function PartyLedgerPage({
         </DialogContent>
       </Dialog>
 
+      {/* খাম / কুরিয়ার ঠিকানা লেবেল প্রিন্ট */}
+      <Dialog open={addrOpen} onOpenChange={setAddrOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-4 w-4" /> ঠিকানা প্রিন্ট (খাম/কুরিয়ার)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="font-semibold">{(contact?.full_name ?? "").trim() || displayName}</div>
+              {(contact?.address ?? "").trim() && (
+                <div className="mt-1 text-muted-foreground">ঠিকানা: {contact?.address}</div>
+              )}
+              {(contact?.phone ?? "").trim() && (
+                <div className="mt-0.5 text-muted-foreground">মোবাইল: {contact?.phone}</div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">পেইজ সাইজ</label>
+              <Select value={addrSize} onValueChange={(v) => setAddrSize(v as typeof addrSize)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="quarter">A4-এর ৪ ভাগের ১ ভাগ (148×105mm) — ডিফল্ট</SelectItem>
+                  <SelectItem value="a6">A6 (105×148mm)</SelectItem>
+                  <SelectItem value="a5">A5 (148×210mm)</SelectItem>
+                  <SelectItem value="a4">A4 (210×297mm)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setAddrOpen(false)}>
+              বাতিল
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                setAddrOpen(false);
+                runAddressLabel(addrSize);
+              }}
+            >
+              <Printer className="h-4 w-4" /> প্রিন্ট করুন
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
 
       {payOpen && (
         <LedgerPage
