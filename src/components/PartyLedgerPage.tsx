@@ -181,6 +181,9 @@ export function PartyLedgerPage({
   // Flexible ledger print dialog state.
   const [printOpen, setPrintOpen] = useState(false);
   const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
+  // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
+  const [addrOpen, setAddrOpen] = useState(false);
+  const [addrSize, setAddrSize] = useState<"quarter" | "a6" | "a5" | "a4">("quarter");
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
