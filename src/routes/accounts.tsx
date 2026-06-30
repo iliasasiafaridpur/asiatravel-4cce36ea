@@ -1606,7 +1606,7 @@ ${partySectionsHtml()}
                             );
                           })}
                         </div>
-                        <p className="text-[10px] text-muted-foreground">মার্ক করা তারিখের কোনো তথ্য বা ক্লোজিং লাইন প্রিন্টে আসবে না (জায়গাটা ফাঁকা থাকবে), তবে ব্যালেন্স হিসাব ভিতরে ঠিক থাকবে।</p>
+                        <p className="text-[10px] text-muted-foreground">মার্ক করা তারিখের তথ্য প্রিন্টে অদৃশ্য থাকবে, কিন্তু ঠিক একই উচ্চতার <b>সাদা জায়গা</b> থেকে যাবে — তাই একই কাগজ আবার বসিয়ে ঐ ফাঁকা জায়গায় পরের দিনের তথ্য প্রিন্ট করা যাবে। ব্যালেন্স হিসাব ভিতরে ঠিক থাকবে।</p>
                       </div>
                     )}
                     <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
