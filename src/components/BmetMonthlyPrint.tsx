@@ -108,7 +108,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
       <h1>BMET Card — ${esc(monthLabel)}</h1>
       <div class="sub">মাসিক তালিকা · মোট ${list.length} টি</div>
       <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(new Date().toISOString().slice(0, 10)))}</div>
-      <table><colgroup>${COLS.map((c) => `<col style="width:${c.w}">`).join("")}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+      <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
       <div class="foot"><span>মোট ${list.length} টি</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
       </body></html>`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
