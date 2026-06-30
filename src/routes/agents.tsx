@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
+import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/agents")({
   head: () => ({ meta: [{ title: "Agent List — Travel Manager" }] }),
@@ -18,9 +21,18 @@ export const Route = createFileRoute("/agents")({
 interface Bal { agent_name: string; total_bill: number; total_received: number; balance_due: number; advance_balance: number; }
 
 function AgentsPage() {
+  const { isAdmin } = useRole();
   const [bals, setBals] = useState<Bal[]>([]);
   const [modes, setModes] = useState<Record<string, string>>({});
   const [serials, setSerials] = useState<Record<string, number | null>>({});
+
+  const handleDelete = async (name: string) => {
+    const { error } = await supabase.from("agents").delete().eq("name", name);
+    if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`Agency "${name}" তালিকা থেকে মুছে ফেলা হয়েছে`);
+    void load();
+  };
+
   const load = async () => {
     let data: unknown;
     let agents: unknown;
@@ -74,9 +86,9 @@ function AgentsPage() {
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Agent</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Agent</TableHead><TableHead>হিসাব ধরন</TableHead><TableHead className="text-right">Total Bill</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Advance Balance</TableHead>{isAdmin && <TableHead className="text-right">Action</TableHead>}</TableRow></TableHeader>
               <TableBody>
-                {bals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
+                {bals.length === 0 ? <TableRow><TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground py-6">কোনো হিসাব নেই</TableCell></TableRow>
                   : bals.map((b, idx) => (
                     <TableRow key={b.agent_name} className={`row-tint-${idx % 4}`}>
                       <TableCell className="font-mono text-xs tabular-nums font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">{partySerialCode("agent", serials[b.agent_name] ?? (idx + 1))}</TableCell>
@@ -86,6 +98,16 @@ function AgentsPage() {
                       <TableCell className="text-right tabular-nums text-emerald-600">৳ {Number(b.total_received).toLocaleString()}</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${b.balance_due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {Number(b.balance_due).toLocaleString()}</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${Number(b.advance_balance) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {Number(b.advance_balance ?? 0).toLocaleString()}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <ConfirmDeleteButton
+                            allowOwner
+                            title={`Agency "${b.agent_name}" ডিলিট?`}
+                            description="এই Agency তালিকা থেকে স্থায়ীভাবে মুছে যাবে। (পুরোনো লেজার এন্ট্রি থাকলে তা নামের ভিত্তিতে থেকে যাবে।) নিশ্চিত করতে লগইন পাসওয়ার্ড দিন।"
+                            onConfirm={() => handleDelete(b.agent_name)}
+                          />
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
               </TableBody>

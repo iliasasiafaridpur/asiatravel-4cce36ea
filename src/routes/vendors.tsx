@@ -10,8 +10,11 @@ import { Eye, Wallet } from "lucide-react";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
+import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/vendors")({
   head: () => ({ meta: [{ title: "Vendor List — Travel Manager" }] }),
@@ -25,7 +28,14 @@ function VendorsPage() {
   const [modes, setModes] = useState<Record<string, string>>({});
   const [serials, setSerials] = useState<Record<string, number | null>>({});
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
+  const { isAdmin } = useRole();
   const navigate = useNavigate();
+  const handleDelete = async (name: string) => {
+    const { error } = await supabase.from("vendors").delete().eq("name", name);
+    if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`Vendor "${name}" তালিকা থেকে মুছে ফেলা হয়েছে`);
+    void load();
+  };
   const load = async () => {
     let data: unknown;
     let vendors: unknown;
@@ -113,6 +123,14 @@ function VendorsPage() {
                           >
                             <Wallet className="h-3.5 w-3.5" /> Pay
                           </Button>
+                          {isAdmin && (
+                            <ConfirmDeleteButton
+                              allowOwner
+                              title={`Vendor "${b.vendor_name}" ডিলিট?`}
+                              description="এই Vendor তালিকা থেকে স্থায়ীভাবে মুছে যাবে। (পুরোনো লেজার এন্ট্রি থাকলে তা নামের ভিত্তিতে থেকে যাবে।) নিশ্চিত করতে লগইন পাসওয়ার্ড দিন।"
+                              onConfirm={() => handleDelete(b.vendor_name)}
+                            />
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
