@@ -165,6 +165,13 @@ export function PartyLedgerPage({
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
   const [partyRefresh, setPartyRefresh] = useState(0);
+  const { canApprove } = useRole();
+  const handleDeleteParty = async (partyName: string) => {
+    const { error } = await supabase.from(contactsTable as never).delete().eq("name", partyName);
+    if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`"${partyName}" তালিকা থেকে মুছে ফেলা হয়েছে`);
+    setPartyRefresh((v) => v + 1);
+  };
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
   // Filter text for the on-page party list (shown when no party is selected).
