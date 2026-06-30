@@ -162,6 +162,7 @@ export function ExtraDueReceiveDialog({
             received_amount: r.received_amount + amt,
             discount_amount: r.discount_amount + disc,
             received_by: user.id,
+            ...(amt > 0 ? { payment_date: today } : {}),
           },
         );
         if (updRes.offline) offline = true;
