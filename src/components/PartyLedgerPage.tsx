@@ -1851,7 +1851,7 @@ export function PartyLedgerPage({
                     if (filtered.length === 0) {
                       return (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                          <TableCell colSpan={canApprove ? 8 : 7} className="text-center text-muted-foreground py-6">
                             কোনো হিসাব নেই
                           </TableCell>
                         </TableRow>
