@@ -954,6 +954,23 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     return null;
   };
 
+  // Agency "With Delivery": the status value each source table uses for delivered,
+  // and whether that table tracks a delivery_date column. Tickets have no
+  // delivery_date — delivery is recorded via the status only.
+  const sourceDeliveredStatus = (srcTable: string): string | null => {
+    const m: Record<string, string> = {
+      tickets: "DELIVERED",
+      bmet_cards: "Delivered",
+      saudi_visas: "Delivered",
+      kuwait_visas: "Delivered",
+      others: "Delivery",
+    };
+    return m[srcTable] ?? null;
+  };
+  const sourceHasDeliveryDate = (srcTable: string): boolean => srcTable !== "tickets";
+
+
+
   // A single bill-allocation record, stored on the PAYMENT log row so an admin
   // delete can reverse exactly what was applied.
   type AllocItem = {
