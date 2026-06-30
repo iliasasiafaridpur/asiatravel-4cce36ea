@@ -1090,6 +1090,9 @@ ${partySectionsHtml()}
   ${TIMELINE_PRINT_TABLE_CSS}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
+  /* মার্ক করা তারিখ: জায়গাটা ঠিক একই উচ্চতায় থাকবে কিন্তু সম্পূর্ণ সাদা/অদৃশ্য —
+     যাতে একই কাগজ আবার বসিয়ে ঐ ফাঁকা জায়গায় পরের দিনের তথ্য প্রিন্ট করা যায়। */
+  tr.blank td{visibility:hidden;background:transparent!important;border-color:transparent!important;color:transparent!important}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
   .printfooter{position:fixed;bottom:0;left:0;right:0;font-size:9px;color:#666;border-top:1px solid #ddd;padding:2px 4px;display:flex;justify-content:space-between}
