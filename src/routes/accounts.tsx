@@ -886,6 +886,7 @@ ${partySectionsHtml()}
     running: number,
     i: number,
     blank = false,
+    seq?: number,
   ): string => {
     const isIn = it.kind === "received";
     const isHand = it.kind === "handover";
