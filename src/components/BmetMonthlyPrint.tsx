@@ -47,7 +47,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
       return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
     };
     return rows
-      .filter((r) => !r.cancelled)
+      // বাতিল কাজও তালিকায় থাকবে (ধূসর + কাটা) — তাই মোট সংখ্যা লিস্টের সাথে মিলবে।
       .filter((r) => String(r.entry_date ?? "").slice(0, 7) === month)
       .sort((a, b) => {
         const ai = String(a[idColumn] ?? "");
