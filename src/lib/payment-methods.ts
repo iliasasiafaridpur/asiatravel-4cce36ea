@@ -65,3 +65,15 @@ export function mdReceivedNote(method?: string | null): string {
 export function vendorReceivedNote(): string {
   return `Vendor Rece — ব্যালেন্সে যোগ হয়নি`;
 }
+
+/**
+ * A cash handover leaves the staff member's drawer the moment it is SUBMITTED
+ * to MD (status "pending") — not only after MD approval. So a pending handover
+ * already reduces the staff's cash balance everywhere. Only an explicitly
+ * cancelled/rejected handover is excluded (its receipts/expenses get unlinked
+ * back to the staff drawer).
+ */
+export function handoverReducesBalance(status?: string | null): boolean {
+  const s = (status ?? "pending").trim().toLowerCase();
+  return s !== "cancelled" && s !== "canceled" && s !== "rejected";
+}
