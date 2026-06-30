@@ -17,7 +17,7 @@ import { lazy, Suspense } from "react";
 import { DigitalClock } from "@/components/DigitalClock";
 
 const DashboardCharts = lazy(() => import("@/components/DashboardCharts"));
-import { isCashMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, vendorExpenseHitsUserBalance, handoverReducesBalance } from "@/lib/payment-methods";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
