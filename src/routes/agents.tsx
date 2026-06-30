@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
+import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/agents")({
   head: () => ({ meta: [{ title: "Agent List — Travel Manager" }] }),
