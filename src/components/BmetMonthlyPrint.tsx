@@ -97,8 +97,8 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
-        table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
-        th,td{border:1px solid #cbd5e1;padding:2px 3px;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;vertical-align:top}
+        table{width:100%;border-collapse:collapse;font-size:8.5px;table-layout:auto}
+        th,td{border:1px solid #cbd5e1;padding:2px 4px;text-align:left;white-space:nowrap;vertical-align:middle}
         th{background:#f1f5f9;font-size:9px}
         .r{text-align:right;font-variant-numeric:tabular-nums}
         .foot{margin-top:12px;padding-top:8px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
