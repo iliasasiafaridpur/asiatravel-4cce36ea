@@ -1579,7 +1579,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         const allocItems: AllocItem[] = [];
         for (const e of entries) {
           const r = rowById.get(e.id)!;
-          allocItems.push(await applyAllocationToRow(r, e.amt));
+          allocItems.push(await applyAllocationToRow(r, e.amt, { markDelivery: isAgency && payWithDelivery }));
           total += e.amt;
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
