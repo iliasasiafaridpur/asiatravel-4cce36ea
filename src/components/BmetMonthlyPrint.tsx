@@ -115,10 +115,10 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         @media print{button{display:none}}
       </style></head><body>
       <h1>BMET Card — ${esc(monthLabel)}</h1>
-      <div class="sub">মাসিক তালিকা · মোট ${list.length} টি</div>
+      <div class="sub">মাসিক তালিকা · মোট ${list.length} টি${cancelledCount ? ` (এর মধ্যে ${cancelledCount} টি বাতিল)` : ""}</div>
       <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(new Date().toISOString().slice(0, 10)))}</div>
       <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
-      <div class="foot"><span>মোট ${list.length} টি</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
+      <div class="foot"><span>মোট ${list.length} টি${cancelledCount ? ` · বাতিল ${cancelledCount} টি` : ""}</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
       </body></html>`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list, monthLabel]);
