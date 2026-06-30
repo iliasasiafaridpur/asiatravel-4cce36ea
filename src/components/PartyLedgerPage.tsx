@@ -7,6 +7,8 @@ import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { LedgerPage } from "@/components/LedgerPage";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { useRole } from "@/hooks/useRole";
 import { PageWatermark } from "@/components/PageWatermark";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { printDocHtml, buildFileTitle } from "@/lib/print-export";
@@ -163,13 +165,20 @@ export function PartyLedgerPage({
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
   const [partyRefresh, setPartyRefresh] = useState(0);
+  const { canApprove } = useRole();
+  const handleDeleteParty = async (partyName: string) => {
+    const { error } = await supabase.from(contactsTable as never).delete().eq("name", partyName);
+    if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`"${partyName}" তালিকা থেকে মুছে ফেলা হয়েছে`);
+    setPartyRefresh((v) => v + 1);
+  };
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
   // Filter text for the on-page party list (shown when no party is selected).
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
   const [balances, setBalances] = useState<
-    { name: string; serial?: number | null; bill: number; paid: number; due: number; advance: number }[]
+    { name: string; serial?: number | null; settle_mode?: string | null; bill: number; paid: number; due: number; advance: number }[]
   >([]);
   // Pagination for the ledger statement table.
   const [page, setPage] = useState(1);
@@ -273,21 +282,26 @@ export function PartyLedgerPage({
     let cancelled = false;
     const loadBalances = async () => {
       let data: unknown;
-      let contactsRows: { name?: string | null; serial_no?: number | null }[];
+      let contactsRows: { name?: string | null; serial_no?: number | null; settle_mode?: string | null }[];
       if (isOffline()) {
         data = cacheRead<Record<string, unknown>[]>(isCustomer ? "bal_agent" : "bal_vendor") ?? [];
-        contactsRows = cacheRead<{ name?: string | null; serial_no?: number | null }[]>(contactsTable) ?? [];
+        contactsRows = cacheRead<{ name?: string | null; serial_no?: number | null; settle_mode?: string | null }[]>(contactsTable) ?? [];
       } else {
         const [balRes, contactsRes] = await Promise.all([
           supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
-          supabase.from(contactsTable as never).select("name,serial_no").limit(5000),
+          supabase.from(contactsTable as never).select("name,serial_no,settle_mode").limit(5000),
         ]);
         data = balRes.data;
-        contactsRows = (contactsRes.data as unknown as { name?: string | null; serial_no?: number | null }[]) ?? [];
+        contactsRows = (contactsRes.data as unknown as { name?: string | null; serial_no?: number | null; settle_mode?: string | null }[]) ?? [];
       }
       const serialByName = new Map(
         (contactsRows
           .map((c) => [String(c.name ?? "").trim().toLowerCase(), c.serial_no ?? null] as const)
+          .filter(([n]) => Boolean(n))),
+      );
+      const modeByName = new Map(
+        (contactsRows
+          .map((c) => [String(c.name ?? "").trim().toLowerCase(), (c.settle_mode ?? "") as string] as const)
           .filter(([n]) => Boolean(n))),
       );
       const nameKey = isCustomer ? "agent_name" : "vendor_name";
@@ -299,6 +313,7 @@ export function PartyLedgerPage({
           return {
           name: partyName,
           serial: serialByName.get(partyName.toLowerCase()) ?? null,
+          settle_mode: modeByName.get(partyName.toLowerCase()) ?? "",
           bill: Number(b[billKey] ?? 0),
           paid: Number(b[paidKey] ?? 0),
           due: Number(b.balance_due ?? 0),
@@ -1813,6 +1828,8 @@ export function PartyLedgerPage({
                     <TableHead className="text-right">{isCustomer ? "Received" : "Paid"}</TableHead>
                     <TableHead className="text-right">Balance Due</TableHead>
                     <TableHead className="text-right">Advance Balance</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">হিসাব ধরন</TableHead>
+                    {canApprove && <TableHead className="text-center w-10"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1834,7 +1851,7 @@ export function PartyLedgerPage({
                     if (filtered.length === 0) {
                       return (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                          <TableCell colSpan={canApprove ? 8 : 7} className="text-center text-muted-foreground py-6">
                             কোনো হিসাব নেই
                           </TableCell>
                         </TableRow>
@@ -1859,6 +1876,19 @@ export function PartyLedgerPage({
                         <TableCell className="text-right tabular-nums text-emerald-600">৳ {b.paid.toLocaleString()}</TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold ${b.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {b.due.toLocaleString()}</TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold ${b.advance > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {b.advance.toLocaleString()}</TableCell>
+                        <TableCell className="text-center">
+                          <SettleModeBadge mode={b.settle_mode || null} />
+                        </TableCell>
+                        {canApprove && (
+                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <ConfirmDeleteButton
+                              onConfirm={() => handleDeleteParty(b.name)}
+                              title={`"${b.name}" ডিলিট করবেন?`}
+                              description="এই এজেন্সি/ভেন্ডরটি তালিকা থেকে স্থায়ীভাবে মুছে যাবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                              allowOwner
+                            />
+                          </TableCell>
+                        )}
                       </TableRow>
                     ));
                   })()}
