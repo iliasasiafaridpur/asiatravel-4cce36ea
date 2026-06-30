@@ -1523,6 +1523,18 @@ ${partySectionsHtml()}
                         <DateInput value={dayTo} onChange={(e) => setDayTo(e.target.value)} />
                       </div>
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">সর্বশেষ হিসাবের সংখ্যা (ঐচ্ছিক)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        inputMode="numeric"
+                        placeholder="যেমন: ৫০ — খালি রাখলে সব এন্ট্রি"
+                        value={dayLastN}
+                        onChange={(e) => setDayLastN(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">তারিখ ফিল্টারের ভেতরে শুধু সর্বশেষ এই কয়টি এন্ট্রি প্রিন্ট হবে; আগের জের ঠিক রেখে ক্লোজিং হিসাব হবে।</p>
+                    </div>
                     <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
                       <Printer className="h-4 w-4" /> দৈনিক ক্লোজিং প্রিন্ট
                     </Button>
