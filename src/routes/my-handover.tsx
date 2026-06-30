@@ -151,7 +151,7 @@ function svcLine(rec: Receipt): string {
   const tbl = rec.service_table ?? "";
   const svc = rec.svc ?? {};
   const bits: string[] = [];
-  const label = svc.service_name || TABLE_LABELS[tbl] || rec.service_type || "Service";
+  const label = svc.service_name || cleanSvcType(rec.service_type) || TABLE_LABELS[tbl] || "Service";
   if (label) bits.push(label);
   if (svc.country) bits.push(String(svc.country));
   if (svc.airline) bits.push(String(svc.airline));
