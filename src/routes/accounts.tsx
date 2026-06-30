@@ -231,6 +231,9 @@ function AccountsPage() {
   const [dayTo, setDayTo] = useState(today());
   // Optional: limit the daily-closing report to the latest N entries
   const [dayLastN, setDayLastN] = useState("");
+  // Optional: dates whose detail rows are hidden (left blank) in the daily-closing
+  // print. Balance still flows through them internally; they just don't render.
+  const [hiddenDays, setHiddenDays] = useState<string[]>([]);
   // Optional vendor / agency balance sections appended to the print
   const [incVendors, setIncVendors] = useState(false);
   const [incAgencies, setIncAgencies] = useState(false);
@@ -540,6 +543,23 @@ function AccountsPage() {
       return { ...it, running: bal };
     });
   }, [accountingReceived, handovers, expenses]);
+
+  // Distinct dates within the daily-closing date filter — used to let the user
+  // tick which dates' details to leave blank in the print.
+  const rangeDates = useMemo<string[]>(() => {
+    const set = new Set<string>();
+    for (const it of fullAsc) {
+      if (dayFrom && it.date < dayFrom) continue;
+      if (dayTo && it.date > dayTo) continue;
+      set.add(it.date);
+    }
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [fullAsc, dayFrom, dayTo]);
+
+  // Drop hidden dates that fall outside the current range when it changes.
+  useEffect(() => {
+    setHiddenDays((prev) => prev.filter((d) => rangeDates.includes(d)));
+  }, [rangeDates]);
 
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
     const desc = [...fullAsc].reverse().filter((it) => {
@@ -1014,10 +1034,15 @@ ${partySectionsHtml()}
     if (rows.length === 0) {
       bodyHtml = `<tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`;
     } else {
+      const hiddenSet = new Set(hiddenDays);
       let dayIn = 0;
       let dayOut = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
+        // Marked dates: leave fully blank — no detail rows, no closing line.
+        // The running balance was already computed across every row, so the
+        // next visible date's balance/closing stays correct.
+        if (hiddenSet.has(it.date)) continue;
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
@@ -1535,6 +1560,48 @@ ${partySectionsHtml()}
                       />
                       <p className="text-[10px] text-muted-foreground">তারিখ ফিল্টারের ভেতরে শুধু সর্বশেষ এই কয়টি এন্ট্রি প্রিন্ট হবে; আগের জের ঠিক রেখে ক্লোজিং হিসাব হবে।</p>
                     </div>
+                    {rangeDates.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">যে তারিখগুলো ফাঁকা রাখবেন (মার্ক করুন)</Label>
+                          {hiddenDays.length > 0 && (
+                            <button
+                              type="button"
+                              className="text-[10px] text-primary underline"
+                              onClick={() => setHiddenDays([])}
+                            >
+                              সব আনমার্ক
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-40 overflow-y-auto rounded-md border p-2 grid grid-cols-2 gap-1">
+                          {rangeDates.map((d) => {
+                            const checked = hiddenDays.includes(d);
+                            return (
+                              <label
+                                key={d}
+                                className="flex items-center gap-1.5 text-[11px] cursor-pointer rounded px-1 py-0.5 hover:bg-muted"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5"
+                                  checked={checked}
+                                  onChange={(e) =>
+                                    setHiddenDays((prev) =>
+                                      e.target.checked ? [...prev, d] : prev.filter((x) => x !== d),
+                                    )
+                                  }
+                                />
+                                <span className={checked ? "line-through text-muted-foreground" : ""}>
+                                  {formatDate(d)}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">মার্ক করা তারিখের কোনো তথ্য বা ক্লোজিং লাইন প্রিন্টে আসবে না (জায়গাটা ফাঁকা থাকবে), তবে ব্যালেন্স হিসাব ভিতরে ঠিক থাকবে।</p>
+                      </div>
+                    )}
                     <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
                       <Printer className="h-4 w-4" /> দৈনিক ক্লোজিং প্রিন্ট
                     </Button>
