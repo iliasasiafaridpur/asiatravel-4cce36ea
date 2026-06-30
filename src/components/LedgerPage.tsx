@@ -214,6 +214,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   // No cash/bank impact — pure wallet adjustment.
   const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
   const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
+  // Agency only: when true, receiving payment also marks the source booking(s)
+  // Delivered (sets delivery_date + status) so the data page status reflects it.
+  // Default false = "Without Delivery" (only money is received, status untouched).
+  const [payWithDelivery, setPayWithDelivery] = useState<boolean>(false);
   const [profileParty, setProfileParty] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -855,6 +859,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     setPayAsMdDeposit(false);
     setPayAsAdjust(false);
     setAdjustKind("refund");
+    setPayWithDelivery(false);
     setPayTarget(groupKey);
     setPayDue(due);
     setPayAmount(String(due > 0 ? due : ""));
@@ -873,6 +878,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     setPayAsMdDeposit(false);
     setPayAsAdjust(false);
     setAdjustKind("refund");
+    setPayWithDelivery(false);
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
@@ -950,6 +956,23 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     return null;
   };
 
+  // Agency "With Delivery": the status value each source table uses for delivered,
+  // and whether that table tracks a delivery_date column. Tickets have no
+  // delivery_date — delivery is recorded via the status only.
+  const sourceDeliveredStatus = (srcTable: string): string | null => {
+    const m: Record<string, string> = {
+      tickets: "DELIVERED",
+      bmet_cards: "Delivered",
+      saudi_visas: "Delivered",
+      kuwait_visas: "Delivered",
+      others: "Delivery",
+    };
+    return m[srcTable] ?? null;
+  };
+  const sourceHasDeliveryDate = (srcTable: string): boolean => srcTable !== "tickets";
+
+
+
   // A single bill-allocation record, stored on the PAYMENT log row so an admin
   // delete can reverse exactly what was applied.
   type AllocItem = {
@@ -975,7 +998,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   const applyAllocationToRow = async (
     row: Row,
     amt: number,
-    opts?: { date?: string; method?: string; asMdDeposit?: boolean },
+    opts?: { date?: string; method?: string; asMdDeposit?: boolean; markDelivery?: boolean },
   ): Promise<AllocItem> => {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
@@ -1014,6 +1037,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       if (isAgency && user?.id) upd.received_by = user.id;
       if (isAgency) {
         upd.payment_date = effectiveDate;
+        // "With Delivery": also mark the source booking Delivered so the data
+        // page's derived status reflects it (delivery_date drives the status).
+        if (opts?.markDelivery) {
+          const ds = sourceDeliveredStatus(srcTable);
+          if (ds) upd.status = ds;
+          if (sourceHasDeliveryDate(srcTable)) upd.delivery_date = effectiveDate;
+        }
       }
       const { error: uErr } = await supabase
         .from(srcTable as never)
@@ -1510,7 +1540,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
         if (amt > payDue + 0.001)
           return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
-        const allocItem = await applyAllocationToRow(payRow, amt);
+        const allocItem = await applyAllocationToRow(payRow, amt, { markDelivery: isAgency && payWithDelivery });
         await recordPaymentLog([allocItem], amt, null);
         await writeCashMirror(amt, String(payRow[mod.idColumn] ?? ""),
           `${String(payRow[mod.idColumn] ?? "")}=${amt}`);
@@ -1551,7 +1581,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         const allocItems: AllocItem[] = [];
         for (const e of entries) {
           const r = rowById.get(e.id)!;
-          allocItems.push(await applyAllocationToRow(r, e.amt));
+          allocItems.push(await applyAllocationToRow(r, e.amt, { markDelivery: isAgency && payWithDelivery }));
           total += e.amt;
           parts.push(`${String(r[mod.idColumn] ?? "")}=${e.amt}`);
         }
@@ -1594,7 +1624,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
-        allocItems.push(await applyAllocationToRow(r, take));
+        allocItems.push(await applyAllocationToRow(r, take, { markDelivery: isAgency && payWithDelivery }));
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
@@ -3215,6 +3245,23 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
             <p className="text-[12px] text-amber-600 font-medium px-1 -mt-1">
               ⚠️ সংরক্ষণের আগে উপরের তিনটি অপশনের যেকোনো একটি অবশ্যই নির্বাচন করুন (User Balance / MD Deposit / Manual Adjustment)।
             </p>
+          )}
+          {/* Agency only: choose whether receiving payment also delivers the
+              booking(s). With Delivery → source rows get marked Delivered (data
+              page status updates). Without Delivery → only money is received. */}
+          {isAgency && (
+            <label className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2.5 cursor-pointer">
+              <Checkbox
+                checked={payWithDelivery}
+                onCheckedChange={(c) => setPayWithDelivery(!!c)}
+                className="mt-0.5"
+              />
+              <span className="text-[12px] leading-snug">
+                <span className="font-medium">ডেলিভারিসহ গ্রহণ</span> — পেমেন্টের সাথে সংশ্লিষ্ট বুকিং{payRow ? "" : "(গুলো)"} <span className="text-emerald-600 font-medium">Delivered</span> হবে (ডাটা পেইজে স্ট্যাটাস আপডেট হবে)।
+                <br />
+                <span className="text-muted-foreground">টিক না দিলে শুধু টাকা গ্রহণ হবে, ডেলিভারি স্ট্যাটাস অপরিবর্তিত থাকবে।</span>
+              </span>
+            </label>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayOpen(false)}>
