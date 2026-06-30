@@ -55,7 +55,7 @@ const cleanStatusText = (text?: string | null) => {
 
 // Internal accounting notes that should never be shown to the user as a "note".
 // e.g. "সার্ভিস/কাস্টমার পেমেন্ট রিসিভ · MD received via Bank Transfer — staff balance neutral"
-const INTERNAL_REMARK_RE = /balance[\s-]*neutral|MD received via|MD deposit|vendor received|account adjustment|opening due/i;
+const INTERNAL_REMARK_RE = /balance[\s-]*neutral|MD received via|MD deposit|vendor received|account adjustment|opening due|সার্ভিস\/কাস্টমার পেমেন্ট রিসিভ|কাস্টমার পেমেন্ট রিসিভ|পেমেন্ট রিসিভ|এজেন্সি পেমেন্ট|এজেন্ট পেমেন্ট/i;
 const cleanReceiptRemark = (text?: string | null) => {
   const raw = String(text ?? "").trim();
   if (!raw) return "";
