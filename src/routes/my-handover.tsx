@@ -76,6 +76,16 @@ const TABLE_LABELS: Record<string, string> = {
   agency_ledger: "Agency Ledger",
 };
 
+// Agency-ledger collective payments store service_type like
+// "Service Receipt: <agent>" / "Agent Receipt: <agent>". The agent name is
+// already shown in the name/first column, so just label it as an agency payment.
+const cleanSvcType = (text?: string | null) => {
+  const s = (text ?? "").trim();
+  if (!s) return "";
+  if (/^(?:Service Receipt|Agent Receipt|Customer\/Sub-Agent[^:]*)\s*:/i.test(s)) return "এজেন্সি পেমেন্ট";
+  return s;
+};
+
 // Emoji icon per service table for the report's service-info block.
 
 // Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
