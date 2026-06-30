@@ -273,21 +273,26 @@ export function PartyLedgerPage({
     let cancelled = false;
     const loadBalances = async () => {
       let data: unknown;
-      let contactsRows: { name?: string | null; serial_no?: number | null }[];
+      let contactsRows: { name?: string | null; serial_no?: number | null; settle_mode?: string | null }[];
       if (isOffline()) {
         data = cacheRead<Record<string, unknown>[]>(isCustomer ? "bal_agent" : "bal_vendor") ?? [];
-        contactsRows = cacheRead<{ name?: string | null; serial_no?: number | null }[]>(contactsTable) ?? [];
+        contactsRows = cacheRead<{ name?: string | null; serial_no?: number | null; settle_mode?: string | null }[]>(contactsTable) ?? [];
       } else {
         const [balRes, contactsRes] = await Promise.all([
           supabase.rpc((isCustomer ? "get_agent_balances" : "get_vendor_balances") as never),
-          supabase.from(contactsTable as never).select("name,serial_no").limit(5000),
+          supabase.from(contactsTable as never).select("name,serial_no,settle_mode").limit(5000),
         ]);
         data = balRes.data;
-        contactsRows = (contactsRes.data as unknown as { name?: string | null; serial_no?: number | null }[]) ?? [];
+        contactsRows = (contactsRes.data as unknown as { name?: string | null; serial_no?: number | null; settle_mode?: string | null }[]) ?? [];
       }
       const serialByName = new Map(
         (contactsRows
           .map((c) => [String(c.name ?? "").trim().toLowerCase(), c.serial_no ?? null] as const)
+          .filter(([n]) => Boolean(n))),
+      );
+      const modeByName = new Map(
+        (contactsRows
+          .map((c) => [String(c.name ?? "").trim().toLowerCase(), (c.settle_mode ?? "") as string] as const)
           .filter(([n]) => Boolean(n))),
       );
       const nameKey = isCustomer ? "agent_name" : "vendor_name";
@@ -299,6 +304,7 @@ export function PartyLedgerPage({
           return {
           name: partyName,
           serial: serialByName.get(partyName.toLowerCase()) ?? null,
+          settle_mode: modeByName.get(partyName.toLowerCase()) ?? "",
           bill: Number(b[billKey] ?? 0),
           paid: Number(b[paidKey] ?? 0),
           due: Number(b.balance_due ?? 0),
