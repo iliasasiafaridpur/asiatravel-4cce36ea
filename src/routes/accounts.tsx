@@ -108,6 +108,14 @@ interface Hand { id: string; handover_id: string; entry_date: string; to_name: s
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; handover_id?: string | null; }
 
+// A submitted handover leaves the staff's drawer the moment it is sent to MD
+// (pending) — only an explicitly cancelled/rejected handover does NOT reduce
+// the staff's cash balance. So balance drops on submit, not on MD approval.
+const handoverReducesBalance = (status?: string | null) => {
+  const s = (status ?? "pending").toLowerCase();
+  return s !== "cancelled" && s !== "canceled" && s !== "rejected";
+};
+
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
 const TIMELINE_PRINT_COLGROUP_HTML = `
