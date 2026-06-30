@@ -181,6 +181,9 @@ export function PartyLedgerPage({
   // Flexible ledger print dialog state.
   const [printOpen, setPrintOpen] = useState(false);
   const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
+  // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
+  const [addrOpen, setAddrOpen] = useState(false);
+  const [addrSize, setAddrSize] = useState<"quarter" | "a6" | "a5" | "a4">("quarter");
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
@@ -1323,6 +1326,72 @@ export function PartyLedgerPage({
     }
   };
 
+  // Print a small address label (full name, mobile, address) for envelope / courier.
+  const runAddressLabel = (size: "quarter" | "a6" | "a5" | "a4") => {
+    const esc = (s: string) =>
+      String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const fullName = (contact?.full_name ?? "").trim() || displayName;
+    const phones = (contact?.phone ?? "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const addr = (contact?.address ?? "").trim();
+
+    // Page geometry. "quarter" = one-fourth of an A4 (A4 = 210×297mm → 148×105mm landscape-ish quarter).
+    const pageCss =
+      size === "quarter"
+        ? "@page{size:148mm 105mm;margin:0}"
+        : size === "a6"
+        ? "@page{size:A6;margin:0}"
+        : size === "a5"
+        ? "@page{size:A5;margin:0}"
+        : "@page{size:A4;margin:0}";
+
+    const phoneHtml = phones.length
+      ? `<div class="row"><span class="lbl">মোবাইল:</span> <span class="val">${phones.map(esc).join(", ")}</span></div>`
+      : "";
+    const addrHtml = addr
+      ? `<div class="row addr"><span class="lbl">ঠিকানা:</span> <span class="val">${esc(addr)}</span></div>`
+      : "";
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(fullName)} — ঠিকানা</title>
+      <style>
+        *{box-sizing:border-box}
+        ${pageCss}
+        html,body{margin:0;padding:0}
+        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a}
+        .label{width:100%;height:100vh;padding:10mm 12mm;display:flex;flex-direction:column;justify-content:center;position:relative}
+        .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .inner{position:relative;z-index:1}
+        .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+        .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.2}
+        .row{font-size:13px;margin-bottom:4px;line-height:1.4}
+        .row.addr{margin-top:2px}
+        .lbl{color:#64748b}
+        .val{font-weight:600}
+        @media print{button{display:none}}
+      </style></head><body>
+      <div class="label"><div class="inner">
+        <div class="to">প্রাপক / To</div>
+        <div class="name">${esc(fullName)}</div>
+        ${addrHtml}
+        ${phoneHtml}
+      </div></div>
+      </body></html>`;
+
+    const docTitle = buildFileTitle(
+      isCustomer ? "Agency_Address" : "Vendor_Address",
+      fullName,
+      todayISO(),
+    );
+    try {
+      printDocHtml(html, docTitle);
+    } catch {
+      toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
+    }
+  };
+
+
 
 
 
@@ -1556,6 +1625,59 @@ export function PartyLedgerPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* খাম / কুরিয়ার ঠিকানা লেবেল প্রিন্ট */}
+      <Dialog open={addrOpen} onOpenChange={setAddrOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-4 w-4" /> ঠিকানা প্রিন্ট (খাম/কুরিয়ার)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="font-semibold">{(contact?.full_name ?? "").trim() || displayName}</div>
+              {(contact?.address ?? "").trim() && (
+                <div className="mt-1 text-muted-foreground">ঠিকানা: {contact?.address}</div>
+              )}
+              {(contact?.phone ?? "").trim() && (
+                <div className="mt-0.5 text-muted-foreground">মোবাইল: {contact?.phone}</div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">পেইজ সাইজ</label>
+              <Select value={addrSize} onValueChange={(v) => setAddrSize(v as typeof addrSize)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="quarter">A4-এর ৪ ভাগের ১ ভাগ (148×105mm) — ডিফল্ট</SelectItem>
+                  <SelectItem value="a6">A6 (105×148mm)</SelectItem>
+                  <SelectItem value="a5">A5 (148×210mm)</SelectItem>
+                  <SelectItem value="a4">A4 (210×297mm)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setAddrOpen(false)}>
+              বাতিল
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                setAddrOpen(false);
+                runAddressLabel(addrSize);
+              }}
+            >
+              <Printer className="h-4 w-4" /> প্রিন্ট করুন
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {payOpen && (
@@ -1902,6 +2024,16 @@ export function PartyLedgerPage({
                       aria-label="Edit"
                     >
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 shrink-0 text-muted-foreground hover:text-primary"
+                      onClick={() => setAddrOpen(true)}
+                      aria-label="ঠিকানা প্রিন্ট"
+                      title="খাম/কুরিয়ার ঠিকানা প্রিন্ট"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                   {contact?.full_name && (
