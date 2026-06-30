@@ -17,7 +17,7 @@ import { lazy, Suspense } from "react";
 import { DigitalClock } from "@/components/DigitalClock";
 
 const DashboardCharts = lazy(() => import("@/components/DashboardCharts"));
-import { isCashMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, vendorExpenseHitsUserBalance, handoverReducesBalance } from "@/lib/payment-methods";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
@@ -299,8 +299,8 @@ function DashboardPage() {
       const totalReceivedToday = cashReceipts.filter((r) => r.entry_date === today).reduce((s, r) => s + Number(r.amount || 0), 0);
       const totalExpenses = expenses.reduce((s, r) => s + (expenseHitsBalance(r) ? Number(r.amount || 0) : 0), 0);
       const totalExpensesToday = expenses.filter((r) => r.entry_date === today).reduce((s, r) => s + (expenseHitsBalance(r) ? Number(r.amount || 0) : 0), 0);
-      // Match /accounts "হাতে আছে": only approved handovers reduce the shown cash balance.
-      const totalHandedOver = handovers.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
+      // Match /accounts "হাতে আছে": a handover reduces the shown cash balance as soon as it is submitted (pending), not only after MD approval.
+      const totalHandedOver = handovers.filter((h) => handoverReducesBalance(h.status)).reduce((s, h) => s + Number(h.amount || 0), 0);
       const pendingHandover = nonDiscount.some((r) => r.approval_status === "pending_md" && r.handover_id);
       return {
         currentBalance: totalReceived - totalExpenses - totalHandedOver,
@@ -345,7 +345,7 @@ function DashboardPage() {
         return !isDiscount && isCashMethod(row.method) ? sum + Number(row.amount || 0) : sum;
       }, 0);
       const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>)
-        .filter((row) => (row.status ?? "approved") === "approved")
+        .filter((row) => handoverReducesBalance(row.status))
         .reduce((sum, row) => sum + Number(row.amount || 0), 0);
       const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number; category: string | null; linked_source_table: string | null }>).reduce((sum, row) => {
         const hitsCash = row.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(row.category) : true;

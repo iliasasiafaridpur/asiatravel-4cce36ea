@@ -108,6 +108,14 @@ interface Hand { id: string; handover_id: string; entry_date: string; to_name: s
 interface Exp  { id: string; expense_id: string; entry_date: string; category: string; purpose: string | null; amount: number; remarks: string | null; spent_by: string | null; handover_id?: string | null; linked_source_table?: string | null; linked_source_id?: string | null; }
 interface Recv { id: string; receipt_id: string; entry_date: string; service_type: string; service_table: string | null; service_row_id: string | null; ref_id: string | null; passenger_name: string; amount: number; method: string; source: string; remarks: string | null; received_by: string | null; handover_id?: string | null; }
 
+// A submitted handover leaves the staff's drawer the moment it is sent to MD
+// (pending) — only an explicitly cancelled/rejected handover does NOT reduce
+// the staff's cash balance. So balance drops on submit, not on MD approval.
+const handoverReducesBalance = (status?: string | null) => {
+  const s = (status ?? "pending").toLowerCase();
+  return s !== "cancelled" && s !== "canceled" && s !== "rejected";
+};
+
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
 const TIMELINE_PRINT_COLGROUP_HTML = `
@@ -494,7 +502,7 @@ function AccountsPage() {
     }
     return [...map.values()].sort((a, b) => b.total - a.total);
   }, [fRecv]);
-  const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
+  const periodHand   = fHand.filter((h) => handoverReducesBalance(h.status)).reduce((s, h) => s + Number(h.amount || 0), 0);
   const expenseHitsBalance = (e: Exp) =>
     e.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(e.category) : true;
   const periodExp    = fExp.reduce((s, e) => s + (expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
@@ -504,7 +512,7 @@ function AccountsPage() {
   const balance = useMemo(() => {
     const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
     const cashOut = handovers
-      .filter((h) => (h.status ?? "approved") === "approved")
+      .filter((h) => handoverReducesBalance(h.status))
       .reduce((s, h) => s + Number(h.amount || 0), 0);
     const spent = expenses.reduce((s, e) => s + (expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
     return cashIn - cashOut - spent;
@@ -527,7 +535,7 @@ function AccountsPage() {
     return items.map((it) => {
       // Non-cash (MD-received) income does NOT change the running balance.
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number(it.row.amount) : 0;
-      else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
+      else if (it.kind === "handover") bal -= handoverReducesBalance(it.row.status) ? Number(it.row.amount) : 0;
       else bal -= expenseHitsBalance(it.row as Exp) ? Number(it.row.amount) : 0;
       return { ...it, running: bal };
     });
@@ -556,7 +564,7 @@ function AccountsPage() {
     let bal = 0;
     return ordered.map((it) => {
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
-      else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? Number((it.row as Hand).amount) : 0;
+      else if (it.kind === "handover") bal -= handoverReducesBalance((it.row as Hand).status) ? Number((it.row as Hand).amount) : 0;
       else bal -= expenseHitsBalance(it.row as Exp) ? Number((it.row as Exp).amount) : 0;
       return { it, running: bal };
     });
@@ -771,7 +779,7 @@ function AccountsPage() {
           else if (isVendorReceivedMethod((it.row as Recv).method)) acc.vendorAmt += amt;
           else acc.mdAmt += amt;
         }
-        else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+        else if (it.kind === "handover") acc.outAmt += handoverReducesBalance((it.row as Hand).status) ? amt : 0;
         else acc.outAmt += expenseHitsBalance(it.row as Exp) ? amt : 0;
         return acc;
       },
@@ -967,7 +975,7 @@ ${partySectionsHtml()}
       let bal = opening;
       for (const it of reordered) {
         if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? amtOf(it) : 0;
-        else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? amtOf(it) : 0;
+        else if (it.kind === "handover") bal -= handoverReducesBalance((it.row as Hand).status) ? amtOf(it) : 0;
         else bal -= expenseHitsBalance(it.row as Exp) ? amtOf(it) : 0;
         it.running = bal;
       }
@@ -982,7 +990,7 @@ ${partySectionsHtml()}
           else if (isVendorReceivedMethod((it.row as Recv).method)) acc.vendorAmt += amt;
           else acc.mdAmt += amt;
         }
-        else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+        else if (it.kind === "handover") acc.outAmt += handoverReducesBalance((it.row as Hand).status) ? amt : 0;
         else acc.outAmt += expenseHitsBalance(it.row as Exp) ? amt : 0;
         return acc;
       },
@@ -1005,7 +1013,7 @@ ${partySectionsHtml()}
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
         } else if (it.kind === "handover") {
-          if (((it.row as Hand).status ?? "approved") === "approved") dayOut += amt;
+          if (handoverReducesBalance((it.row as Hand).status)) dayOut += amt;
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
