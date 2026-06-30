@@ -28,7 +28,7 @@ function VendorsPage() {
   const [modes, setModes] = useState<Record<string, string>>({});
   const [serials, setSerials] = useState<Record<string, number | null>>({});
   const [profileVendor, setProfileVendor] = useState<string | null>(null);
-  const { isAdmin } = useRole();
+  const { canApprove } = useRole();
   const navigate = useNavigate();
   const handleDelete = async (name: string) => {
     const { error } = await supabase.from("vendors").delete().eq("name", name);
@@ -123,7 +123,7 @@ function VendorsPage() {
                           >
                             <Wallet className="h-3.5 w-3.5" /> Pay
                           </Button>
-                          {isAdmin && (
+                          {canApprove && (
                             <ConfirmDeleteButton
                               allowOwner
                               title={`Vendor "${b.vendor_name}" ডিলিট?`}
