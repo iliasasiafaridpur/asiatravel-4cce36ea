@@ -768,7 +768,8 @@ function AccountsPage() {
   th{background:#f5f5f5;font-weight:600}
   th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:left}
+  td.num.in{text-align:right}
+  td.dt,th.dt{white-space:nowrap}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
