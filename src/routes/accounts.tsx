@@ -1034,10 +1034,15 @@ ${partySectionsHtml()}
     if (rows.length === 0) {
       bodyHtml = `<tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`;
     } else {
+      const hiddenSet = new Set(hiddenDays);
       let dayIn = 0;
       let dayOut = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
+        // Marked dates: leave fully blank — no detail rows, no closing line.
+        // The running balance was already computed across every row, so the
+        // next visible date's balance/closing stays correct.
+        if (hiddenSet.has(it.date)) continue;
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
