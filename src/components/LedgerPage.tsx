@@ -1769,7 +1769,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${mod.key}-${todayIso()}.csv`;
+    a.download = `${buildFileTitle(isAgency ? "Agency_Ledger" : "Vendor_Ledger", mod.label || mod.key, todayIso())}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
