@@ -1877,7 +1877,7 @@ export function PartyLedgerPage({
                         <TableCell className={`text-right tabular-nums font-semibold ${b.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {b.due.toLocaleString()}</TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold ${b.advance > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {b.advance.toLocaleString()}</TableCell>
                         <TableCell className="text-center">
-                          <SettleModeBadge mode={b.settle_mode === "one_by_one" ? "one_by_one" : "total"} />
+                          <SettleModeBadge mode={b.settle_mode || null} />
                         </TableCell>
                         {canApprove && (
                           <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
