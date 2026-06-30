@@ -1035,6 +1035,13 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       if (isAgency && user?.id) upd.received_by = user.id;
       if (isAgency) {
         upd.payment_date = effectiveDate;
+        // "With Delivery": also mark the source booking Delivered so the data
+        // page's derived status reflects it (delivery_date drives the status).
+        if (opts?.markDelivery) {
+          const ds = sourceDeliveredStatus(srcTable);
+          if (ds) upd.status = ds;
+          if (sourceHasDeliveryDate(srcTable)) upd.delivery_date = effectiveDate;
+        }
       }
       const { error: uErr } = await supabase
         .from(srcTable as never)
