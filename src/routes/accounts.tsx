@@ -1560,6 +1560,48 @@ ${partySectionsHtml()}
                       />
                       <p className="text-[10px] text-muted-foreground">তারিখ ফিল্টারের ভেতরে শুধু সর্বশেষ এই কয়টি এন্ট্রি প্রিন্ট হবে; আগের জের ঠিক রেখে ক্লোজিং হিসাব হবে।</p>
                     </div>
+                    {rangeDates.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">যে তারিখগুলো ফাঁকা রাখবেন (মার্ক করুন)</Label>
+                          {hiddenDays.length > 0 && (
+                            <button
+                              type="button"
+                              className="text-[10px] text-primary underline"
+                              onClick={() => setHiddenDays([])}
+                            >
+                              সব আনমার্ক
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-40 overflow-y-auto rounded-md border p-2 grid grid-cols-2 gap-1">
+                          {rangeDates.map((d) => {
+                            const checked = hiddenDays.includes(d);
+                            return (
+                              <label
+                                key={d}
+                                className="flex items-center gap-1.5 text-[11px] cursor-pointer rounded px-1 py-0.5 hover:bg-muted"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5"
+                                  checked={checked}
+                                  onChange={(e) =>
+                                    setHiddenDays((prev) =>
+                                      e.target.checked ? [...prev, d] : prev.filter((x) => x !== d),
+                                    )
+                                  }
+                                />
+                                <span className={checked ? "line-through text-muted-foreground" : ""}>
+                                  {formatDate(d)}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">মার্ক করা তারিখের কোনো তথ্য বা ক্লোজিং লাইন প্রিন্টে আসবে না (জায়গাটা ফাঁকা থাকবে), তবে ব্যালেন্স হিসাব ভিতরে ঠিক থাকবে।</p>
+                      </div>
+                    )}
                     <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
                       <Printer className="h-4 w-4" /> দৈনিক ক্লোজিং প্রিন্ট
                     </Button>
