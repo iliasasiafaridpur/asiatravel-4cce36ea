@@ -478,8 +478,8 @@ function PastEodPanel({
                     {highlight && <div className="text-[11px] text-yellow-800 dark:text-yellow-200 font-semibold">⬅ এই লেনদেনটি</div>}
                   </td>
                   <td className="px-2 py-1.5">
-                    <div className="text-sm">{cleanSvcType(r.service_type)}</div>
-                    {info?.service_name && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
+                    <div className="text-sm">{(info?.table === "agency_ledger" && info.service_name) ? info.service_name : cleanSvcType(r.service_type)}</div>
+                    {info?.service_name && info.table !== "agency_ledger" && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
                     {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
                     {info?.airline && <div className="text-xs text-muted-foreground">{info.airline}{info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}</div>}
                     {statusEvt && <div className="text-xs text-violet-600 dark:text-violet-400">{cleanStatusText(r.remarks)} — অবগতি</div>}
