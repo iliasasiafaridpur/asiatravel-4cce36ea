@@ -1828,6 +1828,8 @@ export function PartyLedgerPage({
                     <TableHead className="text-right">{isCustomer ? "Received" : "Paid"}</TableHead>
                     <TableHead className="text-right">Balance Due</TableHead>
                     <TableHead className="text-right">Advance Balance</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">হিসাব ধরন</TableHead>
+                    {canApprove && <TableHead className="text-center w-10"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
