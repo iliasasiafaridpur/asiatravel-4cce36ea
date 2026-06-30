@@ -109,6 +109,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         th,td{border:1px solid #cbd5e1;padding:2px 4px;text-align:left;white-space:nowrap;vertical-align:middle}
         th{background:#f1f5f9;font-size:9px}
         .r{text-align:right;font-variant-numeric:tabular-nums}
+        tr.cx td{color:#94a3b8;text-decoration:line-through}
         .foot{margin-top:12px;padding-top:8px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
         @page{size:A4 portrait;margin:8mm}
         @media print{button{display:none}}
