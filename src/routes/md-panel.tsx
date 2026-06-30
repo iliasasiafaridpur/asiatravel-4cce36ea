@@ -131,7 +131,11 @@ function MdPanelPage() {
             passport: (row.passport as string | null) ?? null,
             sold_price: Number(row[cfg.soldField] ?? 0),
             discount: Number(row[cfg.discountField] ?? 0),
-            service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
+            service_name: cfg.serviceNameField
+              ? (cfg.table === "agency_ledger"
+                  ? (AGENCY_MODULE_LABELS[String(row[cfg.serviceNameField] ?? "")] ?? null)
+                  : ((row[cfg.serviceNameField] as string | null) ?? null))
+              : null,
             airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
             flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
             delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
