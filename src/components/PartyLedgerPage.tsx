@@ -1172,7 +1172,7 @@ export function PartyLedgerPage({
       const totDue = bills.reduce((s, b) => s + b.due, 0);
       summaryLine = `মোট বিল: ${bills.length} টি · মোট বিল মূল্য: ৳${num(totBill)} · মোট ${payHead}: ৳${num(totPaid)} · মোট বাকি: ৳${num(totDue)} · (পরিশোধিত ${billStats.paidCount} · আংশিক ${billStats.partialCount} · বাকি ${billStats.dueCount})`;
       theadHtml = `<tr>
-        <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
+        <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
       bodyHtml = bills.length
@@ -1187,8 +1187,8 @@ export function PartyLedgerPage({
                     : "বাকি";
               const cls = b.cancelled ? ' class="cancel"' : "";
               return `<tr${cls}>
-                <td>${esc(formatDate(b.date))}</td>
-                <td>${esc(b.ledgerId)}</td>
+                <td class="nw">${esc(formatDate(b.date))}</td>
+                <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
@@ -1204,7 +1204,7 @@ export function PartyLedgerPage({
       const dueBills = bills.filter((b) => b.status !== "paid");
       summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
       theadHtml = `<tr>
-        <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
+        <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
       bodyHtml = dueBills.length
@@ -1213,8 +1213,8 @@ export function PartyLedgerPage({
               const st = b.cancelled ? "বাতিল কাজ" : b.status === "partial" ? "আংশিক" : "বাকি";
               const cls = b.cancelled ? ' class="cancel"' : "";
               return `<tr${cls}>
-                <td>${esc(formatDate(b.date))}</td>
-                <td>${esc(b.ledgerId)}</td>
+                <td class="nw">${esc(formatDate(b.date))}</td>
+                <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
@@ -1244,7 +1244,7 @@ export function PartyLedgerPage({
       }
       summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
       theadHtml = `<tr>
-        <th>তারিখ</th><th>ID</th><th>সার্ভিস</th><th>বিবরণ</th>
+        <th class="nw">তারিখ</th><th class="nw">ID</th><th>সার্ভিস</th><th>বিবরণ</th>
         <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>${isCustomer ? '<th class="r">অগ্রিম</th>' : ""}
       </tr>`;
       const colSpan = isCustomer ? 8 : 7;
@@ -1258,8 +1258,8 @@ export function PartyLedgerPage({
           ? list
               .map(
                 (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
-            <td>${esc(formatDate(s.date))}</td>
-            <td>${esc(s.ledgerId)}</td>
+            <td class="nw">${esc(formatDate(s.date))}</td>
+            <td class="nw">${esc(s.ledgerId)}</td>
             <td>${esc(s.service)}</td>
             <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
@@ -1283,6 +1283,7 @@ export function PartyLedgerPage({
         th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}
         th{background:#f1f5f9}
         .r{text-align:right;font-variant-numeric:tabular-nums}
+        .nw{white-space:nowrap}
         .due{color:#e11d48;font-weight:600}
         .pay td{background:#ecfdf5;color:#047857}
         .opening td{background:#fffbeb;font-weight:600}
