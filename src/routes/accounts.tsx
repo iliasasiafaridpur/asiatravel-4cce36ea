@@ -753,7 +753,7 @@ function AccountsPage() {
     const printedBy = displayName(profile, user);
     return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:${PAPER_CSS[printPaper]} ${printOrientation};margin:8mm 5mm 20mm 5mm}
+  @page{size:${PAPER_CSS[printPaper]} ${printOrientation};margin:8mm 5mm 24mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
@@ -762,20 +762,20 @@ function AccountsPage() {
   .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
-  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word}
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
   th{background:#f5f5f5;font-weight:600}
   th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.num.in{text-align:right}
-  td.dt,th.dt{white-space:nowrap}
+  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:74px}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
   .printfooter{position:fixed;bottom:0;left:0;right:0;font-size:9px;color:#666;border-top:1px solid #ddd;padding:2px 4px;display:flex;justify-content:space-between}
   .printfooter .pageno::before{content:"পৃষ্ঠা " counter(page) " / " counter(pages)}
-  @media print{body{padding:2px;padding-bottom:28px}}
+  @media print{body{padding:2px;padding-bottom:36px}}
 </style></head><body>
 <div class="brand">
   <div><div class="co">এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</div><div class="tag">আজকের হিসাব — সম্পূর্ণ হিসাব প্রিন্ট</div></div>
@@ -872,7 +872,7 @@ ${partySectionsHtml()}
     const cls = isHand ? "hand" : "out";
     return `<tr class="row-tint-${i % 4}">` +
       `<td>${i + 1}</td>` +
-      `<td>${formatDate(it.date)}</td>` +
+      `<td class="dt">${formatDate(it.date)}</td>` +
       `<td class="wrap">${name ?? ""}</td>` +
       `<td class="wrap">${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>` +
       `<td class="wrap">${region}${mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}${vendorRecv ? " · Vendor Rece (ব্যালেন্সে নয়)" : ""}</td>` +
@@ -993,7 +993,7 @@ ${partySectionsHtml()}
 
     return `<!doctype html><html><head><meta charset="utf-8"><title>আজকের হিসাব- এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</title>
 <style>
-  @page{size:${PAPER_CSS[printPaper]} ${printOrientation};margin:8mm 5mm 12mm 5mm}
+  @page{size:${PAPER_CSS[printPaper]} ${printOrientation};margin:8mm 5mm 24mm 5mm}
   body{font-family:'Noto Sans Bengali',system-ui,sans-serif;padding:4px;color:#111;margin:0;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .brand{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:6px}
@@ -1002,20 +1002,21 @@ ${partySectionsHtml()}
   .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
-  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word}
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
   th{background:#f5f5f5;font-weight:600}
   th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:left}
+  td.num.in{text-align:right}
+  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:74px}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
   .printfooter{position:fixed;bottom:0;left:0;right:0;font-size:9px;color:#666;border-top:1px solid #ddd;padding:2px 4px;display:flex;justify-content:space-between}
   .printfooter .pageno::before{content:"পৃষ্ঠা " counter(page) " / " counter(pages)}
-  @media print{body{padding:2px;padding-bottom:16px}}
+  @media print{body{padding:2px;padding-bottom:36px}}
 </style></head><body>
 <div class="brand">
   <div><div class="co">এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</div><div class="tag">তারিখভিত্তিক দৈনিক ক্লোজিং রিপোর্ট</div></div>
@@ -1032,7 +1033,7 @@ ${partySectionsHtml()}
 <table>
   <thead>
     <tr>
-      <th>#</th><th>তারিখ</th>
+      <th>#</th><th class="dt">তারিখ</th>
       <th>নাম</th><th>সার্ভিস</th><th>দেশ/রোড</th>
       <th class="num">মোট বিল</th>
       <th class="num">আয়</th>
@@ -1058,6 +1059,7 @@ ${partySectionsHtml()}
 </table>
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
 ${partySectionsHtml()}
+<div style="height:28px"></div>
 <div class="printfooter"><span>এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্ · ${stamp}</span><span class="pageno"></span></div>
 </body></html>`;
   };
