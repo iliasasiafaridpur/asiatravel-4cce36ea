@@ -1172,7 +1172,7 @@ export function PartyLedgerPage({
       const totDue = bills.reduce((s, b) => s + b.due, 0);
       summaryLine = `মোট বিল: ${bills.length} টি · মোট বিল মূল্য: ৳${num(totBill)} · মোট ${payHead}: ৳${num(totPaid)} · মোট বাকি: ৳${num(totDue)} · (পরিশোধিত ${billStats.paidCount} · আংশিক ${billStats.partialCount} · বাকি ${billStats.dueCount})`;
       theadHtml = `<tr>
-        <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
+        <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
       bodyHtml = bills.length
