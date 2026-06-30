@@ -20,17 +20,17 @@ interface Props {
 
 const currentMonth = () => new Date().toISOString().slice(0, 7); // YYYY-MM
 
-const COLS: { key: string; label: string; date?: boolean; num?: boolean }[] = [
-  { key: "__id", label: "ID" },
-  { key: "entry_date", label: "Date", date: true },
-  { key: "passenger_name", label: "Name" },
-  { key: "passport", label: "Passport" },
-  { key: "mobile", label: "Mobile" },
-  { key: "country_name", label: "Country" },
-  { key: "sold_price", label: "Price", num: true },
-  { key: "vendor_sent_date", label: "V-Send Date", date: true },
-  { key: "received_date", label: "V-Rece Date", date: true },
-  { key: "delivery_date", label: "Delivery Date", date: true },
+const COLS: { key: string; label: string; date?: boolean; num?: boolean; w: string }[] = [
+  { key: "__id", label: "ID", w: "11%" },
+  { key: "entry_date", label: "Date", date: true, w: "8%" },
+  { key: "passenger_name", label: "Name", w: "16%" },
+  { key: "passport", label: "Passport", w: "11%" },
+  { key: "mobile", label: "Mobile", w: "11%" },
+  { key: "country_name", label: "Country", w: "9%" },
+  { key: "sold_price", label: "Price", num: true, w: "8%" },
+  { key: "vendor_sent_date", label: "V-Send Date", date: true, w: "8.5%" },
+  { key: "received_date", label: "V-Rece Date", date: true, w: "8.5%" },
+  { key: "delivery_date", label: "Delivery Date", date: true, w: "9%" },
 ];
 
 const esc = (s: unknown) =>
