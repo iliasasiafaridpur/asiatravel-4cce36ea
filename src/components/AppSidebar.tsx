@@ -65,6 +65,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { to: "/agency-ledger", title: "Agency Ledger", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
       { to: "/vendor-ledger", title: "Vendor Ledger", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
+      { to: "/agents", title: "Agency List", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
+      { to: "/vendors", title: "Vendor List", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
       { to: "/accounts", title: "My Accounts", icon: Wallet, color: "text-yellow-400", bg: "bg-yellow-500/15" },
     ],
   },
@@ -72,8 +74,6 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "তালিকা",
     items: [
-      { to: "/agents", title: "Agency List", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
-      { to: "/vendors", title: "Vendor List", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
       { to: "/invoice", title: "Invoice", icon: FileText, color: "text-pink-400", bg: "bg-pink-500/15" },
     ],
   },
