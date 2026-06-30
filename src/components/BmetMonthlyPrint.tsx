@@ -41,12 +41,24 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
   const [month, setMonth] = useState<string>(currentMonth());
 
   const list = useMemo(() => {
+    // ID-এর সিরিয়াল নং অনুযায়ী সাজানো (BMET-2606-001, 002 …); সমান হলে তারিখ।
+    const serialOf = (s: string) => {
+      const m = String(s).match(/(\d+)\s*$/);
+      return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+    };
     return rows
       .filter((r) => !r.cancelled)
       .filter((r) => String(r.entry_date ?? "").slice(0, 7) === month)
-      .sort((a, b) =>
-        String(a.entry_date ?? "").localeCompare(String(b.entry_date ?? "")));
-  }, [rows, month]);
+      .sort((a, b) => {
+        const ai = String(a[idColumn] ?? "");
+        const bi = String(b[idColumn] ?? "");
+        const d = serialOf(ai) - serialOf(bi);
+        if (d !== 0) return d;
+        const byId = ai.localeCompare(bi);
+        if (byId !== 0) return byId;
+        return String(a.entry_date ?? "").localeCompare(String(b.entry_date ?? ""));
+      });
+  }, [rows, month, idColumn]);
 
   const monthLabel = useMemo(() => {
     if (!month) return "";
