@@ -207,7 +207,10 @@ function MyHandoverPage() {
             String(x.source ?? "") !== "discount" &&
             String(x.method ?? "").toLowerCase() !== "discount"
           );
-        }).sort((a, b) => (b.entry_date ?? "").localeCompare(a.entry_date ?? ""));
+        }).sort((a, b) => {
+          const d = (b.entry_date ?? "").localeCompare(a.entry_date ?? "");
+          return d !== 0 ? d : (b.created_at ?? "").localeCompare(a.created_at ?? "");
+        });
         const exps = allExp.filter((x) =>
           x.spent_by === user.id && (x.entry_date ?? "") <= closingDate && !x.handover_id,
         ).filter(expenseHitsBalance);
