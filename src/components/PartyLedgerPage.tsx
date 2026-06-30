@@ -169,7 +169,7 @@ export function PartyLedgerPage({
   const [listFilter, setListFilter] = useState("");
   // Live balance rows for the on-page list (same data as Agent/Vendor List pages).
   const [balances, setBalances] = useState<
-    { name: string; serial?: number | null; bill: number; paid: number; due: number; advance: number }[]
+    { name: string; serial?: number | null; settle_mode?: string | null; bill: number; paid: number; due: number; advance: number }[]
   >([]);
   // Pagination for the ledger statement table.
   const [page, setPage] = useState(1);
