@@ -1204,7 +1204,7 @@ export function PartyLedgerPage({
       const dueBills = bills.filter((b) => b.status !== "paid");
       summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
       theadHtml = `<tr>
-        <th>তারিখ</th><th>ID</th><th>বিবরণ</th>
+        <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
       bodyHtml = dueBills.length
