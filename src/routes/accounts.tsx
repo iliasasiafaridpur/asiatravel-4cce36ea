@@ -138,7 +138,7 @@ const TIMELINE_PRINT_TABLE_CSS = `
   td.num.in{text-align:right}
   td.prev,th.prev{text-align:right;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-size:9px;padding-left:1px;padding-right:2px}
   td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
-  td.name,th.name{padding-left:8px}
+  td.dt + td,th.dt + th{padding-left:8px}
   td:first-child,th:first-child{text-align:center;padding-left:1px;padding-right:1px}
 `;
 
