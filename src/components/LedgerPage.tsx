@@ -3246,6 +3246,23 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
               ⚠️ সংরক্ষণের আগে উপরের তিনটি অপশনের যেকোনো একটি অবশ্যই নির্বাচন করুন (User Balance / MD Deposit / Manual Adjustment)।
             </p>
           )}
+          {/* Agency only: choose whether receiving payment also delivers the
+              booking(s). With Delivery → source rows get marked Delivered (data
+              page status updates). Without Delivery → only money is received. */}
+          {isAgency && (
+            <label className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2.5 cursor-pointer">
+              <Checkbox
+                checked={payWithDelivery}
+                onCheckedChange={(c) => setPayWithDelivery(!!c)}
+                className="mt-0.5"
+              />
+              <span className="text-[12px] leading-snug">
+                <span className="font-medium">ডেলিভারিসহ গ্রহণ</span> — পেমেন্টের সাথে সংশ্লিষ্ট বুকিং{payRow ? "" : "(গুলো)"} <span className="text-emerald-600 font-medium">Delivered</span> হবে (ডাটা পেইজে স্ট্যাটাস আপডেট হবে)।
+                <br />
+                <span className="text-muted-foreground">টিক না দিলে শুধু টাকা গ্রহণ হবে, ডেলিভারি স্ট্যাটাস অপরিবর্তিত থাকবে।</span>
+              </span>
+            </label>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayOpen(false)}>
               বাতিল
