@@ -207,7 +207,10 @@ function MyHandoverPage() {
             String(x.source ?? "") !== "discount" &&
             String(x.method ?? "").toLowerCase() !== "discount"
           );
-        }).sort((a, b) => (b.entry_date ?? "").localeCompare(a.entry_date ?? ""));
+        }).sort((a, b) => {
+          const d = (b.entry_date ?? "").localeCompare(a.entry_date ?? "");
+          return d !== 0 ? d : (b.created_at ?? "").localeCompare(a.created_at ?? "");
+        });
         const exps = allExp.filter((x) =>
           x.spent_by === user.id && (x.entry_date ?? "") <= closingDate && !x.handover_id,
         ).filter(expenseHitsBalance);
@@ -263,7 +266,8 @@ function MyHandoverPage() {
           .is("handover_id", null)
           .not("source", "eq", "discount")
           .not("method", "ilike", "discount")
-          .order("entry_date", { ascending: false }),
+          .order("entry_date", { ascending: false })
+          .order("created_at", { ascending: false }),
         supabase
           .from("cash_expenses")
           .select("id,expense_id,amount,category,purpose,entry_date,created_at,linked_source_table")

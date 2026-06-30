@@ -160,7 +160,9 @@ export function HandoverLedgerInline({
           .from("payment_receipts")
           .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,source,remarks,created_at")
           .in("handover_id", ids)
-          .not("source", "eq", "discount");
+          .not("source", "eq", "discount")
+          .order("entry_date", { ascending: true })
+          .order("created_at", { ascending: true });
         recs = (recData ?? []) as Receipt[];
       }
 
