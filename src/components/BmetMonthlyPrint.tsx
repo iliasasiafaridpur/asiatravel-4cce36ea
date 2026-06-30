@@ -47,7 +47,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
       return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
     };
     return rows
-      .filter((r) => !r.cancelled)
+      // বাতিল কাজও তালিকায় থাকবে (ধূসর + কাটা) — তাই মোট সংখ্যা লিস্টের সাথে মিলবে।
       .filter((r) => String(r.entry_date ?? "").slice(0, 7) === month)
       .sort((a, b) => {
         const ai = String(a[idColumn] ?? "");
@@ -86,7 +86,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
     const body = list
       .map(
         (r) =>
-          `<tr>${COLS.map(
+          `<tr class="${r.cancelled ? "cx" : ""}">${COLS.map(
             (c) =>
               `<td class="${c.num ? "r" : ""}">${esc(
                 cellValue(r, c.key, c.date, c.num),
@@ -94,7 +94,9 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
           ).join("")}</tr>`,
       )
       .join("");
-    const totalPrice = list.reduce((s, r) => s + Number(r.sold_price ?? 0), 0);
+    // বাতিল কাজের Price মোট হিসাবে যোগ হবে না।
+    const totalPrice = list.reduce((s, r) => s + (r.cancelled ? 0 : Number(r.sold_price ?? 0)), 0);
+    const cancelledCount = list.filter((r) => r.cancelled).length;
 
     return `<!doctype html><html><head><meta charset="utf-8"><title>BMET ${esc(monthLabel)}</title>
       <style>
@@ -107,15 +109,16 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         th,td{border:1px solid #cbd5e1;padding:2px 4px;text-align:left;white-space:nowrap;vertical-align:middle}
         th{background:#f1f5f9;font-size:9px}
         .r{text-align:right;font-variant-numeric:tabular-nums}
+        tr.cx td{color:#94a3b8;text-decoration:line-through}
         .foot{margin-top:12px;padding-top:8px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
         @page{size:A4 portrait;margin:8mm}
         @media print{button{display:none}}
       </style></head><body>
       <h1>BMET Card — ${esc(monthLabel)}</h1>
-      <div class="sub">মাসিক তালিকা · মোট ${list.length} টি</div>
+      <div class="sub">মাসিক তালিকা · মোট ${list.length} টি${cancelledCount ? ` (এর মধ্যে ${cancelledCount} টি বাতিল)` : ""}</div>
       <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(new Date().toISOString().slice(0, 10)))}</div>
       <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
-      <div class="foot"><span>মোট ${list.length} টি</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
+      <div class="foot"><span>মোট ${list.length} টি${cancelledCount ? ` · বাতিল ${cancelledCount} টি` : ""}</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
       </body></html>`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list, monthLabel]);
