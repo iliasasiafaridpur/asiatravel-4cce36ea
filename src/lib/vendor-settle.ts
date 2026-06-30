@@ -38,6 +38,7 @@ export async function settleVendorBillByBooking(
   sourceId: string,
   amount: number,
   userId: string,
+  paymentDate?: string,
 ): Promise<{ applied: number; advance: number; vendor: string | null }> {
   if (!sourceTable || !sourceId || amount <= 0) return { applied: 0, advance: 0, vendor: null };
   try {
@@ -61,7 +62,12 @@ export async function settleVendorBillByBooking(
     if (ownApply > 0) {
       const { error } = await supabase
         .from("vendor_ledger" as never)
-        .update({ paid_amount: Number(bill.paid_amount ?? 0) + ownApply, received_by: userId } as never)
+        .update({
+          paid_amount: Number(bill.paid_amount ?? 0) + ownApply,
+          payment_method: "Vendor Received",
+          payment_date: paymentDate ?? new Date().toISOString().slice(0, 10),
+          received_by: userId,
+        } as never)
         .eq("id", bill.id as never);
       if (!error) {
         appliedTotal += ownApply;
@@ -87,7 +93,7 @@ export async function settleVendorBillByBooking(
       } catch {
         advId = "";
       }
-      const today = new Date().toISOString().slice(0, 10);
+      const today = paymentDate ?? new Date().toISOString().slice(0, 10);
       const payload: Record<string, unknown> = {
         ledger_id: advId || `VDL-${Date.now()}`,
         entry_date: today,

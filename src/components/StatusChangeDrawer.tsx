@@ -258,6 +258,7 @@ export function StatusChangeDrawer({
         patch[request.recvCol] = received + paid;
         if (discAmt > 0) patch.discount_amount = existingDiscount + discAmt;
         patch.received_by = user!.id;
+        if (paid > 0) patch.payment_date = eventDate;
       }
 
       await resilientUpdate(request.table, { id: request.row.id }, patch);
@@ -419,7 +420,7 @@ export function StatusChangeDrawer({
           .filter((p) => isVendorReceivedMethod(p.method))
           .reduce((s, p) => s + p.amount, 0);
         if (vendorPaidAmt > 0) {
-          await settleVendorBillByBooking(request.table, request.row.id, vendorPaidAmt, user!.id);
+          await settleVendorBillByBooking(request.table, request.row.id, vendorPaidAmt, user!.id, eventDate);
         }
       }
 

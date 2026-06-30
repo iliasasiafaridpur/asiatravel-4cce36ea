@@ -948,6 +948,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         bmet_cards: "received_amount",
         saudi_visas: "received_amount",
         kuwait_visas: "received",
+          others: "received_amount",
+          extra_services: "received_amount",
       };
       return m[srcTable] ?? null;
     }
@@ -969,7 +971,8 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     };
     return m[srcTable] ?? null;
   };
-  const sourceHasDeliveryDate = (srcTable: string): boolean => srcTable !== "tickets";
+  const sourceHasDeliveryDate = (srcTable: string): boolean =>
+    ["bmet_cards", "saudi_visas", "kuwait_visas", "others"].includes(srcTable);
 
 
 
@@ -1078,8 +1081,11 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       id: row.id,
       ledger_id: String(row[mod.idColumn] ?? ""),
       amt,
-      src_table: srcTable && srcId && recvCol ? srcTable : null,
-      src_id: srcTable && srcId && recvCol ? srcId : null,
+      // Keep source identity for every source-backed vendor/agency bill. Some
+      // vendor bills are paid on vendor_ledger directly (recv_col=null), but
+      // they still need one cash-expense mirror in /accounts.
+      src_table: srcTable && srcId ? srcTable : null,
+      src_id: srcTable && srcId ? srcId : null,
       recv_col: srcTable && srcId && recvCol ? recvCol : null,
     };
   };
@@ -1117,7 +1123,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     const m = opts.method.trim().toLowerCase();
     if (["md sir deposit", "md deposit", "vendor received", "vendor receive", "adjustment"].includes(m)) return;
     const srcBackedAmt = opts.items
-      .filter((it) => it.src_table && it.src_id && it.recv_col)
+      .filter((it) => it.src_table && it.src_id)
       .reduce((s, it) => s + (Number(it.amt) || 0), 0);
     if (srcBackedAmt <= 0.009) return;
     try {
