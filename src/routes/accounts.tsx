@@ -793,15 +793,7 @@ function AccountsPage() {
   .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
-  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
-  th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:right}
-  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:56px;padding-left:1px}
-  td:first-child,th:first-child{width:22px;text-align:center;padding-left:1px;padding-right:1px}
+  ${TIMELINE_PRINT_TABLE_CSS}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
@@ -821,6 +813,9 @@ function AccountsPage() {
   <div>নিট ব্যালেন্স: <b>${fmt(scopedBalance)}</b></div>
 </div>
 ${node.innerHTML.replace(
+  "<table>",
+  `<table>${TIMELINE_PRINT_COLGROUP_HTML}`,
+).replace(
   "</tbody>",
   `<tr><td colspan="6" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
@@ -1034,15 +1029,7 @@ ${partySectionsHtml()}
   .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
-  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
-  th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:right}
-  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:56px;padding-left:1px}
-  td:first-child,th:first-child{width:22px;text-align:center;padding-left:1px;padding-right:1px}
+  ${TIMELINE_PRINT_TABLE_CSS}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
   tfoot td{font-weight:700;background:#fafafa}
@@ -1064,6 +1051,7 @@ ${partySectionsHtml()}
   <div>সর্বশেষ ক্লোজিং: <b>${fmt(finalClosing)}</b></div>
 </div>
 <table>
+  ${TIMELINE_PRINT_COLGROUP_HTML}
   <thead>
     <tr>
       <th>#</th><th class="dt">তারিখ</th>
