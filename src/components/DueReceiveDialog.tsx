@@ -404,7 +404,7 @@ export function DueReceiveDialog({
         .filter((p) => isVendorReceivedMethod(p.method))
         .reduce((s, p) => s + p.amount, 0);
       if (vendorPaidAmt > 0) {
-        await settleVendorBillByBooking(selected.service.table, selected.id, vendorPaidAmt, user.id);
+        await settleVendorBillByBooking(selected.service.table, selected.id, vendorPaidAmt, user.id, today);
       }
 
       // 3) if excess → route to agency_ledger as Advance Received

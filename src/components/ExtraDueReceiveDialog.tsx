@@ -162,6 +162,7 @@ export function ExtraDueReceiveDialog({
             received_amount: r.received_amount + amt,
             discount_amount: r.discount_amount + disc,
             received_by: user.id,
+            ...(amt > 0 ? { payment_date: today } : {}),
           },
         );
         if (updRes.offline) offline = true;
@@ -205,7 +206,7 @@ export function ExtraDueReceiveDialog({
           // "Vendor Received" → passenger paid the vendor directly; settle the
           // extra service's vendor bill without touching the staff balance.
           if (isVendorReceivedMethod(method)) {
-            await settleVendorBillByBooking("extra_services", r.id, amt, user.id);
+            await settleVendorBillByBooking("extra_services", r.id, amt, user.id, today);
           }
         }
       }
