@@ -996,7 +996,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   const applyAllocationToRow = async (
     row: Row,
     amt: number,
-    opts?: { date?: string; method?: string; asMdDeposit?: boolean },
+    opts?: { date?: string; method?: string; asMdDeposit?: boolean; markDelivery?: boolean },
   ): Promise<AllocItem> => {
     const srcTable = String(row.source_table ?? "");
     const srcId = String(row.source_id ?? "");
