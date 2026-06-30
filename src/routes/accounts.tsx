@@ -1483,11 +1483,6 @@ ${partySectionsHtml()}
                   </div>
 
 
-                  {/* Full print */}
-                  <Button onClick={handlePrint} disabled={timeline.length === 0} className="w-full gap-1.5">
-                    <Printer className="h-4 w-4" /> সম্পূর্ণ হিসাব প্রিন্ট
-                  </Button>
-
                   {/* Daily closing range */}
                   <div className="space-y-2 rounded-lg border p-3">
                     <Label className="flex items-center gap-1.5 text-sm font-medium">
