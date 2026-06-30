@@ -1853,8 +1853,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   };
 
   const printPage = () => {
+    const period =
+      startDate || endDate ? `${startDate || "শুরু"}_to_${endDate || todayIso()}` : todayIso();
+    const docTitle = buildFileTitle(
+      isAgency ? "Agency_Ledger" : "Vendor_Ledger",
+      mod.label || mod.key,
+      period,
+    );
     try {
-      printDocHtml(buildPrintHtml());
+      printDocHtml(buildPrintHtml(), docTitle);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
     }
