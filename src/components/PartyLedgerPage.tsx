@@ -1447,7 +1447,7 @@ export function PartyLedgerPage({
             variant="outline"
             size="sm"
             className="gap-1.5"
-            onClick={() => { setPrintMode("all"); setPrintOpen(true); }}
+            onClick={() => { setPrintMode(settleMode === "one_by_one" ? "bill" : "all"); setPrintOpen(true); }}
           >
             <Printer className="h-4 w-4" />
             লেজার প্রিন্ট
