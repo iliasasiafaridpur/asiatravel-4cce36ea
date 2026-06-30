@@ -1244,7 +1244,7 @@ export function PartyLedgerPage({
       }
       summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
       theadHtml = `<tr>
-        <th>তারিখ</th><th>ID</th><th>সার্ভিস</th><th>বিবরণ</th>
+        <th class="nw">তারিখ</th><th class="nw">ID</th><th>সার্ভিস</th><th>বিবরণ</th>
         <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>${isCustomer ? '<th class="r">অগ্রিম</th>' : ""}
       </tr>`;
       const colSpan = isCustomer ? 8 : 7;
