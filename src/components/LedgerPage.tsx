@@ -1538,7 +1538,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         if (!amt || amt <= 0) return toast.error("সঠিক টাকার পরিমাণ দিন");
         if (amt > payDue + 0.001)
           return toast.error(`এই যাত্রীর Due-এর চেয়ে বেশি দেওয়া যাবে না (Due: ${payDue})`);
-        const allocItem = await applyAllocationToRow(payRow, amt);
+        const allocItem = await applyAllocationToRow(payRow, amt, { markDelivery: isAgency && payWithDelivery });
         await recordPaymentLog([allocItem], amt, null);
         await writeCashMirror(amt, String(payRow[mod.idColumn] ?? ""),
           `${String(payRow[mod.idColumn] ?? "")}=${amt}`);
