@@ -5,6 +5,7 @@ import { formatDate, moduleByKey } from "@/lib/modules";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { LedgerPage } from "@/components/LedgerPage";
+import { NewPartyDialog } from "@/components/NewPartyDialog";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { PageWatermark } from "@/components/PageWatermark";
 import logoAsset from "@/assets/logo.png.asset.json";
@@ -161,6 +162,7 @@ export function PartyLedgerPage({
 
   // Full list of parties for the dropdown search filter (top-right).
   const [partyList, setPartyList] = useState<string[]>([]);
+  const [partyRefresh, setPartyRefresh] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
   // Filter text for the on-page party list (shown when no party is selected).
@@ -261,7 +263,7 @@ export function PartyLedgerPage({
     return () => {
       cancelled = true;
     };
-  }, [contactsTable, table, groupField, isCustomer]);
+  }, [contactsTable, table, groupField, isCustomer, partyRefresh]);
 
   // Load live balances (same RPC the Agent/Vendor List pages use) for the
   // on-page list shown when no party is selected.
@@ -316,7 +318,7 @@ export function PartyLedgerPage({
       cancelled = true;
       supabase.removeChannel(ch);
     };
-  }, [isCustomer, table, name, rtId]);
+  }, [isCustomer, table, name, rtId, partyRefresh]);
 
 
 
@@ -1781,12 +1783,18 @@ export function PartyLedgerPage({
         <>
         <Card>
           <CardContent className="p-3 sm:p-4 space-y-3">
-            <Input
-              value={listFilter}
-              onChange={(e) => setListFilter(e.target.value)}
-              placeholder={isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
-              className="h-9 max-w-sm"
-            />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Input
+                value={listFilter}
+                onChange={(e) => setListFilter(e.target.value)}
+                placeholder={isCustomer ? "Agency খুঁজুন…" : "Vendor খুঁজুন…"}
+                className="h-9 max-w-sm"
+              />
+              <NewPartyDialog
+                kind={isCustomer ? "agent" : "vendor"}
+                onCreated={() => setPartyRefresh((v) => v + 1)}
+              />
+            </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>মোট {balances.length} টি {isCustomer ? "Agency" : "Vendor"}</span>
               {listFilter.trim() && (
