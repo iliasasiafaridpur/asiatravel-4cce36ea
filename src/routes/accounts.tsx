@@ -885,6 +885,7 @@ ${partySectionsHtml()}
     it: TLItem & { running: number },
     running: number,
     i: number,
+    blank = false,
   ): string => {
     const isIn = it.kind === "received";
     const isHand = it.kind === "handover";
@@ -937,7 +938,7 @@ ${partySectionsHtml()}
     if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
-    return `<tr class="row-tint-${i % 4}">` +
+    return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
       `<td>${i + 1}</td>` +
       `<td class="dt">${formatDate(it.date)}</td>` +
       `<td class="wrap">${name ?? ""}</td>` +
@@ -1039,10 +1040,13 @@ ${partySectionsHtml()}
       let dayOut = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
-        // Marked dates: leave fully blank — no detail rows, no closing line.
-        // The running balance was already computed across every row, so the
-        // next visible date's balance/closing stays correct.
-        if (hiddenSet.has(it.date)) continue;
+        // Marked dates: keep the SAME space but render it INVISIBLE (white).
+        // The rows are still laid out (identical height), only hidden — so the
+        // operator can re-feed the same physical paper and print the new day's
+        // data in exactly the spot the old print already occupies. Running
+        // balance is precomputed across every row, so the next visible date's
+        // closing stays correct.
+        const isHidden = hiddenSet.has(it.date);
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
@@ -1051,11 +1055,11 @@ ${partySectionsHtml()}
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
-        bodyHtml += buildDetailRowHtml(it, it.running, i);
+        bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
           bodyHtml +=
-            `<tr class="dayclose">` +
+            `<tr class="dayclose${isHidden ? " blank" : ""}">` +
             `<td colspan="6">📅 ${formatDate(it.date)} — দিনের ক্লোজিং</td>` +
             `<td class="num in">+ ${fmt(dayIn)}</td>` +
             `<td></td><td></td>` +
@@ -1086,6 +1090,9 @@ ${partySectionsHtml()}
   ${TIMELINE_PRINT_TABLE_CSS}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
+  /* মার্ক করা তারিখ: জায়গাটা ঠিক একই উচ্চতায় থাকবে কিন্তু সম্পূর্ণ সাদা/অদৃশ্য —
+     যাতে একই কাগজ আবার বসিয়ে ঐ ফাঁকা জায়গায় পরের দিনের তথ্য প্রিন্ট করা যায়। */
+  tr.blank td{visibility:hidden;background:transparent!important;border-color:transparent!important;color:transparent!important}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
   .printfooter{position:fixed;bottom:0;left:0;right:0;font-size:9px;color:#666;border-top:1px solid #ddd;padding:2px 4px;display:flex;justify-content:space-between}
@@ -1563,7 +1570,7 @@ ${partySectionsHtml()}
                     {rangeDates.length > 0 && (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs">যে তারিখগুলো ফাঁকা রাখবেন (মার্ক করুন)</Label>
+                          <Label className="text-xs">আগে প্রিন্ট হওয়া তারিখ (মার্ক করুন → জায়গা সাদা থাকবে)</Label>
                           {hiddenDays.length > 0 && (
                             <button
                               type="button"
@@ -1599,7 +1606,7 @@ ${partySectionsHtml()}
                             );
                           })}
                         </div>
-                        <p className="text-[10px] text-muted-foreground">মার্ক করা তারিখের কোনো তথ্য বা ক্লোজিং লাইন প্রিন্টে আসবে না (জায়গাটা ফাঁকা থাকবে), তবে ব্যালেন্স হিসাব ভিতরে ঠিক থাকবে।</p>
+                        <p className="text-[10px] text-muted-foreground">মার্ক করা তারিখের তথ্য প্রিন্টে অদৃশ্য থাকবে, কিন্তু ঠিক একই উচ্চতার <b>সাদা জায়গা</b> থেকে যাবে — তাই একই কাগজ আবার বসিয়ে ঐ ফাঁকা জায়গায় পরের দিনের তথ্য প্রিন্ট করা যাবে। ব্যালেন্স হিসাব ভিতরে ঠিক থাকবে।</p>
                       </div>
                     )}
                     <Button variant="secondary" onClick={handleRangeClosingPrint} className="w-full gap-1.5">
