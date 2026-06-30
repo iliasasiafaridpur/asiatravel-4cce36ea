@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance, handoverReducesBalance } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
 import { printDocHtml, buildFileTitle } from "@/lib/print-export";
 
@@ -110,11 +110,9 @@ interface Recv { id: string; receipt_id: string; entry_date: string; service_typ
 
 // A submitted handover leaves the staff's drawer the moment it is sent to MD
 // (pending) — only an explicitly cancelled/rejected handover does NOT reduce
-// the staff's cash balance. So balance drops on submit, not on MD approval.
-const handoverReducesBalance = (status?: string | null) => {
-  const s = (status ?? "pending").toLowerCase();
-  return s !== "cancelled" && s !== "canceled" && s !== "rejected";
-};
+// the staff's cash balance. So balance drops on submit, and is restored the
+// instant the handover is cancelled (deleted) or rejected. Shared helper lives
+// in @/lib/payment-methods so every screen agrees (whitespace/casing-safe).
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
