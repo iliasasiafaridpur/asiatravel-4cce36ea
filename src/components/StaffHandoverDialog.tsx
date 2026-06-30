@@ -137,7 +137,8 @@ export function StaffHandoverDialog({
           .is("handover_id", null)
           .not("source", "eq", "discount")
           .not("method", "ilike", "discount")
-          .order("entry_date", { ascending: false }),
+          .order("entry_date", { ascending: false })
+          .order("created_at", { ascending: false }),
         supabase
           .from("cash_expenses")
           .select("id,expense_id,amount,category,purpose,entry_date,created_at,linked_source_table")
