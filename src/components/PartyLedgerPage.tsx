@@ -1307,8 +1307,17 @@ export function PartyLedgerPage({
   const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
     const html = buildPrintHtml(mode, from, to);
     if (!html) return;
+    const modeLabel =
+      mode === "due" ? "Due" : mode === "bill" ? "Bill_by_Bill" : mode === "range" ? "Range" : "Full";
+    const datePart = mode === "range" && (from || to) ? `${from || "শুরু"}_to_${to || todayISO()}` : todayISO();
+    const docTitle = buildFileTitle(
+      isCustomer ? "Agency_Ledger" : "Vendor_Ledger",
+      displayName,
+      modeLabel,
+      datePart,
+    );
     try {
-      printDocHtml(html);
+      printDocHtml(html, docTitle);
     } catch {
       toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
     }
