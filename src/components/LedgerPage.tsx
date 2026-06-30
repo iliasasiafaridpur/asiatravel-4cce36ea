@@ -1209,7 +1209,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       method,
       date: payDate,
       remarks: payRemarks,
-      balanceNeutral: payAsMdDeposit || payAsAdvance,
+      balanceNeutral: payAsMdDeposit,
     });
   };
 
@@ -1472,7 +1472,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       method,
       date,
       remarks,
-      balanceNeutral: asMdDeposit || Boolean(oldDetail.as_user_balance),
+      balanceNeutral: asMdDeposit,
     });
   };
 
