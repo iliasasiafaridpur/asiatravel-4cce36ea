@@ -60,13 +60,20 @@ const cleanSvcType = (text?: string | null) => {
   return s;
 };
 
+// agency_ledger payment rows store the real module in `service_type`
+// (e.g. bmet_cards/tickets); map it to a readable module label.
+const AGENCY_MODULE_LABELS: Record<string, string> = {
+  tickets: "AIR TICKET", bmet_cards: "BMET কার্ড", saudi_visas: "সৌদি ভিসা",
+  kuwait_visas: "কুয়েত ভিসা", others: "Other Service",
+};
+
 const SERVICE_TABLES = [
   { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
   { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
   { table: "bmet_cards", country: "country_name", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
   { table: "tickets", country: "trip_road", serviceNameField: null, airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: null },
   { table: "others", country: "trip_road", serviceNameField: "service_name", airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount", deliveryField: null },
+  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount", deliveryField: null },
 ] as const;
 
 function MdPanelPage() {
@@ -124,7 +131,11 @@ function MdPanelPage() {
             passport: (row.passport as string | null) ?? null,
             sold_price: Number(row[cfg.soldField] ?? 0),
             discount: Number(row[cfg.discountField] ?? 0),
-            service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
+            service_name: cfg.serviceNameField
+              ? (cfg.table === "agency_ledger"
+                  ? (AGENCY_MODULE_LABELS[String(row[cfg.serviceNameField] ?? "")] ?? null)
+                  : ((row[cfg.serviceNameField] as string | null) ?? null))
+              : null,
             airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
             flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
             delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
@@ -467,8 +478,8 @@ function PastEodPanel({
                     {highlight && <div className="text-[11px] text-yellow-800 dark:text-yellow-200 font-semibold">⬅ এই লেনদেনটি</div>}
                   </td>
                   <td className="px-2 py-1.5">
-                    <div className="text-sm">{cleanSvcType(r.service_type)}</div>
-                    {info?.service_name && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
+                    <div className="text-sm">{(info?.table === "agency_ledger" && info.service_name) ? info.service_name : cleanSvcType(r.service_type)}</div>
+                    {info?.service_name && info.table !== "agency_ledger" && <div className="text-xs text-muted-foreground">{info.service_name}</div>}
                     {info?.country && <div className="text-xs text-muted-foreground">{info.country}</div>}
                     {info?.airline && <div className="text-xs text-muted-foreground">{info.airline}{info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}</div>}
                     {statusEvt && <div className="text-xs text-violet-600 dark:text-violet-400">{cleanStatusText(r.remarks)} — অবগতি</div>}
