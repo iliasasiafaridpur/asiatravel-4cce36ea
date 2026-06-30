@@ -74,18 +74,15 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
     return String(v ?? "");
   };
 
-  const doPrint = () => {
-    if (list.length === 0) {
-      toast.error("এই মাসে কোনো রেকর্ড নেই");
-      return;
-    }
-    const head = COLS.map((c) => `<th class="${c.num ? "r" : c.date ? "nw" : ""}">${esc(c.label)}</th>`).join("");
+  // একই HTML প্রিভিউ ও প্রিন্ট — দুটোতে হুবহু একই তথ্য, কোনো তথ্য কাটবে না।
+  const buildHtml = useMemo(() => {
+    const head = COLS.map((c) => `<th class="${c.num ? "r" : ""}">${esc(c.label)}</th>`).join("");
     const body = list
       .map(
         (r) =>
           `<tr>${COLS.map(
             (c) =>
-              `<td class="${c.num ? "r" : c.date || c.key === "__id" ? "nw" : ""}">${esc(
+              `<td class="${c.num ? "r" : ""}">${esc(
                 cellValue(r, c.key, c.date, c.num),
               )}</td>`,
           ).join("")}</tr>`,
@@ -93,7 +90,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
       .join("");
     const totalPrice = list.reduce((s, r) => s + Number(r.sold_price ?? 0), 0);
 
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>BMET ${esc(monthLabel)}</title>
+    return `<!doctype html><html><head><meta charset="utf-8"><title>BMET ${esc(monthLabel)}</title>
       <style>
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:20px;color:#0f172a;position:relative}
         body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -101,10 +98,9 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
         table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
-        th,td{border:1px solid #cbd5e1;padding:2px 3px;text-align:left;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+        th,td{border:1px solid #cbd5e1;padding:2px 3px;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;vertical-align:top}
         th{background:#f1f5f9;font-size:9px}
         .r{text-align:right;font-variant-numeric:tabular-nums}
-        .nw{white-space:nowrap}
         .foot{margin-top:12px;padding-top:8px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
         @page{size:A4 portrait;margin:8mm}
         @media print{button{display:none}}
@@ -115,9 +111,16 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
       <table><colgroup>${COLS.map((c) => `<col style="width:${c.w}">`).join("")}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
       <div class="foot"><span>মোট ${list.length} টি</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
       </body></html>`;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, monthLabel]);
 
+  const doPrint = () => {
+    if (list.length === 0) {
+      toast.error("এই মাসে কোনো রেকর্ড নেই");
+      return;
+    }
     try {
-      printDocHtml(html, buildFileTitle("BMET", monthLabel.replace(/\s+/g, "_")));
+      printDocHtml(buildHtml, buildFileTitle("BMET", monthLabel.replace(/\s+/g, "_")));
     } catch {
       toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
     }
