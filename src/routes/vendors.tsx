@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Wallet } from "lucide-react";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { NewPartyDialog } from "@/components/NewPartyDialog";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
 
