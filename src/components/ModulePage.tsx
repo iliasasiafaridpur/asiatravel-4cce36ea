@@ -682,9 +682,11 @@ export function ModulePage({ module: mod }: Props) {
         if (derived !== undefined) (payload as Record<string, unknown>).status = derived;
       }
 
-      // Only generate a fresh ID for NEW rows. Never overwrite the id of an existing row.
+      const isPartyModule = mod.table === "agents" || mod.table === "vendors";
+      // Only generate a fresh ID for NEW rows. Party IDs are assigned by the
+      // database trigger so serial_no + visible code can never drift apart.
       const entryDateForId = typeof payload.entry_date === "string" ? (payload.entry_date as string) : undefined;
-      const finalId = !isEdit ? await generateNextId(mod, entryDateForId) : undefined;
+      let finalId = !isEdit && !isPartyModule ? await generateNextId(mod, entryDateForId) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
 
       // --- Edit-form status automation (mirror of the Status badge drawer) ---
@@ -792,7 +794,19 @@ export function ModulePage({ module: mod }: Props) {
       } else {
         // INSERT PATH: only when no editing id was captured.
         const hasExtra = supportsExtra && extraServices.some((x) => (x.service_name || "").trim());
-        if (hasExtra) {
+        if (isPartyModule) {
+          const { data: inserted, error } = await supabase
+            .from(mod.table as never)
+            .insert(payload as never)
+            .select(`id,${mod.idColumn},serial_no`)
+            .single();
+          if (error) throw error;
+          const row = inserted as Record<string, unknown> | null;
+          finalId = String(row?.[mod.idColumn] ?? partySerialLabel(mod.table === "agents" ? "agent" : "vendor", row?.serial_no));
+          setOpenForm(false);
+          toast.success(`✓ যোগ হয়েছে: ${finalId}`);
+          clearDraft();
+        } else if (hasExtra) {
           // Direct insert so we can capture the new row id and attach extra services.
           const { data: inserted, error } = await supabase
             .from(mod.table as never)
