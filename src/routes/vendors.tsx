@@ -123,6 +123,14 @@ function VendorsPage() {
                           >
                             <Wallet className="h-3.5 w-3.5" /> Pay
                           </Button>
+                          {isAdmin && (
+                            <ConfirmDeleteButton
+                              allowOwner
+                              title={`Vendor "${b.vendor_name}" ডিলিট?`}
+                              description="এই Vendor তালিকা থেকে স্থায়ীভাবে মুছে যাবে। (পুরোনো লেজার এন্ট্রি থাকলে তা নামের ভিত্তিতে থেকে যাবে।) নিশ্চিত করতে লগইন পাসওয়ার্ড দিন।"
+                              onConfirm={() => handleDelete(b.vendor_name)}
+                            />
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
