@@ -110,6 +110,37 @@ interface Recv { id: string; receipt_id: string; entry_date: string; service_typ
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
+const TIMELINE_PRINT_COLGROUP_HTML = `
+  <colgroup>
+    <col class="c-no"><col class="c-date"><col class="c-name"><col class="c-service"><col class="c-region">
+    <col class="c-bill"><col class="c-in"><col class="c-due"><col class="c-prev"><col class="c-out"><col class="c-bal">
+  </colgroup>`;
+
+function TimelinePrintColGroup() {
+  return (
+    <colgroup>
+      <col className="c-no" /><col className="c-date" /><col className="c-name" /><col className="c-service" /><col className="c-region" />
+      <col className="c-bill" /><col className="c-in" /><col className="c-due" /><col className="c-prev" /><col className="c-out" /><col className="c-bal" />
+    </colgroup>
+  );
+}
+
+const TIMELINE_PRINT_TABLE_CSS = `
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+  col.c-no{width:2.8%}col.c-date{width:7.2%}col.c-name{width:20%}col.c-service{width:17%}col.c-region{width:13%}
+  col.c-bill{width:7%}col.c-in{width:7.5%}col.c-due{width:6.5%}col.c-prev{width:6.5%}col.c-out{width:6.5%}col.c-bal{width:6%}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+  th{background:#f5f5f5;font-weight:600}
+  th.num{text-align:right}
+  td.num,th.num{font-size:9.3px;padding-left:1px;padding-right:2px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.num.in{text-align:right}
+  td.prev,th.prev{text-align:right;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-size:9px;padding-left:1px;padding-right:2px}
+  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;padding-left:1px;padding-right:2px;font-size:9.3px}
+  td:first-child,th:first-child{text-align:center;padding-left:1px;padding-right:1px}
+`;
+
 function StatCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; tone: "primary" | "success" | "warning" | "info" }) {
   const toneMap = {
     primary: "from-primary/15 to-primary/5 text-primary border-primary/20",
