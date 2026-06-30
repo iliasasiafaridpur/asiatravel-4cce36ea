@@ -63,10 +63,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "হিসাব",
     items: [
-      { to: "/agency-ledger", title: "Agency Ledger", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
-      { to: "/vendor-ledger", title: "Vendor Ledger", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
-      { to: "/agents", title: "Agency List", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
-      { to: "/vendors", title: "Vendor List", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
+      { to: "/agency-ledger", title: "Agency (লিস্ট ও হিসাব)", icon: BookUser, color: "text-purple-400", bg: "bg-purple-500/15" },
+      { to: "/vendor-ledger", title: "Vendor (লিস্ট ও হিসাব)", icon: NotebookText, color: "text-amber-400", bg: "bg-amber-500/15" },
       { to: "/accounts", title: "My Accounts", icon: Wallet, color: "text-yellow-400", bg: "bg-yellow-500/15" },
     ],
   },
