@@ -512,7 +512,7 @@ function AccountsPage() {
   const balance = useMemo(() => {
     const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
     const cashOut = handovers
-      .filter((h) => (h.status ?? "approved") === "approved")
+      .filter((h) => handoverReducesBalance(h.status))
       .reduce((s, h) => s + Number(h.amount || 0), 0);
     const spent = expenses.reduce((s, e) => s + (expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
     return cashIn - cashOut - spent;
