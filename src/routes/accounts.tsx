@@ -835,8 +835,12 @@ ${partySectionsHtml()}
   const handlePrint = () => {
     const html = buildTimelineHtml();
     if (!html) return;
+    const period = useDateFilter
+      ? `${dateFrom || "শুরু"}_to_${dateTo || today()}`
+      : today();
+    const docTitle = buildFileTitle("Accounts", "Summary", period);
     try {
-      printDocHtml(html);
+      printDocHtml(html, docTitle);
       setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
