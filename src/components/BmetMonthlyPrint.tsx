@@ -86,7 +86,7 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
     const body = list
       .map(
         (r) =>
-          `<tr>${COLS.map(
+          `<tr class="${r.cancelled ? "cx" : ""}">${COLS.map(
             (c) =>
               `<td class="${c.num ? "r" : ""}">${esc(
                 cellValue(r, c.key, c.date, c.num),
@@ -94,7 +94,9 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
           ).join("")}</tr>`,
       )
       .join("");
-    const totalPrice = list.reduce((s, r) => s + Number(r.sold_price ?? 0), 0);
+    // বাতিল কাজের Price মোট হিসাবে যোগ হবে না।
+    const totalPrice = list.reduce((s, r) => s + (r.cancelled ? 0 : Number(r.sold_price ?? 0)), 0);
+    const cancelledCount = list.filter((r) => r.cancelled).length;
 
     return `<!doctype html><html><head><meta charset="utf-8"><title>BMET ${esc(monthLabel)}</title>
       <style>
