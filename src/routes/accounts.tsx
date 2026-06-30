@@ -990,7 +990,7 @@ ${partySectionsHtml()}
           else if (isVendorReceivedMethod((it.row as Recv).method)) acc.vendorAmt += amt;
           else acc.mdAmt += amt;
         }
-        else if (it.kind === "handover") acc.outAmt += ((it.row as Hand).status ?? "approved") === "approved" ? amt : 0;
+        else if (it.kind === "handover") acc.outAmt += handoverReducesBalance((it.row as Hand).status) ? amt : 0;
         else acc.outAmt += expenseHitsBalance(it.row as Exp) ? amt : 0;
         return acc;
       },
