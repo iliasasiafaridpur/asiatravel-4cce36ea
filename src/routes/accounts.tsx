@@ -1737,7 +1737,7 @@ ${partySectionsHtml()}
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
-                      <td>{formatDate(it.date)}</td>
+                      <td className="dt">{formatDate(it.date)}</td>
                       <td className="wrap">{name}</td>
                       <td className="wrap">{service}{isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>
                       <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}{vendorRecv ? " · Vendor Rece (ব্যালেন্সে নয়)" : ""}</td>
