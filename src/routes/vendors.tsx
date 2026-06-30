@@ -10,8 +10,11 @@ import { Eye, Wallet } from "lucide-react";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
+import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/vendors")({
   head: () => ({ meta: [{ title: "Vendor List — Travel Manager" }] }),
