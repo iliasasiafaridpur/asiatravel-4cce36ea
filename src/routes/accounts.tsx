@@ -1570,7 +1570,7 @@ ${partySectionsHtml()}
                     {rangeDates.length > 0 && (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs">যে তারিখগুলো ফাঁকা রাখবেন (মার্ক করুন)</Label>
+                          <Label className="text-xs">আগে প্রিন্ট হওয়া তারিখ (মার্ক করুন → জায়গা সাদা থাকবে)</Label>
                           {hiddenDays.length > 0 && (
                             <button
                               type="button"
