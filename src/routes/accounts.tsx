@@ -940,7 +940,7 @@ ${partySectionsHtml()}
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
-      `<td>${i + 1}</td>` +
+      `<td>${seq ?? i + 1}</td>` +
       `<td class="dt">${formatDate(it.date)}</td>` +
       `<td class="wrap">${name ?? ""}</td>` +
       `<td class="wrap">${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>` +
