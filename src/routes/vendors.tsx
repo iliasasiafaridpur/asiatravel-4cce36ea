@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Wallet } from "lucide-react";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { NewPartyDialog } from "@/components/NewPartyDialog";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
 
@@ -73,7 +74,10 @@ function VendorsPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">প্রতিটি Vendor এর Balance (Live)</CardTitle></CardHeader>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">প্রতিটি Vendor এর Balance (Live)</CardTitle>
+          <NewPartyDialog kind="vendor" onCreated={() => void load()} />
+        </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>

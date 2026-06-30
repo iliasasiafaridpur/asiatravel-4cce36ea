@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { NewPartyDialog } from "@/components/NewPartyDialog";
 import { partySerialCode } from "@/lib/format";
 import { cacheRead, isOffline } from "@/lib/offline-cache";
 
@@ -66,7 +67,10 @@ function AgentsPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">প্রতিটি Agent এর Balance (Live)</CardTitle></CardHeader>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">প্রতিটি Agent এর Balance (Live)</CardTitle>
+          <NewPartyDialog kind="agent" onCreated={() => void load()} />
+        </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
