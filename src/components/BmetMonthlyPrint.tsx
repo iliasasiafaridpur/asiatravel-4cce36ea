@@ -100,13 +100,13 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
-        table{width:100%;border-collapse:collapse;font-size:11px}
-        th,td{border:1px solid #cbd5e1;padding:5px 6px;text-align:left}
-        th{background:#f1f5f9}
+        table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
+        th,td{border:1px solid #cbd5e1;padding:2px 3px;text-align:left;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+        th{background:#f1f5f9;font-size:9px}
         .r{text-align:right;font-variant-numeric:tabular-nums}
         .nw{white-space:nowrap}
         .foot{margin-top:12px;padding-top:8px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
-        @page{size:A4 landscape;margin:12mm}
+        @page{size:A4 portrait;margin:8mm}
         @media print{button{display:none}}
       </style></head><body>
       <h1>BMET Card — ${esc(monthLabel)}</h1>
