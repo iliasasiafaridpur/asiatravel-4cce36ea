@@ -110,6 +110,37 @@ interface Recv { id: string; receipt_id: string; entry_date: string; service_typ
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
+const TIMELINE_PRINT_COLGROUP_HTML = `
+  <colgroup>
+    <col class="c-no"><col class="c-date"><col class="c-name"><col class="c-service"><col class="c-region">
+    <col class="c-bill"><col class="c-in"><col class="c-due"><col class="c-prev"><col class="c-out"><col class="c-bal">
+  </colgroup>`;
+
+function TimelinePrintColGroup() {
+  return (
+    <colgroup>
+      <col className="c-no" /><col className="c-date" /><col className="c-name" /><col className="c-service" /><col className="c-region" />
+      <col className="c-bill" /><col className="c-in" /><col className="c-due" /><col className="c-prev" /><col className="c-out" /><col className="c-bal" />
+    </colgroup>
+  );
+}
+
+const TIMELINE_PRINT_TABLE_CSS = `
+  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+  col.c-no{width:2.5%}col.c-date{width:7.5%}col.c-name{width:22%}col.c-service{width:17.5%}col.c-region{width:12.5%}
+  col.c-bill{width:6.8%}col.c-in{width:7.2%}col.c-due{width:6.2%}col.c-prev{width:5.5%}col.c-out{width:6.8%}col.c-bal{width:5.5%}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
+  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+  th{background:#f5f5f5;font-weight:600}
+  th.num{text-align:right;white-space:nowrap}
+  td.num,th.num{font-size:9.3px;padding-left:1px;padding-right:2px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.num.in{text-align:right}
+  td.prev,th.prev{text-align:right;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-size:9px;padding-left:1px;padding-right:2px}
+  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;padding-left:1px;padding-right:2px;font-size:9.3px}
+  td:first-child,th:first-child{text-align:center;padding-left:1px;padding-right:1px}
+`;
+
 function StatCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; tone: "primary" | "success" | "warning" | "info" }) {
   const toneMap = {
     primary: "from-primary/15 to-primary/5 text-primary border-primary/20",
@@ -762,15 +793,7 @@ function AccountsPage() {
   .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
-  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
-  th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:right}
-  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:56px;padding-left:1px}
-  td:first-child,th:first-child{width:22px;text-align:center;padding-left:1px;padding-right:1px}
+  ${TIMELINE_PRINT_TABLE_CSS}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tfoot td{font-weight:700;background:#fafafa}
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
@@ -790,6 +813,9 @@ function AccountsPage() {
   <div>নিট ব্যালেন্স: <b>${fmt(scopedBalance)}</b></div>
 </div>
 ${node.innerHTML.replace(
+  "<table>",
+  `<table>${TIMELINE_PRINT_COLGROUP_HTML}`,
+).replace(
   "</tbody>",
   `<tr><td colspan="6" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
@@ -880,7 +906,7 @@ ${partySectionsHtml()}
       `<td class="num">${totalBill !== null ? fmt(totalBill) : ""}</td>` +
       `<td class="num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}">${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}</td>` +
       `<td class="num due">${due !== null && due > 0.005 ? fmt(due) : ""}</td>` +
-      `<td class="wrap" style="white-space:nowrap">${advLines.map(t => `<div style="white-space:nowrap">${t}</div>`).join("")}</td>` +
+      `<td class="prev">${advLines.map(t => `<div>${t}</div>`).join("")}</td>` +
       `<td class="num ${cls}">${!isIn ? `− ${fmt(amt)}` : ""}</td>` +
       `<td class="num">${fmt(running)}</td>` +
       `</tr>`;
@@ -1003,15 +1029,7 @@ ${partySectionsHtml()}
   .brand .sub{font-size:10px;color:#555;line-height:1.45;text-align:right;white-space:nowrap}
   .summary{display:flex;gap:5px;margin-bottom:6px;font-size:11px;font-weight:700;flex-wrap:wrap}
   .summary div{padding:3px 6px;border:1px solid #ddd;border-radius:4px;flex:1;min-width:90px}
-  table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
-  td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
-  th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  td.num.in{text-align:right}
-  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:56px;padding-left:1px}
-  td:first-child,th:first-child{width:22px;text-align:center;padding-left:1px;padding-right:1px}
+  ${TIMELINE_PRINT_TABLE_CSS}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
   tfoot td{font-weight:700;background:#fafafa}
@@ -1033,6 +1051,7 @@ ${partySectionsHtml()}
   <div>সর্বশেষ ক্লোজিং: <b>${fmt(finalClosing)}</b></div>
 </div>
 <table>
+  ${TIMELINE_PRINT_COLGROUP_HTML}
   <thead>
     <tr>
       <th>#</th><th class="dt">তারিখ</th>
@@ -1040,7 +1059,7 @@ ${partySectionsHtml()}
       <th class="num">মোট বিল</th>
       <th class="num">আয়</th>
       <th class="num">বাকি</th>
-      <th class="wrap">Adv:/ discu:</th>
+      <th class="prev">Adv:/ discu:</th>
       <th class="num">খরচ/জমা</th>
       <th class="num">ব্যালেন্স</th>
     </tr>
@@ -1685,7 +1704,7 @@ ${partySectionsHtml()}
                   <th className="num">মোট বিল</th>
                   <th className="num">আয়</th>
                   <th className="num">বাকি</th>
-                  <th className="wrap">Adv:/ discu:</th>
+                  <th className="prev">Adv:/ discu:</th>
                   <th className="num">খরচ/জমা</th>
                   <th className="num">ব্যালেন্স</th>
                 </tr>
@@ -1748,9 +1767,9 @@ ${partySectionsHtml()}
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td className="wrap" style={{whiteSpace:"nowrap"}}>
+                      <td className="prev">
                         {advLines.map((l, idx) => (
-                          <div key={idx} style={{whiteSpace:"nowrap"}}>{l.text}</div>
+                          <div key={idx}>{l.text}</div>
                         ))}
                       </td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
