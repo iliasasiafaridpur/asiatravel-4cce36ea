@@ -335,7 +335,7 @@ function InvoicePage() {
         <Button variant="outline" onClick={() => setBlankPadOpen(true)} className="gap-2">
           <FileText className="h-4 w-4" /> Blank Pad
         </Button>
-        <Button onClick={() => window.print()} className="gap-2">
+        <Button onClick={handleInvoicePrint} className="gap-2">
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
       </div>
