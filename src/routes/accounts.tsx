@@ -906,7 +906,7 @@ ${partySectionsHtml()}
       `<td class="num">${totalBill !== null ? fmt(totalBill) : ""}</td>` +
       `<td class="num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}">${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}</td>` +
       `<td class="num due">${due !== null && due > 0.005 ? fmt(due) : ""}</td>` +
-      `<td class="wrap" style="white-space:nowrap">${advLines.map(t => `<div style="white-space:nowrap">${t}</div>`).join("")}</td>` +
+      `<td class="prev">${advLines.map(t => `<div>${t}</div>`).join("")}</td>` +
       `<td class="num ${cls}">${!isIn ? `− ${fmt(amt)}` : ""}</td>` +
       `<td class="num">${fmt(running)}</td>` +
       `</tr>`;
@@ -1059,7 +1059,7 @@ ${partySectionsHtml()}
       <th class="num">মোট বিল</th>
       <th class="num">আয়</th>
       <th class="num">বাকি</th>
-      <th class="wrap">Adv:/ discu:</th>
+      <th class="prev">Adv:/ discu:</th>
       <th class="num">খরচ/জমা</th>
       <th class="num">ব্যালেন্স</th>
     </tr>
@@ -1704,7 +1704,7 @@ ${partySectionsHtml()}
                   <th className="num">মোট বিল</th>
                   <th className="num">আয়</th>
                   <th className="num">বাকি</th>
-                  <th className="wrap">Adv:/ discu:</th>
+                  <th className="prev">Adv:/ discu:</th>
                   <th className="num">খরচ/জমা</th>
                   <th className="num">ব্যালেন্স</th>
                 </tr>
@@ -1767,9 +1767,9 @@ ${partySectionsHtml()}
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td className="wrap" style={{whiteSpace:"nowrap"}}>
+                      <td className="prev">
                         {advLines.map((l, idx) => (
-                          <div key={idx} style={{whiteSpace:"nowrap"}}>{l.text}</div>
+                          <div key={idx}>{l.text}</div>
                         ))}
                       </td>
                       <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
