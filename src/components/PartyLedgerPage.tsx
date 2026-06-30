@@ -1876,6 +1876,19 @@ export function PartyLedgerPage({
                         <TableCell className="text-right tabular-nums text-emerald-600">৳ {b.paid.toLocaleString()}</TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold ${b.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {b.due.toLocaleString()}</TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold ${b.advance > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {b.advance.toLocaleString()}</TableCell>
+                        <TableCell className="text-center">
+                          <SettleModeBadge mode={b.settle_mode === "one_by_one" ? "one_by_one" : "total"} />
+                        </TableCell>
+                        {canApprove && (
+                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <ConfirmDeleteButton
+                              onConfirm={() => handleDeleteParty(b.name)}
+                              title={`"${b.name}" ডিলিট করবেন?`}
+                              description="এই এজেন্সি/ভেন্ডরটি তালিকা থেকে স্থায়ীভাবে মুছে যাবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                              allowOwner
+                            />
+                          </TableCell>
+                        )}
                       </TableRow>
                     ));
                   })()}
