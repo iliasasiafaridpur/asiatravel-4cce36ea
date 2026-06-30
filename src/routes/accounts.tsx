@@ -544,6 +544,23 @@ function AccountsPage() {
     });
   }, [accountingReceived, handovers, expenses]);
 
+  // Distinct dates within the daily-closing date filter — used to let the user
+  // tick which dates' details to leave blank in the print.
+  const rangeDates = useMemo<string[]>(() => {
+    const set = new Set<string>();
+    for (const it of fullAsc) {
+      if (dayFrom && it.date < dayFrom) continue;
+      if (dayTo && it.date > dayTo) continue;
+      set.add(it.date);
+    }
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [fullAsc, dayFrom, dayTo]);
+
+  // Drop hidden dates that fall outside the current range when it changes.
+  useEffect(() => {
+    setHiddenDays((prev) => prev.filter((d) => rangeDates.includes(d)));
+  }, [rangeDates]);
+
   const timeline = useMemo<(TLItem & { running: number })[]>(() => {
     const desc = [...fullAsc].reverse().filter((it) => {
       if (it.kind !== "received") return true;
