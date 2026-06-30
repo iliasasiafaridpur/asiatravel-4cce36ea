@@ -535,7 +535,7 @@ function AccountsPage() {
     return items.map((it) => {
       // Non-cash (MD-received) income does NOT change the running balance.
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number(it.row.amount) : 0;
-      else if (it.kind === "handover") bal -= (it.row.status ?? "approved") === "approved" ? Number(it.row.amount) : 0;
+      else if (it.kind === "handover") bal -= handoverReducesBalance(it.row.status) ? Number(it.row.amount) : 0;
       else bal -= expenseHitsBalance(it.row as Exp) ? Number(it.row.amount) : 0;
       return { ...it, running: bal };
     });
