@@ -205,7 +205,7 @@ export function ExtraDueReceiveDialog({
           // "Vendor Received" → passenger paid the vendor directly; settle the
           // extra service's vendor bill without touching the staff balance.
           if (isVendorReceivedMethod(method)) {
-            await settleVendorBillByBooking("extra_services", r.id, amt, user.id);
+            await settleVendorBillByBooking("extra_services", r.id, amt, user.id, today);
           }
         }
       }
