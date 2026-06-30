@@ -885,6 +885,7 @@ ${partySectionsHtml()}
     it: TLItem & { running: number },
     running: number,
     i: number,
+    blank = false,
   ): string => {
     const isIn = it.kind === "received";
     const isHand = it.kind === "handover";
