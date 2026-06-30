@@ -775,7 +775,7 @@ function AccountsPage() {
   .finalbox{margin-top:8px;padding:6px 10px;border:2px solid #0369a1;border-radius:6px;background:#eef6ff;font-size:13px;font-weight:800;color:#0369a1;text-align:right}
   .printfooter{position:fixed;bottom:0;left:0;right:0;font-size:9px;color:#666;border-top:1px solid #ddd;padding:2px 4px;display:flex;justify-content:space-between}
   .printfooter .pageno::before{content:"পৃষ্ঠা " counter(page) " / " counter(pages)}
-  @media print{body{padding:2px;padding-bottom:16px}}
+  @media print{body{padding:2px;padding-bottom:28px}}
 </style></head><body>
 <div class="brand">
   <div><div class="co">এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্</div><div class="tag">আজকের হিসাব — সম্পূর্ণ হিসাব প্রিন্ট</div></div>
