@@ -229,6 +229,8 @@ function AccountsPage() {
   
   const [dayFrom, setDayFrom] = useState(today());
   const [dayTo, setDayTo] = useState(today());
+  // Optional: limit the daily-closing report to the latest N entries
+  const [dayLastN, setDayLastN] = useState("");
   // Optional vendor / agency balance sections appended to the print
   const [incVendors, setIncVendors] = useState(false);
   const [incAgencies, setIncAgencies] = useState(false);
