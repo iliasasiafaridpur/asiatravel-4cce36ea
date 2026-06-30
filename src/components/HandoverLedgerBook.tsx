@@ -67,6 +67,35 @@ const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\
 const receiptServiceKey = (r: { service_table: string | null; service_row_id: string | null }) =>
   r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
 
+// agency_ledger payment rows store the real module in `service_type`
+// (tickets/bmet_cards/…) — map it to a user-facing label.
+const AGENCY_MODULE_LABELS: Record<string, string> = {
+  tickets: "AIR TICKET",
+  bmet_cards: "BMET কার্ড",
+  saudi_visas: "সৌদি ভিসা",
+  kuwait_visas: "কুয়েত ভিসা",
+  others: "অন্যান্য সার্ভিস",
+};
+
+// Strip "Service Receipt: <agent>" / "Agent Receipt: <agent>" prefixes used by
+// collective agency payments (agent name already shows in the customer column).
+const cleanAgencyText = (text?: string | null) => {
+  const s = (text ?? "").trim();
+  if (!s) return "এজেন্সি পেমেন্ট";
+  if (/^(?:Service Receipt|Agent Receipt|Customer\/Sub-Agent[^:]*)\s*:/i.test(s)) return "এজেন্সি পেমেন্ট";
+  return s;
+};
+
+// Primary service label for the সার্ভিস column. For agency_ledger rows prefer
+// the real module name resolved from the linked row; never the raw prefix.
+const primaryServiceLabel = (
+  r: { service_table: string | null; service_type: string },
+  info?: { service_name: string | null } | null,
+) => {
+  if (r.service_table === "agency_ledger") return info?.service_name || cleanAgencyText(r.service_type);
+  return r.service_type;
+};
+
 type Expense = {
   id: string;
   expense_id: string;
