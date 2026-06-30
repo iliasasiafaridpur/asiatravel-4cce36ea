@@ -1283,6 +1283,7 @@ export function PartyLedgerPage({
         th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}
         th{background:#f1f5f9}
         .r{text-align:right;font-variant-numeric:tabular-nums}
+        .nw{white-space:nowrap}
         .due{color:#e11d48;font-weight:600}
         .pay td{background:#ecfdf5;color:#047857}
         .opening td{background:#fffbeb;font-weight:600}
