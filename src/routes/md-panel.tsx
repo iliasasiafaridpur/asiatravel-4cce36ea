@@ -73,7 +73,7 @@ const SERVICE_TABLES = [
   { table: "bmet_cards", country: "country_name", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
   { table: "tickets", country: "trip_road", serviceNameField: null, airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: null },
   { table: "others", country: "trip_road", serviceNameField: "service_name", airlineField: "airline", flightDateField: "flight_date", vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount", deliveryField: null },
+  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", airlineField: null, flightDateField: null, vendorField: "agent_name", soldField: "total_bill", discountField: "discount_amount", deliveryField: null },
 ] as const;
 
 function MdPanelPage() {
