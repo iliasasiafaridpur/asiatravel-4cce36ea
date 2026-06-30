@@ -29,6 +29,7 @@ import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/Passw
 import { toast } from "sonner";
 import { TicketRefundDialog } from "@/components/TicketRefundDialog";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
+import { useRole } from "@/hooks/useRole";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
@@ -163,6 +164,7 @@ function selectColumns(mod: ModuleSchema): string {
 
 export function ModulePage({ module: mod }: Props) {
   const { user, profile } = useCurrentUser();
+  const { canApprove } = useRole();
   const { colorFor } = useMobileColors();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -250,6 +252,12 @@ export function ModulePage({ module: mod }: Props) {
     workScrollRef.current = window.scrollY;
     setSelectedId(id);
   }, []);
+  const isPartyList = mod.key === "agents" || mod.key === "vendors";
+  const canShowDelete = useCallback((r: Row) => {
+    if (isPartyList) return canApprove;
+    const owner = r.created_by as string | null | undefined;
+    return !owner || (!!user?.id && owner === user.id);
+  }, [canApprove, isPartyList, user?.id]);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Per-row latest receive info (method + receiver) for the Recv method badge
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
@@ -2083,15 +2091,17 @@ export function ModulePage({ module: mod }: Props) {
                             <Eye className="h-3 w-3 text-primary" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="এডিট করুন" onClick={() => { selectRow(r.id); startEdit(r); }}><Pencil className="h-3 w-3" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="ডিলিট করুন" onClick={() => {
-                            selectRow(r.id);
-                            const owner = r.created_by as string | null | undefined;
-                            if (owner && user?.id && owner !== user.id) {
-                              toast.error("এটি অন্য ইউজারের এন্ট্রি — আপনি ডিলিট করতে পারবেন না।");
-                              return;
-                            }
-                            requestDelete(r);
-                          }}><Trash2 className="h-3 w-3 text-rose-500" /></Button>
+                          {canShowDelete(r) && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" title="ডিলিট করুন" onClick={() => {
+                              selectRow(r.id);
+                              const owner = r.created_by as string | null | undefined;
+                              if (owner && user?.id && owner !== user.id) {
+                                toast.error("এটি অন্য ইউজারের এন্ট্রি — আপনি ডিলিট করতে পারবেন না।");
+                                return;
+                              }
+                              requestDelete(r);
+                            }}><Trash2 className="h-3 w-3 text-rose-500" /></Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
