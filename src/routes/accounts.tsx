@@ -127,12 +127,12 @@ function TimelinePrintColGroup() {
 
 const TIMELINE_PRINT_TABLE_CSS = `
   table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
-  col.c-no{width:2.8%}col.c-date{width:7.2%}col.c-name{width:20%}col.c-service{width:17%}col.c-region{width:13%}
-  col.c-bill{width:7%}col.c-in{width:7.5%}col.c-due{width:6.5%}col.c-prev{width:6.5%}col.c-out{width:6.5%}col.c-bal{width:6%}
+  col.c-no{width:2.5%}col.c-date{width:7.5%}col.c-name{width:22%}col.c-service{width:17.5%}col.c-region{width:12.5%}
+  col.c-bill{width:6.8%}col.c-in{width:7.2%}col.c-due{width:6.2%}col.c-prev{width:5.5%}col.c-out{width:6.8%}col.c-bal{width:5.5%}
   th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
   td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
   th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right}
+  th.num{text-align:right;white-space:nowrap}
   td.num,th.num{font-size:9.3px;padding-left:1px;padding-right:2px}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.num.in{text-align:right}
