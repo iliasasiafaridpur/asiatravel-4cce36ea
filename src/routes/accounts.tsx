@@ -1040,10 +1040,13 @@ ${partySectionsHtml()}
       let dayOut = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
-        // Marked dates: leave fully blank — no detail rows, no closing line.
-        // The running balance was already computed across every row, so the
-        // next visible date's balance/closing stays correct.
-        if (hiddenSet.has(it.date)) continue;
+        // Marked dates: keep the SAME space but render it INVISIBLE (white).
+        // The rows are still laid out (identical height), only hidden — so the
+        // operator can re-feed the same physical paper and print the new day's
+        // data in exactly the spot the old print already occupies. Running
+        // balance is precomputed across every row, so the next visible date's
+        // closing stays correct.
+        const isHidden = hiddenSet.has(it.date);
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
@@ -1052,11 +1055,11 @@ ${partySectionsHtml()}
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
-        bodyHtml += buildDetailRowHtml(it, it.running, i);
+        bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
           bodyHtml +=
-            `<tr class="dayclose">` +
+            `<tr class="dayclose${isHidden ? " blank" : ""}">` +
             `<td colspan="6">📅 ${formatDate(it.date)} — দিনের ক্লোজিং</td>` +
             `<td class="num in">+ ${fmt(dayIn)}</td>` +
             `<td></td><td></td>` +
