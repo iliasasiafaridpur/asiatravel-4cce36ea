@@ -7,6 +7,8 @@ import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { LedgerPage } from "@/components/LedgerPage";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
 import { SettleModeBadge } from "@/components/SettleModeBadge";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { useRole } from "@/hooks/useRole";
 import { PageWatermark } from "@/components/PageWatermark";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { printDocHtml, buildFileTitle } from "@/lib/print-export";
