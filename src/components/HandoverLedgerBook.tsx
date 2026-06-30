@@ -735,8 +735,8 @@ function HandoverCard({
                   </td>
                   {/* সার্ভিস */}
                   <td className="px-1.5 py-1 align-top">
-                    <div className="text-sm font-medium leading-tight">{r.service_type}</div>
-                    {info?.service_name && (
+                    <div className="text-sm font-medium leading-tight">{primaryServiceLabel(r, info)}</div>
+                    {info?.service_name && r.service_table !== "agency_ledger" && (
                       <div className="text-sm text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
                     {info?.country && (
