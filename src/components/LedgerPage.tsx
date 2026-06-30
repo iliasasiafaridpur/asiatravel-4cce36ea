@@ -878,6 +878,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     setPayAsMdDeposit(false);
     setPayAsAdjust(false);
     setAdjustKind("refund");
+    setPayWithDelivery(false);
     setPayTarget(String(row[groupField] ?? ""));
     setPayDue(lineDue);
     setPayAmount(String(lineDue > 0 ? lineDue : ""));
