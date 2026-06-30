@@ -1106,9 +1106,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   // Lifecycle: the expense is linked to the PAYMENT log row, so the trigger's
   // DELETE branch removes it automatically when the log is deleted; the edit
   // path recreates it after its update (the trigger wipes it on every update of
-  // a source_table row). Balance-neutral methods (MD Sir Deposit / Vendor
-  // Received / Adjustment / User Balance) never create an expense — matching
-  // vendorExpenseHitsUserBalance().
+  // a source_table row). Balance-neutral routes (MD Sir Deposit / Vendor
+  // Received / Adjustment) never create an expense. "Payment from User Balance"
+  // IS user money leaving the drawer, so it DOES create the expense and reduces
+  // the user's balance — matching vendorExpenseHitsUserBalance().
   const mirrorVendorPaymentExpense = async (opts: {
     logId: string;
     vendor: string;
@@ -1208,7 +1209,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       method,
       date: payDate,
       remarks: payRemarks,
-      balanceNeutral: payAsMdDeposit || payAsAdvance,
+      balanceNeutral: payAsMdDeposit,
     });
   };
 
@@ -1471,7 +1472,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       method,
       date,
       remarks,
-      balanceNeutral: asMdDeposit || Boolean(oldDetail.as_user_balance),
+      balanceNeutral: asMdDeposit,
     });
   };
 
