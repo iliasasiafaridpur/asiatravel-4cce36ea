@@ -406,7 +406,7 @@ function MyHandoverPage() {
         const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
 
         const tbl = r.service_table ?? "";
-        const svcTitle = info.service_name || TABLE_LABELS[tbl] || r.service_type || "Service";
+        const svcTitle = info.service_name || cleanSvcType(r.service_type) || TABLE_LABELS[tbl] || "Service";
         const region = [
           info.country || "",
           info.airline ? `${info.airline}${info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}` : "",
