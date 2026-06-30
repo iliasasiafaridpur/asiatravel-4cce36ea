@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance, handoverReducesBalance } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
 import { printDocHtml, buildFileTitle } from "@/lib/print-export";
 
