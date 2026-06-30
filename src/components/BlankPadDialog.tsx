@@ -167,7 +167,12 @@ export function BlankPadDialog({ open, onClose }: { open: boolean; onClose: () =
 
   const handlePrint = () => {
     try {
-      printDocHtml(buildHtml());
+      const docTitle = buildFileTitle(
+        "Asia_Tours_Letterhead",
+        subjectVal || toVal || refVal || "",
+        showDate ? dateVal : "",
+      );
+      printDocHtml(buildHtml(), docTitle);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে — অনুমতি দিন");
     }
