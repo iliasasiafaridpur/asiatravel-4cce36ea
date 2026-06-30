@@ -345,7 +345,7 @@ function DashboardPage() {
         return !isDiscount && isCashMethod(row.method) ? sum + Number(row.amount || 0) : sum;
       }, 0);
       const totalHandedOver = ((handovers.data ?? []) as Array<{ amount: number; status: string | null }>)
-        .filter((row) => (row.status ?? "approved") === "approved")
+        .filter((row) => handoverReducesBalance(row.status))
         .reduce((sum, row) => sum + Number(row.amount || 0), 0);
       const totalExpenses = ((expenses.data ?? []) as Array<{ amount: number; category: string | null; linked_source_table: string | null }>).reduce((sum, row) => {
         const hitsCash = row.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(row.category) : true;
