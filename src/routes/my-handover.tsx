@@ -138,8 +138,9 @@ const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknow
     }),
   },
   agency_ledger: {
-    cols: "id,country_route,agent_name,total_bill,discount_amount",
+    cols: "id,country_route,agent_name,total_bill,discount_amount,service_type",
     map: (r) => ({
+      service_name: TABLE_LABELS[r.service_type as string] || undefined,
       country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: r.agent_name as string,
       agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), tracks_cost: false, has_delivery: false,
     }),
