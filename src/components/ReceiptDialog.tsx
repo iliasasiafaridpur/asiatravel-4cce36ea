@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Printer, X, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { buildFileTitle } from "@/lib/print-export";
 import logoAsset from "@/assets/logo.png.asset.json";
+
 
 export interface ReceiptInfo {
   receiptId: string;
