@@ -51,6 +51,14 @@ type ServiceInfo = {
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\s*status\s*:\s*/i, "").trim() || "Delivery";
+// Agency-ledger collective payments store service_type like "Service Receipt: <agent>";
+// the agent name is already in the name column, so just show "এজেন্সি পেমেন্ট".
+const cleanSvcType = (text?: string | null) => {
+  const s = (text ?? "").trim();
+  if (!s) return "";
+  if (/^(?:Service Receipt|Agent Receipt|Customer\/Sub-Agent[^:]*)\s*:/i.test(s)) return "এজেন্সি পেমেন্ট";
+  return s;
+};
 
 const SERVICE_TABLES = [
   { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
