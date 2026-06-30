@@ -20,17 +20,17 @@ interface Props {
 
 const currentMonth = () => new Date().toISOString().slice(0, 7); // YYYY-MM
 
-const COLS: { key: string; label: string; date?: boolean; num?: boolean }[] = [
-  { key: "__id", label: "ID" },
-  { key: "entry_date", label: "Date", date: true },
-  { key: "passenger_name", label: "Name" },
-  { key: "passport", label: "Passport" },
-  { key: "mobile", label: "Mobile" },
-  { key: "country_name", label: "Country" },
-  { key: "sold_price", label: "Price", num: true },
-  { key: "vendor_sent_date", label: "V-Send Date", date: true },
-  { key: "received_date", label: "V-Rece Date", date: true },
-  { key: "delivery_date", label: "Delivery Date", date: true },
+const COLS: { key: string; label: string; date?: boolean; num?: boolean; w: string }[] = [
+  { key: "__id", label: "ID", w: "11%" },
+  { key: "entry_date", label: "Date", date: true, w: "8%" },
+  { key: "passenger_name", label: "Name", w: "16%" },
+  { key: "passport", label: "Passport", w: "11%" },
+  { key: "mobile", label: "Mobile", w: "11%" },
+  { key: "country_name", label: "Country", w: "9%" },
+  { key: "sold_price", label: "Price", num: true, w: "8%" },
+  { key: "vendor_sent_date", label: "V-Send Date", date: true, w: "8.5%" },
+  { key: "received_date", label: "V-Rece Date", date: true, w: "8.5%" },
+  { key: "delivery_date", label: "Delivery Date", date: true, w: "9%" },
 ];
 
 const esc = (s: unknown) =>
@@ -41,12 +41,24 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
   const [month, setMonth] = useState<string>(currentMonth());
 
   const list = useMemo(() => {
+    // ID-এর সিরিয়াল নং অনুযায়ী সাজানো (BMET-2606-001, 002 …); সমান হলে তারিখ।
+    const serialOf = (s: string) => {
+      const m = String(s).match(/(\d+)\s*$/);
+      return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+    };
     return rows
       .filter((r) => !r.cancelled)
       .filter((r) => String(r.entry_date ?? "").slice(0, 7) === month)
-      .sort((a, b) =>
-        String(a.entry_date ?? "").localeCompare(String(b.entry_date ?? "")));
-  }, [rows, month]);
+      .sort((a, b) => {
+        const ai = String(a[idColumn] ?? "");
+        const bi = String(b[idColumn] ?? "");
+        const d = serialOf(ai) - serialOf(bi);
+        if (d !== 0) return d;
+        const byId = ai.localeCompare(bi);
+        if (byId !== 0) return byId;
+        return String(a.entry_date ?? "").localeCompare(String(b.entry_date ?? ""));
+      });
+  }, [rows, month, idColumn]);
 
   const monthLabel = useMemo(() => {
     if (!month) return "";
@@ -88,19 +100,19 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
-        table{width:100%;border-collapse:collapse;font-size:11px}
-        th,td{border:1px solid #cbd5e1;padding:5px 6px;text-align:left}
-        th{background:#f1f5f9}
+        table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
+        th,td{border:1px solid #cbd5e1;padding:2px 3px;text-align:left;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+        th{background:#f1f5f9;font-size:9px}
         .r{text-align:right;font-variant-numeric:tabular-nums}
         .nw{white-space:nowrap}
         .foot{margin-top:12px;padding-top:8px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
-        @page{size:A4 landscape;margin:12mm}
+        @page{size:A4 portrait;margin:8mm}
         @media print{button{display:none}}
       </style></head><body>
       <h1>BMET Card — ${esc(monthLabel)}</h1>
       <div class="sub">মাসিক তালিকা · মোট ${list.length} টি</div>
       <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(new Date().toISOString().slice(0, 10)))}</div>
-      <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+      <table><colgroup>${COLS.map((c) => `<col style="width:${c.w}">`).join("")}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
       <div class="foot"><span>মোট ${list.length} টি</span><span>মোট Price: ৳${totalPrice.toLocaleString()}</span></div>
       </body></html>`;
 
