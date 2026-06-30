@@ -975,7 +975,7 @@ ${partySectionsHtml()}
       let bal = opening;
       for (const it of reordered) {
         if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? amtOf(it) : 0;
-        else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? amtOf(it) : 0;
+        else if (it.kind === "handover") bal -= handoverReducesBalance((it.row as Hand).status) ? amtOf(it) : 0;
         else bal -= expenseHitsBalance(it.row as Exp) ? amtOf(it) : 0;
         it.running = bal;
       }
