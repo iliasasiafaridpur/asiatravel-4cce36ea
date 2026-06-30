@@ -175,6 +175,25 @@ function InvoicePage() {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [blankPadOpen, setBlankPadOpen] = useState(false);
 
+  // Set a descriptive document title so the saved PDF / print file name reads
+  // like "Invoice_INV-..._<customer>"; restore the original afterwards.
+  const handleInvoicePrint = () => {
+    const safe = (s: string) =>
+      s.replace(/[\\/:*?"<>|]+/g, " ").replace(/[—·•,]+/g, " ").trim().replace(/[\s.]+/g, "_");
+    const parts = ["Invoice", invoiceNo, bill.name].map(safe).filter(Boolean);
+    const docTitle = parts.join("_").replace(/_{2,}/g, "_") || "Invoice";
+    const prev = document.title;
+    document.title = docTitle;
+    const restore = () => {
+      document.title = prev;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+    setTimeout(restore, 1500);
+  };
+
+
 
 
 
