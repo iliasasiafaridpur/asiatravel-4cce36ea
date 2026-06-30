@@ -1010,7 +1010,8 @@ ${partySectionsHtml()}
   th.num{text-align:right}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.num.in{text-align:right}
-  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:74px}
+  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;width:56px;padding-left:1px}
+  td:first-child,th:first-child{width:22px;text-align:center;padding-left:1px;padding-right:1px}
   .in{color:#059669}.out{color:#b45309}.hand{color:#0284c7}.due{color:#b91c1c}.vendor{color:#ea580c}
   tr.dayclose td{background:#eef6ff;font-weight:700;color:#0369a1;border-bottom:2px solid #bcdcff}
   tfoot td{font-weight:700;background:#fafafa}
