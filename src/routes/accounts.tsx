@@ -808,8 +808,8 @@ function AccountsPage() {
 </div>
 <div class="summary">
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
-  ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
-  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece (ব্যালেন্সে নয়): <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
+  ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ: <b>${fmt(totals.mdAmt)}</b></div>` : ""}
+  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece: <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
   <div>নিট ব্যালেন্স: <b>${fmt(scopedBalance)}</b></div>
 </div>
@@ -903,7 +903,7 @@ ${partySectionsHtml()}
       `<td class="dt">${formatDate(it.date)}</td>` +
       `<td class="wrap">${name ?? ""}</td>` +
       `<td class="wrap">${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>` +
-      `<td class="wrap">${region}${mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}${vendorRecv ? " · Vendor Rece (ব্যালেন্সে নয়)" : ""}</td>` +
+      `<td class="wrap">${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}</td>` +
       `<td class="num">${totalBill !== null ? fmt(totalBill) : ""}</td>` +
       `<td class="num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}">${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}</td>` +
       `<td class="num due">${due !== null && due > 0.005 ? fmt(due) : ""}</td>` +
@@ -1046,8 +1046,8 @@ ${partySectionsHtml()}
 <div class="summary">
   <div>আগের জের: <b>${fmt(opening)}</b></div>
   <div class="in">নগদ আয়: <b>+ ${fmt(totals.inAmt)}</b></div>
-  ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ (ব্যালেন্সে নয়): <b>${fmt(totals.mdAmt)}</b></div>` : ""}
-  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece (ব্যালেন্সে নয়): <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
+  ${totals.mdAmt > 0 ? `<div class="hand">MD রিসিভ: <b>${fmt(totals.mdAmt)}</b></div>` : ""}
+  ${totals.vendorAmt > 0 ? `<div class="vendor">Vendor Rece: <b>${fmt(totals.vendorAmt)}</b></div>` : ""}
   <div class="out">খরচ/জমা: <b>− ${fmt(totals.outAmt)}</b></div>
   <div>সর্বশেষ ক্লোজিং: <b>${fmt(finalClosing)}</b></div>
 </div>
@@ -1764,7 +1764,7 @@ ${partySectionsHtml()}
                       <td className="dt">{formatDate(it.date)}</td>
                       <td className="wrap">{name}</td>
                       <td className="wrap">{service}{isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>
-                      <td className="wrap">{region}{mdRecv ? " · MD রিসিভ (ব্যালেন্সে নয়)" : ""}{vendorRecv ? " · Vendor Rece (ব্যালেন্সে নয়)" : ""}</td>
+                      <td className="wrap">{region}{mdRecv ? " · MD রিসিভ" : ""}{vendorRecv ? " · Vendor Rece" : ""}</td>
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>

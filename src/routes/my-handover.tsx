@@ -627,10 +627,10 @@ function MyHandoverPage() {
           <div className="text-base font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
               <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
           {totalMdReceived > 0 && (
-            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} (ব্যালেন্সে নয়)</div>
+            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)}</div>
           )}
           {totalVendorReceived > 0 && (
-            <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece: {fmt(totalVendorReceived)} (ব্যালেন্সে নয়)</div>
+            <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece: {fmt(totalVendorReceived)}</div>
           )}
         </div>
         <div className="rounded-lg border bg-rose-500/10 p-3">
@@ -710,10 +710,10 @@ function MyHandoverPage() {
                           </div>
                         )}
                         {mdRecv && (
-                          <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method} — ব্যালেন্সে নয়</div>
+                          <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method}</div>
                         )}
                         {vendorRecv && (
-                          <div className="text-[11px] text-orange-600 dark:text-orange-400">Vendor Rece — ব্যালেন্সে নয়</div>
+                          <div className="text-[11px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
                         )}
                       </div>
                       <div className="text-right">
