@@ -170,14 +170,18 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
               এই মাসে কোনো রেকর্ড পাওয়া যায়নি
             </div>
           ) : (
-            <div className="border rounded-md overflow-hidden bg-white">
-              {/* প্রিভিউ = প্রিন্ট: হুবহু একই HTML একটি iframe-এ দেখানো হচ্ছে */}
-              <iframe
-                title="BMET print preview"
-                srcDoc={buildHtml}
-                className="w-full"
-                style={{ height: "62vh", border: "none", background: "#fff" }}
-              />
+            <div className="flex justify-center bg-slate-100 rounded-md p-4 max-h-[68vh] overflow-y-auto">
+              {/* প্রিভিউ = প্রিন্ট: A4 portrait কাগজের মতো করে হুবহু একই HTML দেখানো হচ্ছে */}
+              <div
+                className="bg-white shadow-md"
+                style={{ width: "210mm", minHeight: "297mm", flex: "0 0 auto" }}
+              >
+                <iframe
+                  title="BMET print preview"
+                  srcDoc={buildHtml}
+                  style={{ width: "210mm", height: "297mm", border: "none", background: "#fff" }}
+                />
+              </div>
             </div>
           )}
 
