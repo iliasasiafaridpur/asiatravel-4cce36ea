@@ -231,6 +231,9 @@ function AccountsPage() {
   const [dayTo, setDayTo] = useState(today());
   // Optional: limit the daily-closing report to the latest N entries
   const [dayLastN, setDayLastN] = useState("");
+  // Optional: dates whose detail rows are hidden (left blank) in the daily-closing
+  // print. Balance still flows through them internally; they just don't render.
+  const [hiddenDays, setHiddenDays] = useState<string[]>([]);
   // Optional vendor / agency balance sections appended to the print
   const [incVendors, setIncVendors] = useState(false);
   const [incAgencies, setIncAgencies] = useState(false);
