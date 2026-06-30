@@ -48,6 +48,10 @@ async function loadParty(pk: "agent" | "vendor"): Promise<void> {
   partyListeners[pk]?.forEach((fn) => fn());
 }
 
+function partyTable(pk: "agent" | "vendor"): "agents" | "vendors" {
+  return pk === "agent" ? "agents" : "vendors";
+}
+
 function partyPrefix(pk: "agent" | "vendor"): string {
   return partyCodePrefix(pk);
 }
@@ -110,6 +114,23 @@ function notify(kind: string) {
 }
 
 async function loadKind(kind: string): Promise<string[]> {
+  const partyKind = PARTY_SERIAL_KIND[kind];
+  if (partyKind) {
+    const { data, error } = await supabase
+      .from(partyTable(partyKind))
+      .select("name")
+      .order("name")
+      .limit(5000);
+    if (error) {
+      toast.error("লোড করতে সমস্যা: " + error.message);
+      return [];
+    }
+    const vs = ((data as { name?: string | null }[] | null) ?? [])
+      .map((r) => String(r.name ?? "").trim())
+      .filter((v) => v && !(partyKind === "agent" && v.toLowerCase() === "self"));
+    cache[kind] = vs;
+    return vs;
+  }
   const { data, error } = await supabase
     .from("lookups")
     .select("value")
@@ -170,6 +191,31 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
     onChange(v);
     setNewVal("");
     setOpenAdd(false);
+    if (partyKind) {
+      void supabase
+        .from(partyTable(partyKind))
+        .insert({ name: v } as never)
+        .select("name,serial_no")
+        .single()
+        .then(async ({ error }) => {
+          if (error) {
+            if (error.code === "23505") {
+              toast.info(`${label} আগে থেকেই আছে`);
+              await loadParty(partyKind);
+              return;
+            }
+            cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
+            notify(kind);
+            toast.error(error.message);
+            return;
+          }
+          await loadParty(partyKind);
+          cache[kind] = await loadKind(kind);
+          notify(kind);
+          toast.success(`${label} যোগ হয়েছে`);
+        });
+      return;
+    }
     void supabase.from("lookups").insert({ kind, value: v }).then(({ error }) => {
       if (error) {
         cache[kind] = (cache[kind] ?? []).filter((x) => x !== v);
