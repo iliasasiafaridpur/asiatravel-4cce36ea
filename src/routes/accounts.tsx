@@ -1676,7 +1676,7 @@ ${partySectionsHtml()}
             <table>
               <thead>
                 <tr>
-                  <th>#</th><th>তারিখ</th>
+                  <th>#</th><th className="dt">তারিখ</th>
                   <th>নাম</th><th>সার্ভিস</th><th>দেশ/রোড</th>
                   <th className="num">মোট বিল</th>
                   <th className="num">আয়</th>
