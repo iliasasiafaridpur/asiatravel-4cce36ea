@@ -865,8 +865,15 @@ ${partySectionsHtml()}
     const statusEvt = isIn && isStatusEventReceipt(r);
     const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
     const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
-    const name = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
     const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
+    // নামের শেষে agency নামের প্রথম অংশ বন্ধনীতে (self বাদে)। যেমন: md salam (kholil)
+    const agencyFirst = (() => {
+      const a = String(svc?.agent ?? "").trim();
+      if (!a || a.toLowerCase() === "self") return "";
+      return a.split(/\s+/)[0];
+    })();
+    const baseName = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
+    const name = isIn && agencyFirst ? `${baseName} (${agencyFirst})` : baseName;
     const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "জমা" : "খরচ";
     let region = "";
     if (isIn && svc) {
