@@ -214,6 +214,10 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   // No cash/bank impact — pure wallet adjustment.
   const [payAsAdjust, setPayAsAdjust] = useState<boolean>(false);
   const [adjustKind, setAdjustKind] = useState<"refund" | "expense">("refund");
+  // Agency only: when true, receiving payment also marks the source booking(s)
+  // Delivered (sets delivery_date + status) so the data page status reflects it.
+  // Default false = "Without Delivery" (only money is received, status untouched).
+  const [payWithDelivery, setPayWithDelivery] = useState<boolean>(false);
   const [profileParty, setProfileParty] = useState<string | null>(null);
   const navigate = useNavigate();
 
