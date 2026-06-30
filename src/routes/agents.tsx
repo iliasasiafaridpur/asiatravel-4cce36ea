@@ -67,7 +67,10 @@ function AgentsPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">প্রতিটি Agent এর Balance (Live)</CardTitle></CardHeader>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">প্রতিটি Agent এর Balance (Live)</CardTitle>
+          <NewPartyDialog kind="agent" onCreated={() => void load()} />
+        </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
