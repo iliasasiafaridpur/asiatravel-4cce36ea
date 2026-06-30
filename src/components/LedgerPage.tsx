@@ -1622,7 +1622,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         const due = advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
         const take = Math.min(remaining, due);
         if (take <= 0) continue;
-        allocItems.push(await applyAllocationToRow(r, take));
+        allocItems.push(await applyAllocationToRow(r, take, { markDelivery: isAgency && payWithDelivery }));
         remaining -= take;
         parts.push(`${String(r[mod.idColumn] ?? "")}=${take}`);
       }
