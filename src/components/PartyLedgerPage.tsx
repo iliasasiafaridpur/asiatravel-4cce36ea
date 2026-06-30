@@ -1972,6 +1972,16 @@ export function PartyLedgerPage({
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 shrink-0 text-muted-foreground hover:text-primary"
+                      onClick={() => setAddrOpen(true)}
+                      aria-label="ঠিকানা প্রিন্ট"
+                      title="খাম/কুরিয়ার ঠিকানা প্রিন্ট"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                   {contact?.full_name && (
                     <div className="mt-1 text-sm text-muted-foreground">{contact.full_name}</div>
