@@ -954,6 +954,15 @@ ${partySectionsHtml()}
       rows.push(it);
     }
 
+    // Optional: keep only the latest N entries. The "আগের জের" (opening) then
+    // becomes the true cumulative balance just before the first kept entry, so
+    // every day's closing balance stays correct.
+    const lastN = Math.floor(Number(dayLastN));
+    if (Number.isFinite(lastN) && lastN > 0 && rows.length > lastN) {
+      opening = rows[rows.length - lastN - 1].running;
+      rows.splice(0, rows.length - lastN);
+    }
+
     // Within each date: receipts (জমা) first then খরচ/handover, larger amount
     // first in each group. Recompute running balance from the carried opening
     // (use fresh objects so the memoized fullAsc rows are never mutated).
