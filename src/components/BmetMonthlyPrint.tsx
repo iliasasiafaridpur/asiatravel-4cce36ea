@@ -165,46 +165,22 @@ export function BmetMonthlyPrint({ rows, idColumn }: Props) {
             </div>
           </div>
 
-          <div className="border rounded-md overflow-x-auto max-h-[60vh] overflow-y-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 bg-muted z-10">
-                <tr>
-                  {COLS.map((c) => (
-                    <th
-                      key={c.key}
-                      className={`border px-2 py-1.5 text-left whitespace-nowrap ${c.num ? "text-right" : ""}`}
-                    >
-                      {c.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {list.length === 0 ? (
-                  <tr>
-                    <td colSpan={COLS.length} className="text-center text-muted-foreground py-8">
-                      এই মাসে কোনো রেকর্ড পাওয়া যায়নি
-                    </td>
-                  </tr>
-                ) : (
-                  list.map((r) => (
-                    <tr key={r.id} className="even:bg-muted/30">
-                      {COLS.map((c) => (
-                        <td
-                          key={c.key}
-                          className={`border px-2 py-1 ${c.num ? "text-right tabular-nums" : ""} ${
-                            c.date || c.key === "__id" ? "whitespace-nowrap" : ""
-                          }`}
-                        >
-                          {cellValue(r, c.key, c.date, c.num)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {list.length === 0 ? (
+            <div className="border rounded-md text-center text-muted-foreground py-12 text-sm">
+              এই মাসে কোনো রেকর্ড পাওয়া যায়নি
+            </div>
+          ) : (
+            <div className="border rounded-md overflow-hidden bg-white">
+              {/* প্রিভিউ = প্রিন্ট: হুবহু একই HTML একটি iframe-এ দেখানো হচ্ছে */}
+              <iframe
+                title="BMET print preview"
+                srcDoc={buildHtml}
+                className="w-full"
+                style={{ height: "62vh", border: "none", background: "#fff" }}
+              />
+            </div>
+          )}
+
         </DialogContent>
       </Dialog>
     </>
