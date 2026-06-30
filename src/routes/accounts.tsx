@@ -1013,7 +1013,7 @@ ${partySectionsHtml()}
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
         } else if (it.kind === "handover") {
-          if (((it.row as Hand).status ?? "approved") === "approved") dayOut += amt;
+          if (handoverReducesBalance((it.row as Hand).status)) dayOut += amt;
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
