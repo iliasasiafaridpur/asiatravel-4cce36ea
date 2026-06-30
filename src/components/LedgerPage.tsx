@@ -53,7 +53,7 @@ import {
   Printer,
 } from "lucide-react";
 import { toast } from "sonner";
-import { printDocHtml } from "@/lib/print-export";
+import { printDocHtml, buildFileTitle } from "@/lib/print-export";
 import { notify } from "@/lib/notify";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { useScrollRestore } from "@/hooks/useScrollRestore";
@@ -1769,7 +1769,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${mod.key}-${todayIso()}.csv`;
+    a.download = `${buildFileTitle(isAgency ? "Agency_Ledger" : "Vendor_Ledger", mod.label || mod.key, todayIso())}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -1853,8 +1853,15 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   };
 
   const printPage = () => {
+    const period =
+      startDate || endDate ? `${startDate || "শুরু"}_to_${endDate || todayIso()}` : todayIso();
+    const docTitle = buildFileTitle(
+      isAgency ? "Agency_Ledger" : "Vendor_Ledger",
+      mod.label || mod.key,
+      period,
+    );
     try {
-      printDocHtml(buildPrintHtml());
+      printDocHtml(buildPrintHtml(), docTitle);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
     }

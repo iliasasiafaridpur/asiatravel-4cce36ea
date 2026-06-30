@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, FileText, X } from "lucide-react";
-import { printDocHtml } from "@/lib/print-export";
+import { printDocHtml, buildFileTitle } from "@/lib/print-export";
 import { formatDate } from "@/lib/modules";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { toast } from "sonner";
@@ -167,7 +167,12 @@ export function BlankPadDialog({ open, onClose }: { open: boolean; onClose: () =
 
   const handlePrint = () => {
     try {
-      printDocHtml(buildHtml());
+      const docTitle = buildFileTitle(
+        "Asia_Tours_Letterhead",
+        subjectVal || toVal || refVal || "",
+        showDate ? dateVal : "",
+      );
+      printDocHtml(buildHtml(), docTitle);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে — অনুমতি দিন");
     }

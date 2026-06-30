@@ -611,7 +611,7 @@ function LedgerTab({ users, txs }: { users: AcctUser[]; txs: Transaction[] }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ledger-${today()}.csv`;
+    a.download = `Accounts_Ledger_${today()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

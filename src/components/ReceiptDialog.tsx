@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Printer, X, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { buildFileTitle } from "@/lib/print-export";
 import logoAsset from "@/assets/logo.png.asset.json";
+
 
 export interface ReceiptInfo {
   receiptId: string;
@@ -50,9 +52,15 @@ export function ReceiptDialog({
   const handlePrint = () => {
     const node = printRef.current;
     if (!node) return;
+    const docTitle = buildFileTitle(
+      "Receipt",
+      receipt.receiptId,
+      receipt.passengerName,
+      receipt.date,
+    );
     const w = window.open("", "_blank", "width=720,height=900");
     if (!w) return;
-    w.document.write(`<!doctype html><html><head><title>Receipt ${receipt.receiptId}</title>
+    w.document.write(`<!doctype html><html><head><title>${docTitle}</title>
       <style>
         @page { size: A5; margin: 10mm; }
         body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:16px; position:relative; }
@@ -70,6 +78,7 @@ export function ReceiptDialog({
         .sig div { border-top:1px solid #111; padding-top:4px; width:40%; text-align:center; }
       </style></head><body>${node.innerHTML}</body></html>`);
     w.document.close();
+    w.document.title = docTitle;
     w.focus();
     setTimeout(() => {
       w.print();

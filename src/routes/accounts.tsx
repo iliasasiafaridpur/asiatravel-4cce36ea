@@ -32,7 +32,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, DUE_RECEIVE_METHODS, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 import { PageWatermark } from "@/components/PageWatermark";
-import { printDocHtml } from "@/lib/print-export";
+import { printDocHtml, buildFileTitle } from "@/lib/print-export";
 
 
 export const Route = createFileRoute("/accounts")({
@@ -835,8 +835,12 @@ ${partySectionsHtml()}
   const handlePrint = () => {
     const html = buildTimelineHtml();
     if (!html) return;
+    const period = useDateFilter
+      ? `${dateFrom || "শুরু"}_to_${dateTo || today()}`
+      : today();
+    const docTitle = buildFileTitle("Accounts", "Summary", period);
     try {
-      printDocHtml(html);
+      printDocHtml(html, docTitle);
       setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
@@ -1089,8 +1093,13 @@ ${partySectionsHtml()}
   const handleRangeClosingPrint = () => {
     const html = buildRangeClosingHtml();
     if (!html) return;
+    const docTitle = buildFileTitle(
+      "Accounts",
+      "Daily_Closing",
+      `${dateFrom || "শুরু"}_to_${dateTo || today()}`,
+    );
     try {
-      printDocHtml(html);
+      printDocHtml(html, docTitle);
       setPrintOpen(false);
     } catch {
       toast.error("পপ-আপ ব্লক হয়েছে");
