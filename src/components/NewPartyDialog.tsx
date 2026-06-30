@@ -79,14 +79,6 @@ export function NewPartyDialog({ kind, onCreated }: Props) {
 
       if (error) throw error;
 
-      // Keep the dropdown lookups in sync so the new party shows in entry forms too.
-      await supabase
-        .from("lookups")
-        .upsert(
-          { category: kind === "agent" ? "agents" : "vendors", value: clean } as never,
-          { onConflict: "category,value" } as never,
-        );
-
       const serial = (data as { serial_no: number | null } | null)?.serial_no ?? null;
       toast.success(
         `নতুন ${label} তৈরি হয়েছে — ${partySerialCode(kind, serial)} ${clean}`,
