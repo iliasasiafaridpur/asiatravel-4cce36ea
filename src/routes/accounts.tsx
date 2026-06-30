@@ -502,7 +502,7 @@ function AccountsPage() {
     }
     return [...map.values()].sort((a, b) => b.total - a.total);
   }, [fRecv]);
-  const periodHand   = fHand.filter((h) => (h.status ?? "approved") === "approved").reduce((s, h) => s + Number(h.amount || 0), 0);
+  const periodHand   = fHand.filter((h) => handoverReducesBalance(h.status)).reduce((s, h) => s + Number(h.amount || 0), 0);
   const expenseHitsBalance = (e: Exp) =>
     e.linked_source_table === "vendor_ledger" ? vendorExpenseHitsUserBalance(e.category) : true;
   const periodExp    = fExp.reduce((s, e) => s + (expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
