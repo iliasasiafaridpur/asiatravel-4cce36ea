@@ -564,7 +564,7 @@ function AccountsPage() {
     let bal = 0;
     return ordered.map((it) => {
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
-      else if (it.kind === "handover") bal -= ((it.row as Hand).status ?? "approved") === "approved" ? Number((it.row as Hand).amount) : 0;
+      else if (it.kind === "handover") bal -= handoverReducesBalance((it.row as Hand).status) ? Number((it.row as Hand).amount) : 0;
       else bal -= expenseHitsBalance(it.row as Exp) ? Number((it.row as Exp).amount) : 0;
       return { it, running: bal };
     });
