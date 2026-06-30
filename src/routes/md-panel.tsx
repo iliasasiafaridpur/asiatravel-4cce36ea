@@ -60,6 +60,13 @@ const cleanSvcType = (text?: string | null) => {
   return s;
 };
 
+// agency_ledger payment rows store the real module in `service_type`
+// (e.g. bmet_cards/tickets); map it to a readable module label.
+const AGENCY_MODULE_LABELS: Record<string, string> = {
+  tickets: "AIR TICKET", bmet_cards: "BMET কার্ড", saudi_visas: "সৌদি ভিসা",
+  kuwait_visas: "কুয়েত ভিসা", others: "Other Service",
+};
+
 const SERVICE_TABLES = [
   { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
   { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, airlineField: null, flightDateField: null, vendorField: "vendor_bought", soldField: "sold_price", discountField: "discount_amount", deliveryField: "delivery_date" },
