@@ -36,6 +36,7 @@ import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
 import { ExtraDueReceiveDialog, type ExtraDuePreselect } from "@/components/ExtraDueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
+import { BmetMonthlyPrint } from "@/components/BmetMonthlyPrint";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
 import { RowDetailDrawer } from "@/components/RowDetailDrawer";
 import { StatusChangeDrawer, type StatusChangeRequest } from "@/components/StatusChangeDrawer";
