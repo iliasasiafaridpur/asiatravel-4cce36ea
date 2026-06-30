@@ -1187,8 +1187,8 @@ export function PartyLedgerPage({
                     : "বাকি";
               const cls = b.cancelled ? ' class="cancel"' : "";
               return `<tr${cls}>
-                <td>${esc(formatDate(b.date))}</td>
-                <td>${esc(b.ledgerId)}</td>
+                <td class="nw">${esc(formatDate(b.date))}</td>
+                <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
