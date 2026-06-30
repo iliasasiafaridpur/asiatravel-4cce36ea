@@ -67,6 +67,35 @@ const cleanStatusText = (text?: string | null) => String(text ?? "").replace(/^\
 const receiptServiceKey = (r: { service_table: string | null; service_row_id: string | null }) =>
   r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
 
+// agency_ledger payment rows store the real module in `service_type`
+// (tickets/bmet_cards/…) — map it to a user-facing label.
+const AGENCY_MODULE_LABELS: Record<string, string> = {
+  tickets: "AIR TICKET",
+  bmet_cards: "BMET কার্ড",
+  saudi_visas: "সৌদি ভিসা",
+  kuwait_visas: "কুয়েত ভিসা",
+  others: "অন্যান্য সার্ভিস",
+};
+
+// Strip "Service Receipt: <agent>" / "Agent Receipt: <agent>" prefixes used by
+// collective agency payments (agent name already shows in the customer column).
+const cleanAgencyText = (text?: string | null) => {
+  const s = (text ?? "").trim();
+  if (!s) return "এজেন্সি পেমেন্ট";
+  if (/^(?:Service Receipt|Agent Receipt|Customer\/Sub-Agent[^:]*)\s*:/i.test(s)) return "এজেন্সি পেমেন্ট";
+  return s;
+};
+
+// Primary service label for the সার্ভিস column. For agency_ledger rows prefer
+// the real module name resolved from the linked row; never the raw prefix.
+const primaryServiceLabel = (
+  r: { service_table: string | null; service_type: string },
+  info?: { service_name: string | null } | null,
+) => {
+  if (r.service_table === "agency_ledger") return info?.service_name || cleanAgencyText(r.service_type);
+  return r.service_type;
+};
+
 type Expense = {
   id: string;
   expense_id: string;
@@ -103,7 +132,7 @@ const SERVICE_TABLES = [
   { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
   { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: null },
   { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: "delivery_date" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: null, vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
+  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
 ] as const;
 
 export function HandoverLedgerInline({
@@ -249,7 +278,11 @@ export function HandoverLedgerInline({
               country: typeof cfg.country === "function"
                 ? cfg.country()
                 : (row[cfg.country] as string | null) ?? null,
-              service_name: cfg.serviceNameField ? ((row[cfg.serviceNameField] as string | null) ?? null) : null,
+              service_name: cfg.serviceNameField
+                ? (cfg.table === "agency_ledger"
+                    ? (AGENCY_MODULE_LABELS[String(row[cfg.serviceNameField] ?? "")] ?? null)
+                    : ((row[cfg.serviceNameField] as string | null) ?? null))
+                : null,
               vendor: isTicketBook ? null : ((row[cfg.vendorField] as string | null) ?? null),
               agent: (row[cfg.agentField] as string | null) ?? null,
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
@@ -702,8 +735,8 @@ function HandoverCard({
                   </td>
                   {/* সার্ভিস */}
                   <td className="px-1.5 py-1 align-top">
-                    <div className="text-sm font-medium leading-tight">{r.service_type}</div>
-                    {info?.service_name && (
+                    <div className="text-sm font-medium leading-tight">{primaryServiceLabel(r, info)}</div>
+                    {info?.service_name && r.service_table !== "agency_ledger" && (
                       <div className="text-sm text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
                     {info?.country && (
