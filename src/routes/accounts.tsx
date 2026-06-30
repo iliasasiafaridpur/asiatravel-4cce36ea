@@ -1039,6 +1039,7 @@ ${partySectionsHtml()}
       const hiddenSet = new Set(hiddenDays);
       let dayIn = 0;
       let dayOut = 0;
+      let daySeq = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
         // Marked dates: keep the SAME space but render it INVISIBLE (white).
@@ -1048,6 +1049,10 @@ ${partySectionsHtml()}
         // balance is precomputed across every row, so the next visible date's
         // closing stays correct.
         const isHidden = hiddenSet.has(it.date);
+        const prev = rows[i - 1];
+        // Serial number restarts at 1 for every distinct date.
+        if (!prev || prev.date !== it.date) daySeq = 0;
+        daySeq += 1;
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
@@ -1056,7 +1061,7 @@ ${partySectionsHtml()}
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
-        bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden);
+        bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden, daySeq);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
           bodyHtml +=
