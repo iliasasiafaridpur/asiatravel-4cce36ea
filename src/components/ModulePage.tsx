@@ -139,6 +139,8 @@ function selectColumns(mod: ModuleSchema): string {
   }
   // status_by only exists on the service tables that have a status workflow
   if (RECV_META[mod.table]) columns.add("status_by");
+  // এন্ট্রির গৃহীত টাকার মাধ্যম (edit ফর্মে সঠিক মাধ্যম দেখাতে দরকার)
+  if (RECV_META[mod.table]) columns.add("payment_method");
   // soft-cancel columns (BMET / Saudi / Kuwait / Tickets)
   if (CANCELABLE_TABLES.has(mod.table)) {
     columns.add("cancelled");
