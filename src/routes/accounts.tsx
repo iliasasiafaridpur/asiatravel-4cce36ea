@@ -178,6 +178,10 @@ const TIMELINE_PRINT_TABLE_CSS = `
   td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
   td.dt + td,th.dt + th{padding-left:8px}
   td:first-child,th:first-child{text-align:center;padding-left:1px;padding-right:1px}
+  /* একই তারিখের সব সারি এক পেইজে একসাথে থাকবে; জায়গা না হলে পুরো তারিখ পরের পেইজে যাবে।
+     তবে এক তারিখের ডাটা এক পেইজে না ধরলে ব্রাউজার নিজেই একাধিক পেইজে ভাগ করবে। */
+  thead{display:table-header-group}
+  tbody.dategroup{break-inside:avoid;page-break-inside:avoid}
 `;
 
 function StatCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; tone: "primary" | "success" | "warning" | "info" }) {
