@@ -364,6 +364,7 @@ function MyHandoverPage() {
           }
         })
       );
+      await resolveAgencyVendors(svcMap);
       for (const rec of recs) {
         const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
         rec.svc = k ? svcMap[k] : undefined;
