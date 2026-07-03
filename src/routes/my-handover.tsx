@@ -658,9 +658,9 @@ function MyHandoverPage() {
             <TrendingUp className="h-3 w-3" /> নগদ আয়
           </div>
           <div className="text-base font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-              <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
+              <div className="text-[10px] text-muted-foreground">{cashCount} নগদ এন্ট্রি</div>
           {totalMdReceived > 0 && (
-            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)}</div>
+            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} ({mdCount})</div>
           )}
           {totalVendorReceived > 0 && (
             <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece: {fmt(totalVendorReceived)}</div>
