@@ -376,7 +376,11 @@ export function HandoverLedgerInline({
     const q = search.trim().toLowerCase();
     const activeHandovers = handovers.filter((h) => {
       const st = (h.status ?? "pending").toLowerCase();
-      if (st === "cancelled" || st === "canceled") return false;
+      // Cancelled AND rejected handovers are no longer active — their receipts/
+      // expenses were unlinked back to the staff pool (cancel_handover /
+      // reject_handover), so they must not show as live cards here (matches
+      // handoverReducesBalance semantics used for the cash balance).
+      if (st === "cancelled" || st === "canceled" || st === "rejected") return false;
       if (st === "pending") {
         if (!((receiptsByH[h.id]?.length ?? 0) > 0 || (expensesByH[h.id]?.length ?? 0) > 0)) return false;
       }

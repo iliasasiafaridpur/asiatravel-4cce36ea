@@ -1058,8 +1058,17 @@ export function PartyLedgerPage({
       const datedSorted = payments.map((p) => p.date).filter(Boolean).sort();
       const payDate = datedSorted.length ? datedSorted[datedSorted.length - 1] : "";
 
-      const due = Math.max(0, bill - paid);
-      const status: BillItem["status"] = due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
+      // Soft-cancelled jobs (কাজ বাতিল/ফেরত) for BMET / Saudi / Kuwait keep their
+      // financial rows but must NOT count as an outstanding due — they are shown
+      // greyed. Tickets are intentionally excluded here: a cancelled ticket keeps
+      // a legitimate office-refund / void-fee payable, so it stays a real due.
+      const softCancelled =
+        Boolean(info?.cancelled) &&
+        (src === "bmet_cards" || src === "saudi_visas" || src === "kuwait_visas");
+      const due = softCancelled ? 0 : Math.max(0, bill - paid);
+      const status: BillItem["status"] = softCancelled
+        ? "paid"
+        : due <= 0.5 ? "paid" : paid > 0 ? "partial" : "due";
       const idText =
         (src && (moduleLabel[src] || src === "extra_services")) && info?.displayId
           ? String(info.displayId)
