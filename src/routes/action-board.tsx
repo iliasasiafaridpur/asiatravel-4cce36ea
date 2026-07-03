@@ -239,6 +239,12 @@ function ActionBoardPage() {
         (payload as Record<string, unknown>).created_by = user.id;
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
+      // এন্ট্রিতে টাকা গৃহীত হলে চয়ন করা মাধ্যম সংরক্ষণ — DB trigger এটি থেকেই
+      // receipt-এর method ঠিক করবে (Cash=স্টাফ ক্যাশ, বাকি সব=MD)।
+      if (RECV_META[mod.table] && recvAmount > 0) {
+        (payload as Record<string, unknown>).payment_method =
+          String(form.payment_method || "Cash");
+      }
       // Auto-capture payment date when money is received but none was entered.
       if (hasField("payment_date") && recvAmount > 0 && !payload.payment_date) {
         (payload as Record<string, unknown>).payment_date =
