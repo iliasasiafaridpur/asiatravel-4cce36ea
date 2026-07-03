@@ -178,6 +178,10 @@ const TIMELINE_PRINT_TABLE_CSS = `
   td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
   td.dt + td,th.dt + th{padding-left:8px}
   td:first-child,th:first-child{text-align:center;padding-left:1px;padding-right:1px}
+  /* একই তারিখের সব সারি এক পেইজে একসাথে থাকবে; জায়গা না হলে পুরো তারিখ পরের পেইজে যাবে।
+     তবে এক তারিখের ডাটা এক পেইজে না ধরলে ব্রাউজার নিজেই একাধিক পেইজে ভাগ করবে। */
+  thead{display:table-header-group}
+  tbody.dategroup{break-inside:avoid;page-break-inside:avoid}
 `;
 
 function StatCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; tone: "primary" | "success" | "warning" | "info" }) {
@@ -883,13 +887,13 @@ ${node.innerHTML.replace(
   "<table>",
   `<table>${TIMELINE_PRINT_COLGROUP_HTML}`,
 ).replace(
-  "</tbody>",
-  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
+  "</table>",
+  `<tbody class="dategroup"><tr><td colspan="6" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
   `<td></td>` +
   `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
-  `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
+  `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody></table>`
 )}
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(scopedBalance)}</div>
 ${partySectionsHtml()}
@@ -1070,7 +1074,7 @@ ${partySectionsHtml()}
     // every distinct date, then the next date's rows continue below.
     let bodyHtml = "";
     if (rows.length === 0) {
-      bodyHtml = `<tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`;
+      bodyHtml = `<tbody><tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr></tbody>`;
     } else {
       const hiddenSet = new Set(hiddenDays);
       let dayIn = 0;
@@ -1089,6 +1093,9 @@ ${partySectionsHtml()}
         // Serial number restarts at 1 for every distinct date.
         if (!prev || prev.date !== it.date) daySeq = 0;
         daySeq += 1;
+        // প্রতিটি তারিখের সব সারি একটি আলাদা <tbody class="dategroup"> এর ভিতরে —
+        // যাতে এক তারিখের হিসাব দুই পেইজে ভাগ না হয়।
+        if (!prev || prev.date !== it.date) bodyHtml += `<tbody class="dategroup">`;
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
@@ -1107,7 +1114,8 @@ ${partySectionsHtml()}
             `<td></td><td></td>` +
             `<td class="num out">− ${fmt(dayOut)}</td>` +
             `<td class="num">${fmt(it.running)}</td>` +
-            `</tr>`;
+            `</tr>` +
+            `</tbody>`;
           dayIn = 0;
           dayOut = 0;
         }
@@ -1167,9 +1175,7 @@ ${partySectionsHtml()}
       <th class="num">ব্যালেন্স</th>
     </tr>
   </thead>
-  <tbody>
-    ${bodyHtml}
-  </tbody>
+  ${bodyHtml}
   <tfoot>
     <tr>
       <td colspan="6">Total</td>
@@ -1866,8 +1872,20 @@ ${partySectionsHtml()}
                   <th className="num">ব্যালেন্স</th>
                 </tr>
               </thead>
-              <tbody>
-                {printAscRows.map(({ it, running }, i) => {
+              {(() => {
+                // একই তারিখের সব সারি একটি <tbody class="dategroup"> এ — যাতে
+                // এক তারিখের হিসাব দুই পেইজে ভাগ না হয় (গ্লোবাল ইনডেক্স অপরিবর্তিত)।
+                const dateGroups: { date: string; rows: { entry: (typeof printAscRows)[number]; gi: number }[] }[] = [];
+                printAscRows.forEach((entry, gi) => {
+                  const last = dateGroups[dateGroups.length - 1];
+                  if (!last || last.date !== entry.it.date) dateGroups.push({ date: entry.it.date, rows: [] });
+                  dateGroups[dateGroups.length - 1].rows.push({ entry, gi });
+                });
+                return dateGroups.map((g) => (
+                  <tbody className="dategroup" key={g.date}>
+                {g.rows.map(({ entry, gi }) => {
+                  const { it, running } = entry;
+                  const i = gi;
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
@@ -1941,7 +1959,9 @@ ${partySectionsHtml()}
                     </tr>
                   );
                 })}
-              </tbody>
+                  </tbody>
+                ));
+              })()}
             </table>
           </div>
         </TabsContent>
