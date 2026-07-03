@@ -613,14 +613,12 @@ function AccountsPage() {
     return desc.slice(0, latestN);
   }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptForService]);
 
-  // Print rows — grouped: receipts (জমা) on top, then expenses/handovers (খরচ)
-  // below. Within each group, larger amount first (big top → small bottom).
+  // Print rows — receipts (আয়) big→small then খরচ, but split into segments by
+  // cash handover: each handover sits chronologically between the transactions
+  // before it and after it (not lumped at the very bottom anymore).
   // Running balance is SCOPED to these printed entries only (starts from 0).
   const printAscRows = useMemo<{ it: TLItem & { running: number }; running: number }[]>(() => {
-    const amtOf = (it: TLItem) => Number((it.row as { amount?: number }).amount || 0);
-    const ins = timeline.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
-    const outs = timeline.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
-    const ordered = [...ins, ...outs];
+    const ordered = segmentByHandover(timeline as (TLItem & { running: number; created?: string })[]);
     let bal = 0;
     return ordered.map((it) => {
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
