@@ -116,6 +116,38 @@ interface Recv { id: string; receipt_id: string; entry_date: string; service_typ
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
+// Order a set of same-scope timeline items into segments separated by cash
+// handovers, in chronological (created) order. A handover then sits as a
+// divider between the transactions made BEFORE it (shown above) and the ones
+// made AFTER it (shown below). Within each segment the existing display
+// grouping is preserved: receipts (আয়) big→small first, then খরচ big→small.
+function segmentByHandover<
+  T extends { kind: string; date: string; row: { amount?: number | null }; created?: string },
+>(items: T[]): T[] {
+  const amtOf = (it: T) => Number(it.row?.amount || 0);
+  const createdOf = (it: T) =>
+    it.created ?? (it.row as { created_at?: string }).created_at ?? it.date;
+  const chrono = [...items].sort((a, b) => createdOf(a).localeCompare(createdOf(b)));
+  const ordered: T[] = [];
+  let bucket: T[] = [];
+  const flush = () => {
+    const ins = bucket.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
+    const outs = bucket.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
+    ordered.push(...ins, ...outs);
+    bucket = [];
+  };
+  for (const it of chrono) {
+    if (it.kind === "handover") {
+      flush();
+      ordered.push(it);
+    } else {
+      bucket.push(it);
+    }
+  }
+  flush();
+  return ordered;
+}
+
 const TIMELINE_PRINT_COLGROUP_HTML = `
   <colgroup>
     <col class="c-no"><col class="c-date"><col class="c-name"><col class="c-service"><col class="c-region">
