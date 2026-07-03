@@ -251,6 +251,10 @@ export function HandoverLedgerInline({
       }
 
       const svcMap: Record<string, ServiceInfo> = {};
+      // agency_ledger rows have no vendor of their own — the real vendor lives
+      // in the underlying source job (source_table/source_id). Collect refs so
+      // we can resolve the true "V:" vendor name after the main pass.
+      const agencySrcRefs: Array<{ key: string; table: string; id: string }> = [];
       await Promise.all(
         SERVICE_TABLES.map(async (cfg) => {
           const rowIds = Array.from(byTable[cfg.table] ?? []);
@@ -265,6 +269,8 @@ export function HandoverLedgerInline({
           if (cfg.deliveryField) cols.push(cfg.deliveryField);
           // Need status for tickets to hide vendor/cost while in BOOK.
           if (cfg.table === "tickets") cols.push("status");
+          // Need the source job link to resolve the real vendor for agency rows.
+          if (cfg.table === "agency_ledger") cols.push("source_table", "source_id");
           const uniqueCols = Array.from(new Set(cols));
           const { data } = await supabase
             .from(cfg.table as never)
