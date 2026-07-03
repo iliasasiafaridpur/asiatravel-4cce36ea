@@ -127,44 +127,10 @@ function ActionBoardPage() {
     }
   }, [extraServices, mod.table, supportsExtra, user?.id]);
 
-  const insertReceiptRow = useCallback(async (opts: {
-    rowId: string;
-    refId: string;
-    passengerName: string;
-    amount: number;
-    entryDate?: string | null;
-  }) => {
-    const meta = RECV_META[mod.table];
-    if (!user?.id || !meta || opts.amount <= 0) return;
-    let receiptId: string;
-    try {
-      receiptId = await generateNextId({
-        key: "_rcpt", label: "", short: "", table: "payment_receipts",
-        idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [],
-      });
-    } catch {
-      const d = new Date();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yy = String(d.getFullYear()).slice(-2);
-      receiptId = `RCPT-${mm}${yy}-OFFLINE-${Date.now().toString().slice(-6)}`;
-    }
-    await resilientInsert("payment_receipts", {
-      receipt_id: receiptId,
-      entry_date: opts.entryDate || todayIso(),
-      service_type: meta.serviceType,
-      service_table: mod.table,
-      service_row_id: opts.rowId,
-      ref_id: opts.refId,
-      passenger_name: opts.passengerName || "—",
-      amount: opts.amount,
-      method: "Cash",
-      source: "form_receive",
-      remarks: "Action Board entry receive",
-      received_by: user.id,
-      received_by_name: displayName(profile, user),
-      created_by: user.id,
-    });
-  }, [mod.table, profile, user]);
+  // (আগের `insertReceiptRow` সরানো হয়েছে — গৃহীত টাকার receipt এখন DB trigger
+  // sync_service_receipt নিজেই চয়ন করা payment_method সহ তৈরি করে।)
+
+
 
   const insertStatusEventRow = useCallback(async (opts: {
     rowId: string;
@@ -239,6 +205,12 @@ function ActionBoardPage() {
         (payload as Record<string, unknown>).created_by = user.id;
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
+      // এন্ট্রিতে টাকা গৃহীত হলে চয়ন করা মাধ্যম সংরক্ষণ — DB trigger এটি থেকেই
+      // receipt-এর method ঠিক করবে (Cash=স্টাফ ক্যাশ, বাকি সব=MD)।
+      if (RECV_META[mod.table] && recvAmount > 0) {
+        (payload as Record<string, unknown>).payment_method =
+          String(form.payment_method || "Cash");
+      }
       // Auto-capture payment date when money is received but none was entered.
       if (hasField("payment_date") && recvAmount > 0 && !payload.payment_date) {
         (payload as Record<string, unknown>).payment_date =
@@ -270,17 +242,10 @@ function ActionBoardPage() {
         if (supportsExtra && extraServices.some((x) => (x.service_name || "").trim())) {
           try { await syncExtraServices(rowId, payload); } catch { /* best effort */ }
         }
-        if (recvAmount > 0) {
-          try {
-            await insertReceiptRow({
-              rowId,
-              refId: newId,
-              passengerName: String(payload.passenger_name ?? ""),
-              amount: recvAmount,
-              entryDate: String(payload.payment_date ?? payload.entry_date ?? todayIso()),
-            });
-          } catch { /* best effort */ }
-        }
+        // NOTE: গৃহীত টাকার receipt এখন DB trigger (sync_service_receipt) নিজেই
+        // তৈরি করে চয়ন করা payment_method সহ। আগে এখানে ম্যানুয়ালি আরেকটি
+        // 'form_receive' receipt বসত — যা টাকা দ্বিগুণ গণনা করত ও জোর করে
+        // "Cash" ধরত। তাই সেটি সরানো হলো।
         if (isDeliveryStatus(payload.status)) {
           try {
             await insertStatusEventRow({
@@ -315,7 +280,7 @@ function ActionBoardPage() {
       savingRef.current = false;
       setSaving(false);
     }
-  }, [mod, form, profile, user, clearDraft, category, extraServices, supportsExtra, syncExtraServices, insertReceiptRow, insertStatusEventRow]);
+  }, [mod, form, profile, user, clearDraft, category, extraServices, supportsExtra, syncExtraServices, insertStatusEventRow]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
