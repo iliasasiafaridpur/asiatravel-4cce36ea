@@ -174,6 +174,10 @@ function InvoicePage() {
   const [discount, setDiscount] = useState<number>(0);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [blankPadOpen, setBlankPadOpen] = useState(false);
+  // Tracks how much of `received` was auto-contributed by each loaded service line
+  // (keyed by item uid), so replacing/removing a line can subtract its old
+  // contribution instead of leaving stale amounts that inflate Received / hide Due.
+  const loadedReceivedRef = useRef<Record<string, number>>({});
 
   // Set a descriptive document title so the saved PDF / print file name reads
   // like "Invoice_INV-..._<customer>"; restore the original afterwards.
