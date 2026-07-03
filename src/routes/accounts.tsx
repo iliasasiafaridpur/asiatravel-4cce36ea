@@ -517,13 +517,17 @@ function AccountsPage() {
   // bKash…) does NOT leave the staff's cash drawer — only Cash-method vendor
   // payments reduce cash-in-hand. Manual/office expenses always reduce it.
   const balance = useMemo(() => {
-    const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+    // "হাতে আছে" = cash balance AS OF dateTo. Rows may now be loaded past dateTo
+    // (to feed the daily-closing print's dayTo range), so cap here to keep the
+    // card accurate regardless of the wider load window.
+    const upto = (d?: string) => !dateTo || String(d ?? "") <= dateTo;
+    const cashIn = received.reduce((s, r) => s + (upto(r.entry_date) && isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
     const cashOut = handovers
-      .filter((h) => handoverReducesBalance(h.status))
+      .filter((h) => upto(h.entry_date) && handoverReducesBalance(h.status))
       .reduce((s, h) => s + Number(h.amount || 0), 0);
-    const spent = expenses.reduce((s, e) => s + (expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
+    const spent = expenses.reduce((s, e) => s + (upto(e.entry_date) && expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
     return cashIn - cashOut - spent;
-  }, [received, handovers, expenses]);
+  }, [received, handovers, expenses, dateTo]);
 
   // Build full chronological timeline (all data) with running balance from 0
   type TLItem =
