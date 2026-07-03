@@ -362,7 +362,20 @@ function MyHandoverPage() {
   const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalVendorReceived = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
-  const totalDiscount = receipts.reduce((s, r) => s + Number(r.discount || 0), 0);
+  // Discount lives on the service ROW; each receipt for that row carries the same
+  // value. Count once per service row so multi-installment bookings don't inflate it.
+  const totalDiscount = (() => {
+    const seen = new Set<string>();
+    let sum = 0;
+    for (const r of receipts) {
+      const k = serviceKey(r);
+      if (!k) { sum += Number(r.discount || 0); continue; }
+      if (seen.has(k)) continue;
+      seen.add(k);
+      sum += Number(r.discount || 0);
+    }
+    return sum;
+  })();
   const netCash = totalReceived - totalExpense;
   const moneyServiceKeys = useMemo(() => new Set(
     receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
