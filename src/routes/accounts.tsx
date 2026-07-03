@@ -1037,9 +1037,7 @@ ${partySectionsHtml()}
       const reordered: (TLItem & { running: number })[] = [];
       for (const d of dateOrder) {
         const grp = byDate.get(d)!;
-        const ins = grp.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
-        const outs = grp.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
-        for (const it of [...ins, ...outs]) reordered.push({ ...it });
+        for (const it of segmentByHandover(grp)) reordered.push({ ...it });
       }
       let bal = opening;
       for (const it of reordered) {
