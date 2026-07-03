@@ -178,7 +178,7 @@ export function DueReceiveDialog({
       try {
         const all: DueRow[] = [];
         for (const s of SERVICES) {
-          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}${s.hasCancel ? ", cancelled" : ""}`;
           const { data, error } = await supabase
             .from(s.table as never)
             .select(cols)
@@ -186,6 +186,7 @@ export function DueReceiveDialog({
             .limit(500);
           if (error) continue;
           for (const r of (data as unknown as Record<string, unknown>[]) ?? []) {
+            if (s.hasCancel && r.cancelled === true) continue; // বাতিল কাজ due-তালিকায় দেখাবে না
             const sold = Number(r.sold_price ?? 0);
             const recv = Number(r[s.recvCol] ?? 0);
             const disc = Number(r.discount_amount ?? 0);
