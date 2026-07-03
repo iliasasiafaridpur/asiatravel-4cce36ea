@@ -362,6 +362,11 @@ function MyHandoverPage() {
   const totalMdReceived = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalVendorReceived = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
   const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+  // Item counts that MATCH each amount bucket (avoid showing the mixed
+  // visible-receipt count under the cash-only chip).
+  const moneyRow = (r: Receipt) => !isStatusEvent(r) && Number(r.amount || 0) > 0;
+  const cashCount = receipts.filter((r) => moneyRow(r) && isCashMethod(r.method)).length;
+  const mdCount = receipts.filter((r) => moneyRow(r) && isMdReceivedMethod(r.method)).length;
   // Discount lives on the service ROW; each receipt for that row carries the same
   // value. Count once per service row so multi-installment bookings don't inflate it.
   const totalDiscount = (() => {
@@ -653,9 +658,9 @@ function MyHandoverPage() {
             <TrendingUp className="h-3 w-3" /> নগদ আয়
           </div>
           <div className="text-base font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-              <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
+              <div className="text-[10px] text-muted-foreground">{cashCount} নগদ এন্ট্রি</div>
           {totalMdReceived > 0 && (
-            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)}</div>
+            <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD রিসিভ: {fmt(totalMdReceived)} ({mdCount})</div>
           )}
           {totalVendorReceived > 0 && (
             <div className="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Vendor Rece: {fmt(totalVendorReceived)}</div>
