@@ -234,16 +234,33 @@ function InvoicePage() {
   const updateItem = (uid: string, patch: Partial<InvoiceItem>) =>
     setItems((p) => p.map((it) => (it.uid === uid ? { ...it, ...patch } : it)));
 
-  const changeItemService = (uid: string, type: string) =>
+  const changeItemService = (uid: string, type: string) => {
+    // Switching a line's service type drops whatever entry was loaded there.
+    const prev = loadedReceivedRef.current[uid] || 0;
+    if (prev) {
+      delete loadedReceivedRef.current[uid];
+      setReceived((r) => Math.max(0, r - prev));
+    }
     setItems((p) => p.map((it) => (it.uid === uid ? { ...blankItem(type), uid } : it)));
+  };
 
   const addItem = () => setItems((p) => [...p, blankItem("tickets")]);
 
   const removeItem = (uid: string) =>
-    setItems((p) => (p.length <= 1 ? p : p.filter((it) => it.uid !== uid)));
+    setItems((p) => {
+      if (p.length <= 1) return p;
+      const prev = loadedReceivedRef.current[uid] || 0;
+      if (prev) {
+        delete loadedReceivedRef.current[uid];
+        setReceived((r) => Math.max(0, r - prev));
+      }
+      return p.filter((it) => it.uid !== uid);
+    });
 
   // Loading an existing entry into a service line. Passenger info is filled only
-  // if still empty (one passenger per invoice). Received accumulates per service.
+  // if still empty (one passenger per invoice). Received accumulates per service,
+  // but a line that already carried a loaded entry first gives back its previous
+  // contribution so switching entries never double-counts the received amount.
   const loadEntryIntoItem = (uid: string, e: ServiceEntry) => {
     setItems((p) => p.map((it) => (it.uid === uid ? { ...buildItemFromEntry(e), uid } : it)));
     setBill((prev) => ({
@@ -252,7 +269,12 @@ function InvoicePage() {
       nationality: prev.nationality || "Bangladeshi",
       mobile: prev.mobile || e.mobile || "",
     }));
-    if (e.received) setReceived((prev) => prev + (e.received || 0));
+    const prevContrib = loadedReceivedRef.current[uid] || 0;
+    const newContrib = e.received || 0;
+    loadedReceivedRef.current[uid] = newContrib;
+    if (prevContrib !== newContrib) {
+      setReceived((r) => Math.max(0, r - prevContrib + newContrib));
+    }
   };
 
   const subtotal = items.reduce((s, i) => s + i.rate, 0);
