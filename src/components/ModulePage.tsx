@@ -562,6 +562,9 @@ export function ModulePage({ module: mod }: Props) {
     if (mod.fields.some((fld) => fld.name === "entry_by") && (!f.entry_by || f.entry_by === "User")) {
       f.entry_by = displayName(profile, user);
     }
+    if (RECV_META[mod.table]) {
+      f.payment_method = String((r as Record<string, unknown>).payment_method || "Cash");
+    }
     setForm(f);
     setOpenForm(true);
     if (supportsExtra) {
