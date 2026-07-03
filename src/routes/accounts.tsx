@@ -116,6 +116,38 @@ interface Recv { id: string; receipt_id: string; entry_date: string; service_typ
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
 
+// Order a set of same-scope timeline items into segments separated by cash
+// handovers, in chronological (created) order. A handover then sits as a
+// divider between the transactions made BEFORE it (shown above) and the ones
+// made AFTER it (shown below). Within each segment the existing display
+// grouping is preserved: receipts (আয়) big→small first, then খরচ big→small.
+function segmentByHandover<
+  T extends { kind: string; date: string; row: { amount?: number | null }; created?: string },
+>(items: T[]): T[] {
+  const amtOf = (it: T) => Number(it.row?.amount || 0);
+  const createdOf = (it: T) =>
+    it.created ?? (it.row as { created_at?: string }).created_at ?? it.date;
+  const chrono = [...items].sort((a, b) => createdOf(a).localeCompare(createdOf(b)));
+  const ordered: T[] = [];
+  let bucket: T[] = [];
+  const flush = () => {
+    const ins = bucket.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
+    const outs = bucket.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
+    ordered.push(...ins, ...outs);
+    bucket = [];
+  };
+  for (const it of chrono) {
+    if (it.kind === "handover") {
+      flush();
+      ordered.push(it);
+    } else {
+      bucket.push(it);
+    }
+  }
+  flush();
+  return ordered;
+}
+
 const TIMELINE_PRINT_COLGROUP_HTML = `
   <colgroup>
     <col class="c-no"><col class="c-date"><col class="c-name"><col class="c-service"><col class="c-region">
@@ -581,14 +613,12 @@ function AccountsPage() {
     return desc.slice(0, latestN);
   }, [fullAsc, latestN, useDateFilter, inDateRange, hasMoneyReceiptForService]);
 
-  // Print rows — grouped: receipts (জমা) on top, then expenses/handovers (খরচ)
-  // below. Within each group, larger amount first (big top → small bottom).
+  // Print rows — receipts (আয়) big→small then খরচ, but split into segments by
+  // cash handover: each handover sits chronologically between the transactions
+  // before it and after it (not lumped at the very bottom anymore).
   // Running balance is SCOPED to these printed entries only (starts from 0).
   const printAscRows = useMemo<{ it: TLItem & { running: number }; running: number }[]>(() => {
-    const amtOf = (it: TLItem) => Number((it.row as { amount?: number }).amount || 0);
-    const ins = timeline.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
-    const outs = timeline.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
-    const ordered = [...ins, ...outs];
+    const ordered = segmentByHandover(timeline as (TLItem & { running: number; created?: string })[]);
     let bal = 0;
     return ordered.map((it) => {
       if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
@@ -910,9 +940,9 @@ ${partySectionsHtml()}
       if (!a || a.toLowerCase() === "self") return "";
       return a.split(/\s+/)[0];
     })();
-    const baseName = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
+    const baseName = isIn ? r.passenger_name : isHand ? `ক্যাশ হ্যান্ডওভার: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
     const name = isIn && agencyFirst ? `${baseName} (${agencyFirst})` : baseName;
-    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "জমা" : "খরচ";
+    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
     let region = "";
     if (isIn && svc) {
       if (r.service_table === "tickets") {
@@ -1007,9 +1037,7 @@ ${partySectionsHtml()}
       const reordered: (TLItem & { running: number })[] = [];
       for (const d of dateOrder) {
         const grp = byDate.get(d)!;
-        const ins = grp.filter((it) => it.kind === "received").sort((a, b) => amtOf(b) - amtOf(a));
-        const outs = grp.filter((it) => it.kind !== "received").sort((a, b) => amtOf(b) - amtOf(a));
-        for (const it of [...ins, ...outs]) reordered.push({ ...it });
+        for (const it of segmentByHandover(grp)) reordered.push({ ...it });
       }
       let bal = opening;
       for (const it of reordered) {
@@ -1854,9 +1882,9 @@ ${partySectionsHtml()}
                     if (!a || a.toLowerCase() === "self") return "";
                     return a.split(/\s+/)[0];
                   })();
-                  const baseName = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
+                  const baseName = isIn ? r.passenger_name : isHand ? `ক্যাশ হ্যান্ডওভার: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const name = isIn && agencyFirst ? `${baseName} (${agencyFirst})` : baseName;
-                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "জমা" : "খরচ";
+                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
                   let region = "";
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
