@@ -283,7 +283,11 @@ export function HandoverLedgerInline({
                     ? (AGENCY_MODULE_LABELS[String(row[cfg.serviceNameField] ?? "")] ?? null)
                     : ((row[cfg.serviceNameField] as string | null) ?? null))
                 : null,
-              vendor: isTicketBook ? null : ((row[cfg.vendorField] as string | null) ?? null),
+              // Agency ledger has NO vendor — the agency itself is the customer.
+              // Never surface agent_name as a "vendor" in the মোট বিল / V: line.
+              vendor: (cfg.table === "agency_ledger" || isTicketBook)
+                ? null
+                : ((row[cfg.vendorField] as string | null) ?? null),
               agent: (row[cfg.agentField] as string | null) ?? null,
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
               passport: (row.passport as string | null) ?? null,

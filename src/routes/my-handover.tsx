@@ -141,7 +141,10 @@ const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknow
     cols: "id,country_route,agent_name,total_bill,discount_amount,service_type",
     map: (r) => ({
       service_name: TABLE_LABELS[r.service_type as string] || undefined,
-      country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: r.agent_name as string,
+      // Agency ledger has NO vendor concept — the agency is the customer, not a
+      // vendor. Keep vendor null so the "মোট বিল / V:" line never shows the
+      // agency name where a vendor is expected.
+      country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: null,
       agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), tracks_cost: false, has_delivery: false,
     }),
   },
