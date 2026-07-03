@@ -1290,7 +1290,7 @@ ${partySectionsHtml()}
             {/* Active badge */}
             <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
               {useDateFilter
-                ? `${displayRecv.length + fHand.length + fExp.length} এন্ট্রি · তারিখ`
+                ? `${timeline.length} এন্ট্রি · তারিখ`
                 : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
             </div>
           </div>
