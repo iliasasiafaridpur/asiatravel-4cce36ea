@@ -682,6 +682,12 @@ export function ModulePage({ module: mod }: Props) {
         if (!isEdit) (payload as Record<string, unknown>).created_by = user.id;
         if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
       }
+      // এন্ট্রিতে টাকা গৃহীত হলে চয়ন করা মাধ্যম সংরক্ষণ — এটি থেকে DB trigger
+      // (sync_service_receipt) receipt-এর method ঠিক করবে (Cash=স্টাফ, বাকি=MD)।
+      if (RECV_META[mod.table] && recvAmount > 0) {
+        (payload as Record<string, unknown>).payment_method =
+          String(form.payment_method || "Cash");
+      }
       // Auto-capture payment date when money is received but none was entered,
       // so it always shows in the edit form and view page.
       if (hasField("payment_date") && recvAmount > 0 && !payload.payment_date) {
