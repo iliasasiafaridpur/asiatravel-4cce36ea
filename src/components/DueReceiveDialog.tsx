@@ -115,7 +115,7 @@ export function DueReceiveDialog({
 
   // Helper — fetch a single row by id from a given service
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
-    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}${s.hasCancel ? ", cancelled" : ""}`;
     const { data, error } = await supabase
       .from(s.table as never)
       .select(cols)
@@ -123,6 +123,7 @@ export function DueReceiveDialog({
       .maybeSingle();
     if (error || !data) return null;
     const r = data as unknown as Record<string, unknown>;
+    if (s.hasCancel && r.cancelled === true) return null;
     const sold = Number(r.sold_price ?? 0);
     const recv = Number(r[s.recvCol] ?? 0);
     const disc = Number(r.discount_amount ?? 0);
