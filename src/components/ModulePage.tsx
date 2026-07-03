@@ -496,7 +496,8 @@ export function ModulePage({ module: mod }: Props) {
     }
     if (dueOnly) {
       const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
-      xs = xs.filter((r) => computeValue(r, dueColumn) > 0);
+      // বাতিল করা কাজ due হিসেবে গণনা হয় না, তাই "শুধু বকেয়া" তালিকায় দেখানো হবে না।
+      xs = xs.filter((r) => computeValue(r, dueColumn) > 0 && !(canCancel && r.cancelled));
     }
     if (startDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) >= startDate);
     if (endDate) xs = xs.filter((r) => String(r.entry_date ?? "").slice(0, 10) <= endDate);
@@ -685,7 +686,10 @@ export function ModulePage({ module: mod }: Props) {
 
       if (user?.id) {
         if (!isEdit) (payload as Record<string, unknown>).created_by = user.id;
-        if (recvAmount > 0) (payload as Record<string, unknown>).received_by = user.id;
+        // received_by ("কে টাকা নিয়েছিল") শুধু নতুন এন্ট্রিতে সেট হবে। এডিটে received
+        // ফিল্ড locked থাকে (টাকা বদলায় না), তাই পুরনো collector-কে ওভাররাইট করা যাবে না —
+        // নইলে নাম/তারিখ ঠিক করলেও audit-trail নষ্ট হতো।
+        if (recvAmount > 0 && !isEdit) (payload as Record<string, unknown>).received_by = user.id;
       }
       // এন্ট্রিতে টাকা গৃহীত হলে চয়ন করা মাধ্যম সংরক্ষণ — এটি থেকে DB trigger
       // (sync_service_receipt) receipt-এর method ঠিক করবে (Cash=স্টাফ, বাকি=MD)।
