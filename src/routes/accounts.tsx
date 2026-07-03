@@ -275,10 +275,14 @@ function AccountsPage() {
     // but "হাতে আছে" must be the real running cash balance as of dateTo — not
     // only this period's net. Otherwise a previous handover inside today's
     // filter incorrectly reduces today's newly received cash.
-    if (dateTo) {
-      recvQuery = recvQuery.lte("entry_date", dateTo);
-      handQuery = handQuery.lte("entry_date", dateTo);
-      expQuery = expQuery.lte("entry_date", dateTo);
+    // Upper bound = max(dateTo, dayTo). dateTo scopes the visible timeline, but the
+    // daily-closing print scopes by dayTo — if dayTo > dateTo we must still load those
+    // extra days' rows, otherwise the closing report silently shows incomplete data.
+    const loadUpto = [dateTo, dayTo].filter(Boolean).sort().slice(-1)[0];
+    if (loadUpto) {
+      recvQuery = recvQuery.lte("entry_date", loadUpto);
+      handQuery = handQuery.lte("entry_date", loadUpto);
+      expQuery = expQuery.lte("entry_date", loadUpto);
     }
     const historyLimit = Math.max(parsedLimit, 5000);
     recvQuery = recvQuery.limit(historyLimit);
