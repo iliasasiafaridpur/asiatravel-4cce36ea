@@ -1175,9 +1175,7 @@ ${partySectionsHtml()}
       <th class="num">ব্যালেন্স</th>
     </tr>
   </thead>
-  <tbody>
-    ${bodyHtml}
-  </tbody>
+  ${bodyHtml}
   <tfoot>
     <tr>
       <td colspan="6">Total</td>
