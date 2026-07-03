@@ -633,7 +633,12 @@ function HandoverCard({
       <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 border">{status}</Badge>
     );
 
-  const cutoff = new Date(handover.created_at).getTime();
+  // Order receipts by business date (entry_date) first, created_at only as tie-break.
+  // Using created_at alone mis-sorts back-dated receipts (earlier date, entered later),
+  // which wrongly shifted them out of "পূর্বের জমা".
+  const rank = (entry?: string | null, created?: string | null) =>
+    `${String(entry ?? "").slice(0, 10)}T${String(created ?? "")}`;
+  const cutoffRank = rank(handover.entry_date, handover.created_at);
   const firstPendingReceipt = receipts.find((r) => r.approval_status !== "approved") ?? receipts[0];
 
   // Each handover gets a distinct, status-colored accent so one card is clearly
