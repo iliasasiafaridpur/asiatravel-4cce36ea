@@ -275,10 +275,14 @@ function AccountsPage() {
     // but "হাতে আছে" must be the real running cash balance as of dateTo — not
     // only this period's net. Otherwise a previous handover inside today's
     // filter incorrectly reduces today's newly received cash.
-    if (dateTo) {
-      recvQuery = recvQuery.lte("entry_date", dateTo);
-      handQuery = handQuery.lte("entry_date", dateTo);
-      expQuery = expQuery.lte("entry_date", dateTo);
+    // Upper bound = max(dateTo, dayTo). dateTo scopes the visible timeline, but the
+    // daily-closing print scopes by dayTo — if dayTo > dateTo we must still load those
+    // extra days' rows, otherwise the closing report silently shows incomplete data.
+    const loadUpto = [dateTo, dayTo].filter(Boolean).sort().slice(-1)[0];
+    if (loadUpto) {
+      recvQuery = recvQuery.lte("entry_date", loadUpto);
+      handQuery = handQuery.lte("entry_date", loadUpto);
+      expQuery = expQuery.lte("entry_date", loadUpto);
     }
     const historyLimit = Math.max(parsedLimit, 5000);
     recvQuery = recvQuery.limit(historyLimit);
@@ -322,7 +326,7 @@ function AccountsPage() {
 
     setSyncing(false);
     setLoading(false);
-  }, [user?.id, seeAll, dateTo, latestInput]);
+  }, [user?.id, seeAll, dateTo, dayTo, latestInput]);
 
   useEffect(() => {
     void reload(true);
@@ -513,13 +517,17 @@ function AccountsPage() {
   // bKash…) does NOT leave the staff's cash drawer — only Cash-method vendor
   // payments reduce cash-in-hand. Manual/office expenses always reduce it.
   const balance = useMemo(() => {
-    const cashIn = received.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+    // "হাতে আছে" = cash balance AS OF dateTo. Rows may now be loaded past dateTo
+    // (to feed the daily-closing print's dayTo range), so cap here to keep the
+    // card accurate regardless of the wider load window.
+    const upto = (d?: string) => !dateTo || String(d ?? "") <= dateTo;
+    const cashIn = received.reduce((s, r) => s + (upto(r.entry_date) && isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
     const cashOut = handovers
-      .filter((h) => handoverReducesBalance(h.status))
+      .filter((h) => upto(h.entry_date) && handoverReducesBalance(h.status))
       .reduce((s, h) => s + Number(h.amount || 0), 0);
-    const spent = expenses.reduce((s, e) => s + (expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
+    const spent = expenses.reduce((s, e) => s + (upto(e.entry_date) && expenseHitsBalance(e) ? Number(e.amount || 0) : 0), 0);
     return cashIn - cashOut - spent;
-  }, [received, handovers, expenses]);
+  }, [received, handovers, expenses, dateTo]);
 
   // Build full chronological timeline (all data) with running balance from 0
   type TLItem =
@@ -1291,7 +1299,7 @@ ${partySectionsHtml()}
             <div className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold whitespace-nowrap">
               {useDateFilter
                 ? `${timeline.length} এন্ট্রি · তারিখ`
-                : isInvalidInput ? "ফিল্টার নেই" : `${latestN} সর্বশেষ`}
+                : isInvalidInput ? "ফিল্টার নেই" : `${timeline.length} সর্বশেষ`}
             </div>
           </div>
           <div className="flex gap-2">
