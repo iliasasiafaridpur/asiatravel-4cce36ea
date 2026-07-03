@@ -504,7 +504,18 @@ export function ModulePage({ module: mod }: Props) {
     // তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার: নির্বাচিত স্টাটাসের তারিখ কলাম == নির্বাচিত তারিখ
     if (supportsStatusChangeFilter && statusChangeStatus && statusChangeDate) {
       const col = statusDateColMap[statusChangeStatus];
-      if (col) xs = xs.filter((r) => String(r[col] ?? "").slice(0, 10) === statusChangeDate);
+      if (col) {
+        // একাধিক স্টাটাস একই তারিখ কলাম শেয়ার করলে (যেমন "Delivered" ও
+        // "Delivery But Due" — দুটোই delivery_date) শুধু তারিখ মেলালে দুটো
+        // আলাদা স্টাটাস এক হয়ে যায়। তাই কলাম শেয়ার হলে রো-এর আসল স্টাটাসও মেলাই।
+        const sharesColumn =
+          Object.entries(statusDateColMap).filter(([, c]) => c === col).length > 1;
+        xs = xs.filter((r) => {
+          if (String(r[col] ?? "").slice(0, 10) !== statusChangeDate) return false;
+          if (!sharesColumn) return true;
+          return (String(r.status ?? "") || (mod.statuses?.[0] ?? "")) === statusChangeStatus;
+        });
+      }
     }
     const q = search.trim().toLowerCase();
     if (q) {
