@@ -61,7 +61,7 @@ import { FormSections } from "@/components/ModulePage";
 import { PartyProfileDrawer } from "@/components/PartyProfileDrawer";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
+import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -1121,8 +1121,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
   }) => {
     if (isAgency) return;
     if (opts.balanceNeutral) return;
-    const m = opts.method.trim().toLowerCase();
-    if (["md sir deposit", "md deposit", "vendor received", "vendor receive", "adjustment"].includes(m)) return;
+    // Single source of truth for balance-neutral methods (shared with everywhere
+    // else via vendorExpenseHitsUserBalance) so the two lists can never diverge.
+    if (!vendorExpenseHitsUserBalance(opts.method)) return;
     const srcBackedAmt = opts.items
       .filter((it) => it.src_table && it.src_id)
       .reduce((s, it) => s + (Number(it.amt) || 0), 0);
