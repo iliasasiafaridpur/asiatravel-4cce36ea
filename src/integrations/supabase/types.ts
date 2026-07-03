@@ -1553,6 +1553,7 @@ export type Database = {
         Args: { _vendor_name: string }
         Returns: undefined
       }
+      recompute_handover_amount: { Args: { h_id: string }; Returns: undefined }
       reject_handover: {
         Args: { _handover_id: string; _reason?: string }
         Returns: undefined
