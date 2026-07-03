@@ -2457,43 +2457,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
         );
       })}
 
-      {showMethod && (
-        <section className="rounded-xl border bg-card/40 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 border-b bg-muted/40">
-            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Wallet className="h-3 w-3" />
-            </span>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
-              টাকা গ্রহণের মাধ্যম
-            </h3>
-          </div>
-          <div
-            className="grid gap-x-2 gap-y-1.5 p-2"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-          >
-            <div className="space-y-0.5 min-w-0">
-              <Select
-                value={methodVal}
-                onValueChange={(v) => setForm((s) => ({ ...s, payment_method: v }))}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ENTRY_RECEIVE_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] leading-tight text-muted-foreground">
-                {isCashMethod(methodVal)
-                  ? "Cash — আপনার ক্যাশ ব্যালেন্সে যোগ হবে।"
-                  : "এই মাধ্যমের টাকা সরাসরি MD-তে যাবে, আপনার ক্যাশে যোগ হবে না।"}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+
 
     </div>
   );
