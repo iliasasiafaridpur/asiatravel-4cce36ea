@@ -1882,9 +1882,9 @@ ${partySectionsHtml()}
                     if (!a || a.toLowerCase() === "self") return "";
                     return a.split(/\s+/)[0];
                   })();
-                  const baseName = isIn ? r.passenger_name : isHand ? `জমা: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
+                  const baseName = isIn ? r.passenger_name : isHand ? `ক্যাশ হ্যান্ডওভার: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const name = isIn && agencyFirst ? `${baseName} (${agencyFirst})` : baseName;
-                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "জমা" : "খরচ";
+                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
                   let region = "";
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {
