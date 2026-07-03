@@ -1,0 +1,1 @@
+UPDATE public.tickets SET status = 'DELIVERED' WHERE status = 'Delivery But Due';

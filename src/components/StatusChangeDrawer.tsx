@@ -192,7 +192,11 @@ export function StatusChangeDrawer({
   const apply = async (asDeliveryButDue = false) => {
     if (isSame && !asDeliveryButDue) return;
     // "Delivery But Due" = mark delivered today but keep the outstanding due (no receive).
-    const finalStatus = asDeliveryButDue ? "Delivery But Due" : next;
+    // Only BMET has a dedicated "Delivery But Due" stage; for other modules
+    // (tickets, saudi/kuwait visa, other) we keep their own delivered status
+    // (DELIVERED / Delivered / Delivery) so no invalid status is ever written.
+    const hasButDueStage = order.some((s) => eq(s, "Delivery But Due"));
+    const finalStatus = asDeliveryButDue ? (hasButDueStage ? "Delivery But Due" : next) : next;
     const receiveDue = isDeliveredWithDue && !asDeliveryButDue;
     const markDelivered = isDeliveredAny || isDeliveryButDue || asDeliveryButDue;
     if (!user?.id && receiveDue) { toast.error("লগইন প্রয়োজন"); return; }
