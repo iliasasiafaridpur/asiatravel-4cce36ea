@@ -1074,7 +1074,7 @@ ${partySectionsHtml()}
     // every distinct date, then the next date's rows continue below.
     let bodyHtml = "";
     if (rows.length === 0) {
-      bodyHtml = `<tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr>`;
+      bodyHtml = `<tbody><tr><td colspan="11" style="text-align:center;color:#888;padding:18px">এই সময়ে কোনো লেনদেন নেই</td></tr></tbody>`;
     } else {
       const hiddenSet = new Set(hiddenDays);
       let dayIn = 0;
@@ -1093,6 +1093,9 @@ ${partySectionsHtml()}
         // Serial number restarts at 1 for every distinct date.
         if (!prev || prev.date !== it.date) daySeq = 0;
         daySeq += 1;
+        // প্রতিটি তারিখের সব সারি একটি আলাদা <tbody class="dategroup"> এর ভিতরে —
+        // যাতে এক তারিখের হিসাব দুই পেইজে ভাগ না হয়।
+        if (!prev || prev.date !== it.date) bodyHtml += `<tbody class="dategroup">`;
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
           if (isCashMethod((it.row as Recv).method)) dayIn += amt;
@@ -1111,7 +1114,8 @@ ${partySectionsHtml()}
             `<td></td><td></td>` +
             `<td class="num out">− ${fmt(dayOut)}</td>` +
             `<td class="num">${fmt(it.running)}</td>` +
-            `</tr>`;
+            `</tr>` +
+            `</tbody>`;
           dayIn = 0;
           dayOut = 0;
         }
