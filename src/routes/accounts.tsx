@@ -1872,8 +1872,20 @@ ${partySectionsHtml()}
                   <th className="num">ব্যালেন্স</th>
                 </tr>
               </thead>
-              <tbody>
-                {printAscRows.map(({ it, running }, i) => {
+              {(() => {
+                // একই তারিখের সব সারি একটি <tbody class="dategroup"> এ — যাতে
+                // এক তারিখের হিসাব দুই পেইজে ভাগ না হয় (গ্লোবাল ইনডেক্স অপরিবর্তিত)।
+                const dateGroups: { date: string; rows: { entry: (typeof printAscRows)[number]; gi: number }[] }[] = [];
+                printAscRows.forEach((entry, gi) => {
+                  const last = dateGroups[dateGroups.length - 1];
+                  if (!last || last.date !== entry.it.date) dateGroups.push({ date: entry.it.date, rows: [] });
+                  dateGroups[dateGroups.length - 1].rows.push({ entry, gi });
+                });
+                return dateGroups.map((g) => (
+                  <tbody className="dategroup" key={g.date}>
+                {g.rows.map(({ entry, gi }) => {
+                  const { it, running } = entry;
+                  const i = gi;
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
