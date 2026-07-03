@@ -280,7 +280,7 @@ function ActionBoardPage() {
       savingRef.current = false;
       setSaving(false);
     }
-  }, [mod, form, profile, user, clearDraft, category, extraServices, supportsExtra, syncExtraServices, insertReceiptRow, insertStatusEventRow]);
+  }, [mod, form, profile, user, clearDraft, category, extraServices, supportsExtra, syncExtraServices, insertStatusEventRow]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
