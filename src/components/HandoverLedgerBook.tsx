@@ -744,15 +744,15 @@ function HandoverCard({
               const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
               const info = sk ? serviceMap[sk] : undefined;
               const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-              const past = allForSvc.filter((x) => x.id !== r.id && new Date(x.created_at).getTime() < cutoff);
-              const future = allForSvc.filter((x) => x.id !== r.id && new Date(x.created_at).getTime() > cutoff);
+              const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
+              const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
               const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
               const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
               const lastPast = past.length
-                ? past.reduce((a, b) => (new Date(a.created_at).getTime() > new Date(b.created_at).getTime() ? a : b))
+                ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
                 : null;
               const lastFuture = future.length
-                ? future.reduce((a, b) => (new Date(a.created_at).getTime() < new Date(b.created_at).getTime() ? a : b))
+                ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
                 : null;
               const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
               const bill = info?.sold_price ?? 0;
