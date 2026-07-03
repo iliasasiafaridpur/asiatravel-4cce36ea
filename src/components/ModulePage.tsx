@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
@@ -2398,30 +2398,58 @@ export function FormSections({ mod, form, setForm, isEdit }: {
                 const isAgencyField = field.lookup === "sub_agency" || field.name === "agency_sold";
                 const agencyVal = isAgencyField ? String(form[field.name] ?? "").trim() : "";
                 const matched = isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" ? matchAgency(agencyVal) : undefined;
+                const isRecvField = ["received", "received_amount", "paid_amount"].includes(field.name);
                 return (
-                  <div key={field.name} className="space-y-0.5 min-w-0" style={fieldGridStyle(field)}>
-                    <FormField
-                      field={field}
-                      value={form[field.name]}
-                      onChange={(v) => onFieldChange(field, v)}
-                      disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
-                    />
-                    {isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" && (
-                      <p className="text-[10px] leading-tight text-muted-foreground">
-                        {matched?.serial != null ? (
-                          <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{partySerialCode("agent", matched.serial)}</span>
-                        ) : (
-                          <span className="text-amber-500">ID নেই</span>
-                        )}
-                        {" · "}
-                        {matched?.phone ? (
-                          <span className="text-emerald-500">📱 {matched.phone}</span>
-                        ) : (
-                          <span className="text-amber-500">এজেন্সির পরিচিতি বোর্ডে মোবাইল নেই</span>
-                        )}
-                      </p>
+                  <Fragment key={field.name}>
+                    <div className="space-y-0.5 min-w-0" style={fieldGridStyle(field)}>
+                      <FormField
+                        field={field}
+                        value={form[field.name]}
+                        onChange={(v) => onFieldChange(field, v)}
+                        disabled={isEdit && ["received", "received_amount", "paid_amount"].includes(field.name)}
+                      />
+                      {isAgencyField && agencyVal && agencyVal.toLowerCase() !== "self" && (
+                        <p className="text-[10px] leading-tight text-muted-foreground">
+                          {matched?.serial != null ? (
+                            <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">{partySerialCode("agent", matched.serial)}</span>
+                          ) : (
+                            <span className="text-amber-500">ID নেই</span>
+                          )}
+                          {" · "}
+                          {matched?.phone ? (
+                            <span className="text-emerald-500">📱 {matched.phone}</span>
+                          ) : (
+                            <span className="text-amber-500">এজেন্সির পরিচিতি বোর্ডে মোবাইল নেই</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    {showMethod && isRecvField && (
+                      <div className="space-y-0.5 min-w-0">
+                        <Label className="flex items-center gap-1 text-[11px] font-medium text-foreground/80">
+                          <Wallet className="h-3 w-3 text-primary" /> টাকা গ্রহণের মাধ্যম
+                        </Label>
+                        <Select
+                          value={methodVal}
+                          onValueChange={(v) => setForm((s) => ({ ...s, payment_method: v }))}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ENTRY_RECEIVE_METHODS.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] leading-tight text-muted-foreground">
+                          {isCashMethod(methodVal)
+                            ? "Cash — আপনার ক্যাশে যোগ হবে।"
+                            : "সরাসরি MD-তে যাবে।"}
+                        </p>
+                      </div>
                     )}
-                  </div>
+                  </Fragment>
                 );
               })}
             </div>
@@ -2429,43 +2457,7 @@ export function FormSections({ mod, form, setForm, isEdit }: {
         );
       })}
 
-      {showMethod && (
-        <section className="rounded-xl border bg-card/40 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 border-b bg-muted/40">
-            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Wallet className="h-3 w-3" />
-            </span>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
-              টাকা গ্রহণের মাধ্যম
-            </h3>
-          </div>
-          <div
-            className="grid gap-x-2 gap-y-1.5 p-2"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-          >
-            <div className="space-y-0.5 min-w-0">
-              <Select
-                value={methodVal}
-                onValueChange={(v) => setForm((s) => ({ ...s, payment_method: v }))}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ENTRY_RECEIVE_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] leading-tight text-muted-foreground">
-                {isCashMethod(methodVal)
-                  ? "Cash — আপনার ক্যাশ ব্যালেন্সে যোগ হবে।"
-                  : "এই মাধ্যমের টাকা সরাসরি MD-তে যাবে, আপনার ক্যাশে যোগ হবে না।"}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+
 
     </div>
   );
