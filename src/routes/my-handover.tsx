@@ -34,6 +34,7 @@ type SvcDetail = {
   bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null; discount?: number;
   vendor_price?: number; tracks_cost?: boolean;
   delivery_date?: string | null; has_delivery?: boolean;
+  src_table?: string | null; src_id?: string | null;
 };
 type Receipt = {
   id: string; receipt_id?: string | null; amount: number;
