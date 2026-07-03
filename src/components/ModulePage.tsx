@@ -1025,6 +1025,13 @@ export function ModulePage({ module: mod }: Props) {
     if (newStatus === "Delivered" && hasField("delivery_date") && !row.delivery_date) {
       payload.delivery_date = todayIso();
     }
+    // নিরাপত্তা: সরাসরি "Delivered" দিলেও যদি বকেয়া থেকে যায় এবং মডিউলে
+    // "Delivery But Due" স্ট্যাটাস থাকে, তবে সেটিই লেখা হবে — দুটো এক হবে না।
+    if (newStatus === "Delivered" && (mod.statuses ?? []).includes("Delivery But Due")) {
+      const dueCol = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
+      if (computeValue(row, dueCol) > 0) payload.status = "Delivery But Due";
+    }
+
 
     try {
       const { error } = await supabase
