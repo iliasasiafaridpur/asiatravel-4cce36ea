@@ -352,7 +352,11 @@ export function DueReceiveDialog({
       if (appliedToDue > 0) upd.payment_date = today;
       if (withDelivery) {
         if (selected.service.hasDelivery) upd.delivery_date = today;
-        upd.status = selected.service.deliveredStatus;
+        // এই পেমেন্টের পরেও বকেয়া থাকলে "Delivery But Due", পুরো শোধ হলে "Delivered"।
+        const remainingDue = Math.max(0, selected.due - disc - appliedToDue);
+        upd.status = remainingDue > 0
+          ? selected.service.dueDeliveredStatus
+          : selected.service.deliveredStatus;
       }
       const updRes = await resilientUpdate(
         selected.service.table,
