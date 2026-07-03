@@ -1959,7 +1959,9 @@ ${partySectionsHtml()}
                     </tr>
                   );
                 })}
-              </tbody>
+                  </tbody>
+                ));
+              })()}
             </table>
           </div>
         </TabsContent>
