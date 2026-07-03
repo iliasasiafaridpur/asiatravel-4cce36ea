@@ -251,6 +251,10 @@ export function HandoverLedgerInline({
       }
 
       const svcMap: Record<string, ServiceInfo> = {};
+      // agency_ledger rows have no vendor of their own — the real vendor lives
+      // in the underlying source job (source_table/source_id). Collect refs so
+      // we can resolve the true "V:" vendor name after the main pass.
+      const agencySrcRefs: Array<{ key: string; table: string; id: string }> = [];
       await Promise.all(
         SERVICE_TABLES.map(async (cfg) => {
           const rowIds = Array.from(byTable[cfg.table] ?? []);
@@ -265,6 +269,8 @@ export function HandoverLedgerInline({
           if (cfg.deliveryField) cols.push(cfg.deliveryField);
           // Need status for tickets to hide vendor/cost while in BOOK.
           if (cfg.table === "tickets") cols.push("status");
+          // Need the source job link to resolve the real vendor for agency rows.
+          if (cfg.table === "agency_ledger") cols.push("source_table", "source_id");
           const uniqueCols = Array.from(new Set(cols));
           const { data } = await supabase
             .from(cfg.table as never)
@@ -299,9 +305,52 @@ export function HandoverLedgerInline({
               delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
               has_delivery: Boolean(cfg.deliveryField),
             };
+            // Queue the source-job vendor lookup for agency_ledger rows.
+            if (cfg.table === "agency_ledger") {
+              const st = row.source_table as string | null;
+              const sid = row.source_id as string | null;
+              if (st && sid) {
+                agencySrcRefs.push({ key: `${cfg.table}:${row.id as string}`, table: st, id: sid });
+              }
+            }
           }
         })
       );
+
+      // Resolve the true vendor name (and cost) for agency_ledger rows from
+      // their source job, so the "V:" line shows the actual vendor of the work.
+      if (agencySrcRefs.length > 0) {
+        const bySrcTable: Record<string, Array<{ key: string; id: string }>> = {};
+        for (const ref of agencySrcRefs) (bySrcTable[ref.table] ??= []).push({ key: ref.key, id: ref.id });
+        await Promise.all(
+          Object.entries(bySrcTable).map(async ([tbl, refs]) => {
+            const vField = tbl === "extra_services" ? "vendor_name" : "vendor_bought";
+            const cField = tbl === "extra_services" ? "vendor_cost" : "cost_price";
+            const ids = Array.from(new Set(refs.map((r) => r.id)));
+            const { data } = await supabase
+              .from(tbl as never)
+              .select(`id,${vField},${cField}`)
+              .in("id", ids);
+            const map: Record<string, { vendor: string | null; cost: number }> = {};
+            for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+              map[row.id as string] = {
+                vendor: (row[vField] as string | null) ?? null,
+                cost: Number(row[cField] ?? 0),
+              };
+            }
+            for (const ref of refs) {
+              const src = map[ref.id];
+              const info = svcMap[ref.key];
+              if (src && info && src.vendor) {
+                info.vendor = src.vendor;
+                info.vendor_price = src.cost;
+                info.tracks_cost = true;
+              }
+            }
+          }),
+        );
+      }
+
 
       if (cancelled) return;
       setHandovers(hvs);

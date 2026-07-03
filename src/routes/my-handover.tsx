@@ -34,6 +34,7 @@ type SvcDetail = {
   bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null; discount?: number;
   vendor_price?: number; tracks_cost?: boolean;
   delivery_date?: string | null; has_delivery?: boolean;
+  src_table?: string | null; src_id?: string | null;
 };
 type Receipt = {
   id: string; receipt_id?: string | null; amount: number;
@@ -138,17 +139,54 @@ const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknow
     }),
   },
   agency_ledger: {
-    cols: "id,country_route,agent_name,total_bill,discount_amount,service_type",
+    cols: "id,country_route,agent_name,total_bill,discount_amount,service_type,source_table,source_id",
     map: (r) => ({
       service_name: TABLE_LABELS[r.service_type as string] || undefined,
-      // Agency ledger has NO vendor concept — the agency is the customer, not a
-      // vendor. Keep vendor null so the "মোট বিল / V:" line never shows the
-      // agency name where a vendor is expected.
+      // Agency ledger has NO vendor of its own — the agency is the customer.
+      // The real vendor lives in the underlying source job; keep vendor null
+      // here and let resolveAgencyVendors() fill in the true vendor name.
       country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: null,
       agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), tracks_cost: false, has_delivery: false,
+      src_table: (r.source_table as string | null) ?? null, src_id: (r.source_id as string | null) ?? null,
     }),
   },
 };
+
+// Resolve the true vendor name (and cost) for agency_ledger service rows from
+// their underlying source job, so the "V:" line shows the actual vendor.
+async function resolveAgencyVendors(svcMap: Record<string, SvcDetail>) {
+  const bySrc: Record<string, Array<{ key: string; id: string }>> = {};
+  for (const [key, detail] of Object.entries(svcMap)) {
+    if (key.startsWith("agency_ledger:") && detail.src_table && detail.src_id) {
+      (bySrc[detail.src_table] ??= []).push({ key, id: detail.src_id });
+    }
+  }
+  if (Object.keys(bySrc).length === 0) return;
+  await Promise.all(
+    Object.entries(bySrc).map(async ([tbl, refs]) => {
+      const vField = tbl === "extra_services" ? "vendor_name" : "vendor_bought";
+      const cField = tbl === "extra_services" ? "vendor_cost" : "cost_price";
+      const ids = Array.from(new Set(refs.map((r) => r.id)));
+      const { data } = await supabase
+        .from(tbl as never)
+        .select(`id,${vField},${cField}`)
+        .in("id", ids);
+      const map: Record<string, { vendor: string | null; cost: number }> = {};
+      for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+        map[String(row.id)] = { vendor: (row[vField] as string | null) ?? null, cost: Number(row[cField] ?? 0) };
+      }
+      for (const ref of refs) {
+        const src = map[ref.id];
+        const info = svcMap[ref.key];
+        if (src && info && src.vendor) {
+          info.vendor = src.vendor;
+          info.vendor_price = src.cost;
+          info.tracks_cost = true;
+        }
+      }
+    }),
+  );
+}
 
 // Build the secondary line: module/service name, country, then ticket details.
 function svcLine(rec: Receipt): string {
@@ -244,6 +282,7 @@ function MyHandoverPage() {
             if (ids.has(String(row.id))) svcMap[`${tbl}:${String(row.id)}`] = cfg.map(row);
           }
         }
+        await resolveAgencyVendors(svcMap);
         for (const rec of recs) {
           const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
           rec.svc = k ? svcMap[k] : undefined;
@@ -325,6 +364,7 @@ function MyHandoverPage() {
           }
         })
       );
+      await resolveAgencyVendors(svcMap);
       for (const rec of recs) {
         const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
         rec.svc = k ? svcMap[k] : undefined;
