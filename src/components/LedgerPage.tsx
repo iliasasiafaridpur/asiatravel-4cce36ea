@@ -552,6 +552,9 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
       const src = String(r.source_table ?? "");
       if (src !== "bmet_cards" && src !== "saudi_visas" && src !== "kuwait_visas") return true;
       const info = sourceInfoMap.get(String(r.source_id ?? ""));
+      // বাতিল করা (soft-cancel) কাজ vendor due হিসেবে গণনা হবে না — কার্ড, তালিকা,
+      // dueByGroup ও FIFO পেমেন্ট ডায়ালগ সবই এই ফাংশন ব্যবহার করে বলে একবারেই ঠিক হয়।
+      if (info?.cancelled) return false;
       return !!info?.received_from_vendor;
     },
     [isAgency, sourceInfoMap],
