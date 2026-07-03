@@ -276,17 +276,10 @@ function ActionBoardPage() {
         if (supportsExtra && extraServices.some((x) => (x.service_name || "").trim())) {
           try { await syncExtraServices(rowId, payload); } catch { /* best effort */ }
         }
-        if (recvAmount > 0) {
-          try {
-            await insertReceiptRow({
-              rowId,
-              refId: newId,
-              passengerName: String(payload.passenger_name ?? ""),
-              amount: recvAmount,
-              entryDate: String(payload.payment_date ?? payload.entry_date ?? todayIso()),
-            });
-          } catch { /* best effort */ }
-        }
+        // NOTE: গৃহীত টাকার receipt এখন DB trigger (sync_service_receipt) নিজেই
+        // তৈরি করে চয়ন করা payment_method সহ। আগে এখানে ম্যানুয়ালি আরেকটি
+        // 'form_receive' receipt বসত — যা টাকা দ্বিগুণ গণনা করত ও জোর করে
+        // "Cash" ধরত। তাই সেটি সরানো হলো।
         if (isDeliveryStatus(payload.status)) {
           try {
             await insertStatusEventRow({
