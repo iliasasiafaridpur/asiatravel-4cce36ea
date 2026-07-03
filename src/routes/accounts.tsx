@@ -887,13 +887,13 @@ ${node.innerHTML.replace(
   "<table>",
   `<table>${TIMELINE_PRINT_COLGROUP_HTML}`,
 ).replace(
-  "</tbody>",
-  `<tr><td colspan="6" style="font-weight:700">Total</td>` +
+  "</table>",
+  `<tbody class="dategroup"><tr><td colspan="6" style="font-weight:700">Total</td>` +
   `<td class="num in" style="font-weight:700">+ ${fmt(totals.inAmt)}</td>` +
   `<td></td>` +
   `<td></td>` +
   `<td class="num out" style="font-weight:700">− ${fmt(totals.outAmt)}</td>` +
-  `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody>`
+  `<td class="num" style="font-weight:700">${fmt(scopedBalance)}</td></tr></tbody></table>`
 )}
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(scopedBalance)}</div>
 ${partySectionsHtml()}
