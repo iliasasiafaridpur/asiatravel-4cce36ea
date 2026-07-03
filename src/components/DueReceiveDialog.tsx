@@ -21,11 +21,12 @@ import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
   // hasDelivery=false means the table has no `delivery_date` column; delivery is tracked via status alone.
-  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route", hasDelivery: false, deliveredStatus: "DELIVERED" },
-  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country", hasDelivery: true,  deliveredStatus: "Delivered" },
-  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type", hasDelivery: true,  deliveredStatus: "Delivered" },
-  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No", hasDelivery: true,  deliveredStatus: "Delivered" },
-  { key: "other",       table: "others",       idCol: "other_id",  recvCol: "received_amount", type: "Other",      extraCol: "service_name", extraLabel: "Service", hasDelivery: true,  deliveredStatus: "Delivery" },
+  // hasCancel=true means the table has a `cancelled` soft-cancel column that must exclude the row from due.
+  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route", hasDelivery: false, deliveredStatus: "DELIVERED", hasCancel: true },
+  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country", hasDelivery: true,  deliveredStatus: "Delivered", hasCancel: true },
+  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type", hasDelivery: true,  deliveredStatus: "Delivered", hasCancel: true },
+  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No", hasDelivery: true,  deliveredStatus: "Delivered", hasCancel: true },
+  { key: "other",       table: "others",       idCol: "other_id",  recvCol: "received_amount", type: "Other",      extraCol: "service_name", extraLabel: "Service", hasDelivery: true,  deliveredStatus: "Delivery", hasCancel: false },
 ] as const;
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -114,7 +115,7 @@ export function DueReceiveDialog({
 
   // Helper — fetch a single row by id from a given service
   const fetchOne = async (s: Service, rowId: string): Promise<DueRow | null> => {
-    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+    const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}${s.hasCancel ? ", cancelled" : ""}`;
     const { data, error } = await supabase
       .from(s.table as never)
       .select(cols)
@@ -122,6 +123,7 @@ export function DueReceiveDialog({
       .maybeSingle();
     if (error || !data) return null;
     const r = data as unknown as Record<string, unknown>;
+    if (s.hasCancel && r.cancelled === true) return null;
     const sold = Number(r.sold_price ?? 0);
     const recv = Number(r[s.recvCol] ?? 0);
     const disc = Number(r.discount_amount ?? 0);
@@ -176,7 +178,7 @@ export function DueReceiveDialog({
       try {
         const all: DueRow[] = [];
         for (const s of SERVICES) {
-          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}`;
+          const cols = `id, ${s.idCol}, passenger_name, passport, mobile, sold_price, ${s.recvCol}, discount_amount, entry_date, ${s.extraCol}, agency_sold, status${s.hasDelivery ? ", delivery_date" : ""}${s.hasCancel ? ", cancelled" : ""}`;
           const { data, error } = await supabase
             .from(s.table as never)
             .select(cols)
@@ -184,6 +186,7 @@ export function DueReceiveDialog({
             .limit(500);
           if (error) continue;
           for (const r of (data as unknown as Record<string, unknown>[]) ?? []) {
+            if (s.hasCancel && r.cancelled === true) continue; // বাতিল কাজ due-তালিকায় দেখাবে না
             const sold = Number(r.sold_price ?? 0);
             const recv = Number(r[s.recvCol] ?? 0);
             const disc = Number(r.discount_amount ?? 0);
