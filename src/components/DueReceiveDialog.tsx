@@ -22,11 +22,11 @@ import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 const SERVICES = [
   // hasDelivery=false means the table has no `delivery_date` column; delivery is tracked via status alone.
   // hasCancel=true means the table has a `cancelled` soft-cancel column that must exclude the row from due.
-  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route", hasDelivery: false, deliveredStatus: "DELIVERED", hasCancel: true },
-  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country", hasDelivery: true,  deliveredStatus: "Delivered", hasCancel: true },
-  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type", hasDelivery: true,  deliveredStatus: "Delivered", hasCancel: true },
-  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No", hasDelivery: true,  deliveredStatus: "Delivered", hasCancel: true },
-  { key: "other",       table: "others",       idCol: "other_id",  recvCol: "received_amount", type: "Other",      extraCol: "service_name", extraLabel: "Service", hasDelivery: true,  deliveredStatus: "Delivery", hasCancel: false },
+  { key: "tickets",     table: "tickets",      idCol: "ticket_id", recvCol: "received",        type: "Ticket",     extraCol: "trip_road",    extraLabel: "Route", hasDelivery: false, deliveredStatus: "DELIVERED", dueDeliveredStatus: "DELIVERED", hasCancel: true },
+  { key: "bmet",        table: "bmet_cards",   idCol: "bmet_id",   recvCol: "received_amount", type: "BMET Card",  extraCol: "country_name", extraLabel: "Country", hasDelivery: true,  deliveredStatus: "Delivered", dueDeliveredStatus: "Delivery But Due", hasCancel: true },
+  { key: "saudi-visa",  table: "saudi_visas",  idCol: "saudi_id",  recvCol: "received_amount", type: "Saudi Visa", extraCol: "visa_type",    extraLabel: "Visa Type", hasDelivery: true,  deliveredStatus: "Delivered", dueDeliveredStatus: "Delivered", hasCancel: true },
+  { key: "kuwait-visa", table: "kuwait_visas", idCol: "kuwait_id", recvCol: "received",        type: "Kuwait Visa",extraCol: "visa_no",      extraLabel: "Visa No", hasDelivery: true,  deliveredStatus: "Delivered", dueDeliveredStatus: "Delivered", hasCancel: true },
+  { key: "other",       table: "others",       idCol: "other_id",  recvCol: "received_amount", type: "Other",      extraCol: "service_name", extraLabel: "Service", hasDelivery: true,  deliveredStatus: "Delivery", dueDeliveredStatus: "Delivery", hasCancel: false },
 ] as const;
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -280,7 +280,10 @@ export function DueReceiveDialog({
       const s = selected.service;
       const patch: Record<string, unknown> = {};
       if (s.hasDelivery) patch.delivery_date = newDate;
-      patch.status = next === "Delivered" ? s.deliveredStatus : "Pending";
+      // বকেয়া থাকলে "Delivery But Due", নাহলে "Delivered" — দুটো আলাদা স্ট্যাটাস।
+      patch.status = next === "Delivered"
+        ? (selected.due > 0 ? s.dueDeliveredStatus : s.deliveredStatus)
+        : "Pending";
       await resilientUpdate(
         s.table,
         { id: selected.id },
@@ -349,7 +352,11 @@ export function DueReceiveDialog({
       if (appliedToDue > 0) upd.payment_date = today;
       if (withDelivery) {
         if (selected.service.hasDelivery) upd.delivery_date = today;
-        upd.status = selected.service.deliveredStatus;
+        // এই পেমেন্টের পরেও বকেয়া থাকলে "Delivery But Due", পুরো শোধ হলে "Delivered"।
+        const remainingDue = Math.max(0, selected.due - disc - appliedToDue);
+        upd.status = remainingDue > 0
+          ? selected.service.dueDeliveredStatus
+          : selected.service.deliveredStatus;
       }
       const updRes = await resilientUpdate(
         selected.service.table,
