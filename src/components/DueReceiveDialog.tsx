@@ -280,7 +280,10 @@ export function DueReceiveDialog({
       const s = selected.service;
       const patch: Record<string, unknown> = {};
       if (s.hasDelivery) patch.delivery_date = newDate;
-      patch.status = next === "Delivered" ? s.deliveredStatus : "Pending";
+      // বকেয়া থাকলে "Delivery But Due", নাহলে "Delivered" — দুটো আলাদা স্ট্যাটাস।
+      patch.status = next === "Delivered"
+        ? (selected.due > 0 ? s.dueDeliveredStatus : s.deliveredStatus)
+        : "Pending";
       await resilientUpdate(
         s.table,
         { id: selected.id },
