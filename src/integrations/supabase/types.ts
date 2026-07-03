@@ -207,6 +207,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           payment_date: string | null
+          payment_method: string | null
           received_amount: number | null
           received_by: string | null
           received_date: string | null
@@ -241,6 +242,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -275,6 +277,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -662,6 +665,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           payment_date: string | null
+          payment_method: string | null
           received: number | null
           received_by: string | null
           received_date: string | null
@@ -694,6 +698,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -726,6 +731,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -799,6 +805,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           payment_date: string | null
+          payment_method: string | null
           received_amount: number | null
           received_by: string | null
           service_name: string | null
@@ -828,6 +835,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number | null
           received_by?: string | null
           service_name?: string | null
@@ -857,6 +865,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number | null
           received_by?: string | null
           service_name?: string | null
@@ -1053,6 +1062,7 @@ export type Database = {
           passenger_name: string
           passport: string | null
           payment_date: string | null
+          payment_method: string | null
           received_amount: number | null
           received_by: string | null
           received_date: string | null
@@ -1096,6 +1106,7 @@ export type Database = {
           passenger_name: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -1139,6 +1150,7 @@ export type Database = {
           passenger_name?: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number | null
           received_by?: string | null
           received_date?: string | null
@@ -1182,6 +1194,7 @@ export type Database = {
           passenger_refund_mode: string
           passport: string | null
           payment_date: string | null
+          payment_method: string | null
           pnr: string | null
           received: number | null
           received_by: string | null
@@ -1217,6 +1230,7 @@ export type Database = {
           passenger_refund_mode?: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           pnr?: string | null
           received?: number | null
           received_by?: string | null
@@ -1252,6 +1266,7 @@ export type Database = {
           passenger_refund_mode?: string
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           pnr?: string | null
           received?: number | null
           received_by?: string | null
