@@ -241,6 +241,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "bmet_id",
     idPrefix: "BMET",
     monthlyId: true,
+    paginateByMonth: true,
     statuses: STATUS_BMET,
     fields: [
       // 1) Passenger Details & price
