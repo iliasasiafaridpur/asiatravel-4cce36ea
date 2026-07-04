@@ -1454,7 +1454,13 @@ export function PartyLedgerPage({
 
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
-    const printName = serialCode ? `${fullNm} (${serialCode})` : fullNm;
+    // সর্ট নাম (স্ক্রিন/রুট নাম) ফুল নামের সামনে ব্রাকেটে দেখানো হয়।
+    const shortNm = (displayName ?? "").trim();
+    const hasShort = shortNm && shortNm !== fullNm.trim();
+    const namePrefix = hasShort ? `(${shortNm}) ` : "";
+    const printName = serialCode
+      ? `${namePrefix}${fullNm} · ${serialCode}`
+      : `${namePrefix}${fullNm}`;
     const addr = (contact?.address ?? "").trim();
     const phonesStr = phoneList.map((p) => p.phone).join(", ");
     const printContact = [
@@ -1585,6 +1591,12 @@ export function PartyLedgerPage({
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .party-meta{color:#334155;font-size:11px;margin-bottom:4px}
+        /* হেডার: বাম পাশে নাম/পরিচিতি, ডান পাশে প্রিন্ট তারিখ ও সারাংশ (জায়গা বাঁচাতে পাশাপাশি) */
+        .head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:10px}
+        .head-left{flex:1 1 auto;min-width:0}
+        .head-right{flex:0 0 auto;text-align:right;max-width:48%}
+        .head-right .meta{color:#64748b;font-size:11px;margin-bottom:4px}
+        .head-right .sum{font-size:12px;font-weight:600;line-height:1.5}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
         .sum{font-size:13px;margin-bottom:12px;font-weight:600}
         table{width:100%;border-collapse:collapse;font-size:12px}
@@ -1602,11 +1614,17 @@ export function PartyLedgerPage({
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
-      <h1>${esc(printName)}</h1>
-      <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
-      ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
-      <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
-      <div class="sum">${esc(summaryLine)}</div>
+      <div class="head">
+        <div class="head-left">
+          <h1>${esc(printName)}</h1>
+          <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
+          ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
+        </div>
+        <div class="head-right">
+          <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
+          <div class="sum">${esc(summaryLine)}</div>
+        </div>
+      </div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
       <div class="foot"><span>${esc(curLabel)}</span><span>৳${num(curAmt)}</span></div>
       </body></html>`;
