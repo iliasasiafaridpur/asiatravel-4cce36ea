@@ -1169,11 +1169,9 @@ export function PartyLedgerPage({
       if (amount <= 0.0001) continue;
       const methods = Array.from(new Set(items.map((i) => i.method).filter(Boolean)));
       const earliest = items.map((i) => i.createdAt).filter(Boolean).sort()[0] ?? "";
-      const description =
-        items.length > 1
-          ? `${items.length}টি প্রাপ্তি${methods.length ? ` · ${methods.join(", ")}` : ""}`
-          : [items[0].passenger, items[0].method, items[0].receiver].filter(Boolean).join(" · ") ||
-            "পেমেন্ট গ্রহণ";
+      // "মোট বিলের হিসাব" (total) ledger: the payment-receive row shows ONLY
+      // "পেমেন্ট গ্রহণ" + the method(s) — no passenger / receiver detail.
+      const description = `পেমেন্ট গ্রহণ${methods.length ? ` · ${methods.join(", ")}` : ""}`;
       const ledgerId = items.length > 1 ? `${items.length}টি রসিদ` : items[0].receiptId;
       prepped.push({
         id: `receipt-day-${date}`,
