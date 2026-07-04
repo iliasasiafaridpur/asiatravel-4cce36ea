@@ -2212,7 +2212,7 @@ export function ModulePage({ module: mod }: Props) {
                           {listCols.map((c) => {
                             if (c.kind === "computed") {
                               const v = c.comp.compute(r);
-                              const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                              const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key] && !agencyIsTotalSettle(r.agency_sold);
                               return (
                                 <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
                                   {isServiceDue ? (
@@ -2225,7 +2225,10 @@ export function ModulePage({ module: mod }: Props) {
                                       {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                                     </button>
                                   ) : (
-                                    <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                                    <span
+                                      className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}
+                                      title={c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key] && agencyIsTotalSettle(r.agency_sold) ? "মোটের উপর হিসাব — টাকা এজেন্সি লেজারে মোট হিসাবে গ্রহণ করুন" : undefined}
+                                    >{v.toLocaleString()}</span>
                                   )}
                                 </TableCell>
                               );
