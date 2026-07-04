@@ -2090,7 +2090,9 @@ export function ModulePage({ module: mod }: Props) {
 
       <Card>
         <CardContent className="p-3 sm:p-4">
+          {monthPager && <div className="mb-3">{monthPager}</div>}
           <div className="overflow-x-auto rounded-md border">
+
             <Table>
               <TableHeader>
                 <TableRow>
