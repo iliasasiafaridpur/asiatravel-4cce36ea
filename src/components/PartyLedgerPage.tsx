@@ -211,7 +211,7 @@ export function PartyLedgerPage({
   const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
-  const [addrSize, setAddrSize] = useState<"quarter" | "a6" | "a5" | "a4">("quarter");
+  const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
@@ -1654,7 +1654,9 @@ export function PartyLedgerPage({
   };
 
   // Print a small address label (full name, mobile, address) for envelope / courier.
-  const runAddressLabel = (size: "quarter" | "a6" | "a5" | "a4") => {
+  // The printer tray always holds A4 (@page size:A4); the label content is sized to
+  // the selected paper size (A4/A5/A6/A7) and prints in that much of the A4 sheet.
+  const runAddressLabel = (size: "a4" | "a5" | "a6" | "a7") => {
     const esc = (s: string) =>
       String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const fullName = (contact?.full_name ?? "").trim() || displayName;
@@ -1664,15 +1666,15 @@ export function PartyLedgerPage({
       .filter(Boolean);
     const addr = (contact?.address ?? "").trim();
 
-    // Page geometry. "quarter" = one-fourth of an A4 (A4 = 210×297mm → 148×105mm landscape-ish quarter).
-    const pageCss =
-      size === "quarter"
-        ? "@page{size:148mm 105mm;margin:0}"
-        : size === "a6"
-        ? "@page{size:A6;margin:0}"
-        : size === "a5"
-        ? "@page{size:A5;margin:0}"
-        : "@page{size:A4;margin:0}";
+    // International portrait dimensions in mm (width × height).
+    const DIMS: Record<typeof size, { w: number; h: number }> = {
+      a4: { w: 210, h: 297 },
+      a5: { w: 148, h: 210 },
+      a6: { w: 105, h: 148 },
+      a7: { w: 74, h: 105 },
+    };
+    const dim = DIMS[size];
+    const padMm = Math.max(6, Math.round(dim.w * 0.06));
 
     const phoneHtml = phones.length
       ? `<div class="row"><span class="lbl">মোবাইল:</span> <span class="val">${phones.map(esc).join(", ")}</span></div>`
@@ -1684,10 +1686,10 @@ export function PartyLedgerPage({
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(fullName)} — ঠিকানা</title>
       <style>
         *{box-sizing:border-box}
-        ${pageCss}
+        @page{size:A4;margin:0}
         html,body{margin:0;padding:0}
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a}
-        .label{width:100%;height:100vh;padding:10mm 12mm;display:flex;flex-direction:column;justify-content:center;position:relative}
+        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         .inner{position:relative;z-index:1}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
@@ -1705,6 +1707,7 @@ export function PartyLedgerPage({
         ${phoneHtml}
       </div></div>
       </body></html>`;
+
 
     const docTitle = buildFileTitle(
       isCustomer ? "Agency_Address" : "Vendor_Address",
@@ -1965,15 +1968,6 @@ export function PartyLedgerPage({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-1">
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="font-semibold">{(contact?.full_name ?? "").trim() || displayName}</div>
-              {(contact?.address ?? "").trim() && (
-                <div className="mt-1 text-muted-foreground">ঠিকানা: {contact?.address}</div>
-              )}
-              {(contact?.phone ?? "").trim() && (
-                <div className="mt-0.5 text-muted-foreground">মোবাইল: {contact?.phone}</div>
-              )}
-            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">পেইজ সাইজ</label>
               <Select value={addrSize} onValueChange={(v) => setAddrSize(v as typeof addrSize)}>
@@ -1981,13 +1975,63 @@ export function PartyLedgerPage({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="quarter">A4-এর ৪ ভাগের ১ ভাগ (148×105mm) — ডিফল্ট</SelectItem>
-                  <SelectItem value="a6">A6 (105×148mm)</SelectItem>
-                  <SelectItem value="a5">A5 (148×210mm)</SelectItem>
-                  <SelectItem value="a4">A4 (210×297mm)</SelectItem>
+                  <SelectItem value="a4">A4 (২১.০ × ২৯.৭ সেমি) — পুরো পাতা</SelectItem>
+                  <SelectItem value="a5">A5 (১৪.৮ × ২১.০ সেমি) — অর্ধেক</SelectItem>
+                  <SelectItem value="a6">A6 (১০.৫ × ১৪.৮ সেমি) — চার ভাগের এক</SelectItem>
+                  <SelectItem value="a7">A7 (৭.৪ × ১০.৫ সেমি)</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground">
+                ট্রে-তে A4 কাগজ থাকবে; লেখা {addrSize.toUpperCase()} সাইজের জায়গা জুড়ে প্রিন্ট হবে।
+              </p>
             </div>
+
+            {/* Live preview with dotted border showing the selected size */}
+            {(() => {
+              const DIMS = {
+                a4: { w: 210, h: 297 },
+                a5: { w: 148, h: 210 },
+                a6: { w: 105, h: 148 },
+                a7: { w: 74, h: 105 },
+              } as const;
+              const dim = DIMS[addrSize];
+              const MM_TO_PX = 96 / 25.4;
+              const wPx = dim.w * MM_TO_PX;
+              const scale = Math.min(1, 260 / wPx);
+              return (
+                <div className="flex justify-center rounded-lg bg-muted/40 p-4">
+                  <div style={{ width: `${wPx * scale}px`, height: `${dim.h * MM_TO_PX * scale}px` }}>
+                    <div
+                      style={{
+                        width: `${wPx}px`,
+                        height: `${dim.h * MM_TO_PX}px`,
+                        transform: `scale(${scale})`,
+                        transformOrigin: "top left",
+                      }}
+                    >
+                      <div className="flex h-full w-full flex-col justify-center rounded-sm border-2 border-dashed border-primary/60 bg-background p-4">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
+                        <div className="mt-1 text-base font-bold leading-tight">
+                          {(contact?.full_name ?? "").trim() || displayName}
+                        </div>
+                        {(contact?.address ?? "").trim() && (
+                          <div className="mt-1.5 text-xs leading-snug">
+                            <span className="text-muted-foreground">ঠিকানা: </span>
+                            {contact?.address}
+                          </div>
+                        )}
+                        {(contact?.phone ?? "").trim() && (
+                          <div className="mt-1 text-xs font-semibold">
+                            <span className="font-normal text-muted-foreground">মোবাইল: </span>
+                            {contact?.phone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setAddrOpen(false)}>
