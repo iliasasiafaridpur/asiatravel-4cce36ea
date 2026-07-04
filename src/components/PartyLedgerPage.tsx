@@ -2096,7 +2096,7 @@ export function PartyLedgerPage({
               const A4 = { w: 210, h: 297 };
               const MM_TO_PX = 96 / 25.4;
               const a4wPx = A4.w * MM_TO_PX;
-              const scale = Math.min(1, 240 / a4wPx);
+              const scale = Math.min(1, 170 / a4wPx);
               const showSender = addrShowSender && (senderName.trim() || senderAddr.trim() || senderPhone.trim());
               return (
                 <div className="flex justify-center rounded-lg bg-muted/40 p-4">
