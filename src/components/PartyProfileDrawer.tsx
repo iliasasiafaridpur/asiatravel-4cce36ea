@@ -62,6 +62,8 @@ export function PartyProfileDrawer({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<{ name: string; phones: string[]; address: string }>({ name: "", phones: [""], address: "" });
+  const [courierOpen, setCourierOpen] = useState(false);
+
 
 
   useEffect(() => {
