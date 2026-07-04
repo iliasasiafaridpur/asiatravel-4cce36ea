@@ -217,6 +217,7 @@ const TIMELINE_PRINT_TABLE_CSS = `
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:normal;word-break:normal;overflow-wrap:normal}
   td.span-fill{text-align:left;word-break:normal;overflow-wrap:break-word}
   td.num.in{text-align:right}
+  td.num.span-fill{text-align:left}
   td.prev,th.prev{text-align:right;white-space:normal;word-break:break-word;overflow-wrap:anywhere;font-size:9px;padding-left:1px;padding-right:2px}
   td.dt,th.dt{white-space:normal;word-break:normal;overflow-wrap:anywhere;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
   td.dt + td,th.dt + th{padding-left:8px}
