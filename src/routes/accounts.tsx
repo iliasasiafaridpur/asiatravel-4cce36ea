@@ -175,7 +175,7 @@ function renderTimelinePrintTextCellsHtml(cells: { className: string; html: stri
     }
     let span = 1;
     if (cell.allowSpan !== false) {
-      while (i + span < cells.length && cells[i + span].allowSpan !== false && !printCellHasText(cells[i + span].html)) span += 1;
+      while (i + span < cells.length && !printCellHasText(cells[i + span].html)) span += 1;
     }
     out += `<td class="${cell.className}"${span > 1 ? ` colspan="${span}"` : ""}>${cell.html}</td>`;
     i += span - 1;
@@ -197,7 +197,7 @@ function TimelinePrintTextCells({
     }
     let span = 1;
     if (cell.allowSpan !== false) {
-      while (i + span < cells.length && cells[i + span].allowSpan !== false && !printCellHasText(cells[i + span].plain)) span += 1;
+      while (i + span < cells.length && !printCellHasText(cells[i + span].plain)) span += 1;
     }
     out.push(<td key={i} className={cell.className} colSpan={span > 1 ? span : undefined}>{cell.content}</td>);
     i += span - 1;
