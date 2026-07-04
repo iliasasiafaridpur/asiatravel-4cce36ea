@@ -1397,13 +1397,11 @@ export function PartyLedgerPage({
         cancelDate: info?.cancelDate ?? null,
       });
     }
-    // Unpaid first, then partial, then paid; oldest outstanding on top so the
-    // most overdue bill is the first thing seen.
-    const rank = { due: 0, partial: 1, paid: 2 } as const;
+    // নতুন বিল উপরে, পুরনো নিচে — তারিখ অনুযায়ী উল্টো ক্রম (একই তারিখ হলে ID দিয়ে)।
     out.sort((a, b) => {
-      if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
-      if (a.status === "paid") return (b.payDate || b.date).localeCompare(a.payDate || a.date);
-      return (a.date || "9999").localeCompare(b.date || "9999"); // oldest due first
+      const d = (b.date || "").localeCompare(a.date || "");
+      if (d !== 0) return d;
+      return (b.ledgerId || "").localeCompare(a.ledgerId || "");
     });
     return out;
   }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap]);
