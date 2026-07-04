@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, Save, Ban, Eye, UserRound, Users, Building2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { TicketRefundDialog } from "@/components/TicketRefundDialog";
@@ -92,6 +92,20 @@ interface Props {
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const BN_MONTHS = [
+  "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+  "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+];
+// "YYYY-MM" → "জুলাই ২০২৬"
+const formatMonthLabel = (key: string) => {
+  const [y, m] = key.split("-");
+  const idx = Number(m) - 1;
+  const name = idx >= 0 && idx < 12 ? BN_MONTHS[idx] : m;
+  return `${name} ${y}`;
+};
+
+
 
 function partySerialLabel(kind: "agent" | "vendor", serial: unknown, code?: unknown): string {
   const prefix = partyCodePrefix(kind);
@@ -181,6 +195,8 @@ export function ModulePage({ module: mod }: Props) {
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  // মাস-ভিত্তিক পেজিনেশন (শুধু Air Ticket / BMET): 0 = সর্বশেষ মাস
+  const [monthIndex, setMonthIndex] = useState(0);
   // BMET: তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার — কোন তারিখে কোন স্টাটাসে গিয়েছে তা দেখায়
   const [statusChangeDate, setStatusChangeDate] = useState<string>("");
   const [statusChangeStatus, setStatusChangeStatus] = useState<string>("");
@@ -525,6 +541,61 @@ export function ModulePage({ module: mod }: Props) {
     }
     return xs;
   }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, mod.key, canCancel, showCancelled]);
+
+  // মাস-ভিত্তিক পেজিং: filtered রো থেকে distinct মাস (YYYY-MM) বের করে সর্বশেষ আগে সাজাই।
+  const monthKeys = useMemo(() => {
+    if (!mod.paginateByMonth) return [] as string[];
+    const set = new Set<string>();
+    for (const r of filtered) {
+      const k = String(r.entry_date ?? "").slice(0, 7);
+      if (k) set.add(k);
+    }
+    return Array.from(set).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+  }, [filtered, mod.paginateByMonth]);
+
+  // ফিল্টার বদলালে বা মাস তালিকা বদলালে সূচক সীমার মধ্যে রাখি (সর্বশেষ মাসে ফিরি)।
+  useEffect(() => {
+    if (mod.paginateByMonth && monthIndex > Math.max(0, monthKeys.length - 1)) {
+      setMonthIndex(0);
+    }
+  }, [monthKeys.length, monthIndex, mod.paginateByMonth]);
+
+  const curMonthKey = mod.paginateByMonth ? monthKeys[monthIndex] : undefined;
+  const pageRows = useMemo(() => {
+    if (!mod.paginateByMonth || !curMonthKey) return filtered;
+    return filtered.filter((r) => String(r.entry_date ?? "").slice(0, 7) === curMonthKey);
+  }, [filtered, mod.paginateByMonth, curMonthKey]);
+
+  const monthPager = mod.paginateByMonth && monthKeys.length > 0 ? (
+    <div className="flex items-center justify-center gap-2 flex-wrap">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8"
+        disabled={monthIndex >= monthKeys.length - 1}
+        onClick={() => setMonthIndex((i) => Math.min(monthKeys.length - 1, i + 1))}
+      >
+        <ChevronLeft className="h-4 w-4" /> পুরোনো
+      </Button>
+      <span className="text-sm font-medium px-2 whitespace-nowrap">
+        {formatMonthLabel(curMonthKey!)}
+        <span className="text-muted-foreground font-normal"> ({monthIndex + 1}/{monthKeys.length})</span>
+      </span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8"
+        disabled={monthIndex <= 0}
+        onClick={() => setMonthIndex((i) => Math.max(0, i - 1))}
+      >
+        নতুন <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  ) : null;
+
+
 
 
   const summary = useMemo(() => {
@@ -2019,7 +2090,9 @@ export function ModulePage({ module: mod }: Props) {
 
       <Card>
         <CardContent className="p-3 sm:p-4">
+          {monthPager && <div className="mb-3">{monthPager}</div>}
           <div className="overflow-x-auto rounded-md border">
+
             <Table>
               <TableHeader>
                 <TableRow>
@@ -2057,8 +2130,8 @@ export function ModulePage({ module: mod }: Props) {
                       </TableCell>
                     </TableRow>
                   );
-                  if (filtered.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
-                  return filtered.map((r, idx) => (
+                  if (pageRows.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
+                  return pageRows.map((r, idx) => (
                     <TableRow
                       key={r.id}
                       id={`row-${r.id}`}
@@ -2148,7 +2221,9 @@ export function ModulePage({ module: mod }: Props) {
               </TableBody>
             </Table>
           </div>
+          {monthPager && <div className="mt-3">{monthPager}</div>}
         </CardContent>
+
       </Card>
 
 

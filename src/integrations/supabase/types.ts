@@ -1541,6 +1541,15 @@ export type Database = {
         Args: { _column: string; _prefix: string; _table: string }
         Returns: string
       }
+      next_yearly_id: {
+        Args: {
+          _column: string
+          _entry_date?: string
+          _prefix: string
+          _table: string
+        }
+        Returns: string
+      }
       recalc_account_balance: {
         Args: { _account_id: string }
         Returns: undefined

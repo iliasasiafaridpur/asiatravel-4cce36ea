@@ -44,6 +44,10 @@ export interface ModuleSchema {
   idColumn: string;
   idPrefix: string;
   monthlyId?: boolean;
+  /** Generate yearly serial IDs like SAV-26-001 instead of monthly. */
+  yearlyId?: boolean;
+  /** Show list one calendar month at a time (latest first) with prev/next paging. */
+  paginateByMonth?: boolean;
   statuses?: string[];
   fields: Field[];
   /** Optional explicit ordering for list columns. Mix field names and computed names. */
@@ -79,6 +83,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "ticket_id",
     idPrefix: "TKT",
     monthlyId: true,
+    paginateByMonth: true,
     statuses: STATUS_TICKET,
     fields: [
       // 1) Passenger Details & price
@@ -236,6 +241,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "bmet_id",
     idPrefix: "BMET",
     monthlyId: true,
+    paginateByMonth: true,
     statuses: STATUS_BMET,
     fields: [
       // 1) Passenger Details & price
@@ -419,7 +425,7 @@ export const MODULES: ModuleSchema[] = [
     table: "saudi_visas",
     idColumn: "saudi_id",
     idPrefix: "SAV",
-    monthlyId: true,
+    yearlyId: true,
     statuses: STATUS_VISA,
     fields: [
       // 1) Passenger
@@ -570,7 +576,7 @@ export const MODULES: ModuleSchema[] = [
     table: "kuwait_visas",
     idColumn: "kuwait_id",
     idPrefix: "KUV",
-    monthlyId: true,
+    yearlyId: true,
     statuses: STATUS_VISA,
     fields: [
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
