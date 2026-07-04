@@ -1019,12 +1019,15 @@ ${partySectionsHtml()}
     if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
+    const textCellsHtml = renderTimelinePrintTextCellsHtml([
+      { className: "wrap", html: name ?? "" },
+      { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
+      { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
+    ]);
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
       `<td>${seq ?? i + 1}</td>` +
       `<td class="dt">${formatDate(it.date)}</td>` +
-      `<td class="wrap">${name ?? ""}</td>` +
-      `<td class="wrap">${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>` +
-      `<td class="wrap">${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}</td>` +
+      textCellsHtml +
       `<td class="num">${totalBill !== null ? fmt(totalBill) : ""}</td>` +
       `<td class="num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}">${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}</td>` +
       `<td class="num due">${due !== null && due > 0.005 ? fmt(due) : ""}</td>` +
@@ -1977,13 +1980,19 @@ ${partySectionsHtml()}
                   // বাকি = মোট বিল − নগদ জমা − Discount
                   const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
+                  const serviceText = `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}`;
+                  const regionText = `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}`;
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
                       <td className="dt">{formatDate(it.date)}</td>
-                      <td className="wrap">{name}</td>
-                      <td className="wrap">{service}{isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}</td>
-                      <td className="wrap">{region}{mdRecv ? " · MD রিসিভ" : ""}{vendorRecv ? " · Vendor Rece" : ""}</td>
+                      <TimelinePrintTextCells
+                        cells={[
+                          { className: "wrap", content: name, plain: name ?? "" },
+                          { className: "wrap", content: serviceText, plain: serviceText },
+                          { className: "wrap", content: regionText, plain: regionText },
+                        ]}
+                      />
                       <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
                       <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
                       <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
