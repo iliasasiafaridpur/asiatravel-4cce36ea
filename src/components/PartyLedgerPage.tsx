@@ -502,7 +502,7 @@ export function PartyLedgerPage({
         const serviceRowId = String(raw.service_row_id ?? "");
         const source = String(raw.source ?? "").trim().toLowerCase();
         const ledgerTargets = serviceTable === "agency_ledger"
-          ? (source === "agency_ledger" || source === "agency_ledger_payment" ? [serviceRowId] : [])
+          ? [serviceRowId]
           : (sourceToLedgerIds.get(`${serviceTable}:${serviceRowId}`) ?? []);
         for (const ledgerRowId of ledgerTargets) {
           const key = `${raw.id}:${ledgerRowId}`;
