@@ -1586,6 +1586,7 @@ export function PartyLedgerPage({
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;padding:24px;color:#0f172a;position:relative}
         body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         h1{font-size:18px;margin:0 0 2px}
+        .short-name{color:#475569;font-size:13px;font-weight:600;margin:0 0 3px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
         .party-meta{color:#334155;font-size:11px;margin-bottom:4px}
         /* হেডার: বাম পাশে নাম/পরিচিতি, ডান পাশে প্রিন্ট তারিখ ও সারাংশ (জায়গা বাঁচাতে পাশাপাশি) */
