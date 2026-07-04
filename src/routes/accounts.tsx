@@ -186,7 +186,9 @@ function renderTimelinePrintTextCellsHtml(cells: { className: string; html: stri
 function renderTimelinePrintDataCellsHtml(cells: { className: string; html: string; allowSpan?: boolean }[]) {
   return renderTimelinePrintTextCellsHtml(cells.map((cell, index) => ({
     ...cell,
-    allowSpan: index <= 2 ? cell.allowSpan : false,
+    // যে কলামের ডান পাশে ফাঁকা জায়গা আছে, সেই জায়গা নিয়ে একই লাইনে লিখবে।
+    // কিন্তু পরের কলামে লেখা থাকলে span হবে না, তখন নিজের কলামেই wrap করবে।
+    allowSpan: index === cells.length - 1 ? false : cell.allowSpan,
   })));
 }
 
@@ -221,7 +223,7 @@ function TimelinePrintDataCells({
     <TimelinePrintTextCells
       cells={cells.map((cell, index) => ({
         ...cell,
-        allowSpan: index <= 2 ? cell.allowSpan : false,
+        allowSpan: index === cells.length - 1 ? false : cell.allowSpan,
       }))}
     />
   );
