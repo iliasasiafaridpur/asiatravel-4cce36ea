@@ -494,7 +494,7 @@ export function PartyLedgerPage({
 
     const results = await Promise.all(queries);
     const seen = new Set<string>();
-    const next: LedgerReceipt[] = [];
+    const rawReceipts: LedgerReceipt[] = [];
     for (const res of results) {
       for (const raw of (res.data as Record<string, unknown>[] | null) ?? []) {
         if (!isCountableReceipt(raw)) continue;
@@ -508,7 +508,7 @@ export function PartyLedgerPage({
           const key = `${raw.id}:${ledgerRowId}`;
           if (seen.has(key)) continue;
           seen.add(key);
-          next.push({
+          rawReceipts.push({
             id: String(raw.id ?? ""),
             receipt_id: raw.receipt_id ? String(raw.receipt_id) : null,
             entry_date: raw.entry_date ? String(raw.entry_date) : null,
@@ -526,6 +526,33 @@ export function PartyLedgerPage({
             ledgerRowId,
           });
         }
+      }
+    }
+
+    // Normalize receipts per ledger row so a direct source receipt and its
+    // agency-ledger mirror can never be shown twice. Prefer real source
+    // receipts; use agency mirror receipts only for the uncovered cash amount.
+    const ledgerById = new Map(ledgerRows.map((r) => [String(r.id), r]));
+    const grouped = new Map<string, LedgerReceipt[]>();
+    for (const rec of rawReceipts) {
+      grouped.set(rec.ledgerRowId, [...(grouped.get(rec.ledgerRowId) ?? []), rec]);
+    }
+    const next: LedgerReceipt[] = [];
+    const byDate = (a: LedgerReceipt, b: LedgerReceipt) =>
+      `${a.entry_date ?? ""}|${a.created_at ?? ""}`.localeCompare(`${b.entry_date ?? ""}|${b.created_at ?? ""}`);
+    for (const [ledgerRowId, list] of grouped.entries()) {
+      const ledgerRow = ledgerById.get(ledgerRowId);
+      const cashCap = Math.max(0, Number(ledgerRow?.[paidCol] ?? 0));
+      if (cashCap <= 0) continue;
+      let remaining = cashCap;
+      const direct = list.filter((r) => String(r.service_table ?? "") !== "agency_ledger").sort(byDate);
+      const mirrors = list.filter((r) => String(r.service_table ?? "") === "agency_ledger").sort(byDate);
+      for (const rec of [...direct, ...mirrors]) {
+        if (remaining <= 0.0001) break;
+        const amt = Math.min(Number(rec.amount ?? 0), remaining);
+        if (amt <= 0) continue;
+        next.push({ ...rec, amount: amt });
+        remaining -= amt;
       }
     }
     next.sort((a, b) => `${a.entry_date ?? ""}|${a.created_at ?? ""}`.localeCompare(`${b.entry_date ?? ""}|${b.created_at ?? ""}`));
@@ -1060,7 +1087,7 @@ export function PartyLedgerPage({
       const discount = Number(r.discount_amount ?? 0);
       const ledgerRowId = String(r.id);
       const receiptTotal = receiptSumByLedger.get(ledgerRowId) ?? 0;
-      const unreceiptedCash = advRow ? cash : Math.max(0, cash - receiptTotal);
+      const unreceiptedCash = advRow ? 0 : Math.max(0, cash - receiptTotal);
 
       // কাজ এখনো সম্পন্ন হয়নি? BMET/Saudi/Kuwait এন্ট্রি যা ভেন্ডর থেকে এখনো
       // received হয়নি (received_date নেই) সেগুলো অসম্পূর্ণ — ধূসর দেখানো হবে।
@@ -1075,7 +1102,7 @@ export function PartyLedgerPage({
         date: String(r.entry_date ?? ""),
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
-        deposit: advRow ? cash : unreceiptedCash + applied + discount,
+        deposit: advRow ? cash : applied + discount,
         credit: advRow ? 0 : bill,
         advance: 0,
         isPayment: advRow,
@@ -1084,7 +1111,7 @@ export function PartyLedgerPage({
         cancelReason: cInfo?.cancelReason ?? null,
         cancelDate: cInfo?.cancelDate ?? null,
         sortKey: `${String(r.entry_date ?? "") || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
-        deltaBalance: advRow ? 0 : bill - unreceiptedCash - applied - discount,
+        deltaBalance: advRow ? 0 : bill - applied - discount,
         advanceDelta: advRow ? cash : -applied,
       });
 
@@ -1107,6 +1134,28 @@ export function PartyLedgerPage({
             isPayment: true,
             sortKey: `${String(rec.entry_date ?? "") || "0000-00-00"}|${String(rec.created_at ?? "")}|1`,
             deltaBalance: -Number(rec.amount ?? 0),
+            advanceDelta: 0,
+          });
+        }
+        if (unreceiptedCash > 0.0001) {
+          const method = String(r.payment_method ?? "Cash").trim() || "Cash";
+          const receiver = String((r as Record<string, unknown>).received_by_name ?? "").trim();
+          const details = [String(r.passenger_name ?? "").trim(), method, receiver]
+            .filter(Boolean)
+            .join(" · ");
+          const payDate = String(r.payment_date ?? r.entry_date ?? "");
+          prepped.push({
+            id: `receipt-unrecorded-${ledgerRowId}`,
+            ledgerId: String(r.ledger_id ?? ""),
+            date: payDate,
+            service: "Payment Receive",
+            description: details || "পেমেন্ট গ্রহণ",
+            deposit: unreceiptedCash,
+            credit: 0,
+            advance: 0,
+            isPayment: true,
+            sortKey: `${payDate || "0000-00-00"}|${String(r.updated_at ?? r.created_at ?? "")}|1`,
+            deltaBalance: -unreceiptedCash,
             advanceDelta: 0,
           });
         }
