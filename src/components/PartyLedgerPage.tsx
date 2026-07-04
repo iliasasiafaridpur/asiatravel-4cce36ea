@@ -1968,15 +1968,6 @@ export function PartyLedgerPage({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-1">
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="font-semibold">{(contact?.full_name ?? "").trim() || displayName}</div>
-              {(contact?.address ?? "").trim() && (
-                <div className="mt-1 text-muted-foreground">ঠিকানা: {contact?.address}</div>
-              )}
-              {(contact?.phone ?? "").trim() && (
-                <div className="mt-0.5 text-muted-foreground">মোবাইল: {contact?.phone}</div>
-              )}
-            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">পেইজ সাইজ</label>
               <Select value={addrSize} onValueChange={(v) => setAddrSize(v as typeof addrSize)}>
@@ -1984,13 +1975,63 @@ export function PartyLedgerPage({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="quarter">A4-এর ৪ ভাগের ১ ভাগ (148×105mm) — ডিফল্ট</SelectItem>
-                  <SelectItem value="a6">A6 (105×148mm)</SelectItem>
-                  <SelectItem value="a5">A5 (148×210mm)</SelectItem>
-                  <SelectItem value="a4">A4 (210×297mm)</SelectItem>
+                  <SelectItem value="a4">A4 (২১.০ × ২৯.৭ সেমি) — পুরো পাতা</SelectItem>
+                  <SelectItem value="a5">A5 (১৪.৮ × ২১.০ সেমি) — অর্ধেক</SelectItem>
+                  <SelectItem value="a6">A6 (১০.৫ × ১৪.৮ সেমি) — চার ভাগের এক</SelectItem>
+                  <SelectItem value="a7">A7 (৭.৪ × ১০.৫ সেমি)</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground">
+                ট্রে-তে A4 কাগজ থাকবে; লেখা {addrSize.toUpperCase()} সাইজের জায়গা জুড়ে প্রিন্ট হবে।
+              </p>
             </div>
+
+            {/* Live preview with dotted border showing the selected size */}
+            {(() => {
+              const DIMS = {
+                a4: { w: 210, h: 297 },
+                a5: { w: 148, h: 210 },
+                a6: { w: 105, h: 148 },
+                a7: { w: 74, h: 105 },
+              } as const;
+              const dim = DIMS[addrSize];
+              const MM_TO_PX = 96 / 25.4;
+              const wPx = dim.w * MM_TO_PX;
+              const scale = Math.min(1, 260 / wPx);
+              return (
+                <div className="flex justify-center rounded-lg bg-muted/40 p-4">
+                  <div style={{ width: `${wPx * scale}px`, height: `${dim.h * MM_TO_PX * scale}px` }}>
+                    <div
+                      style={{
+                        width: `${wPx}px`,
+                        height: `${dim.h * MM_TO_PX}px`,
+                        transform: `scale(${scale})`,
+                        transformOrigin: "top left",
+                      }}
+                    >
+                      <div className="flex h-full w-full flex-col justify-center rounded-sm border-2 border-dashed border-primary/60 bg-background p-4">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
+                        <div className="mt-1 text-base font-bold leading-tight">
+                          {(contact?.full_name ?? "").trim() || displayName}
+                        </div>
+                        {(contact?.address ?? "").trim() && (
+                          <div className="mt-1.5 text-xs leading-snug">
+                            <span className="text-muted-foreground">ঠিকানা: </span>
+                            {contact?.address}
+                          </div>
+                        )}
+                        {(contact?.phone ?? "").trim() && (
+                          <div className="mt-1 text-xs font-semibold">
+                            <span className="font-normal text-muted-foreground">মোবাইল: </span>
+                            {contact?.phone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setAddrOpen(false)}>
