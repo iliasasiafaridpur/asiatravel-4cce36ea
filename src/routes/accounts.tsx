@@ -1028,12 +1028,12 @@ ${partySectionsHtml()}
       { className: "wrap", html: name ?? "" },
       { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
-      { className: "num", html: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
-      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
-      { className: "num due", html: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
-      { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join(""), allowSpan: false },
-      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
-      { className: "num", html: fmt(running), allowSpan: false },
+      { className: "num", html: totalBill !== null ? fmt(totalBill) : "" },
+      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+      { className: "num due", html: due !== null && due > 0.005 ? fmt(due) : "" },
+      { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join("") },
+      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "" },
+      { className: "num", html: fmt(running) },
     ]);
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
       `<td>${seq ?? i + 1}</td>` +
@@ -1996,12 +1996,12 @@ ${partySectionsHtml()}
                           { className: "wrap", content: name, plain: name ?? "" },
                           { className: "wrap", content: serviceText, plain: serviceText },
                           { className: "wrap", content: regionText, plain: regionText },
-                          { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
-                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
-                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
-                          { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" "), allowSpan: false },
-                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
-                          { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
+                          { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "" },
+                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "" },
+                          { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" ") },
+                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "" },
+                          { className: "num", content: fmt(running), plain: fmt(running) },
                         ]}
                       />
                     </tr>
