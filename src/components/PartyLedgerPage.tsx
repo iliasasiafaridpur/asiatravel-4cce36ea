@@ -2862,7 +2862,7 @@ export function PartyLedgerPage({
                   </TableRow>
                 ) : filteredStatement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
