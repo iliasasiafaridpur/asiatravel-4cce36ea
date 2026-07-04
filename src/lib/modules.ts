@@ -83,6 +83,7 @@ export const MODULES: ModuleSchema[] = [
     idColumn: "ticket_id",
     idPrefix: "TKT",
     monthlyId: true,
+    paginateByMonth: true,
     statuses: STATUS_TICKET,
     fields: [
       // 1) Passenger Details & price
