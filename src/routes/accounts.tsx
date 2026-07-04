@@ -183,6 +183,13 @@ function renderTimelinePrintTextCellsHtml(cells: { className: string; html: stri
   return out;
 }
 
+function renderTimelinePrintDataCellsHtml(cells: { className: string; html: string; allowSpan?: boolean }[]) {
+  return renderTimelinePrintTextCellsHtml(cells.map((cell, index) => ({
+    ...cell,
+    allowSpan: index <= 2 ? cell.allowSpan : false,
+  })));
+}
+
 function TimelinePrintTextCells({
   cells,
 }: {
@@ -203,6 +210,21 @@ function TimelinePrintTextCells({
     i += span - 1;
   }
   return <>{out}</>;
+}
+
+function TimelinePrintDataCells({
+  cells,
+}: {
+  cells: { className: string; content: React.ReactNode; plain: string; allowSpan?: boolean }[];
+}) {
+  return (
+    <TimelinePrintTextCells
+      cells={cells.map((cell, index) => ({
+        ...cell,
+        allowSpan: index <= 2 ? cell.allowSpan : false,
+      }))}
+    />
+  );
 }
 
 const TIMELINE_PRINT_TABLE_CSS = `
@@ -1026,7 +1048,7 @@ ${partySectionsHtml()}
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
     const incomeText = isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : "";
-    const textCellsHtml = renderTimelinePrintTextCellsHtml([
+    const textCellsHtml = renderTimelinePrintDataCellsHtml([
       { className: "wrap", html: name ?? "" },
       { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
@@ -1993,7 +2015,7 @@ ${partySectionsHtml()}
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
                       <td className="dt">{formatDate(it.date)}</td>
-                      <TimelinePrintTextCells
+                      <TimelinePrintDataCells
                         cells={[
                           { className: "wrap", content: name, plain: name ?? "" },
                           { className: "wrap", content: serviceText, plain: serviceText },
