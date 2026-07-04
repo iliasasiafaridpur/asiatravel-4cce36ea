@@ -1280,6 +1280,15 @@ export function PartyLedgerPage({
     cancelReason?: string | null;
     cancelDate?: string | null;
   };
+  const sortBillsDueFirstNewest = (items: BillItem[]) =>
+    [...items].sort((a, b) => {
+      const ar = a.status !== "paid" ? 0 : 1;
+      const br = b.status !== "paid" ? 0 : 1;
+      if (ar !== br) return ar - br;
+      const d = (b.date || "").localeCompare(a.date || "");
+      if (d !== 0) return d;
+      return (b.ledgerId || "").localeCompare(a.ledgerId || "");
+    });
   const bills = useMemo<BillItem[]>(() => {
     const moduleLabel: Record<string, string> = {
       bmet_cards: "BMET Card",
@@ -1397,13 +1406,8 @@ export function PartyLedgerPage({
         cancelDate: info?.cancelDate ?? null,
       });
     }
-    // নতুন বিল উপরে, পুরনো নিচে — তারিখ অনুযায়ী উল্টো ক্রম (একই তারিখ হলে ID দিয়ে)।
-    out.sort((a, b) => {
-      const d = (b.date || "").localeCompare(a.date || "");
-      if (d !== 0) return d;
-      return (b.ledgerId || "").localeCompare(a.ledgerId || "");
-    });
-    return out;
+    // বাকি/আংশিক বিল সব একসাথে উপরে; সেই গ্রুপের মধ্যে নতুন উপরে, পুরনো নিচে।
+    return sortBillsDueFirstNewest(out);
   }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap]);
 
   const billStats = useMemo(() => {
@@ -1518,10 +1522,8 @@ export function PartyLedgerPage({
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
-      // প্রিন্টে নতুন বিল উপরে, পুরনো নিচে — তারিখ অনুযায়ী উল্টো ক্রম।
-      const billsSorted = [...bills].sort((a, b) =>
-        (b.date || "").localeCompare(a.date || ""),
-      );
+      // প্রিন্টেও বাকি/আংশিক বিল আগে; তার মধ্যে নতুন উপরে, পুরনো নিচে।
+      const billsSorted = sortBillsDueFirstNewest(bills);
       bodyHtml = billsSorted.length
         ? billsSorted
             .map((b) => {
