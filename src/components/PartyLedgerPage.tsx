@@ -2895,7 +2895,7 @@ export function PartyLedgerPage({
                       <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-amber-600"}`}>
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className={`text-right tabular-nums font-semibold px-4 ${isCustomer ? "" : "pr-6"}`}>
+                      <TableCell className={`text-right tabular-nums font-semibold px-4 pr-6`}>
                         {isCustomer ? (
                           s.balance > 0 ? (
                             <div className="text-rose-600 leading-tight">
