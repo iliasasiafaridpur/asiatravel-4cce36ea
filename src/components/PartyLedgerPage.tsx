@@ -2019,6 +2019,69 @@ export function PartyLedgerPage({
               </p>
             </div>
 
+            {/* Orientation: উপর-নিচ (Portrait) নাকি ডান-বাম (Landscape) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">লেখার দিক (Orientation)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={addrOrient === "portrait" ? "default" : "outline"}
+                  onClick={() => setAddrOrient("portrait")}
+                >
+                  উপর-নিচ (Portrait)
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={addrOrient === "landscape" ? "default" : "outline"}
+                  onClick={() => setAddrOrient("landscape")}
+                >
+                  ডান-বাম (Landscape)
+                </Button>
+              </div>
+            </div>
+
+            {/* প্রেরক (From/Sender) — খামের মত প্রেরকের তথ্য */}
+            <div className="space-y-1.5 rounded-md border border-border/60 p-2.5">
+              <button
+                type="button"
+                onClick={() => setAddrShowSender((v) => !v)}
+                className="flex w-full items-center justify-between text-xs font-medium"
+              >
+                <span>প্রেরক (From) দেখান</span>
+                <span
+                  className={`flex h-4 w-4 items-center justify-center rounded border ${
+                    addrShowSender ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                  }`}
+                >
+                  {addrShowSender ? "✓" : ""}
+                </span>
+              </button>
+              {addrShowSender && (
+                <div className="space-y-1.5 pt-1">
+                  <Input
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="প্রেরকের নাম / প্রতিষ্ঠান"
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    value={senderAddr}
+                    onChange={(e) => setSenderAddr(e.target.value)}
+                    placeholder="প্রেরকের ঠিকানা (ঐচ্ছিক)"
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    value={senderPhone}
+                    onChange={(e) => setSenderPhone(e.target.value)}
+                    placeholder="প্রেরকের মোবাইল (ঐচ্ছিক)"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              )}
+            </div>
+
             {/* Live preview with dotted border showing the selected size */}
             {(() => {
               const DIMS = {
@@ -2027,11 +2090,14 @@ export function PartyLedgerPage({
                 a6: { w: 105, h: 148 },
                 a7: { w: 74, h: 105 },
               } as const;
-              const dim = DIMS[addrSize];
+              const base = DIMS[addrSize];
+              const dim =
+                addrOrient === "landscape" ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
               const A4 = { w: 210, h: 297 };
               const MM_TO_PX = 96 / 25.4;
               const a4wPx = A4.w * MM_TO_PX;
               const scale = Math.min(1, 240 / a4wPx);
+              const showSender = addrShowSender && (senderName.trim() || senderAddr.trim() || senderPhone.trim());
               return (
                 <div className="flex justify-center rounded-lg bg-muted/40 p-4">
                   <div style={{ width: `${a4wPx * scale}px`, height: `${A4.h * MM_TO_PX * scale}px` }}>
@@ -2047,31 +2113,48 @@ export function PartyLedgerPage({
                     >
                       {/* Label box pinned to the top-right corner */}
                       <div
-                        className="absolute right-0 top-0 flex flex-col justify-start rounded-sm border-2 border-dashed border-primary/60 bg-primary/5 p-4"
+                        className="absolute right-0 top-0 flex flex-col rounded-sm border-2 border-dashed border-primary/60 bg-primary/5 p-4"
                         style={{ width: `${dim.w * MM_TO_PX}px`, height: `${dim.h * MM_TO_PX}px` }}
                       >
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
-                        <div className="mt-1 text-base font-bold leading-tight">
-                          {(contact?.full_name ?? "").trim() || displayName}
+                        {showSender && (
+                          <div className="max-w-[60%] self-start">
+                            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
+                            {senderName.trim() && (
+                              <div className="text-[11px] font-bold leading-tight">{senderName}</div>
+                            )}
+                            {senderAddr.trim() && (
+                              <div className="text-[10px] leading-tight text-muted-foreground">{senderAddr}</div>
+                            )}
+                            {senderPhone.trim() && (
+                              <div className="text-[10px] leading-tight text-muted-foreground">{senderPhone}</div>
+                            )}
+                          </div>
+                        )}
+                        <div className="mt-auto max-w-[75%] self-end text-right">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
+                          <div className="mt-1 text-base font-bold leading-tight">
+                            {(contact?.full_name ?? "").trim() || displayName}
+                          </div>
+                          {(contact?.address ?? "").trim() && (
+                            <div className="mt-1.5 text-xs leading-snug">
+                              <span className="text-muted-foreground">ঠিকানা: </span>
+                              {contact?.address}
+                            </div>
+                          )}
+                          {(contact?.phone ?? "").trim() && (
+                            <div className="mt-1 text-xs font-semibold">
+                              <span className="font-normal text-muted-foreground">মোবাইল: </span>
+                              {contact?.phone}
+                            </div>
+                          )}
                         </div>
-                        {(contact?.address ?? "").trim() && (
-                          <div className="mt-1.5 text-xs leading-snug">
-                            <span className="text-muted-foreground">ঠিকানা: </span>
-                            {contact?.address}
-                          </div>
-                        )}
-                        {(contact?.phone ?? "").trim() && (
-                          <div className="mt-1 text-xs font-semibold">
-                            <span className="font-normal text-muted-foreground">মোবাইল: </span>
-                            {contact?.phone}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })()}
+
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setAddrOpen(false)}>
