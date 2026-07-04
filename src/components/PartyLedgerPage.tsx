@@ -1540,12 +1540,12 @@ export function PartyLedgerPage({
       summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>সার্ভিস</th><th>বিবরণ</th>
-        <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>${isCustomer ? '<th class="r">অগ্রিম</th>' : ""}
+        <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>
       </tr>`;
-      const colSpan = isCustomer ? 8 : 7;
+      const colSpan = 7;
       const openingRow =
         mode === "range"
-          ? `<tr class="opening"><td colspan="${isCustomer ? 6 : 5}">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td>${isCustomer ? "<td></td>" : ""}</tr>`
+          ? `<tr class="opening"><td colspan="5">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td></tr>`
           : "";
       bodyHtml =
         openingRow +
