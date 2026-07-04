@@ -212,6 +212,13 @@ export function PartyLedgerPage({
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
   const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
+  // Orientation: খামের লেখা উপর-নিচ (portrait) নাকি ডান-বাম (landscape)।
+  const [addrOrient, setAddrOrient] = useState<"portrait" | "landscape">("landscape");
+  // প্রেরক (From/Sender) — খামের মত প্রেরকের তথ্য দেখানোর অপশন।
+  const [addrShowSender, setAddrShowSender] = useState(true);
+  const [senderName, setSenderName] = useState("এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্");
+  const [senderAddr, setSenderAddr] = useState("");
+  const [senderPhone, setSenderPhone] = useState("");
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
