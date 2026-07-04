@@ -2221,7 +2221,9 @@ export function ModulePage({ module: mod }: Props) {
               </TableBody>
             </Table>
           </div>
+          {monthPager && <div className="mt-3">{monthPager}</div>}
         </CardContent>
+
       </Card>
 
 
