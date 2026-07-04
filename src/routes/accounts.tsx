@@ -1996,18 +1996,14 @@ ${partySectionsHtml()}
                           { className: "wrap", content: name, plain: name ?? "" },
                           { className: "wrap", content: serviceText, plain: serviceText },
                           { className: "wrap", content: regionText, plain: regionText },
+                          { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
+                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
+                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
+                          { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" "), allowSpan: false },
+                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
+                          { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
                         ]}
                       />
-                      <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
-                      <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td className="prev">
-                        {advLines.map((l, idx) => (
-                          <div key={idx}>{l.text}</div>
-                        ))}
-                      </td>
-                      <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
-                      <td className="num">{fmt(running)}</td>
                     </tr>
                   );
                 })}
