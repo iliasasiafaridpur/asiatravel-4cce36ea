@@ -286,6 +286,39 @@ export function ModulePage({ module: mod }: Props) {
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
   // user_id → display name (for rows whose receiver isn't on a receipt)
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
+  // এজেন্সির নাম (normalized) → হিসাব ধরন (settle_mode). "মোটের উপর" (total)
+  // এজেন্সির জন্য এই ডাটা পেইজে বিল-বাই-বিল "Due Receive" বাটন দেখানো হয় না —
+  // তাদের টাকা এজেন্সি লেজারে মোট হিসাবে (Auto FIFO) গ্রহণ করা হয়।
+  const [settleModeByAgency, setSettleModeByAgency] = useState<Record<string, string>>({});
+  const agencyIsTotalSettle = useCallback(
+    (agencyName: unknown): boolean => {
+      const n = String(agencyName ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+      if (!n || n === "self") return false;
+      // শুধুমাত্র সুস্পষ্টভাবে "মোটের উপর" সেট করা এজেন্সির ক্ষেত্রে লুকানো হয়;
+      // সেট না থাকা / এক-একটা-বিল এজেন্সিতে বাটন আগের মতোই থাকে।
+      return settleModeByAgency[n] === "total";
+    },
+    [settleModeByAgency],
+  );
+  // এজেন্সিভিত্তিক হিসাব ধরন লোড — শুধু সার্ভিস মডিউলে (যেখানে agency_sold আছে)।
+  useEffect(() => {
+    if (!mod.fields.some((f) => f.name === "agency_sold")) return;
+    let alive = true;
+    void supabase
+      .from("agents")
+      .select("name,settle_mode")
+      .limit(5000)
+      .then(({ data }) => {
+        if (!alive) return;
+        const modeMap: Record<string, string> = {};
+        for (const r of (data as { name?: string | null; settle_mode?: string | null }[] | null) ?? []) {
+          const key = String(r.name ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+          if (key && key !== "self") modeMap[key] = (r.settle_mode ?? "").trim() || "total";
+        }
+        setSettleModeByAgency(modeMap);
+      });
+    return () => { alive = false; };
+  }, [mod]);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -1090,7 +1123,7 @@ export function ModulePage({ module: mod }: Props) {
       const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
       const due = computeValue(row, dueColumn);
       const svc = DUE_SERVICE_KEY[mod.key];
-      if (due > 0 && svc) {
+      if (due > 0 && svc && !agencyIsTotalSettle(row.agency_sold)) {
         setDuePreselect({ serviceKey: svc, rowId: row.id });
         return;
       }
@@ -1141,7 +1174,7 @@ export function ModulePage({ module: mod }: Props) {
     } catch (e) {
       toast.error("Status আপডেট করা যায়নি: " + errMsg(e));
     }
-  }, [mod, computeValue, load, profile, user]);
+  }, [mod, computeValue, load, profile, user, agencyIsTotalSettle]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
     selectRow(row.id);
@@ -1385,7 +1418,8 @@ export function ModulePage({ module: mod }: Props) {
     };
     const dueBtn = (r: Row, due: number) => {
       const svc = DUE_SERVICE_KEY[mod.key];
-      if (due > 0 && svc) {
+      const totalSettle = agencyIsTotalSettle(r.agency_sold);
+      if (due > 0 && svc && !totalSettle) {
         return (
           <button
             type="button"
@@ -1397,7 +1431,14 @@ export function ModulePage({ module: mod }: Props) {
           </button>
         );
       }
-      return <span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span>;
+      return (
+        <span
+          className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}
+          title={due > 0 && totalSettle ? "মোটের উপর হিসাব — টাকা এজেন্সি লেজারে মোট হিসাবে গ্রহণ করুন" : undefined}
+        >
+          Due: {fmt(due)}
+        </span>
+      );
     };
     // Small badge next to Recv: ALWAYS the first 3 letters of the name of the
     // user who actually RECEIVED the payment (not the MD who later receives it
@@ -1656,7 +1697,7 @@ export function ModulePage({ module: mod }: Props) {
       default:
         return null;
     }
-  }, [mod, computeValue, handleStatusSelect, mobileColorForRow, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow]);
+  }, [mod, computeValue, handleStatusSelect, mobileColorForRow, extraCounts, extraDetails, recvInfo, profileNames, user, canCancel, selectRow, agencyIsTotalSettle]);
 
 
   // After any action overlay (edit / due / status / view) closes, restore the
@@ -2171,7 +2212,7 @@ export function ModulePage({ module: mod }: Props) {
                           {listCols.map((c) => {
                             if (c.kind === "computed") {
                               const v = c.comp.compute(r);
-                              const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key];
+                              const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key] && !agencyIsTotalSettle(r.agency_sold);
                               return (
                                 <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
                                   {isServiceDue ? (
@@ -2184,7 +2225,10 @@ export function ModulePage({ module: mod }: Props) {
                                       {v.toLocaleString()} <Wallet className="h-3.5 w-3.5" />
                                     </button>
                                   ) : (
-                                    <span className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}>{v.toLocaleString()}</span>
+                                    <span
+                                      className={v < 0 ? "text-rose-500" : v > 0 && c.comp.name === "balance" ? "text-rose-500 font-semibold" : v > 0 ? "text-emerald-600" : ""}
+                                      title={c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key] && agencyIsTotalSettle(r.agency_sold) ? "মোটের উপর হিসাব — টাকা এজেন্সি লেজারে মোট হিসাবে গ্রহণ করুন" : undefined}
+                                    >{v.toLocaleString()}</span>
                                   )}
                                 </TableCell>
                               );
