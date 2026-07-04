@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/modules";
-import { Phone, PhoneCall, MessageCircle, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus } from "lucide-react";
+import { Phone, PhoneCall, MessageCircle, MapPin, FileText, TrendingUp, TrendingDown, Pencil, Check, X, Plus, Package } from "lucide-react";
 import { toast } from "sonner";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { CourierEnvelopeDialog } from "@/components/CourierEnvelopeDialog";
 
 /** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
 function waNumber(raw: string): string {
