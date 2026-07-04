@@ -1454,6 +1454,18 @@ export function PartyLedgerPage({
       return `<div class="inst">কিস্তি: ${parts}</div>`;
     };
 
+    // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
+    const fullNm = (contact?.full_name ?? "").trim() || displayName;
+    const printName = serialCode ? `${fullNm} (${serialCode})` : fullNm;
+    const addr = (contact?.address ?? "").trim();
+    const phonesStr = phoneList.map((p) => p.phone).join(", ");
+    const printContact = [
+      addr ? `ঠিকানা: ${esc(addr)}` : "",
+      phonesStr ? `ফোন: ${esc(phonesStr)}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
     let subtitle = "";
     let summaryLine = "";
     let theadHtml = "";
