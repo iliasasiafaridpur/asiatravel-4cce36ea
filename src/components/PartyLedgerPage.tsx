@@ -1520,8 +1520,12 @@ export function PartyLedgerPage({
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
-      bodyHtml = bills.length
-        ? bills
+      // প্রিন্টে নতুন বিল উপরে, পুরনো নিচে — তারিখ অনুযায়ী উল্টো ক্রম।
+      const billsSorted = [...bills].sort((a, b) =>
+        (b.date || "").localeCompare(a.date || ""),
+      );
+      bodyHtml = billsSorted.length
+        ? billsSorted
             .map((b) => {
               const st = b.cancelled
                 ? "বাতিল কাজ"
@@ -1546,7 +1550,10 @@ export function PartyLedgerPage({
         : `<tr><td colspan="8" class="empty">কোনো বিল নেই</td></tr>`;
     } else if (mode === "due") {
       subtitle = "শুধু বাকি বিল সমূহ";
-      const dueBills = bills.filter((b) => b.status !== "paid");
+      // প্রিন্টে নতুন বাকি বিল উপরে, পুরনো নিচে।
+      const dueBills = bills
+        .filter((b) => b.status !== "paid")
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
