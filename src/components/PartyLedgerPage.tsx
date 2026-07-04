@@ -2131,46 +2131,46 @@ export function PartyLedgerPage({
                 <div className="flex flex-col items-center gap-2 rounded-lg bg-muted/40 p-4">
                   {/* The envelope */}
                   <div
-                    className="relative overflow-hidden rounded-md border border-border bg-background shadow-md"
+                    className="relative overflow-hidden rounded-md border border-border bg-background p-3 shadow-md"
                     style={{ width: `${wPx}px`, height: `${hPx}px` }}
                   >
-                    {/* Stamp box — top-right corner, like a real envelope */}
-                    <div className="absolute right-3 top-3 flex h-8 w-6 items-center justify-center rounded-[2px] border border-dashed border-muted-foreground/40 text-[6px] uppercase text-muted-foreground/50">
-                      Stamp
-                    </div>
-                    {/* Sender — top-left corner */}
-                    {showSender && (
-                      <div className="absolute left-3 top-3 w-[45%] max-w-[45%] break-words">
-                        <div className="text-[8px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
-                        {senderName.trim() && (
-                          <div className="text-[11px] font-bold leading-tight">{senderName}</div>
-                        )}
-                        {senderAddr.trim() && (
-                          <div className="text-[9px] leading-tight text-muted-foreground">{senderAddr}</div>
-                        )}
-                        {senderPhone.trim() && (
-                          <div className="text-[9px] leading-tight text-muted-foreground">{senderPhone}</div>
+                    <div className="flex h-full flex-row items-start justify-between gap-3">
+                      {/* Sender — left column */}
+                      <div className="w-1/2 max-w-[50%] break-words">
+                        {showSender && (
+                          <>
+                            <div className="text-[8px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
+                            {senderName.trim() && (
+                              <div className="text-[11px] font-bold leading-tight">{senderName}</div>
+                            )}
+                            {senderAddr.trim() && (
+                              <div className="text-[9px] leading-tight text-muted-foreground">{senderAddr}</div>
+                            )}
+                            {senderPhone.trim() && (
+                              <div className="text-[9px] leading-tight text-muted-foreground">{senderPhone}</div>
+                            )}
+                          </>
                         )}
                       </div>
-                    )}
-                    {/* Recipient — envelope style: middle area, shifted to the right */}
-                    <div className="absolute left-[38%] top-[52%] w-[54%] -translate-y-1/2 break-words text-left">
-                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
-                      <div className="mt-0.5 text-[15px] font-bold leading-tight">
-                        {(contact?.full_name ?? "").trim() || displayName}
+                      {/* Recipient — right column, vertically centered */}
+                      <div className="w-1/2 max-w-[50%] self-center break-words text-left">
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
+                        <div className="mt-0.5 text-[14px] font-bold leading-tight">
+                          {(contact?.full_name ?? "").trim() || displayName}
+                        </div>
+                        {(contact?.address ?? "").trim() && (
+                          <div className="mt-1 text-[11px] leading-snug">
+                            <span className="text-muted-foreground">ঠিকানা: </span>
+                            {contact?.address}
+                          </div>
+                        )}
+                        {(contact?.phone ?? "").trim() && (
+                          <div className="mt-0.5 text-[11px] font-semibold">
+                            <span className="font-normal text-muted-foreground">মোবাইল: </span>
+                            {contact?.phone}
+                          </div>
+                        )}
                       </div>
-                      {(contact?.address ?? "").trim() && (
-                        <div className="mt-1 text-[11px] leading-snug">
-                          <span className="text-muted-foreground">ঠিকানা: </span>
-                          {contact?.address}
-                        </div>
-                      )}
-                      {(contact?.phone ?? "").trim() && (
-                        <div className="mt-0.5 text-[11px] font-semibold">
-                          <span className="font-normal text-muted-foreground">মোবাইল: </span>
-                          {contact?.phone}
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
