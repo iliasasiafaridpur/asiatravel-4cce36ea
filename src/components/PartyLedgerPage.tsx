@@ -1096,10 +1096,19 @@ export function PartyLedgerPage({
         cSrc === "bmet_cards" || cSrc === "saudi_visas" || cSrc === "kuwait_visas";
       const cInfo = srcMap.get(String(r.source_id ?? ""));
       const incomplete = !advRow && cSourced && !cInfo?.countDate;
+      // তারিখ: টিকিট → Issue (entry) date, BMET/ভিসা → ভেন্ডর থেকে received date
+      // (দুটোই srcMap.countDate থেকে আসে); সোর্স তারিখ না থাকলে লেজার entry_date।
+      // পেমেন্ট (advance) হলে গ্রহণের তারিখ।
+      const cDate = advRow
+        ? String(r.payment_date ?? r.entry_date ?? "")
+        : String(cInfo?.countDate ?? r.entry_date ?? "");
+      // আইডি: সোর্স মডিউলের আসল আইডি (TKT-…, bmet_id, saudi_id, kuwait_id)
+      // থাকলে সেটি, না থাকলে লেজারের নিজের আইডি।
+      const cId = cInfo?.displayId ? String(cInfo.displayId) : String(r.ledger_id ?? "");
       prepped.push({
         id: ledgerRowId,
-        ledgerId: String(r.ledger_id ?? ""),
-        date: String(r.entry_date ?? ""),
+        ledgerId: cId,
+        date: cDate,
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
         deposit: advRow ? cash : applied + discount,
@@ -1110,7 +1119,7 @@ export function PartyLedgerPage({
         cancelled: !advRow && Boolean(cInfo?.cancelled),
         cancelReason: cInfo?.cancelReason ?? null,
         cancelDate: cInfo?.cancelDate ?? null,
-        sortKey: `${String(r.entry_date ?? "") || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
+        sortKey: `${cDate || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
         deltaBalance: advRow ? 0 : bill - applied - discount,
         advanceDelta: advRow ? cash : -applied,
       });
