@@ -181,6 +181,8 @@ export function ModulePage({ module: mod }: Props) {
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  // মাস-ভিত্তিক পেজিনেশন (শুধু Air Ticket / BMET): 0 = সর্বশেষ মাস
+  const [monthIndex, setMonthIndex] = useState(0);
   // BMET: তারিখ অনুযায়ী স্টাটাস পরিবর্তন ফিল্টার — কোন তারিখে কোন স্টাটাসে গিয়েছে তা দেখায়
   const [statusChangeDate, setStatusChangeDate] = useState<string>("");
   const [statusChangeStatus, setStatusChangeStatus] = useState<string>("");
