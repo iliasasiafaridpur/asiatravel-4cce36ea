@@ -1591,8 +1591,9 @@ export function PartyLedgerPage({
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
-      <h1>${esc(displayName)}</h1>
+      <h1>${esc(printName)}</h1>
       <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
+      ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
       <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
       <div class="sum">${esc(summaryLine)}</div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
