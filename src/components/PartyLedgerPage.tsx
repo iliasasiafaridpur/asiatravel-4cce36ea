@@ -2082,7 +2082,7 @@ export function PartyLedgerPage({
               )}
             </div>
 
-            {/* Live preview with dotted border showing the selected size */}
+            {/* Live envelope preview — shows exactly how it prints (খামের মত) */}
             {(() => {
               const DIMS = {
                 a4: { w: 210, h: 297 },
@@ -2093,68 +2093,65 @@ export function PartyLedgerPage({
               const base = DIMS[addrSize];
               const dim =
                 addrOrient === "landscape" ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
-              const A4 = { w: 210, h: 297 };
-              const MM_TO_PX = 96 / 25.4;
-              const a4wPx = A4.w * MM_TO_PX;
-              const scale = Math.min(1, 170 / a4wPx);
+              // Scale the envelope so its longest side ~= 300px for a readable preview.
+              const MAX = 300;
+              const scale = MAX / Math.max(dim.w, dim.h);
+              const wPx = dim.w * scale;
+              const hPx = dim.h * scale;
               const showSender = addrShowSender && (senderName.trim() || senderAddr.trim() || senderPhone.trim());
               return (
-                <div className="flex justify-center rounded-lg bg-muted/40 p-4">
-                  <div style={{ width: `${a4wPx * scale}px`, height: `${A4.h * MM_TO_PX * scale}px` }}>
-                    {/* Full A4 sheet */}
-                    <div
-                      className="relative bg-background shadow-sm ring-1 ring-border"
-                      style={{
-                        width: `${a4wPx}px`,
-                        height: `${A4.h * MM_TO_PX}px`,
-                        transform: `scale(${scale})`,
-                        transformOrigin: "top left",
-                      }}
-                    >
-                      {/* Label box pinned to the top-right corner */}
-                      <div
-                        className="absolute right-0 top-0 flex flex-col rounded-sm border-2 border-dashed border-primary/60 bg-primary/5 p-4"
-                        style={{ width: `${dim.w * MM_TO_PX}px`, height: `${dim.h * MM_TO_PX}px` }}
-                      >
-                        {showSender && (
-                          <div className="max-w-[55%] self-start break-words">
-                            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
-                            {senderName.trim() && (
-                              <div className="text-[11px] font-bold leading-tight">{senderName}</div>
-                            )}
-                            {senderAddr.trim() && (
-                              <div className="text-[10px] leading-tight text-muted-foreground">{senderAddr}</div>
-                            )}
-                            {senderPhone.trim() && (
-                              <div className="text-[10px] leading-tight text-muted-foreground">{senderPhone}</div>
-                            )}
-                          </div>
-                        )}
-                        <div className="m-auto max-w-[80%] break-words text-left">
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
-                          <div className="mt-1 text-base font-bold leading-tight">
-                            {(contact?.full_name ?? "").trim() || displayName}
-                          </div>
-                          {(contact?.address ?? "").trim() && (
-                            <div className="mt-1.5 text-xs leading-snug">
-                              <span className="text-muted-foreground">ঠিকানা: </span>
-                              {contact?.address}
-                            </div>
-                          )}
-                          {(contact?.phone ?? "").trim() && (
-                            <div className="mt-1 text-xs font-semibold">
-                              <span className="font-normal text-muted-foreground">মোবাইল: </span>
-                              {contact?.phone}
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
+                <div className="flex flex-col items-center gap-2 rounded-lg bg-muted/40 p-4">
+                  {/* The envelope */}
+                  <div
+                    className="relative overflow-hidden rounded-md border border-border bg-background shadow-md"
+                    style={{ width: `${wPx}px`, height: `${hPx}px` }}
+                  >
+                    {/* Stamp box — top-right corner, like a real envelope */}
+                    <div className="absolute right-3 top-3 flex h-8 w-6 items-center justify-center rounded-[2px] border border-dashed border-muted-foreground/40 text-[6px] uppercase text-muted-foreground/50">
+                      Stamp
                     </div>
+                    {/* Sender — top-left corner */}
+                    {showSender && (
+                      <div className="absolute left-3 top-3 max-w-[55%] break-words">
+                        <div className="text-[8px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
+                        {senderName.trim() && (
+                          <div className="text-[11px] font-bold leading-tight">{senderName}</div>
+                        )}
+                        {senderAddr.trim() && (
+                          <div className="text-[9px] leading-tight text-muted-foreground">{senderAddr}</div>
+                        )}
+                        {senderPhone.trim() && (
+                          <div className="text-[9px] leading-tight text-muted-foreground">{senderPhone}</div>
+                        )}
+                      </div>
+                    )}
+                    {/* Recipient — centered in the middle of the envelope */}
+                    <div className="absolute left-1/2 top-[56%] w-[70%] -translate-x-1/2 -translate-y-1/2 break-words text-left">
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
+                      <div className="mt-0.5 text-[15px] font-bold leading-tight">
+                        {(contact?.full_name ?? "").trim() || displayName}
+                      </div>
+                      {(contact?.address ?? "").trim() && (
+                        <div className="mt-1 text-[11px] leading-snug">
+                          <span className="text-muted-foreground">ঠিকানা: </span>
+                          {contact?.address}
+                        </div>
+                      )}
+                      {(contact?.phone ?? "").trim() && (
+                        <div className="mt-0.5 text-[11px] font-semibold">
+                          <span className="font-normal text-muted-foreground">মোবাইল: </span>
+                          {contact?.phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {addrSize.toUpperCase()} খাম · {addrOrient === "landscape" ? "ডান-বাম" : "উপর-নিচ"} · A4 কাগজের উপরে-ডান কোণে প্রিন্ট হবে
                   </div>
                 </div>
               );
             })()}
+
 
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
