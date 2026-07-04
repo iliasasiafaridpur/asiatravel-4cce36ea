@@ -1586,6 +1586,7 @@ export function PartyLedgerPage({
         body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
+        .party-meta{color:#334155;font-size:11px;margin-bottom:4px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
         .sum{font-size:13px;margin-bottom:12px;font-weight:600}
         table{width:100%;border-collapse:collapse;font-size:12px}
