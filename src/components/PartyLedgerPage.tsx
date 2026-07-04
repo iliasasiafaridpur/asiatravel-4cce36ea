@@ -2856,7 +2856,7 @@ export function PartyLedgerPage({
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
