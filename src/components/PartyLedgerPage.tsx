@@ -1719,7 +1719,7 @@ export function PartyLedgerPage({
       ? `<div class="row addr"><span class="lbl">ঠিকানা:</span> <span class="val">${esc(addr)}</span></div>`
       : "";
 
-    // প্রেরক (From) ব্লক — খামের উপরে-বাম কোণে।
+    // প্রেরক (From) ব্লক — প্রাপকের পাশে সমান কলামে।
     const sName = senderName.trim();
     const sAddr = senderAddr.trim();
     const sPhone = senderPhone.trim();
@@ -1741,9 +1741,9 @@ export function PartyLedgerPage({
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a;display:flex;justify-content:flex-end;align-items:flex-start}
         .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:50%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        .env{position:relative;z-index:1;display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:8mm;height:100%}
-        .col{flex:1 1 0;width:50%;max-width:50%;overflow-wrap:anywhere;word-break:break-word}
-        .col.to-col{align-self:center;text-align:left}
+        .env{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:8mm;height:100%}
+        .col{min-width:0;overflow-wrap:anywhere;word-break:break-word;text-align:left}
+        .col.to-col{align-self:start;text-align:left}
         .cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
         .from-name{font-size:12px;font-weight:700;line-height:1.25}
         .from-row{font-size:10px;color:#475569;line-height:1.35}
@@ -2110,7 +2110,7 @@ export function PartyLedgerPage({
               )}
             </div>
 
-            {/* Live envelope preview — shows exactly how it prints (খামের মত) */}
+            {/* Live envelope preview — shows exactly how it prints */}
             {(() => {
               const DIMS = {
                 a4: { w: 210, h: 297 },
@@ -2134,9 +2134,9 @@ export function PartyLedgerPage({
                     className="relative overflow-hidden rounded-md border border-border bg-background p-3 shadow-md"
                     style={{ width: `${wPx}px`, height: `${hPx}px` }}
                   >
-                    <div className="flex h-full flex-row items-start justify-between gap-3">
-                      {/* Sender — left column */}
-                      <div className="w-1/2 max-w-[50%] break-words">
+                    <div className="grid h-full grid-cols-2 items-start gap-3">
+                      {/* Sender — left equal column */}
+                      <div className="min-w-0 break-words text-left">
                         {showSender && (
                           <>
                             <div className="text-[8px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
@@ -2152,8 +2152,8 @@ export function PartyLedgerPage({
                           </>
                         )}
                       </div>
-                      {/* Recipient — right column, vertically centered */}
-                      <div className="w-1/2 max-w-[50%] self-center break-words text-left">
+                      {/* Recipient — right equal column */}
+                      <div className="min-w-0 break-words text-left">
                         <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
                         <div className="mt-0.5 text-[14px] font-bold leading-tight">
                           {(contact?.full_name ?? "").trim() || displayName}
