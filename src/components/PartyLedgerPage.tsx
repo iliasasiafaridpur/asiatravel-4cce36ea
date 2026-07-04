@@ -1725,13 +1725,13 @@ export function PartyLedgerPage({
     const sPhone = senderPhone.trim();
     const senderHtml =
       addrShowSender && (sName || sAddr || sPhone)
-        ? `<div class="from">
-             <div class="from-cap">প্রেরক / From</div>
+        ? `<div class="from col">
+             <div class="cap">প্রেরক / From</div>
              ${sName ? `<div class="from-name">${esc(sName)}</div>` : ""}
              ${sAddr ? `<div class="from-row">${esc(sAddr)}</div>` : ""}
              ${sPhone ? `<div class="from-row">${esc(sPhone)}</div>` : ""}
            </div>`
-        : "";
+        : `<div class="col"></div>`;
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(fullName)} — ঠিকানা</title>
       <style>
