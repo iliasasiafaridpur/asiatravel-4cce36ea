@@ -2849,10 +2849,8 @@ export function PartyLedgerPage({
                     {isCustomer ? "Deposit" : "Payment"}
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
-                  <TableHead className={`w-[128px] text-right px-4 ${isCustomer ? "" : "pr-6"}`}>Balance</TableHead>
-                  {isCustomer && (
-                    <TableHead className="w-[104px] text-right px-4 pr-6">Advance</TableHead>
-                  )}
+                  <TableHead className={`w-[128px] text-right px-4 pr-6`}>Balance</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
