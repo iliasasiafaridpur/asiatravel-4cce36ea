@@ -165,7 +165,7 @@ function TimelinePrintColGroup() {
 
 const printCellHasText = (value: unknown) => String(value ?? "").replace(/<[^>]*>/g, "").trim().length > 0;
 
-function renderTimelinePrintTextCellsHtml(cells: { className: string; html: string }[]) {
+function renderTimelinePrintTextCellsHtml(cells: { className: string; html: string; allowSpan?: boolean }[]) {
   let out = "";
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i];
@@ -174,7 +174,9 @@ function renderTimelinePrintTextCellsHtml(cells: { className: string; html: stri
       continue;
     }
     let span = 1;
-    while (i + span < cells.length && !printCellHasText(cells[i + span].html)) span += 1;
+    if (cell.allowSpan !== false) {
+      while (i + span < cells.length && cells[i + span].allowSpan !== false && !printCellHasText(cells[i + span].html)) span += 1;
+    }
     out += `<td class="${cell.className}"${span > 1 ? ` colspan="${span}"` : ""}>${cell.html}</td>`;
     i += span - 1;
   }
@@ -184,7 +186,7 @@ function renderTimelinePrintTextCellsHtml(cells: { className: string; html: stri
 function TimelinePrintTextCells({
   cells,
 }: {
-  cells: { className: string; content: React.ReactNode; plain: string }[];
+  cells: { className: string; content: React.ReactNode; plain: string; allowSpan?: boolean }[];
 }) {
   const out: React.ReactNode[] = [];
   for (let i = 0; i < cells.length; i++) {
@@ -194,7 +196,9 @@ function TimelinePrintTextCells({
       continue;
     }
     let span = 1;
-    while (i + span < cells.length && !printCellHasText(cells[i + span].plain)) span += 1;
+    if (cell.allowSpan !== false) {
+      while (i + span < cells.length && cells[i + span].allowSpan !== false && !printCellHasText(cells[i + span].plain)) span += 1;
+    }
     out.push(<td key={i} className={cell.className} colSpan={span > 1 ? span : undefined}>{cell.content}</td>);
     i += span - 1;
   }
@@ -1019,21 +1023,22 @@ ${partySectionsHtml()}
     if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
+    const incomeText = isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : "";
     const textCellsHtml = renderTimelinePrintTextCellsHtml([
       { className: "wrap", html: name ?? "" },
       { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
+      { className: "num", html: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
+      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
+      { className: "num due", html: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
+      { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join(""), allowSpan: false },
+      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
+      { className: "num", html: fmt(running), allowSpan: false },
     ]);
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
       `<td>${seq ?? i + 1}</td>` +
       `<td class="dt">${formatDate(it.date)}</td>` +
       textCellsHtml +
-      `<td class="num">${totalBill !== null ? fmt(totalBill) : ""}</td>` +
-      `<td class="num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}">${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}</td>` +
-      `<td class="num due">${due !== null && due > 0.005 ? fmt(due) : ""}</td>` +
-      `<td class="prev">${advLines.map(t => `<div>${t}</div>`).join("")}</td>` +
-      `<td class="num ${cls}">${!isIn ? `− ${fmt(amt)}` : ""}</td>` +
-      `<td class="num">${fmt(running)}</td>` +
       `</tr>`;
   };
 
@@ -1991,18 +1996,14 @@ ${partySectionsHtml()}
                           { className: "wrap", content: name, plain: name ?? "" },
                           { className: "wrap", content: serviceText, plain: serviceText },
                           { className: "wrap", content: regionText, plain: regionText },
+                          { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
+                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
+                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
+                          { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" "), allowSpan: false },
+                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
+                          { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
                         ]}
                       />
-                      <td className="num">{totalBill !== null ? fmt(totalBill) : ""}</td>
-                      <td className={`num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`}>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</td>
-                      <td className="num due">{due !== null && due > 0.005 ? fmt(due) : ""}</td>
-                      <td className="prev">
-                        {advLines.map((l, idx) => (
-                          <div key={idx}>{l.text}</div>
-                        ))}
-                      </td>
-                      <td className={`num ${cls}`}>{!isIn ? `− ${fmt(amt)}` : ""}</td>
-                      <td className="num">{fmt(running)}</td>
                     </tr>
                   );
                 })}
