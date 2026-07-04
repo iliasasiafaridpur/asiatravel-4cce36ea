@@ -81,6 +81,23 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 
 type LedgerRow = Record<string, unknown> & { id: string };
+type LedgerReceipt = {
+  id: string;
+  receipt_id: string | null;
+  entry_date: string | null;
+  service_type: string | null;
+  service_table: string | null;
+  service_row_id: string | null;
+  ref_id: string | null;
+  passenger_name: string | null;
+  amount: number;
+  method: string | null;
+  source: string | null;
+  remarks: string | null;
+  received_by_name: string | null;
+  created_at: string | null;
+  ledgerRowId: string;
+};
 type Contact = {
   phone?: string | null;
   phone_labels?: string | null;
@@ -199,6 +216,7 @@ export function PartyLedgerPage({
   const [printTo, setPrintTo] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
+  const [receiptRows, setReceiptRows] = useState<LedgerReceipt[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
   // Authoritative balance row (matches the list page exactly).
@@ -351,8 +369,11 @@ export function PartyLedgerPage({
   // Last payment (পরিশোধ/গ্রহণ) — newest ledger row with a positive paid amount.
   const lastPayment = useMemo(() => {
     let best: { date: string; amount: number } | null = null;
-    for (const r of rows) {
-      const amt = Number((r as Record<string, unknown>)[paidCol] ?? 0);
+    const paymentSource = isCustomer && receiptRows.length > 0 ? receiptRows : rows;
+    for (const r of paymentSource) {
+      const amt = isCustomer && "amount" in r
+        ? Number((r as LedgerReceipt).amount ?? 0)
+        : Number((r as Record<string, unknown>)[paidCol] ?? 0);
       if (!(amt > 0)) continue;
       // গ্রহণ/পরিশোধের আসল তারিখ payment_date; না থাকলে entry_date।
       const rec = r as Record<string, unknown>;
@@ -360,7 +381,7 @@ export function PartyLedgerPage({
       if (!best || date >= best.date) best = { date, amount: amt };
     }
     return best;
-  }, [rows, paidCol]);
+  }, [rows, receiptRows, paidCol, isCustomer]);
 
   const serialCode =
     contact?.serial_no != null
@@ -418,6 +439,99 @@ export function PartyLedgerPage({
     setSrcMap(map);
   };
 
+  const receiptSelect =
+    "id,receipt_id,entry_date,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by_name,created_at";
+
+  const isCountableReceipt = (r: Record<string, unknown>) => {
+    const amount = Number(r.amount ?? 0);
+    if (!(amount > 0)) return false;
+    const source = String(r.source ?? "").trim().toLowerCase();
+    const method = String(r.method ?? "").trim().toLowerCase();
+    if (["discount", "status_event", "status_change", "status-delivery"].includes(source)) return false;
+    if (method === "discount" || method === "status") return false;
+    return true;
+  };
+
+  const loadAgencyReceipts = async (ledgerRows: LedgerRow[]) => {
+    if (!isCustomer || ledgerRows.length === 0) {
+      setReceiptRows([]);
+      return;
+    }
+
+    const ledgerIds = ledgerRows.map((r) => String(r.id)).filter(Boolean);
+    const sourceToLedgerIds = new Map<string, string[]>();
+    const sourceIdsByTable = new Map<string, string[]>();
+    for (const r of ledgerRows) {
+      const srcTable = String(r.source_table ?? "").trim();
+      const srcId = String(r.source_id ?? "").trim();
+      if (!srcTable || !srcId) continue;
+      const key = `${srcTable}:${srcId}`;
+      sourceToLedgerIds.set(key, [...(sourceToLedgerIds.get(key) ?? []), String(r.id)]);
+      sourceIdsByTable.set(srcTable, [...(sourceIdsByTable.get(srcTable) ?? []), srcId]);
+    }
+
+    const queries: Promise<{ data: unknown[] | null; error: unknown }>[] = [];
+    if (ledgerIds.length > 0) {
+      queries.push(
+        supabase
+          .from("payment_receipts" as never)
+          .select(receiptSelect)
+          .eq("service_table", "agency_ledger")
+          .in("service_row_id", ledgerIds) as unknown as Promise<{ data: unknown[] | null; error: unknown }>,
+      );
+    }
+    for (const [srcTable, ids] of sourceIdsByTable.entries()) {
+      const uniqueIds = Array.from(new Set(ids));
+      if (!uniqueIds.length) continue;
+      queries.push(
+        supabase
+          .from("payment_receipts" as never)
+          .select(receiptSelect)
+          .eq("service_table", srcTable)
+          .in("service_row_id", uniqueIds) as unknown as Promise<{ data: unknown[] | null; error: unknown }>,
+      );
+    }
+
+    const results = await Promise.all(queries);
+    const seen = new Set<string>();
+    const next: LedgerReceipt[] = [];
+    for (const res of results) {
+      for (const raw of (res.data as Record<string, unknown>[] | null) ?? []) {
+        if (!isCountableReceipt(raw)) continue;
+        const serviceTable = String(raw.service_table ?? "");
+        const serviceRowId = String(raw.service_row_id ?? "");
+        const source = String(raw.source ?? "").trim().toLowerCase();
+        const ledgerTargets = serviceTable === "agency_ledger"
+          ? (source === "agency_ledger" || source === "agency_ledger_payment" ? [serviceRowId] : [])
+          : (sourceToLedgerIds.get(`${serviceTable}:${serviceRowId}`) ?? []);
+        for (const ledgerRowId of ledgerTargets) {
+          const key = `${raw.id}:${ledgerRowId}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          next.push({
+            id: String(raw.id ?? ""),
+            receipt_id: raw.receipt_id ? String(raw.receipt_id) : null,
+            entry_date: raw.entry_date ? String(raw.entry_date) : null,
+            service_type: raw.service_type ? String(raw.service_type) : null,
+            service_table: serviceTable || null,
+            service_row_id: serviceRowId || null,
+            ref_id: raw.ref_id ? String(raw.ref_id) : null,
+            passenger_name: raw.passenger_name ? String(raw.passenger_name) : null,
+            amount: Number(raw.amount ?? 0),
+            method: raw.method ? String(raw.method) : null,
+            source: raw.source ? String(raw.source) : null,
+            remarks: raw.remarks ? String(raw.remarks) : null,
+            received_by_name: raw.received_by_name ? String(raw.received_by_name) : null,
+            created_at: raw.created_at ? String(raw.created_at) : null,
+            ledgerRowId,
+          });
+        }
+      }
+    }
+    next.sort((a, b) => `${a.entry_date ?? ""}|${a.created_at ?? ""}`.localeCompare(`${b.entry_date ?? ""}|${b.created_at ?? ""}`));
+    setReceiptRows(next);
+  };
+
   const setSummaryFromBalRows = (balRows: Record<string, unknown>[]) => {
     const nameKey = isCustomer ? "agent_name" : "vendor_name";
     const billKey = isCustomer ? "total_bill" : "total_payable";
@@ -461,6 +575,7 @@ export function PartyLedgerPage({
         return ca < cb ? -1 : ca > cb ? 1 : 0;
       });
     setRows(ledgerRows);
+    setReceiptRows([]);
 
     const allContacts = cacheRead<Contact[]>(contactsTable) ?? [];
     const mine = allContacts.filter(
@@ -502,6 +617,7 @@ export function PartyLedgerPage({
       if (ledgerRes.error) throw ledgerRes.error;
       const ledgerRows = (ledgerRes.data as unknown as LedgerRow[]) ?? [];
       setRows(ledgerRows);
+      await loadAgencyReceipts(ledgerRows);
       // Duplicate-tolerant: a name should map to one contact, but if stale
       // duplicates ever exist, merge them so an explicit "এক একটা বিল" choice
       // and any saved phone/address are never lost.
