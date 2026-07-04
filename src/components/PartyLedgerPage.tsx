@@ -656,9 +656,8 @@ export function PartyLedgerPage({
       setSummaryFromBalRows(balRows);
 
       await applySrcMap(ledgerRows, false);
-    } catch (e) {
+    } catch {
       // Network failed mid-session — fall back to the offline snapshot.
-      console.error("LEDGER_LOAD_ERR", e);
       await loadFromCache();
     }
     setLoading(false);
