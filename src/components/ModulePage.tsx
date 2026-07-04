@@ -93,6 +93,20 @@ interface Props {
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+const BN_MONTHS = [
+  "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+  "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+];
+// "YYYY-MM" → "জুলাই ২০২৬"
+const formatMonthLabel = (key: string) => {
+  const [y, m] = key.split("-");
+  const idx = Number(m) - 1;
+  const name = idx >= 0 && idx < 12 ? BN_MONTHS[idx] : m;
+  return `${name} ${y}`;
+};
+
+
+
 function partySerialLabel(kind: "agent" | "vendor", serial: unknown, code?: unknown): string {
   const prefix = partyCodePrefix(kind);
   const n = Number(serial);
