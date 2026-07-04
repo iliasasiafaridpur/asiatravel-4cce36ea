@@ -425,7 +425,7 @@ export const MODULES: ModuleSchema[] = [
     table: "saudi_visas",
     idColumn: "saudi_id",
     idPrefix: "SAV",
-    monthlyId: true,
+    yearlyId: true,
     statuses: STATUS_VISA,
     fields: [
       // 1) Passenger
