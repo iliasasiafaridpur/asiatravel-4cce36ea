@@ -1116,8 +1116,12 @@ export function PartyLedgerPage({
         date: cDate,
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
-        deposit: advRow ? cash : applied + discount,
-        credit: advRow ? 0 : bill,
+        // এক রো → এক কলাম: ডিপোজিট রো (advance) শুধু পেমেন্ট দেখাবে; বিল রো শুধু
+        // Credit দেখাবে। বিলের যে অংশ আগেই জমা করা advance বা ডিসকাউন্ট দিয়ে
+        // মেটানো হয়েছে তা এখানে আবার "ডিপোজিট" হিসেবে দেখানো হয় না (তাহলে
+        // advance দুইবার দেখা যেত)। Credit = বিলের নিট বকেয়া অংশ।
+        deposit: advRow ? cash : 0,
+        credit: advRow ? 0 : bill - applied - discount,
         advance: 0,
         isPayment: advRow,
         incomplete,
