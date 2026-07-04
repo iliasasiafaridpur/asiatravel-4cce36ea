@@ -167,15 +167,15 @@ const TIMELINE_PRINT_TABLE_CSS = `
   table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
   col.c-no{width:2.5%}col.c-date{width:7.5%}col.c-name{width:22%}col.c-service{width:17.5%}col.c-region{width:12.5%}
   col.c-bill{width:6.8%}col.c-in{width:7.2%}col.c-due{width:6.2%}col.c-prev{width:5.5%}col.c-out{width:6.8%}col.c-bal{width:5.5%}
-  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
+  th,td{border-bottom:1px solid #e5e5e5;padding:2px 3px;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere;overflow:hidden}
   td.wrap,th.wrap{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
   th{background:#f5f5f5;font-weight:600}
-  th.num{text-align:right;white-space:nowrap}
+  th.num{text-align:right;white-space:normal;overflow-wrap:anywhere}
   td.num,th.num{font-size:9.3px;padding-left:1px;padding-right:2px}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}
   td.num.in{text-align:right}
-  td.prev,th.prev{text-align:right;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-size:9px;padding-left:1px;padding-right:2px}
-  td.dt,th.dt{white-space:nowrap;word-break:normal;overflow-wrap:normal;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
+  td.prev,th.prev{text-align:right;white-space:normal;word-break:break-word;overflow-wrap:anywhere;font-size:9px;padding-left:1px;padding-right:2px}
+  td.dt,th.dt{white-space:normal;word-break:normal;overflow-wrap:anywhere;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
   td.dt + td,th.dt + th{padding-left:8px}
   td:first-child,th:first-child{text-align:center;padding-left:1px;padding-right:1px}
   /* একই তারিখের সব সারি এক পেইজে একসাথে থাকবে; জায়গা না হলে পুরো তারিখ পরের পেইজে যাবে।
