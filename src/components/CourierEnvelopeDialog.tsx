@@ -148,17 +148,24 @@ export function CourierEnvelopeDialog({
           <div className="flex justify-center rounded-lg bg-muted/40 p-4">
             <div
               style={{
-                width: `${previewWidthPx}px`,
-                height: `${dim.h * MM_TO_PX}px`,
-                transform: `scale(${previewScale})`,
-                transformOrigin: "top center",
+                width: `${previewWidthPx * previewScale}px`,
+                height: `${dim.h * MM_TO_PX * previewScale}px`,
               }}
             >
               <div
-                className="h-full w-full rounded-sm border-2 border-dashed border-primary/60 bg-background p-4"
-                style={{ boxSizing: "border-box" }}
+                style={{
+                  width: `${previewWidthPx}px`,
+                  height: `${dim.h * MM_TO_PX}px`,
+                  transform: `scale(${previewScale})`,
+                  transformOrigin: "top left",
+                }}
               >
-                {EnvelopeContent}
+                <div
+                  className="h-full w-full rounded-sm border-2 border-dashed border-primary/60 bg-background p-4"
+                  style={{ boxSizing: "border-box" }}
+                >
+                  {EnvelopeContent}
+                </div>
               </div>
             </div>
           </div>
