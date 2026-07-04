@@ -286,6 +286,20 @@ export function ModulePage({ module: mod }: Props) {
   const [recvInfo, setRecvInfo] = useState<Record<string, { method: string | null; received_by: string | null; received_by_name: string | null }>>({});
   // user_id → display name (for rows whose receiver isn't on a receipt)
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
+  // এজেন্সির নাম (normalized) → হিসাব ধরন (settle_mode). "মোটের উপর" (total)
+  // এজেন্সির জন্য এই ডাটা পেইজে বিল-বাই-বিল "Due Receive" বাটন দেখানো হয় না —
+  // তাদের টাকা এজেন্সি লেজারে মোট হিসাবে (Auto FIFO) গ্রহণ করা হয়।
+  const [settleModeByAgency, setSettleModeByAgency] = useState<Record<string, string>>({});
+  const agencyIsTotalSettle = useCallback(
+    (agencyName: unknown): boolean => {
+      const n = String(agencyName ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+      if (!n || n === "self") return false;
+      // শুধুমাত্র সুস্পষ্টভাবে "মোটের উপর" সেট করা এজেন্সির ক্ষেত্রে লুকানো হয়;
+      // সেট না থাকা / এক-একটা-বিল এজেন্সিতে বাটন আগের মতোই থাকে।
+      return settleModeByAgency[n] === "total";
+    },
+    [settleModeByAgency],
+  );
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
