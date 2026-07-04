@@ -1123,7 +1123,7 @@ export function ModulePage({ module: mod }: Props) {
       const dueColumn = mod.computed?.some((c) => c.name === "balance") ? "balance" : "due";
       const due = computeValue(row, dueColumn);
       const svc = DUE_SERVICE_KEY[mod.key];
-      if (due > 0 && svc) {
+      if (due > 0 && svc && !agencyIsTotalSettle(row.agency_sold)) {
         setDuePreselect({ serviceKey: svc, rowId: row.id });
         return;
       }
