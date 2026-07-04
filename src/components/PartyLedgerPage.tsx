@@ -1594,8 +1594,8 @@ export function PartyLedgerPage({
         <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>
       </tr>`;
       const colSpan = 7;
-      // নতুন উপরে দেখাতে তালিকা উল্টে দিই; "আগের জের" সবচেয়ে নিচে থাকবে।
-      const displayList = [...list].reverse();
+      // নতুন এন্ট্রি উপরে, পুরনো নিচে — স্ক্রিনের মতই। "আগের জের" সবচেয়ে নিচে থাকবে।
+      const displayList = list;
       const rowsHtml = displayList.length
         ? displayList
             .map(
