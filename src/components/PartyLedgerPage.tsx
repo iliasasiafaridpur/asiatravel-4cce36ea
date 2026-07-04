@@ -1454,13 +1454,10 @@ export function PartyLedgerPage({
 
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
-    // সর্ট নাম (স্ক্রিন/রুট নাম) ফুল নামের সামনে ব্রাকেটে দেখানো হয়।
+    // সর্ট নাম (স্ক্রিন/রুট নাম) — ফুল নামের নিচে সেকেন্ডারি লাইনে দেখানো হয়।
     const shortNm = (displayName ?? "").trim();
     const hasShort = shortNm && shortNm !== fullNm.trim();
-    const namePrefix = hasShort ? `(${shortNm}) ` : "";
-    const printName = serialCode
-      ? `${namePrefix}${fullNm} · ${serialCode}`
-      : `${namePrefix}${fullNm}`;
+    const printName = serialCode ? `${fullNm} · ${serialCode}` : fullNm;
     const addr = (contact?.address ?? "").trim();
     const phonesStr = phoneList.map((p) => p.phone).join(", ");
     const printContact = [
