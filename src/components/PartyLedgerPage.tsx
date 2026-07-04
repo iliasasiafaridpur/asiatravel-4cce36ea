@@ -1521,7 +1521,8 @@ export function PartyLedgerPage({
             .join("")
         : `<tr><td colspan="8" class="empty">কোনো বাকি বিল নেই</td></tr>`;
     } else {
-      // all / range — চলমান ব্যালেন্সসহ পূর্ণ লেজার (পুরনো → নতুন)।
+      // all / range — চলমান ব্যালেন্সসহ পূর্ণ লেজার। স্ক্রিনের মতই: নতুন উপরে, পুরনো নিচে।
+      // ব্যালেন্স হিসাবের জন্য ভেতরে পুরনো → নতুন ধরে রাখি, শুধু দেখানোর সময় উল্টে দিই।
       const chrono = [...statement].reverse();
       let list = chrono;
       let opening = 0;
@@ -1543,16 +1544,12 @@ export function PartyLedgerPage({
         <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>
       </tr>`;
       const colSpan = 7;
-      const openingRow =
-        mode === "range"
-          ? `<tr class="opening"><td colspan="5">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td></tr>`
-          : "";
-      bodyHtml =
-        openingRow +
-        (list.length
-          ? list
-              .map(
-                (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
+      // নতুন উপরে দেখাতে তালিকা উল্টে দিই; "আগের জের" সবচেয়ে নিচে থাকবে।
+      const displayList = [...list].reverse();
+      const rowsHtml = displayList.length
+        ? displayList
+            .map(
+              (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
             <td class="nw">${esc(formatDate(s.date))}</td>
             <td class="nw">${esc(s.ledgerId)}</td>
             <td>${esc(s.service)}</td>
@@ -1561,9 +1558,14 @@ export function PartyLedgerPage({
             <td class="r">${s.credit ? num(s.credit) : "—"}</td>
             <td class="r">${num(s.balance)}</td>
           </tr>`,
-              )
-              .join("")
-          : `<tr><td colspan="${colSpan}" class="empty">কোনো হিসাব নেই</td></tr>`);
+            )
+            .join("")
+        : `<tr><td colspan="${colSpan}" class="empty">কোনো হিসাব নেই</td></tr>`;
+      const openingRow =
+        mode === "range"
+          ? `<tr class="opening"><td colspan="5">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td></tr>`
+          : "";
+      bodyHtml = rowsHtml + openingRow;
     }
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(displayName)} — ${esc(subtitle)}</title>
