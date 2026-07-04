@@ -163,6 +163,44 @@ function TimelinePrintColGroup() {
   );
 }
 
+const printCellHasText = (value: unknown) => String(value ?? "").replace(/<[^>]*>/g, "").trim().length > 0;
+
+function renderTimelinePrintTextCellsHtml(cells: { className: string; html: string }[]) {
+  let out = "";
+  for (let i = 0; i < cells.length; i++) {
+    const cell = cells[i];
+    if (!printCellHasText(cell.html)) {
+      out += `<td class="${cell.className}"></td>`;
+      continue;
+    }
+    let span = 1;
+    while (i + span < cells.length && !printCellHasText(cells[i + span].html)) span += 1;
+    out += `<td class="${cell.className}"${span > 1 ? ` colspan="${span}"` : ""}>${cell.html}</td>`;
+    i += span - 1;
+  }
+  return out;
+}
+
+function TimelinePrintTextCells({
+  cells,
+}: {
+  cells: { className: string; content: React.ReactNode; plain: string }[];
+}) {
+  const out: React.ReactNode[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    const cell = cells[i];
+    if (!printCellHasText(cell.plain)) {
+      out.push(<td key={i} className={cell.className}></td>);
+      continue;
+    }
+    let span = 1;
+    while (i + span < cells.length && !printCellHasText(cells[i + span].plain)) span += 1;
+    out.push(<td key={i} className={cell.className} colSpan={span > 1 ? span : undefined}>{cell.content}</td>);
+    i += span - 1;
+  }
+  return <>{out}</>;
+}
+
 const TIMELINE_PRINT_TABLE_CSS = `
   table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
   col.c-no{width:2.5%}col.c-date{width:7.5%}col.c-name{width:22%}col.c-service{width:17.5%}col.c-region{width:12.5%}
