@@ -1418,7 +1418,8 @@ export function ModulePage({ module: mod }: Props) {
     };
     const dueBtn = (r: Row, due: number) => {
       const svc = DUE_SERVICE_KEY[mod.key];
-      if (due > 0 && svc) {
+      const totalSettle = agencyIsTotalSettle(r.agency_sold);
+      if (due > 0 && svc && !totalSettle) {
         return (
           <button
             type="button"
@@ -1430,7 +1431,14 @@ export function ModulePage({ module: mod }: Props) {
           </button>
         );
       }
-      return <span className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}>Due: {fmt(due)}</span>;
+      return (
+        <span
+          className={due > 0 ? "text-rose-500 font-semibold" : "text-emerald-600"}
+          title={due > 0 && totalSettle ? "মোটের উপর হিসাব — টাকা এজেন্সি লেজারে মোট হিসাবে গ্রহণ করুন" : undefined}
+        >
+          Due: {fmt(due)}
+        </span>
+      );
     };
     // Small badge next to Recv: ALWAYS the first 3 letters of the name of the
     // user who actually RECEIVED the payment (not the MD who later receives it
