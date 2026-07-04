@@ -1484,7 +1484,7 @@ export function PartyLedgerPage({
               return `<tr${cls}>
                 <td class="nw">${esc(formatDate(b.date))}</td>
                 <td class="nw">${esc(b.ledgerId)}</td>
-                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
+                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
                 <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
