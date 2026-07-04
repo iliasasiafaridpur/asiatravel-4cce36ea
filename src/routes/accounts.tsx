@@ -177,7 +177,7 @@ function renderTimelinePrintTextCellsHtml(cells: { className: string; html: stri
     if (cell.allowSpan !== false) {
       while (i + span < cells.length && !printCellHasText(cells[i + span].html)) span += 1;
     }
-    out += `<td class="${cell.className}"${span > 1 ? ` colspan="${span}"` : ""}>${cell.html}</td>`;
+    out += `<td class="${cell.className}${span > 1 ? " span-fill" : ""}"${span > 1 ? ` colspan="${span}"` : ""}>${cell.html}</td>`;
     i += span - 1;
   }
   return out;
@@ -199,7 +199,7 @@ function TimelinePrintTextCells({
     if (cell.allowSpan !== false) {
       while (i + span < cells.length && !printCellHasText(cells[i + span].plain)) span += 1;
     }
-    out.push(<td key={i} className={cell.className} colSpan={span > 1 ? span : undefined}>{cell.content}</td>);
+    out.push(<td key={i} className={`${cell.className}${span > 1 ? " span-fill" : ""}`} colSpan={span > 1 ? span : undefined}>{cell.content}</td>);
     i += span - 1;
   }
   return <>{out}</>;
@@ -214,7 +214,8 @@ const TIMELINE_PRINT_TABLE_CSS = `
   th{background:#f5f5f5;font-weight:600}
   th.num{text-align:right;white-space:normal;overflow-wrap:anywhere}
   td.num,th.num{font-size:9.3px;padding-left:1px;padding-right:2px}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:normal;word-break:normal;overflow-wrap:normal}
+  td.span-fill{text-align:left;word-break:normal;overflow-wrap:break-word}
   td.num.in{text-align:right}
   td.prev,th.prev{text-align:right;white-space:normal;word-break:break-word;overflow-wrap:anywhere;font-size:9px;padding-left:1px;padding-right:2px}
   td.dt,th.dt{white-space:normal;word-break:normal;overflow-wrap:anywhere;padding-left:1px;padding-right:10px;font-size:9.3px;border-right:1px solid #e5e5e5}
@@ -1028,11 +1029,11 @@ ${partySectionsHtml()}
       { className: "wrap", html: name ?? "" },
       { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
-      { className: "num", html: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
-      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
-      { className: "num due", html: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
-      { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join(""), allowSpan: false },
-      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
+      { className: "num", html: totalBill !== null ? fmt(totalBill) : "" },
+      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+      { className: "num due", html: due !== null && due > 0.005 ? fmt(due) : "" },
+      { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join("") },
+      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "" },
       { className: "num", html: fmt(running), allowSpan: false },
     ]);
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
@@ -1996,11 +1997,11 @@ ${partySectionsHtml()}
                           { className: "wrap", content: name, plain: name ?? "" },
                           { className: "wrap", content: serviceText, plain: serviceText },
                           { className: "wrap", content: regionText, plain: regionText },
-                          { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "", allowSpan: false },
-                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}`, allowSpan: false },
-                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "", allowSpan: false },
-                          { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" "), allowSpan: false },
-                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "", allowSpan: false },
+                          { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "" },
+                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "" },
+                          { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" ") },
+                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "" },
                           { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
                         ]}
                       />
