@@ -1540,12 +1540,12 @@ export function PartyLedgerPage({
       summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>সার্ভিস</th><th>বিবরণ</th>
-        <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>${isCustomer ? '<th class="r">অগ্রিম</th>' : ""}
+        <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>
       </tr>`;
-      const colSpan = isCustomer ? 8 : 7;
+      const colSpan = 7;
       const openingRow =
         mode === "range"
-          ? `<tr class="opening"><td colspan="${isCustomer ? 6 : 5}">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td>${isCustomer ? "<td></td>" : ""}</tr>`
+          ? `<tr class="opening"><td colspan="5">আগের জের (Opening Balance)</td><td class="r">${num(opening)}</td></tr>`
           : "";
       bodyHtml =
         openingRow +
@@ -1559,7 +1559,7 @@ export function PartyLedgerPage({
             <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
             <td class="r">${s.credit ? num(s.credit) : "—"}</td>
-            <td class="r">${num(s.balance)}</td>${isCustomer ? `<td class="r">${s.advance ? num(s.advance) : "—"}</td>` : ""}
+            <td class="r">${num(s.balance)}</td>
           </tr>`,
               )
               .join("")
@@ -2849,22 +2849,20 @@ export function PartyLedgerPage({
                     {isCustomer ? "Deposit" : "Payment"}
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
-                  <TableHead className={`w-[128px] text-right px-4 ${isCustomer ? "" : "pr-6"}`}>Balance</TableHead>
-                  {isCustomer && (
-                    <TableHead className="w-[104px] text-right px-4 pr-6">Advance</TableHead>
-                  )}
+                  <TableHead className={`w-[128px] text-right px-4 pr-6`}>Balance</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : filteredStatement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
@@ -2897,7 +2895,7 @@ export function PartyLedgerPage({
                       <TableCell className={`text-right tabular-nums px-4 ${s.isPayment ? "text-emerald-600" : "text-amber-600"}`}>
                         {s.credit ? s.credit.toLocaleString() : "—"}
                       </TableCell>
-                      <TableCell className={`text-right tabular-nums font-semibold px-4 ${isCustomer ? "" : "pr-6"}`}>
+                      <TableCell className={`text-right tabular-nums font-semibold px-4 pr-6`}>
                         {isCustomer ? (
                           s.balance > 0 ? (
                             <div className="text-rose-600 leading-tight">
@@ -2926,11 +2924,7 @@ export function PartyLedgerPage({
                           <span className="text-muted-foreground">0</span>
                         )}
                       </TableCell>
-                      {isCustomer && (
-                        <TableCell className="text-right tabular-nums text-emerald-600 px-4 pr-6">
-                          {s.advance ? s.advance.toLocaleString() : "—"}
-                        </TableCell>
-                      )}
+
                     </TableRow>
                   ))
                 )}
