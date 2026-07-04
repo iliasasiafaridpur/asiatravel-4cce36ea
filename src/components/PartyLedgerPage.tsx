@@ -1680,8 +1680,11 @@ export function PartyLedgerPage({
       a6: { w: 105, h: 148 },
       a7: { w: 74, h: 105 },
     };
-    const dim = DIMS[size];
-    const padMm = Math.max(6, Math.round(dim.w * 0.06));
+    const base = DIMS[size];
+    // Landscape হলে প্রস্থ ও উচ্চতা অদলবদল (ডান-বাম) হবে।
+    const dim =
+      addrOrient === "landscape" ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
+    const padMm = Math.max(6, Math.round(dim.w * 0.05));
 
     const phoneHtml = phones.length
       ? `<div class="row"><span class="lbl">মোবাইল:</span> <span class="val">${phones.map(esc).join(", ")}</span></div>`
@@ -1690,15 +1693,33 @@ export function PartyLedgerPage({
       ? `<div class="row addr"><span class="lbl">ঠিকানা:</span> <span class="val">${esc(addr)}</span></div>`
       : "";
 
+    // প্রেরক (From) ব্লক — খামের উপরে-বাম কোণে।
+    const sName = senderName.trim();
+    const sAddr = senderAddr.trim();
+    const sPhone = senderPhone.trim();
+    const senderHtml =
+      addrShowSender && (sName || sAddr || sPhone)
+        ? `<div class="from">
+             <div class="from-cap">প্রেরক / From</div>
+             ${sName ? `<div class="from-name">${esc(sName)}</div>` : ""}
+             ${sAddr ? `<div class="from-row">${esc(sAddr)}</div>` : ""}
+             ${sPhone ? `<div class="from-row">${esc(sPhone)}</div>` : ""}
+           </div>`
+        : "";
+
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(fullName)} — ঠিকানা</title>
       <style>
         *{box-sizing:border-box}
         @page{size:A4;margin:0}
         html,body{margin:0;padding:0}
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a;display:flex;justify-content:flex-end;align-items:flex-start}
-        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden}
-        .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        .inner{position:relative;z-index:1}
+        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;position:relative;overflow:hidden}
+        .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:50%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .from{position:relative;z-index:1;align-self:flex-start;max-width:60%}
+        .from-cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+        .from-name{font-size:12px;font-weight:700;line-height:1.2}
+        .from-row{font-size:10px;color:#475569;line-height:1.3}
+        .inner{position:relative;z-index:1;margin-top:auto;align-self:flex-end;text-align:right;max-width:75%}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
         .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.2}
         .row{font-size:13px;margin-bottom:4px;line-height:1.4}
@@ -1708,12 +1729,15 @@ export function PartyLedgerPage({
         @media print{button{display:none}}
       </style></head><body>
 
-      <div class="label"><div class="inner">
-        <div class="to">প্রাপক / To</div>
-        <div class="name">${esc(fullName)}</div>
-        ${addrHtml}
-        ${phoneHtml}
-      </div></div>
+      <div class="label">
+        ${senderHtml}
+        <div class="inner">
+          <div class="to">প্রাপক / To</div>
+          <div class="name">${esc(fullName)}</div>
+          ${addrHtml}
+          ${phoneHtml}
+        </div>
+      </div>
       </body></html>`;
 
 
@@ -1728,6 +1752,7 @@ export function PartyLedgerPage({
       toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
     }
   };
+
 
 
 
