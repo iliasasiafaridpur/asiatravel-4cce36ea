@@ -528,6 +528,61 @@ export function ModulePage({ module: mod }: Props) {
     return xs;
   }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, mod.key, canCancel, showCancelled]);
 
+  // মাস-ভিত্তিক পেজিং: filtered রো থেকে distinct মাস (YYYY-MM) বের করে সর্বশেষ আগে সাজাই।
+  const monthKeys = useMemo(() => {
+    if (!mod.paginateByMonth) return [] as string[];
+    const set = new Set<string>();
+    for (const r of filtered) {
+      const k = String(r.entry_date ?? "").slice(0, 7);
+      if (k) set.add(k);
+    }
+    return Array.from(set).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+  }, [filtered, mod.paginateByMonth]);
+
+  // ফিল্টার বদলালে বা মাস তালিকা বদলালে সূচক সীমার মধ্যে রাখি (সর্বশেষ মাসে ফিরি)।
+  useEffect(() => {
+    if (mod.paginateByMonth && monthIndex > Math.max(0, monthKeys.length - 1)) {
+      setMonthIndex(0);
+    }
+  }, [monthKeys.length, monthIndex, mod.paginateByMonth]);
+
+  const curMonthKey = mod.paginateByMonth ? monthKeys[monthIndex] : undefined;
+  const pageRows = useMemo(() => {
+    if (!mod.paginateByMonth || !curMonthKey) return filtered;
+    return filtered.filter((r) => String(r.entry_date ?? "").slice(0, 7) === curMonthKey);
+  }, [filtered, mod.paginateByMonth, curMonthKey]);
+
+  const monthPager = mod.paginateByMonth && monthKeys.length > 0 ? (
+    <div className="flex items-center justify-center gap-2 flex-wrap">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8"
+        disabled={monthIndex >= monthKeys.length - 1}
+        onClick={() => setMonthIndex((i) => Math.min(monthKeys.length - 1, i + 1))}
+      >
+        <ChevronLeft className="h-4 w-4" /> পুরোনো
+      </Button>
+      <span className="text-sm font-medium px-2 whitespace-nowrap">
+        {formatMonthLabel(curMonthKey!)}
+        <span className="text-muted-foreground font-normal"> ({monthIndex + 1}/{monthKeys.length})</span>
+      </span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8"
+        disabled={monthIndex <= 0}
+        onClick={() => setMonthIndex((i) => Math.max(0, i - 1))}
+      >
+        নতুন <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  ) : null;
+
+
+
 
   const summary = useMemo(() => {
     if (!mod.summaryFields) return null;
