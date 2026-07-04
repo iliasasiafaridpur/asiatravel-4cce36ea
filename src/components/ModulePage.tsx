@@ -1174,7 +1174,7 @@ export function ModulePage({ module: mod }: Props) {
     } catch (e) {
       toast.error("Status আপডেট করা যায়নি: " + errMsg(e));
     }
-  }, [mod, computeValue, load, profile, user]);
+  }, [mod, computeValue, load, profile, user, agencyIsTotalSettle]);
 
   const handleStatusSelect = useCallback((row: Row, newStatus: string, anchorEl?: HTMLElement | null) => {
     selectRow(row.id);
