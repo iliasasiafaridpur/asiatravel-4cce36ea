@@ -300,6 +300,25 @@ export function ModulePage({ module: mod }: Props) {
     },
     [settleModeByAgency],
   );
+  // এজেন্সিভিত্তিক হিসাব ধরন লোড — শুধু সার্ভিস মডিউলে (যেখানে agency_sold আছে)।
+  useEffect(() => {
+    if (!mod.fields.some((f) => f.name === "agency_sold")) return;
+    let alive = true;
+    void supabase
+      .from("agents")
+      .select("name,settle_mode")
+      .limit(5000)
+      .then(({ data }) => {
+        if (!alive) return;
+        const modeMap: Record<string, string> = {};
+        for (const r of (data as { name?: string | null; settle_mode?: string | null }[] | null) ?? []) {
+          const key = String(r.name ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+          if (key && key !== "self") modeMap[key] = (r.settle_mode ?? "").trim() || "total";
+        }
+        setSettleModeByAgency(modeMap);
+      });
+    return () => { alive = false; };
+  }, [mod]);
   const loadingRef = useRef(false);
   const reloadQueuedRef = useRef(false);
   const hasLoadedRef = useRef(false);
