@@ -466,10 +466,28 @@ export function PartyProfileDrawer({
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
                       <span className="text-muted-foreground">{contact?.address || "ঠিকানা নেই"}</span>
                     </div>
+                    <div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs mt-1"
+                        onClick={() => setCourierOpen(true)}
+                      >
+                        <Package className="h-3.5 w-3.5 mr-1" /> ঠিকানা প্রিন্ট (কুরিয়ার খাম)
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
             </section>
+
+            <CourierEnvelopeDialog
+              open={courierOpen}
+              onOpenChange={setCourierOpen}
+              name={displayName ?? ""}
+              phones={phoneList}
+              address={contact?.address ?? ""}
+            />
 
             <Separator />
 
