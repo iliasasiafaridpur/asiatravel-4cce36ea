@@ -2130,8 +2130,8 @@ export function ModulePage({ module: mod }: Props) {
                       </TableCell>
                     </TableRow>
                   );
-                  if (filtered.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
-                  return filtered.map((r, idx) => (
+                  if (pageRows.length === 0) return (<TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</TableCell></TableRow>);
+                  return pageRows.map((r, idx) => (
                     <TableRow
                       key={r.id}
                       id={`row-${r.id}`}
