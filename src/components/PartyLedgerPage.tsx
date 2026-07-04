@@ -1719,7 +1719,7 @@ export function PartyLedgerPage({
         .from-cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
         .from-name{font-size:12px;font-weight:700;line-height:1.25}
         .from-row{font-size:10px;color:#475569;line-height:1.35}
-        .inner{position:relative;z-index:1;margin:auto;text-align:center;max-width:80%;overflow-wrap:anywhere;word-break:break-word}
+        .inner{position:relative;z-index:1;margin:auto;text-align:left;max-width:80%;overflow-wrap:anywhere;word-break:break-word}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
         .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.25}
         .row{font-size:13px;margin-bottom:4px;line-height:1.45}
