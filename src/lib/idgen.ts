@@ -25,13 +25,13 @@ function localId(mod: ModuleSchema, entryDate?: string) {
 // entry gets a serial in that earlier month).
 export async function generateNextId(mod: ModuleSchema, entryDate?: string): Promise<string> {
   try {
-    const fn = mod.monthlyId ? "next_module_id" : "next_simple_id";
+    const fn = mod.yearlyId ? "next_yearly_id" : mod.monthlyId ? "next_module_id" : "next_simple_id";
     const params: Record<string, unknown> = {
       _prefix: mod.idPrefix,
       _table: mod.table,
       _column: mod.idColumn,
     };
-    if (mod.monthlyId && entryDate) params._entry_date = entryDate;
+    if ((mod.yearlyId || mod.monthlyId) && entryDate) params._entry_date = entryDate;
     const { data, error } = await supabase.rpc(fn as never, params as never);
     if (error || !data) return localId(mod, entryDate);
     return data as unknown as string;
