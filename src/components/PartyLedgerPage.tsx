@@ -1996,21 +1996,28 @@ export function PartyLedgerPage({
                 a7: { w: 74, h: 105 },
               } as const;
               const dim = DIMS[addrSize];
+              const A4 = { w: 210, h: 297 };
               const MM_TO_PX = 96 / 25.4;
-              const wPx = dim.w * MM_TO_PX;
-              const scale = Math.min(1, 260 / wPx);
+              const a4wPx = A4.w * MM_TO_PX;
+              const scale = Math.min(1, 240 / a4wPx);
               return (
                 <div className="flex justify-center rounded-lg bg-muted/40 p-4">
-                  <div style={{ width: `${wPx * scale}px`, height: `${dim.h * MM_TO_PX * scale}px` }}>
+                  <div style={{ width: `${a4wPx * scale}px`, height: `${A4.h * MM_TO_PX * scale}px` }}>
+                    {/* Full A4 sheet */}
                     <div
+                      className="relative bg-background shadow-sm ring-1 ring-border"
                       style={{
-                        width: `${wPx}px`,
-                        height: `${dim.h * MM_TO_PX}px`,
+                        width: `${a4wPx}px`,
+                        height: `${A4.h * MM_TO_PX}px`,
                         transform: `scale(${scale})`,
                         transformOrigin: "top left",
                       }}
                     >
-                      <div className="flex h-full w-full flex-col justify-center rounded-sm border-2 border-dashed border-primary/60 bg-background p-4">
+                      {/* Label box pinned to the top-right corner */}
+                      <div
+                        className="absolute right-0 top-0 flex flex-col justify-start rounded-sm border-2 border-dashed border-primary/60 bg-primary/5 p-4"
+                        style={{ width: `${dim.w * MM_TO_PX}px`, height: `${dim.h * MM_TO_PX}px` }}
+                      >
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
                         <div className="mt-1 text-base font-bold leading-tight">
                           {(contact?.full_name ?? "").trim() || displayName}
