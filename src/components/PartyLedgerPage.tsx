@@ -1550,7 +1550,10 @@ export function PartyLedgerPage({
         : `<tr><td colspan="8" class="empty">কোনো বিল নেই</td></tr>`;
     } else if (mode === "due") {
       subtitle = "শুধু বাকি বিল সমূহ";
-      const dueBills = bills.filter((b) => b.status !== "paid");
+      // প্রিন্টে নতুন বাকি বিল উপরে, পুরনো নিচে।
+      const dueBills = bills
+        .filter((b) => b.status !== "paid")
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
