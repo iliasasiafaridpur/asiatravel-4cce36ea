@@ -1614,11 +1614,17 @@ export function PartyLedgerPage({
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
-      <h1>${esc(printName)}</h1>
-      <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
-      ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
-      <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
-      <div class="sum">${esc(summaryLine)}</div>
+      <div class="head">
+        <div class="head-left">
+          <h1>${esc(printName)}</h1>
+          <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
+          ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
+        </div>
+        <div class="head-right">
+          <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
+          <div class="sum">${esc(summaryLine)}</div>
+        </div>
+      </div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
       <div class="foot"><span>${esc(curLabel)}</span><span>৳${num(curAmt)}</span></div>
       </body></html>`;
