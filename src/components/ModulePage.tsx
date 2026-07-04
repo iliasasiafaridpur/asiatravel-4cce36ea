@@ -2426,23 +2426,15 @@ export function FormSections({ mod, form, setForm, isEdit }: {
     let alive = true;
     void supabase
       .from("agents")
-      .select("name,phone,serial_no,settle_mode")
+      .select("name,phone,serial_no")
       .limit(5000)
       .then(({ data }) => {
         if (!alive) return;
-        const rowsData =
-          (data as { name?: string | null; phone?: string | null; serial_no?: number | null; settle_mode?: string | null }[] | null) ?? [];
         setAgencyPhones(
-          rowsData
+          ((data as { name?: string | null; phone?: string | null; serial_no?: number | null }[] | null) ?? [])
             .map((r) => ({ name: String(r.name ?? "").trim(), phone: String(r.phone ?? "").trim(), serial: r.serial_no ?? null }))
             .filter((r) => r.name && r.name.toLowerCase() !== "self"),
         );
-        const modeMap: Record<string, string> = {};
-        for (const r of rowsData) {
-          const key = String(r.name ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
-          if (key && key !== "self") modeMap[key] = (r.settle_mode ?? "").trim() || "total";
-        }
-        setSettleModeByAgency(modeMap);
       });
     return () => { alive = false; };
   }, [mod]);
