@@ -1824,17 +1824,22 @@ export function PartyLedgerPage({
               </span>
               {" "}— সেই অনুযায়ী প্রিন্ট অপশন দেখানো হচ্ছে:
             </p>
-            {((settleMode === "one_by_one"
+            {((isCustomer
               ? [
-                  { v: "bill", t: "বিল-বাই-বিল হিসাব", d: "প্রতিটি বিল আলাদা — পরিশোধ/গ্রহণ তারিখসহ" },
-                  { v: "due", t: "শুধু বাকি বিল সমূহ", d: "শুধু বকেয়া ও আংশিক বিল" },
-                  { v: "range", t: "তারিখ অনুযায়ী হিসাব", d: "নির্দিষ্ট তারিখ থেকে চলতি ব্যালেন্স পর্যন্ত" },
+                  { v: "all", t: "মোট বিলের লেজার", d: "পাসবইয়ের মত চলমান মোট হিসাব" },
+                  { v: "bill", t: "বিল-বাই-বিল হিসাব", d: "প্রতিটি বিল আলাদা — গ্রহণ তারিখসহ" },
                 ]
-              : [
-                  { v: "all", t: "সম্পূর্ণ হিসাবের লেজার", d: "সব এন্ট্রি চলমান ব্যালেন্সসহ" },
-                  { v: "due", t: "শুধু বাকি বিল সমূহ", d: "শুধু বকেয়া ও আংশিক বিল" },
-                  { v: "range", t: "তারিখ অনুযায়ী হিসাব", d: "নির্দিষ্ট তারিখ থেকে চলতি ব্যালেন্স পর্যন্ত" },
-                ]) as { v: "all" | "due" | "range" | "bill"; t: string; d: string }[]).map((opt) => (
+              : settleMode === "one_by_one"
+                ? [
+                    { v: "bill", t: "বিল-বাই-বিল হিসাব", d: "প্রতিটি বিল আলাদা — পরিশোধ/গ্রহণ তারিখসহ" },
+                    { v: "due", t: "শুধু বাকি বিল সমূহ", d: "শুধু বকেয়া ও আংশিক বিল" },
+                    { v: "range", t: "তারিখ অনুযায়ী হিসাব", d: "নির্দিষ্ট তারিখ থেকে চলতি ব্যালেন্স পর্যন্ত" },
+                  ]
+                : [
+                    { v: "all", t: "সম্পূর্ণ হিসাবের লেজার", d: "সব এন্ট্রি চলমান ব্যালেন্সসহ" },
+                    { v: "due", t: "শুধু বাকি বিল সমূহ", d: "শুধু বকেয়া ও আংশিক বিল" },
+                    { v: "range", t: "তারিখ অনুযায়ী হিসাব", d: "নির্দিষ্ট তারিখ থেকে চলতি ব্যালেন্স পর্যন্ত" },
+                  ]) as { v: "all" | "due" | "range" | "bill"; t: string; d: string }[]).map((opt) => (
               <button
                 key={opt.v}
                 type="button"
@@ -2587,7 +2592,7 @@ export function PartyLedgerPage({
                 size="sm"
                 variant="outline"
                 className="ml-auto h-7 gap-1 text-xs"
-                onClick={() => { setPrintMode("due"); setPrintOpen(true); }}
+                onClick={() => { setPrintMode("bill"); setPrintOpen(true); }}
               >
                 <Printer className="h-3.5 w-3.5" /> প্রিন্ট
               </Button>
@@ -2628,7 +2633,7 @@ export function PartyLedgerPage({
                       return (
                         <Fragment key={b.id}>
                           <TableRow
-                            className={`row-tint-${idx % 4} ${hasHist ? "cursor-pointer" : ""}`}
+                            className={`row-tint-${idx % 4} ${hasHist ? "cursor-pointer" : ""} ${b.cancelled ? "opacity-60" : ""}`}
                             onClick={() => hasHist && setExpandedBill(open ? null : b.id)}
                           >
                             <TableCell className="px-1 text-center text-muted-foreground">
@@ -2647,6 +2652,7 @@ export function PartyLedgerPage({
                             <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
                               <span className="text-muted-foreground">{b.service}</span>
                               {b.description ? ` · ${b.description}` : ""}
+                              {b.cancelled ? " · 🚫 বাতিল কাজ" : ""}
                             </TableCell>
                             <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
                             <TableCell className="text-right tabular-nums text-emerald-600">
@@ -2729,13 +2735,14 @@ export function PartyLedgerPage({
         </Card>
       )}
 
-      {/* Ledger statement */}
+      {/* Total-bill running ledger — Agency one-by-one parties use only the bill-by-bill table above. */}
+      {(!isCustomer || settleMode === "total") && (
       <Card>
         <CardContent className="p-3 sm:p-4">
           {/* Heading + inline search/date-range filter for this ledger statement. */}
           <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex items-center gap-2 lg:mb-1">
-              <h3 className="text-sm font-semibold">{pageTitle}</h3>
+              <h3 className="text-sm font-semibold">{isCustomer ? "মোট বিলের লেজার" : pageTitle}</h3>
               <Badge variant="secondary" className="text-[11px] font-medium">
                 মোট {statement.length} টি
               </Badge>
@@ -2945,6 +2952,7 @@ export function PartyLedgerPage({
           )}
         </CardContent>
       </Card>
+      )}
         </>
       )}
     </div>
