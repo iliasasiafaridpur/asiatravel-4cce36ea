@@ -1741,14 +1741,13 @@ export function PartyLedgerPage({
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a;display:flex;justify-content:flex-end;align-items:flex-start}
         .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:50%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        .stamp{position:absolute;z-index:1;top:${padMm}mm;right:${padMm}mm;width:14mm;height:18mm;border:1px dashed #cbd5e1;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#cbd5e1;text-transform:uppercase;letter-spacing:1px}
-        .from{position:absolute;z-index:1;top:${padMm}mm;left:${padMm}mm;width:45%;max-width:45%;overflow-wrap:anywhere;word-break:break-word}
-        .from-cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+        .env{position:relative;z-index:1;display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:8mm;height:100%}
+        .col{flex:1 1 0;width:50%;max-width:50%;overflow-wrap:anywhere;word-break:break-word}
+        .col.to-col{align-self:center;text-align:left}
+        .cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
         .from-name{font-size:12px;font-weight:700;line-height:1.25}
         .from-row{font-size:10px;color:#475569;line-height:1.35}
-        .inner{position:absolute;z-index:1;top:52%;left:38%;transform:translateY(-50%);width:54%;text-align:left;overflow-wrap:anywhere;word-break:break-word}
-        .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
-        .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.25}
+        .name{font-size:18px;font-weight:700;margin-bottom:8px;line-height:1.25}
         .row{font-size:13px;margin-bottom:4px;line-height:1.45}
         .row.addr{margin-top:2px}
         .lbl{color:#64748b}
@@ -1757,13 +1756,14 @@ export function PartyLedgerPage({
       </style></head><body>
 
       <div class="label">
-        <div class="stamp">Stamp</div>
-        ${senderHtml}
-        <div class="inner">
-          <div class="to">প্রাপক / To</div>
-          <div class="name">${esc(fullName)}</div>
-          ${addrHtml}
-          ${phoneHtml}
+        <div class="env">
+          ${senderHtml}
+          <div class="col to-col">
+            <div class="cap">প্রাপক / To</div>
+            <div class="name">${esc(fullName)}</div>
+            ${addrHtml}
+            ${phoneHtml}
+          </div>
         </div>
       </div>
       </body></html>`;
