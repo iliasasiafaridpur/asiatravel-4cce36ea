@@ -44,6 +44,10 @@ export interface ModuleSchema {
   idColumn: string;
   idPrefix: string;
   monthlyId?: boolean;
+  /** Generate yearly serial IDs like SAV-26-001 instead of monthly. */
+  yearlyId?: boolean;
+  /** Show list one calendar month at a time (latest first) with prev/next paging. */
+  paginateByMonth?: boolean;
   statuses?: string[];
   fields: Field[];
   /** Optional explicit ordering for list columns. Mix field names and computed names. */
