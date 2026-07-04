@@ -2130,7 +2130,7 @@ export function PartyLedgerPage({
                             )}
                           </div>
                         )}
-                        <div className="m-auto max-w-[80%] break-words text-center">
+                        <div className="m-auto max-w-[80%] break-words text-left">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
                           <div className="mt-1 text-base font-bold leading-tight">
                             {(contact?.full_name ?? "").trim() || displayName}
