@@ -11,6 +11,7 @@ function localId(mod: ModuleSchema, entryDate?: string) {
   const yy = String(d.getFullYear()).slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const rand = String(Math.floor(Math.random() * 900 + 100));
+  if (mod.yearlyId) return `${mod.idPrefix}-${yy}-${rand}`;
   return mod.monthlyId
     ? `${mod.idPrefix}-${yy}${mm}-${rand}`
     : `${mod.idPrefix}-${rand}`;
