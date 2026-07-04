@@ -2117,7 +2117,7 @@ export function PartyLedgerPage({
                         style={{ width: `${dim.w * MM_TO_PX}px`, height: `${dim.h * MM_TO_PX}px` }}
                       >
                         {showSender && (
-                          <div className="max-w-[60%] self-start">
+                          <div className="max-w-[55%] self-start break-words">
                             <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
                             {senderName.trim() && (
                               <div className="text-[11px] font-bold leading-tight">{senderName}</div>
@@ -2130,7 +2130,7 @@ export function PartyLedgerPage({
                             )}
                           </div>
                         )}
-                        <div className="mt-auto max-w-[75%] self-end text-right">
+                        <div className="m-auto max-w-[80%] break-words text-center">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
                           <div className="mt-1 text-base font-bold leading-tight">
                             {(contact?.full_name ?? "").trim() || displayName}
@@ -2148,6 +2148,7 @@ export function PartyLedgerPage({
                             </div>
                           )}
                         </div>
+
                       </div>
                     </div>
                   </div>
