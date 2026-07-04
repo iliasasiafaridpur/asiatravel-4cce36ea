@@ -1688,8 +1688,8 @@ export function PartyLedgerPage({
         *{box-sizing:border-box}
         @page{size:A4;margin:0}
         html,body{margin:0;padding:0}
-        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a}
-        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+        body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a;display:flex;justify-content:flex-end;align-items:flex-start}
+        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         .inner{position:relative;z-index:1}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
@@ -1700,6 +1700,7 @@ export function PartyLedgerPage({
         .val{font-weight:600}
         @media print{button{display:none}}
       </style></head><body>
+
       <div class="label"><div class="inner">
         <div class="to">প্রাপক / To</div>
         <div class="name">${esc(fullName)}</div>
