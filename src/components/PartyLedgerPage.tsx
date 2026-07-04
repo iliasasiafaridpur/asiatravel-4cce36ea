@@ -215,10 +215,36 @@ export function PartyLedgerPage({
   // Orientation: খামের লেখা উপর-নিচ (portrait) নাকি ডান-বাম (landscape)।
   const [addrOrient, setAddrOrient] = useState<"portrait" | "landscape">("landscape");
   // প্রেরক (From/Sender) — খামের মত প্রেরকের তথ্য দেখানোর অপশন।
-  const [addrShowSender, setAddrShowSender] = useState(true);
-  const [senderName, setSenderName] = useState("এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্");
-  const [senderAddr, setSenderAddr] = useState("");
-  const [senderPhone, setSenderPhone] = useState("");
+  // এন্ট্রি করা প্রেরকের তথ্য localStorage-এ থেকে যায়, নিজে থেকে মুছে না।
+  const readStore = (key: string, fallback: string) => {
+    if (typeof window === "undefined") return fallback;
+    const v = window.localStorage.getItem(key);
+    return v === null ? fallback : v;
+  };
+  const [addrShowSender, setAddrShowSender] = useState(
+    () => readStore("addr_show_sender", "1") === "1"
+  );
+  const [senderName, setSenderName] = useState(() =>
+    readStore("addr_sender_name", "এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্")
+  );
+  const [senderAddr, setSenderAddr] = useState(() => readStore("addr_sender_addr", ""));
+  const [senderPhone, setSenderPhone] = useState(() => readStore("addr_sender_phone", ""));
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("addr_show_sender", addrShowSender ? "1" : "0");
+  }, [addrShowSender]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("addr_sender_name", senderName);
+  }, [senderName]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("addr_sender_addr", senderAddr);
+  }, [senderAddr]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("addr_sender_phone", senderPhone);
+  }, [senderPhone]);
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
