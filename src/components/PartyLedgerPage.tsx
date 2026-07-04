@@ -1454,6 +1454,18 @@ export function PartyLedgerPage({
       return `<div class="inst">কিস্তি: ${parts}</div>`;
     };
 
+    // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
+    const fullNm = (contact?.full_name ?? "").trim() || displayName;
+    const printName = serialCode ? `${fullNm} (${serialCode})` : fullNm;
+    const addr = (contact?.address ?? "").trim();
+    const phonesStr = phoneList.map((p) => p.phone).join(", ");
+    const printContact = [
+      addr ? `ঠিকানা: ${esc(addr)}` : "",
+      phonesStr ? `ফোন: ${esc(phonesStr)}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
     let subtitle = "";
     let summaryLine = "";
     let theadHtml = "";
@@ -1484,7 +1496,7 @@ export function PartyLedgerPage({
               return `<tr${cls}>
                 <td class="nw">${esc(formatDate(b.date))}</td>
                 <td class="nw">${esc(b.ledgerId)}</td>
-                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
+                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
                 <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
@@ -1574,6 +1586,7 @@ export function PartyLedgerPage({
         body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:60%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         h1{font-size:18px;margin:0 0 2px}
         .sub{color:#64748b;font-size:12px;margin-bottom:2px}
+        .party-meta{color:#334155;font-size:11px;margin-bottom:4px}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
         .sum{font-size:13px;margin-bottom:12px;font-weight:600}
         table{width:100%;border-collapse:collapse;font-size:12px}
@@ -1591,8 +1604,9 @@ export function PartyLedgerPage({
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
-      <h1>${esc(displayName)}</h1>
+      <h1>${esc(printName)}</h1>
       <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
+      ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
       <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
       <div class="sum">${esc(summaryLine)}</div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
