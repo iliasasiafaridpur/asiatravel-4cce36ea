@@ -81,6 +81,23 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 
 type LedgerRow = Record<string, unknown> & { id: string };
+type LedgerReceipt = {
+  id: string;
+  receipt_id: string | null;
+  entry_date: string | null;
+  service_type: string | null;
+  service_table: string | null;
+  service_row_id: string | null;
+  ref_id: string | null;
+  passenger_name: string | null;
+  amount: number;
+  method: string | null;
+  source: string | null;
+  remarks: string | null;
+  received_by_name: string | null;
+  created_at: string | null;
+  ledgerRowId: string;
+};
 type Contact = {
   phone?: string | null;
   phone_labels?: string | null;
@@ -199,6 +216,7 @@ export function PartyLedgerPage({
   const [printTo, setPrintTo] = useState("");
 
   const [rows, setRows] = useState<LedgerRow[]>([]);
+  const [receiptRows, setReceiptRows] = useState<LedgerReceipt[]>([]);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(false);
   // Authoritative balance row (matches the list page exactly).
@@ -351,8 +369,11 @@ export function PartyLedgerPage({
   // Last payment (পরিশোধ/গ্রহণ) — newest ledger row with a positive paid amount.
   const lastPayment = useMemo(() => {
     let best: { date: string; amount: number } | null = null;
-    for (const r of rows) {
-      const amt = Number((r as Record<string, unknown>)[paidCol] ?? 0);
+    const paymentSource = isCustomer && receiptRows.length > 0 ? receiptRows : rows;
+    for (const r of paymentSource) {
+      const amt = isCustomer && "amount" in r
+        ? Number((r as LedgerReceipt).amount ?? 0)
+        : Number((r as Record<string, unknown>)[paidCol] ?? 0);
       if (!(amt > 0)) continue;
       // গ্রহণ/পরিশোধের আসল তারিখ payment_date; না থাকলে entry_date।
       const rec = r as Record<string, unknown>;
@@ -360,7 +381,7 @@ export function PartyLedgerPage({
       if (!best || date >= best.date) best = { date, amount: amt };
     }
     return best;
-  }, [rows, paidCol]);
+  }, [rows, receiptRows, paidCol, isCustomer]);
 
   const serialCode =
     contact?.serial_no != null
@@ -418,6 +439,99 @@ export function PartyLedgerPage({
     setSrcMap(map);
   };
 
+  const receiptSelect =
+    "id,receipt_id,entry_date,service_type,service_table,service_row_id,ref_id,passenger_name,amount,method,source,remarks,received_by_name,created_at";
+
+  const isCountableReceipt = (r: Record<string, unknown>) => {
+    const amount = Number(r.amount ?? 0);
+    if (!(amount > 0)) return false;
+    const source = String(r.source ?? "").trim().toLowerCase();
+    const method = String(r.method ?? "").trim().toLowerCase();
+    if (["discount", "status_event", "status_change", "status-delivery"].includes(source)) return false;
+    if (method === "discount" || method === "status") return false;
+    return true;
+  };
+
+  const loadAgencyReceipts = async (ledgerRows: LedgerRow[]) => {
+    if (!isCustomer || ledgerRows.length === 0) {
+      setReceiptRows([]);
+      return;
+    }
+
+    const ledgerIds = ledgerRows.map((r) => String(r.id)).filter(Boolean);
+    const sourceToLedgerIds = new Map<string, string[]>();
+    const sourceIdsByTable = new Map<string, string[]>();
+    for (const r of ledgerRows) {
+      const srcTable = String(r.source_table ?? "").trim();
+      const srcId = String(r.source_id ?? "").trim();
+      if (!srcTable || !srcId) continue;
+      const key = `${srcTable}:${srcId}`;
+      sourceToLedgerIds.set(key, [...(sourceToLedgerIds.get(key) ?? []), String(r.id)]);
+      sourceIdsByTable.set(srcTable, [...(sourceIdsByTable.get(srcTable) ?? []), srcId]);
+    }
+
+    const queries: Promise<{ data: unknown[] | null; error: unknown }>[] = [];
+    if (ledgerIds.length > 0) {
+      queries.push(
+        supabase
+          .from("payment_receipts" as never)
+          .select(receiptSelect)
+          .eq("service_table", "agency_ledger")
+          .in("service_row_id", ledgerIds) as unknown as Promise<{ data: unknown[] | null; error: unknown }>,
+      );
+    }
+    for (const [srcTable, ids] of sourceIdsByTable.entries()) {
+      const uniqueIds = Array.from(new Set(ids));
+      if (!uniqueIds.length) continue;
+      queries.push(
+        supabase
+          .from("payment_receipts" as never)
+          .select(receiptSelect)
+          .eq("service_table", srcTable)
+          .in("service_row_id", uniqueIds) as unknown as Promise<{ data: unknown[] | null; error: unknown }>,
+      );
+    }
+
+    const results = await Promise.all(queries);
+    const seen = new Set<string>();
+    const next: LedgerReceipt[] = [];
+    for (const res of results) {
+      for (const raw of (res.data as Record<string, unknown>[] | null) ?? []) {
+        if (!isCountableReceipt(raw)) continue;
+        const serviceTable = String(raw.service_table ?? "");
+        const serviceRowId = String(raw.service_row_id ?? "");
+        const source = String(raw.source ?? "").trim().toLowerCase();
+        const ledgerTargets = serviceTable === "agency_ledger"
+          ? (source === "agency_ledger" || source === "agency_ledger_payment" ? [serviceRowId] : [])
+          : (sourceToLedgerIds.get(`${serviceTable}:${serviceRowId}`) ?? []);
+        for (const ledgerRowId of ledgerTargets) {
+          const key = `${raw.id}:${ledgerRowId}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          next.push({
+            id: String(raw.id ?? ""),
+            receipt_id: raw.receipt_id ? String(raw.receipt_id) : null,
+            entry_date: raw.entry_date ? String(raw.entry_date) : null,
+            service_type: raw.service_type ? String(raw.service_type) : null,
+            service_table: serviceTable || null,
+            service_row_id: serviceRowId || null,
+            ref_id: raw.ref_id ? String(raw.ref_id) : null,
+            passenger_name: raw.passenger_name ? String(raw.passenger_name) : null,
+            amount: Number(raw.amount ?? 0),
+            method: raw.method ? String(raw.method) : null,
+            source: raw.source ? String(raw.source) : null,
+            remarks: raw.remarks ? String(raw.remarks) : null,
+            received_by_name: raw.received_by_name ? String(raw.received_by_name) : null,
+            created_at: raw.created_at ? String(raw.created_at) : null,
+            ledgerRowId,
+          });
+        }
+      }
+    }
+    next.sort((a, b) => `${a.entry_date ?? ""}|${a.created_at ?? ""}`.localeCompare(`${b.entry_date ?? ""}|${b.created_at ?? ""}`));
+    setReceiptRows(next);
+  };
+
   const setSummaryFromBalRows = (balRows: Record<string, unknown>[]) => {
     const nameKey = isCustomer ? "agent_name" : "vendor_name";
     const billKey = isCustomer ? "total_bill" : "total_payable";
@@ -461,6 +575,7 @@ export function PartyLedgerPage({
         return ca < cb ? -1 : ca > cb ? 1 : 0;
       });
     setRows(ledgerRows);
+    setReceiptRows([]);
 
     const allContacts = cacheRead<Contact[]>(contactsTable) ?? [];
     const mine = allContacts.filter(
@@ -502,6 +617,7 @@ export function PartyLedgerPage({
       if (ledgerRes.error) throw ledgerRes.error;
       const ledgerRows = (ledgerRes.data as unknown as LedgerRow[]) ?? [];
       setRows(ledgerRows);
+      await loadAgencyReceipts(ledgerRows);
       // Duplicate-tolerant: a name should map to one contact, but if stale
       // duplicates ever exist, merge them so an explicit "এক একটা বিল" choice
       // and any saved phone/address are never lost.
@@ -917,26 +1033,35 @@ export function PartyLedgerPage({
       return out.reverse();
     }
 
-    // CUSTOMER: keep the advance-wallet aware logic.
+    // CUSTOMER: show real receipt entries on their actual receive dates. The
+    // bill row carries the bill/discount/advance-applied math; payment_receipts
+    // rows carry cash receive history so a later payment no longer appears as if
+    // it was received on the original bill date.
+    const receiptsByLedger = new Map<string, LedgerReceipt[]>();
+    const receiptSumByLedger = new Map<string, number>();
+    for (const rec of receiptRows) {
+      const arr = receiptsByLedger.get(rec.ledgerRowId) ?? [];
+      arr.push(rec);
+      receiptsByLedger.set(rec.ledgerRowId, arr);
+      receiptSumByLedger.set(rec.ledgerRowId, (receiptSumByLedger.get(rec.ledgerRowId) ?? 0) + Number(rec.amount ?? 0));
+    }
+
     let bal = 0;
     let adv = 0;
-    const out: Stmt[] = [];
+    type Prep = Omit<Stmt, "previous" | "balance"> & { sortKey: string; deltaBalance: number; advanceDelta: number };
+    const prepped: Prep[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
-      if (svc === "PAYMENT" || svc === "OPENING") continue;
+      if (svc === "PAYMENT") continue;
       const advRow = svc === "ADVANCE";
       const cash = Number(r[paidCol] ?? 0);
       const applied = Number(r.advance_applied ?? 0);
       const bill = Number(r[billCol] ?? 0);
       const discount = Number(r.discount_amount ?? 0);
-      const prev = bal;
+      const ledgerRowId = String(r.id);
+      const receiptTotal = receiptSumByLedger.get(ledgerRowId) ?? 0;
+      const unreceiptedCash = advRow ? cash : Math.max(0, cash - receiptTotal);
 
-      if (advRow) {
-        adv += cash;
-      } else {
-        bal = prev + bill - cash - applied - discount;
-        adv = Math.max(adv - applied, 0);
-      }
       // কাজ এখনো সম্পন্ন হয়নি? BMET/Saudi/Kuwait এন্ট্রি যা ভেন্ডর থেকে এখনো
       // received হয়নি (received_date নেই) সেগুলো অসম্পূর্ণ — ধূসর দেখানো হবে।
       const cSrc = String(r.source_table ?? "");
@@ -944,27 +1069,76 @@ export function PartyLedgerPage({
         cSrc === "bmet_cards" || cSrc === "saudi_visas" || cSrc === "kuwait_visas";
       const cInfo = srcMap.get(String(r.source_id ?? ""));
       const incomplete = !advRow && cSourced && !cInfo?.countDate;
-      out.push({
-        id: String(r.id),
+      prepped.push({
+        id: ledgerRowId,
         ledgerId: String(r.ledger_id ?? ""),
         date: String(r.entry_date ?? ""),
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
-        previous: prev,
-        deposit: advRow ? cash : cash + applied,
+        deposit: advRow ? cash : unreceiptedCash + applied + discount,
         credit: advRow ? 0 : bill,
-        balance: bal,
-        advance: Math.max(adv, 0),
+        advance: 0,
         isPayment: advRow,
         incomplete,
         cancelled: !advRow && Boolean(cInfo?.cancelled),
         cancelReason: cInfo?.cancelReason ?? null,
         cancelDate: cInfo?.cancelDate ?? null,
+        sortKey: `${String(r.entry_date ?? "") || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
+        deltaBalance: advRow ? 0 : bill - unreceiptedCash - applied - discount,
+        advanceDelta: advRow ? cash : -applied,
       });
+
+      if (!advRow) {
+        for (const rec of receiptsByLedger.get(ledgerRowId) ?? []) {
+          const method = String(rec.method ?? "").trim();
+          const receiver = String(rec.received_by_name ?? "").trim();
+          const details = [String(rec.passenger_name ?? r.passenger_name ?? "").trim(), method, receiver]
+            .filter(Boolean)
+            .join(" · ");
+          prepped.push({
+            id: `receipt-${rec.id}-${ledgerRowId}`,
+            ledgerId: String(rec.receipt_id ?? rec.ref_id ?? r.ledger_id ?? ""),
+            date: String(rec.entry_date ?? r.payment_date ?? r.entry_date ?? ""),
+            service: "Payment Receive",
+            description: details || String(rec.remarks ?? "পেমেন্ট গ্রহণ"),
+            deposit: Number(rec.amount ?? 0),
+            credit: 0,
+            advance: 0,
+            isPayment: true,
+            sortKey: `${String(rec.entry_date ?? "") || "0000-00-00"}|${String(rec.created_at ?? "")}|1`,
+            deltaBalance: -Number(rec.amount ?? 0),
+            advanceDelta: 0,
+          });
+        }
+      }
     }
+
+    prepped.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+    const out: Stmt[] = prepped.map((p) => {
+      const prev = bal;
+      bal = prev + p.deltaBalance;
+      adv = Math.max(adv + p.advanceDelta, 0);
+      return {
+        id: p.id,
+        ledgerId: p.ledgerId,
+        date: p.date,
+        service: p.service,
+        description: p.description,
+        previous: prev,
+        deposit: p.deposit,
+        credit: p.credit,
+        balance: bal,
+        advance: Math.max(adv, 0),
+        isPayment: p.isPayment,
+        incomplete: p.incomplete,
+        cancelled: p.cancelled,
+        cancelReason: p.cancelReason,
+        cancelDate: p.cancelDate,
+      };
+    });
     // Latest entry on top (same as the vendor ledger).
     return out.reverse();
-  }, [rows, billCol, paidCol, isCustomer, srcMap]);
+  }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap]);
 
   // Per-bill breakdown for "এক একটা বিল" (Bill-by-Bill) parties. Each booking is
   // shown with its own বাকি / আংশিক / পরিশোধিত status so one-by-one settlement is
@@ -1004,7 +1178,17 @@ export function PartyLedgerPage({
     // Vendor: map each bill row id -> dated payment instalments pulled from the
     // green PAYMENT rows' alloc_detail (so every settlement carries its date).
     const payByBill = new Map<string, BillPay[]>();
-    if (!isCustomer) {
+    if (isCustomer) {
+      for (const rec of receiptRows) {
+        const arr = payByBill.get(rec.ledgerRowId) ?? [];
+        arr.push({
+          date: String(rec.entry_date ?? ""),
+          amt: Number(rec.amount ?? 0),
+          method: String(rec.method ?? ""),
+        });
+        payByBill.set(rec.ledgerRowId, arr);
+      }
+    } else {
       for (const r of rows) {
         if (String(r.service_type ?? "").toUpperCase() !== "PAYMENT") continue;
         const det = (r as Record<string, unknown>).alloc_detail as
@@ -1024,7 +1208,7 @@ export function PartyLedgerPage({
     const out: BillItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
-      if (svc === "PAYMENT" || svc === "ADVANCE" || svc === "OPENING") continue;
+      if (svc === "PAYMENT" || svc === "ADVANCE") continue;
       const src = String(r.source_table ?? "");
       const sid = String(r.source_id ?? "");
       const info = srcMap.get(sid);
@@ -1044,7 +1228,11 @@ export function PartyLedgerPage({
       const rowMethod = String(r.payment_method ?? "");
       const payments: BillPay[] = [];
       if (isCustomer) {
-        if (direct > 0) payments.push({ date: rowPayDate, amt: direct, method: rowMethod || "Cash" });
+        const linked = payByBill.get(String(r.id)) ?? [];
+        for (const p of linked) payments.push(p);
+        const covered = linked.reduce((s, p) => s + p.amt, 0);
+        const directNet = Math.max(0, direct - covered);
+        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash" });
         if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
         if (disc > 0) payments.push({ date: rowPayDate, amt: disc, method: "ডিসকাউন্ট" });
       } else {
@@ -1105,7 +1293,7 @@ export function PartyLedgerPage({
       return (a.date || "9999").localeCompare(b.date || "9999"); // oldest due first
     });
     return out;
-  }, [rows, billCol, paidCol, isCustomer, srcMap]);
+  }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap]);
 
   const billStats = useMemo(() => {
     let dueCount = 0,

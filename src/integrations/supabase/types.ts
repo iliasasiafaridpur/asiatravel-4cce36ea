@@ -531,6 +531,7 @@ export type Database = {
           passenger_name: string | null
           passport: string | null
           payment_date: string | null
+          payment_method: string | null
           received_amount: number
           received_by: string | null
           service_name: string
@@ -553,6 +554,7 @@ export type Database = {
           passenger_name?: string | null
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number
           received_by?: string | null
           service_name: string
@@ -575,6 +577,7 @@ export type Database = {
           passenger_name?: string | null
           passport?: string | null
           payment_date?: string | null
+          payment_method?: string | null
           received_amount?: number
           received_by?: string | null
           service_name?: string

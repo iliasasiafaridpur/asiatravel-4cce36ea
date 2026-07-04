@@ -679,7 +679,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         due += advanceAdjustedRows.get(r.id)?.displayDue ?? Math.max(balanceOf(r), 0);
       }
     }
-    paid = cashPaid + applied;
+    paid = cashPaid + applied + (isAgency ? discount : 0);
     return {
       bill,
       paid,
@@ -715,7 +715,7 @@ export function LedgerPage({ module: mod, autoPay, onAutoPayHandled, renderMode 
         return {
           key,
           bill: v.bill,
-          paid: v.cashPaid + v.applied,
+          paid: v.cashPaid + v.applied + (isAgency ? v.discount : 0),
           due: v.due,
           advance: Math.max(v.advance - v.applied, 0),
         };
