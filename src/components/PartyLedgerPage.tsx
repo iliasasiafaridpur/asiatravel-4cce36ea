@@ -1559,7 +1559,7 @@ export function PartyLedgerPage({
             <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
             <td class="r">${s.credit ? num(s.credit) : "—"}</td>
-            <td class="r">${num(s.balance)}</td>${isCustomer ? `<td class="r">${s.advance ? num(s.advance) : "—"}</td>` : ""}
+            <td class="r">${num(s.balance)}</td>
           </tr>`,
               )
               .join("")
