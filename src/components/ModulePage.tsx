@@ -576,7 +576,7 @@ export function ModulePage({ module: mod }: Props) {
         disabled={monthIndex >= monthKeys.length - 1}
         onClick={() => setMonthIndex((i) => Math.min(monthKeys.length - 1, i + 1))}
       >
-        <ChevronLeft className="h-4 w-4" /> পুরোনো
+        <ChevronLeft className="h-4 w-4" /> পূর্ববর্তী মাস
       </Button>
       <span className="text-sm font-medium px-2 whitespace-nowrap">
         {formatMonthLabel(curMonthKey!)}
@@ -590,7 +590,7 @@ export function ModulePage({ module: mod }: Props) {
         disabled={monthIndex <= 0}
         onClick={() => setMonthIndex((i) => Math.max(0, i - 1))}
       >
-        নতুন <ChevronRight className="h-4 w-4" />
+        পরবর্তী মাস <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
   ) : null;
