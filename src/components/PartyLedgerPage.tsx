@@ -212,6 +212,13 @@ export function PartyLedgerPage({
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
   const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
+  // Orientation: খামের লেখা উপর-নিচ (portrait) নাকি ডান-বাম (landscape)।
+  const [addrOrient, setAddrOrient] = useState<"portrait" | "landscape">("landscape");
+  // প্রেরক (From/Sender) — খামের মত প্রেরকের তথ্য দেখানোর অপশন।
+  const [addrShowSender, setAddrShowSender] = useState(true);
+  const [senderName, setSenderName] = useState("এশিয়া ট্যুরস্ এন্ড ট্রাভেলস্");
+  const [senderAddr, setSenderAddr] = useState("");
+  const [senderPhone, setSenderPhone] = useState("");
   const [printFrom, setPrintFrom] = useState("");
   const [printTo, setPrintTo] = useState("");
 
@@ -1673,8 +1680,11 @@ export function PartyLedgerPage({
       a6: { w: 105, h: 148 },
       a7: { w: 74, h: 105 },
     };
-    const dim = DIMS[size];
-    const padMm = Math.max(6, Math.round(dim.w * 0.06));
+    const base = DIMS[size];
+    // Landscape হলে প্রস্থ ও উচ্চতা অদলবদল (ডান-বাম) হবে।
+    const dim =
+      addrOrient === "landscape" ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
+    const padMm = Math.max(6, Math.round(dim.w * 0.05));
 
     const phoneHtml = phones.length
       ? `<div class="row"><span class="lbl">মোবাইল:</span> <span class="val">${phones.map(esc).join(", ")}</span></div>`
@@ -1683,15 +1693,33 @@ export function PartyLedgerPage({
       ? `<div class="row addr"><span class="lbl">ঠিকানা:</span> <span class="val">${esc(addr)}</span></div>`
       : "";
 
+    // প্রেরক (From) ব্লক — খামের উপরে-বাম কোণে।
+    const sName = senderName.trim();
+    const sAddr = senderAddr.trim();
+    const sPhone = senderPhone.trim();
+    const senderHtml =
+      addrShowSender && (sName || sAddr || sPhone)
+        ? `<div class="from">
+             <div class="from-cap">প্রেরক / From</div>
+             ${sName ? `<div class="from-name">${esc(sName)}</div>` : ""}
+             ${sAddr ? `<div class="from-row">${esc(sAddr)}</div>` : ""}
+             ${sPhone ? `<div class="from-row">${esc(sPhone)}</div>` : ""}
+           </div>`
+        : "";
+
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(fullName)} — ঠিকানা</title>
       <style>
         *{box-sizing:border-box}
         @page{size:A4;margin:0}
         html,body{margin:0;padding:0}
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a;display:flex;justify-content:flex-end;align-items:flex-start}
-        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden}
-        .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        .inner{position:relative;z-index:1}
+        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;position:relative;overflow:hidden}
+        .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:50%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .from{position:relative;z-index:1;align-self:flex-start;max-width:60%}
+        .from-cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+        .from-name{font-size:12px;font-weight:700;line-height:1.2}
+        .from-row{font-size:10px;color:#475569;line-height:1.3}
+        .inner{position:relative;z-index:1;margin-top:auto;align-self:flex-end;text-align:right;max-width:75%}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
         .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.2}
         .row{font-size:13px;margin-bottom:4px;line-height:1.4}
@@ -1701,12 +1729,15 @@ export function PartyLedgerPage({
         @media print{button{display:none}}
       </style></head><body>
 
-      <div class="label"><div class="inner">
-        <div class="to">প্রাপক / To</div>
-        <div class="name">${esc(fullName)}</div>
-        ${addrHtml}
-        ${phoneHtml}
-      </div></div>
+      <div class="label">
+        ${senderHtml}
+        <div class="inner">
+          <div class="to">প্রাপক / To</div>
+          <div class="name">${esc(fullName)}</div>
+          ${addrHtml}
+          ${phoneHtml}
+        </div>
+      </div>
       </body></html>`;
 
 
@@ -1721,6 +1752,7 @@ export function PartyLedgerPage({
       toast.error("প্রিন্ট উইন্ডো খোলা যায়নি (পপ-আপ ব্লক?)");
     }
   };
+
 
 
 
@@ -1987,6 +2019,69 @@ export function PartyLedgerPage({
               </p>
             </div>
 
+            {/* Orientation: উপর-নিচ (Portrait) নাকি ডান-বাম (Landscape) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">লেখার দিক (Orientation)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={addrOrient === "portrait" ? "default" : "outline"}
+                  onClick={() => setAddrOrient("portrait")}
+                >
+                  উপর-নিচ (Portrait)
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={addrOrient === "landscape" ? "default" : "outline"}
+                  onClick={() => setAddrOrient("landscape")}
+                >
+                  ডান-বাম (Landscape)
+                </Button>
+              </div>
+            </div>
+
+            {/* প্রেরক (From/Sender) — খামের মত প্রেরকের তথ্য */}
+            <div className="space-y-1.5 rounded-md border border-border/60 p-2.5">
+              <button
+                type="button"
+                onClick={() => setAddrShowSender((v) => !v)}
+                className="flex w-full items-center justify-between text-xs font-medium"
+              >
+                <span>প্রেরক (From) দেখান</span>
+                <span
+                  className={`flex h-4 w-4 items-center justify-center rounded border ${
+                    addrShowSender ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                  }`}
+                >
+                  {addrShowSender ? "✓" : ""}
+                </span>
+              </button>
+              {addrShowSender && (
+                <div className="space-y-1.5 pt-1">
+                  <Input
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="প্রেরকের নাম / প্রতিষ্ঠান"
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    value={senderAddr}
+                    onChange={(e) => setSenderAddr(e.target.value)}
+                    placeholder="প্রেরকের ঠিকানা (ঐচ্ছিক)"
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    value={senderPhone}
+                    onChange={(e) => setSenderPhone(e.target.value)}
+                    placeholder="প্রেরকের মোবাইল (ঐচ্ছিক)"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              )}
+            </div>
+
             {/* Live preview with dotted border showing the selected size */}
             {(() => {
               const DIMS = {
@@ -1995,11 +2090,14 @@ export function PartyLedgerPage({
                 a6: { w: 105, h: 148 },
                 a7: { w: 74, h: 105 },
               } as const;
-              const dim = DIMS[addrSize];
+              const base = DIMS[addrSize];
+              const dim =
+                addrOrient === "landscape" ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
               const A4 = { w: 210, h: 297 };
               const MM_TO_PX = 96 / 25.4;
               const a4wPx = A4.w * MM_TO_PX;
               const scale = Math.min(1, 240 / a4wPx);
+              const showSender = addrShowSender && (senderName.trim() || senderAddr.trim() || senderPhone.trim());
               return (
                 <div className="flex justify-center rounded-lg bg-muted/40 p-4">
                   <div style={{ width: `${a4wPx * scale}px`, height: `${A4.h * MM_TO_PX * scale}px` }}>
@@ -2015,31 +2113,48 @@ export function PartyLedgerPage({
                     >
                       {/* Label box pinned to the top-right corner */}
                       <div
-                        className="absolute right-0 top-0 flex flex-col justify-start rounded-sm border-2 border-dashed border-primary/60 bg-primary/5 p-4"
+                        className="absolute right-0 top-0 flex flex-col rounded-sm border-2 border-dashed border-primary/60 bg-primary/5 p-4"
                         style={{ width: `${dim.w * MM_TO_PX}px`, height: `${dim.h * MM_TO_PX}px` }}
                       >
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
-                        <div className="mt-1 text-base font-bold leading-tight">
-                          {(contact?.full_name ?? "").trim() || displayName}
+                        {showSender && (
+                          <div className="max-w-[60%] self-start">
+                            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
+                            {senderName.trim() && (
+                              <div className="text-[11px] font-bold leading-tight">{senderName}</div>
+                            )}
+                            {senderAddr.trim() && (
+                              <div className="text-[10px] leading-tight text-muted-foreground">{senderAddr}</div>
+                            )}
+                            {senderPhone.trim() && (
+                              <div className="text-[10px] leading-tight text-muted-foreground">{senderPhone}</div>
+                            )}
+                          </div>
+                        )}
+                        <div className="mt-auto max-w-[75%] self-end text-right">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
+                          <div className="mt-1 text-base font-bold leading-tight">
+                            {(contact?.full_name ?? "").trim() || displayName}
+                          </div>
+                          {(contact?.address ?? "").trim() && (
+                            <div className="mt-1.5 text-xs leading-snug">
+                              <span className="text-muted-foreground">ঠিকানা: </span>
+                              {contact?.address}
+                            </div>
+                          )}
+                          {(contact?.phone ?? "").trim() && (
+                            <div className="mt-1 text-xs font-semibold">
+                              <span className="font-normal text-muted-foreground">মোবাইল: </span>
+                              {contact?.phone}
+                            </div>
+                          )}
                         </div>
-                        {(contact?.address ?? "").trim() && (
-                          <div className="mt-1.5 text-xs leading-snug">
-                            <span className="text-muted-foreground">ঠিকানা: </span>
-                            {contact?.address}
-                          </div>
-                        )}
-                        {(contact?.phone ?? "").trim() && (
-                          <div className="mt-1 text-xs font-semibold">
-                            <span className="font-normal text-muted-foreground">মোবাইল: </span>
-                            {contact?.phone}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })()}
+
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setAddrOpen(false)}>
