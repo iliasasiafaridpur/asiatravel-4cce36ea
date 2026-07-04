@@ -1020,7 +1020,7 @@ ${partySectionsHtml()}
         sumPrev += pv;
         if (!lastAdvDate || p.entry_date > lastAdvDate) lastAdvDate = p.entry_date;
       }
-      if (sumPrev > 0.005) advLines.push(`${fmt(sumPrev)} (${formatDate(lastAdvDate)})`);
+      if (sumPrev > 0.005) advLines.push(`(৳${sumPrev.toLocaleString()}-Adv-${formatDate(lastAdvDate)})`);
     }
     if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
@@ -1032,7 +1032,7 @@ ${partySectionsHtml()}
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
       { className: "num", html: totalBill !== null ? fmt(totalBill) : "" },
       { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
-      { className: "num due", html: due !== null && due > 0.005 ? fmt(due) : "" },
+      { className: "num due", html: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "" },
       { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join("") },
       { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "" },
       { className: "num", html: fmt(running), allowSpan: false },
@@ -1981,7 +1981,7 @@ ${partySectionsHtml()}
                       sumPrev += pv;
                       if (!lastAdvDate || p.entry_date > lastAdvDate) lastAdvDate = p.entry_date;
                     }
-                    if (sumPrev > 0.005) advLines.push({ text: `${fmt(sumPrev)} (${formatDate(lastAdvDate)})` });
+                    if (sumPrev > 0.005) advLines.push({ text: `(৳${sumPrev.toLocaleString()}-Adv-${formatDate(lastAdvDate)})` });
                   }
                   if (discAmt > 0.005) advLines.push({ text: `${fmt(discAmt)} Discount` });
                   // বাকি = মোট বিল − নগদ জমা − Discount
@@ -2000,7 +2000,7 @@ ${partySectionsHtml()}
                           { className: "wrap", content: regionText, plain: regionText },
                           { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "" },
                           { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
-                          { className: "num due", content: due !== null && due > 0.005 ? fmt(due) : "", plain: due !== null && due > 0.005 ? fmt(due) : "" },
+                          { className: "num due", content: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "", plain: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "" },
                           { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" ") },
                           { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "" },
                           { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
