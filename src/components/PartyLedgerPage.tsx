@@ -1614,6 +1614,7 @@ export function PartyLedgerPage({
       <div class="head">
         <div class="head-left">
           <h1>${esc(printName)}</h1>
+          ${hasShort ? `<div class="short-name">${esc(shortNm)}</div>` : ""}
           <div class="sub">${isCustomer ? "Agency" : "Vendor"} Ledger · ${esc(subtitle)}</div>
           ${printContact ? `<div class="party-meta">${printContact}</div>` : ""}
         </div>
