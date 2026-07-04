@@ -1715,14 +1715,14 @@ export function PartyLedgerPage({
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a;display:flex;justify-content:flex-end;align-items:flex-start}
         .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:50%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        .from{position:relative;z-index:1;align-self:flex-start;max-width:60%}
+        .from{position:relative;z-index:1;align-self:flex-start;max-width:55%;overflow-wrap:anywhere;word-break:break-word}
         .from-cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
-        .from-name{font-size:12px;font-weight:700;line-height:1.2}
-        .from-row{font-size:10px;color:#475569;line-height:1.3}
-        .inner{position:relative;z-index:1;margin-top:auto;align-self:flex-end;text-align:right;max-width:75%}
-        .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
-        .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.2}
-        .row{font-size:13px;margin-bottom:4px;line-height:1.4}
+        .from-name{font-size:12px;font-weight:700;line-height:1.25}
+        .from-row{font-size:10px;color:#475569;line-height:1.35}
+        .inner{position:relative;z-index:1;margin:auto;text-align:center;max-width:80%;overflow-wrap:anywhere;word-break:break-word}
+        .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+        .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.25}
+        .row{font-size:13px;margin-bottom:4px;line-height:1.45}
         .row.addr{margin-top:2px}
         .lbl{color:#64748b}
         .val{font-weight:600}
@@ -2117,7 +2117,7 @@ export function PartyLedgerPage({
                         style={{ width: `${dim.w * MM_TO_PX}px`, height: `${dim.h * MM_TO_PX}px` }}
                       >
                         {showSender && (
-                          <div className="max-w-[60%] self-start">
+                          <div className="max-w-[55%] self-start break-words">
                             <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
                             {senderName.trim() && (
                               <div className="text-[11px] font-bold leading-tight">{senderName}</div>
@@ -2130,7 +2130,7 @@ export function PartyLedgerPage({
                             )}
                           </div>
                         )}
-                        <div className="mt-auto max-w-[75%] self-end text-right">
+                        <div className="m-auto max-w-[80%] break-words text-center">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
                           <div className="mt-1 text-base font-bold leading-tight">
                             {(contact?.full_name ?? "").trim() || displayName}
@@ -2148,6 +2148,7 @@ export function PartyLedgerPage({
                             </div>
                           )}
                         </div>
+
                       </div>
                     </div>
                   </div>
