@@ -1654,7 +1654,9 @@ export function PartyLedgerPage({
   };
 
   // Print a small address label (full name, mobile, address) for envelope / courier.
-  const runAddressLabel = (size: "quarter" | "a6" | "a5" | "a4") => {
+  // The printer tray always holds A4 (@page size:A4); the label content is sized to
+  // the selected paper size (A4/A5/A6/A7) and prints in that much of the A4 sheet.
+  const runAddressLabel = (size: "a4" | "a5" | "a6" | "a7") => {
     const esc = (s: string) =>
       String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const fullName = (contact?.full_name ?? "").trim() || displayName;
@@ -1664,15 +1666,15 @@ export function PartyLedgerPage({
       .filter(Boolean);
     const addr = (contact?.address ?? "").trim();
 
-    // Page geometry. "quarter" = one-fourth of an A4 (A4 = 210×297mm → 148×105mm landscape-ish quarter).
-    const pageCss =
-      size === "quarter"
-        ? "@page{size:148mm 105mm;margin:0}"
-        : size === "a6"
-        ? "@page{size:A6;margin:0}"
-        : size === "a5"
-        ? "@page{size:A5;margin:0}"
-        : "@page{size:A4;margin:0}";
+    // International portrait dimensions in mm (width × height).
+    const DIMS: Record<typeof size, { w: number; h: number }> = {
+      a4: { w: 210, h: 297 },
+      a5: { w: 148, h: 210 },
+      a6: { w: 105, h: 148 },
+      a7: { w: 74, h: 105 },
+    };
+    const dim = DIMS[size];
+    const padMm = Math.max(6, Math.round(dim.w * 0.06));
 
     const phoneHtml = phones.length
       ? `<div class="row"><span class="lbl">মোবাইল:</span> <span class="val">${phones.map(esc).join(", ")}</span></div>`
@@ -1684,10 +1686,10 @@ export function PartyLedgerPage({
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(fullName)} — ঠিকানা</title>
       <style>
         *{box-sizing:border-box}
-        ${pageCss}
+        @page{size:A4;margin:0}
         html,body{margin:0;padding:0}
         body{font-family:system-ui,'Noto Sans Bengali',sans-serif;color:#0f172a}
-        .label{width:100%;height:100vh;padding:10mm 12mm;display:flex;flex-direction:column;justify-content:center;position:relative}
+        .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:55%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         .inner{position:relative;z-index:1}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
@@ -1705,6 +1707,7 @@ export function PartyLedgerPage({
         ${phoneHtml}
       </div></div>
       </body></html>`;
+
 
     const docTitle = buildFileTitle(
       isCustomer ? "Agency_Address" : "Vendor_Address",
