@@ -1716,11 +1716,11 @@ export function PartyLedgerPage({
         .label{width:${dim.w}mm;height:${dim.h}mm;padding:${padMm}mm;position:relative;overflow:hidden}
         .label::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:url("${window.location.origin}${logoAsset.url}");background-repeat:no-repeat;background-position:center;background-size:50%;opacity:0.06;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         .stamp{position:absolute;z-index:1;top:${padMm}mm;right:${padMm}mm;width:14mm;height:18mm;border:1px dashed #cbd5e1;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#cbd5e1;text-transform:uppercase;letter-spacing:1px}
-        .from{position:absolute;z-index:1;top:${padMm}mm;left:${padMm}mm;max-width:50%;overflow-wrap:anywhere;word-break:break-word}
+        .from{position:absolute;z-index:1;top:${padMm}mm;left:${padMm}mm;width:45%;max-width:45%;overflow-wrap:anywhere;word-break:break-word}
         .from-cap{font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
         .from-name{font-size:12px;font-weight:700;line-height:1.25}
         .from-row{font-size:10px;color:#475569;line-height:1.35}
-        .inner{position:absolute;z-index:1;top:56%;left:50%;transform:translate(-50%,-50%);width:70%;text-align:left;overflow-wrap:anywhere;word-break:break-word}
+        .inner{position:absolute;z-index:1;top:52%;left:38%;transform:translateY(-50%);width:54%;text-align:left;overflow-wrap:anywhere;word-break:break-word}
         .to{font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
         .name{font-size:20px;font-weight:700;margin-bottom:8px;line-height:1.25}
         .row{font-size:13px;margin-bottom:4px;line-height:1.45}
@@ -2095,8 +2095,8 @@ export function PartyLedgerPage({
               const base = DIMS[addrSize];
               const dim =
                 addrOrient === "landscape" ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
-              // Scale the envelope so its longest side ~= 300px for a readable preview.
-              const MAX = 300;
+              // Small popup preview; print keeps the selected real paper size.
+              const MAX = 230;
               const scale = MAX / Math.max(dim.w, dim.h);
               const wPx = dim.w * scale;
               const hPx = dim.h * scale;
@@ -2114,7 +2114,7 @@ export function PartyLedgerPage({
                     </div>
                     {/* Sender — top-left corner */}
                     {showSender && (
-                      <div className="absolute left-3 top-3 max-w-[55%] break-words">
+                      <div className="absolute left-3 top-3 w-[45%] max-w-[45%] break-words">
                         <div className="text-[8px] uppercase tracking-wider text-muted-foreground">প্রেরক / From</div>
                         {senderName.trim() && (
                           <div className="text-[11px] font-bold leading-tight">{senderName}</div>
@@ -2127,8 +2127,8 @@ export function PartyLedgerPage({
                         )}
                       </div>
                     )}
-                    {/* Recipient — centered in the middle of the envelope */}
-                    <div className="absolute left-1/2 top-[56%] w-[70%] -translate-x-1/2 -translate-y-1/2 break-words text-left">
+                    {/* Recipient — envelope style: middle area, shifted to the right */}
+                    <div className="absolute left-[38%] top-[52%] w-[54%] -translate-y-1/2 break-words text-left">
                       <div className="text-[9px] uppercase tracking-wider text-muted-foreground">প্রাপক / To</div>
                       <div className="mt-0.5 text-[15px] font-bold leading-tight">
                         {(contact?.full_name ?? "").trim() || displayName}
