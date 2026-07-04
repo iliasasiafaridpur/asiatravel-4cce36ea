@@ -576,7 +576,7 @@ export const MODULES: ModuleSchema[] = [
     table: "kuwait_visas",
     idColumn: "kuwait_id",
     idPrefix: "KUV",
-    monthlyId: true,
+    yearlyId: true,
     statuses: STATUS_VISA,
     fields: [
       { name: "entry_date", label: "Date", type: "date", showInList: true, section: "passenger" },
