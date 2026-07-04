@@ -1520,8 +1520,12 @@ export function PartyLedgerPage({
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
       </tr>`;
-      bodyHtml = bills.length
-        ? bills
+      // প্রিন্টে নতুন বিল উপরে, পুরনো নিচে — তারিখ অনুযায়ী উল্টো ক্রম।
+      const billsSorted = [...bills].sort((a, b) =>
+        (b.date || "").localeCompare(a.date || ""),
+      );
+      bodyHtml = billsSorted.length
+        ? billsSorted
             .map((b) => {
               const st = b.cancelled
                 ? "বাতিল কাজ"
