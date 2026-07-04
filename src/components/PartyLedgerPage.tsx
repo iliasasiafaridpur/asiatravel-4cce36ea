@@ -1077,6 +1077,11 @@ export function PartyLedgerPage({
     let adv = 0;
     type Prep = Omit<Stmt, "previous" | "balance"> & { sortKey: string; deltaBalance: number; advanceDelta: number };
     const prepped: Prep[] = [];
+    // Collect every "Payment Receive" (cash actually received from the agent) so
+    // multiple receipts landing on the SAME date are shown as ONE combined
+    // payment-receive row (e.g. all the 21 Jun / 4 Jul receipts merge into one).
+    type PayItem = { date: string; amount: number; method: string; passenger: string; receiver: string; receiptId: string; createdAt: string };
+    const payItems: PayItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
       if (svc === "PAYMENT") continue;
@@ -1126,49 +1131,64 @@ export function PartyLedgerPage({
 
       if (!advRow) {
         for (const rec of receiptsByLedger.get(ledgerRowId) ?? []) {
-          const method = String(rec.method ?? "").trim();
-          const receiver = String(rec.received_by_name ?? "").trim();
-          const details = [String(rec.passenger_name ?? r.passenger_name ?? "").trim(), method, receiver]
-            .filter(Boolean)
-            .join(" · ");
-          prepped.push({
-            id: `receipt-${rec.id}-${ledgerRowId}`,
-            ledgerId: String(rec.receipt_id ?? rec.ref_id ?? r.ledger_id ?? ""),
+          payItems.push({
             date: String(rec.entry_date ?? r.payment_date ?? r.entry_date ?? ""),
-            service: "Payment Receive",
-            description: details || String(rec.remarks ?? "পেমেন্ট গ্রহণ"),
-            deposit: Number(rec.amount ?? 0),
-            credit: 0,
-            advance: 0,
-            isPayment: true,
-            sortKey: `${String(rec.entry_date ?? "") || "0000-00-00"}|${String(rec.created_at ?? "")}|1`,
-            deltaBalance: -Number(rec.amount ?? 0),
-            advanceDelta: 0,
+            amount: Number(rec.amount ?? 0),
+            method: String(rec.method ?? "").trim(),
+            passenger: String(rec.passenger_name ?? r.passenger_name ?? "").trim(),
+            receiver: String(rec.received_by_name ?? "").trim(),
+            receiptId: String(rec.receipt_id ?? rec.ref_id ?? r.ledger_id ?? ""),
+            createdAt: String(rec.created_at ?? ""),
           });
         }
         if (unreceiptedCash > 0.0001) {
-          const method = String(r.payment_method ?? "Cash").trim() || "Cash";
-          const receiver = String((r as Record<string, unknown>).received_by_name ?? "").trim();
-          const details = [String(r.passenger_name ?? "").trim(), method, receiver]
-            .filter(Boolean)
-            .join(" · ");
-          const payDate = String(r.payment_date ?? r.entry_date ?? "");
-          prepped.push({
-            id: `receipt-unrecorded-${ledgerRowId}`,
-            ledgerId: String(r.ledger_id ?? ""),
-            date: payDate,
-            service: "Payment Receive",
-            description: details || "পেমেন্ট গ্রহণ",
-            deposit: unreceiptedCash,
-            credit: 0,
-            advance: 0,
-            isPayment: true,
-            sortKey: `${payDate || "0000-00-00"}|${String(r.updated_at ?? r.created_at ?? "")}|1`,
-            deltaBalance: -unreceiptedCash,
-            advanceDelta: 0,
+          payItems.push({
+            date: String(r.payment_date ?? r.entry_date ?? ""),
+            amount: unreceiptedCash,
+            method: String(r.payment_method ?? "Cash").trim() || "Cash",
+            passenger: String(r.passenger_name ?? "").trim(),
+            receiver: String((r as Record<string, unknown>).received_by_name ?? "").trim(),
+            receiptId: String(r.ledger_id ?? ""),
+            createdAt: String(r.updated_at ?? r.created_at ?? ""),
           });
         }
       }
+    }
+
+    // Merge every payment received on the SAME calendar date into ONE
+    // "Payment Receive" row. All methods are shown; a single receipt keeps its
+    // passenger/method detail, several receipts show the count + methods.
+    const payByDate = new Map<string, PayItem[]>();
+    for (const p of payItems) {
+      const arr = payByDate.get(p.date) ?? [];
+      arr.push(p);
+      payByDate.set(p.date, arr);
+    }
+    for (const [date, items] of payByDate.entries()) {
+      const amount = items.reduce((s, i) => s + i.amount, 0);
+      if (amount <= 0.0001) continue;
+      const methods = Array.from(new Set(items.map((i) => i.method).filter(Boolean)));
+      const earliest = items.map((i) => i.createdAt).filter(Boolean).sort()[0] ?? "";
+      const description =
+        items.length > 1
+          ? `${items.length}টি প্রাপ্তি${methods.length ? ` · ${methods.join(", ")}` : ""}`
+          : [items[0].passenger, items[0].method, items[0].receiver].filter(Boolean).join(" · ") ||
+            "পেমেন্ট গ্রহণ";
+      const ledgerId = items.length > 1 ? `${items.length}টি রসিদ` : items[0].receiptId;
+      prepped.push({
+        id: `receipt-day-${date}`,
+        ledgerId,
+        date,
+        service: "Payment Receive",
+        description,
+        deposit: amount,
+        credit: 0,
+        advance: 0,
+        isPayment: true,
+        sortKey: `${date || "0000-00-00"}|${earliest}|1`,
+        deltaBalance: -amount,
+        advanceDelta: 0,
+      });
     }
 
     prepped.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
