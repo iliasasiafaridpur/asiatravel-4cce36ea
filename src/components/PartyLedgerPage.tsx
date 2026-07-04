@@ -1052,7 +1052,7 @@ export function PartyLedgerPage({
     const prepped: Prep[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
-      if (svc === "PAYMENT" || svc === "OPENING") continue;
+      if (svc === "PAYMENT") continue;
       const advRow = svc === "ADVANCE";
       const cash = Number(r[paidCol] ?? 0);
       const applied = Number(r.advance_applied ?? 0);
@@ -1075,7 +1075,7 @@ export function PartyLedgerPage({
         date: String(r.entry_date ?? ""),
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
-        deposit: advRow ? cash : unreceiptedCash + applied,
+        deposit: advRow ? cash : unreceiptedCash + applied + discount,
         credit: advRow ? 0 : bill,
         advance: 0,
         isPayment: advRow,
@@ -1208,7 +1208,7 @@ export function PartyLedgerPage({
     const out: BillItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
-      if (svc === "PAYMENT" || svc === "ADVANCE" || svc === "OPENING") continue;
+      if (svc === "PAYMENT" || svc === "ADVANCE") continue;
       const src = String(r.source_table ?? "");
       const sid = String(r.source_id ?? "");
       const info = srcMap.get(sid);
