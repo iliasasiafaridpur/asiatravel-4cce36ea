@@ -2924,11 +2924,7 @@ export function PartyLedgerPage({
                           <span className="text-muted-foreground">0</span>
                         )}
                       </TableCell>
-                      {isCustomer && (
-                        <TableCell className="text-right tabular-nums text-emerald-600 px-4 pr-6">
-                          {s.advance ? s.advance.toLocaleString() : "—"}
-                        </TableCell>
-                      )}
+
                     </TableRow>
                   ))
                 )}
