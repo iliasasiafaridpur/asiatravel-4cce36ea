@@ -542,31 +542,47 @@ export function ModulePage({ module: mod }: Props) {
     return xs;
   }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, mod.key, canCancel, showCancelled]);
 
+  // কোনো ফিল্টার/সার্চ সক্রিয় থাকলে মাস-ভিত্তিক সীমাবদ্ধতা বাদ — সব ফলাফল দেখাই।
+  const filterActive = useMemo(() => {
+    return (
+      search.trim() !== "" ||
+      statusFilter !== "all" ||
+      Object.values(fieldFilters).some((v) => v && v !== "all") ||
+      dueOnly ||
+      startDate !== "" ||
+      endDate !== "" ||
+      (!!statusChangeStatus && !!statusChangeDate) ||
+      (canCancel && showCancelled)
+    );
+  }, [search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeStatus, statusChangeDate, canCancel, showCancelled]);
+
+  const monthPagingOn = !!mod.paginateByMonth && !filterActive;
+
   // মাস-ভিত্তিক পেজিং: filtered রো থেকে distinct মাস (YYYY-MM) বের করে সর্বশেষ আগে সাজাই।
   const monthKeys = useMemo(() => {
-    if (!mod.paginateByMonth) return [] as string[];
+    if (!monthPagingOn) return [] as string[];
     const set = new Set<string>();
     for (const r of filtered) {
       const k = String(r.entry_date ?? "").slice(0, 7);
       if (k) set.add(k);
     }
     return Array.from(set).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
-  }, [filtered, mod.paginateByMonth]);
+  }, [filtered, monthPagingOn]);
 
   // ফিল্টার বদলালে বা মাস তালিকা বদলালে সূচক সীমার মধ্যে রাখি (সর্বশেষ মাসে ফিরি)।
   useEffect(() => {
-    if (mod.paginateByMonth && monthIndex > Math.max(0, monthKeys.length - 1)) {
+    if (monthPagingOn && monthIndex > Math.max(0, monthKeys.length - 1)) {
       setMonthIndex(0);
     }
-  }, [monthKeys.length, monthIndex, mod.paginateByMonth]);
+  }, [monthKeys.length, monthIndex, monthPagingOn]);
 
-  const curMonthKey = mod.paginateByMonth ? monthKeys[monthIndex] : undefined;
+  const curMonthKey = monthPagingOn ? monthKeys[monthIndex] : undefined;
   const pageRows = useMemo(() => {
-    if (!mod.paginateByMonth || !curMonthKey) return filtered;
+    if (!monthPagingOn || !curMonthKey) return filtered;
     return filtered.filter((r) => String(r.entry_date ?? "").slice(0, 7) === curMonthKey);
-  }, [filtered, mod.paginateByMonth, curMonthKey]);
+  }, [filtered, monthPagingOn, curMonthKey]);
 
-  const monthPager = mod.paginateByMonth && monthKeys.length > 0 ? (
+  const monthPager = monthPagingOn && monthKeys.length > 0 ? (
     <div className="flex items-center justify-center gap-2 flex-wrap">
       <Button
         type="button"
