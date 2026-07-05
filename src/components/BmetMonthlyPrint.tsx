@@ -29,6 +29,7 @@ const COLS: { key: string; label: string; date?: boolean; num?: boolean }[] = [
   { key: "country_name", label: "Country" },
   { key: "sold_price", label: "Price", num: true },
   { key: "vendor_sent_date", label: "V-Send Date", date: true },
+  { key: "vendor_bought", label: "Vendor" },
   { key: "received_date", label: "V-Rece Date", date: true },
   { key: "delivery_date", label: "Delivery Date", date: true },
 ];
