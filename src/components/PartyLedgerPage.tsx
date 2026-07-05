@@ -702,6 +702,61 @@ export function PartyLedgerPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, table]);
 
+  type BillPay = { date: string; amt: number; method: string };
+
+  const vendorPaymentAlloc = useMemo(() => {
+    const cashByPaymentLog = new Map<string, number>();
+    const coveredByBill = new Map<string, number>();
+    const paymentsByBill = new Map<string, BillPay[]>();
+    if (isCustomer) return { cashByPaymentLog, coveredByBill, paymentsByBill };
+
+    // PAYMENT rows keep the original per-bill allocation history. If a source
+    // bill's vendor cost is later corrected downward, the bill's paid_amount is
+    // capped by the database, but old alloc_detail can still contain the higher
+    // historical amount. Clamp allocations to the bill's current paid_amount so
+    // the running ledger always reconciles with the authoritative balance.
+    const remainingByBill = new Map<string, number>();
+    for (const r of rows) {
+      const svc = String(r.service_type ?? "").toUpperCase();
+      if (svc === "PAYMENT" || svc === "ADVANCE") continue;
+      remainingByBill.set(String(r.id), Math.max(0, Number(r[paidCol] ?? 0)));
+    }
+
+    const paymentRows = rows
+      .filter((r) => String(r.service_type ?? "").toUpperCase() === "PAYMENT")
+      .sort((a, b) => {
+        const ak = `${String(a.payment_date ?? a.entry_date ?? "")}|${String(a.created_at ?? "")}|${String(a.ledger_id ?? "")}`;
+        const bk = `${String(b.payment_date ?? b.entry_date ?? "")}|${String(b.created_at ?? "")}|${String(b.ledger_id ?? "")}`;
+        return ak.localeCompare(bk);
+      });
+
+    for (const r of paymentRows) {
+      const det = (r as Record<string, unknown>).alloc_detail as
+        | { items?: Array<{ id?: string; amt?: number }> }
+        | null;
+      const pdate = String(r.payment_date ?? r.entry_date ?? "");
+      const method = String(r.payment_method ?? "");
+      let logCash = 0;
+      for (const it of det?.items ?? []) {
+        const bid = String(it?.id ?? "");
+        const requested = Math.max(0, Number(it?.amt ?? 0));
+        if (!bid || requested <= 0) continue;
+        const hasCap = remainingByBill.has(bid);
+        const take = hasCap ? Math.min(requested, Math.max(0, remainingByBill.get(bid) ?? 0)) : requested;
+        if (take <= 0) continue;
+        if (hasCap) remainingByBill.set(bid, Math.max(0, (remainingByBill.get(bid) ?? 0) - take));
+        logCash += take;
+        coveredByBill.set(bid, (coveredByBill.get(bid) ?? 0) + take);
+        const arr = paymentsByBill.get(bid) ?? [];
+        arr.push({ date: pdate, amt: take, method });
+        paymentsByBill.set(bid, arr);
+      }
+      cashByPaymentLog.set(String(r.id), logCash);
+    }
+
+    return { cashByPaymentLog, coveredByBill, paymentsByBill };
+  }, [rows, paidCol, isCustomer]);
+
 
   const beginEdit = () => {
     const nums = (contact?.phone ?? "").split(",").map((p) => p.trim());
