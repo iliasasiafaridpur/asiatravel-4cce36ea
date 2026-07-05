@@ -702,6 +702,61 @@ export function PartyLedgerPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, table]);
 
+  type BillPay = { date: string; amt: number; method: string };
+
+  const vendorPaymentAlloc = useMemo(() => {
+    const cashByPaymentLog = new Map<string, number>();
+    const coveredByBill = new Map<string, number>();
+    const paymentsByBill = new Map<string, BillPay[]>();
+    if (isCustomer) return { cashByPaymentLog, coveredByBill, paymentsByBill };
+
+    // PAYMENT rows keep the original per-bill allocation history. If a source
+    // bill's vendor cost is later corrected downward, the bill's paid_amount is
+    // capped by the database, but old alloc_detail can still contain the higher
+    // historical amount. Clamp allocations to the bill's current paid_amount so
+    // the running ledger always reconciles with the authoritative balance.
+    const remainingByBill = new Map<string, number>();
+    for (const r of rows) {
+      const svc = String(r.service_type ?? "").toUpperCase();
+      if (svc === "PAYMENT" || svc === "ADVANCE") continue;
+      remainingByBill.set(String(r.id), Math.max(0, Number(r[paidCol] ?? 0)));
+    }
+
+    const paymentRows = rows
+      .filter((r) => String(r.service_type ?? "").toUpperCase() === "PAYMENT")
+      .sort((a, b) => {
+        const ak = `${String(a.payment_date ?? a.entry_date ?? "")}|${String(a.created_at ?? "")}|${String(a.ledger_id ?? "")}`;
+        const bk = `${String(b.payment_date ?? b.entry_date ?? "")}|${String(b.created_at ?? "")}|${String(b.ledger_id ?? "")}`;
+        return ak.localeCompare(bk);
+      });
+
+    for (const r of paymentRows) {
+      const det = (r as Record<string, unknown>).alloc_detail as
+        | { items?: Array<{ id?: string; amt?: number }> }
+        | null;
+      const pdate = String(r.payment_date ?? r.entry_date ?? "");
+      const method = String(r.payment_method ?? "");
+      let logCash = 0;
+      for (const it of det?.items ?? []) {
+        const bid = String(it?.id ?? "");
+        const requested = Math.max(0, Number(it?.amt ?? 0));
+        if (!bid || requested <= 0) continue;
+        const hasCap = remainingByBill.has(bid);
+        const take = hasCap ? Math.min(requested, Math.max(0, remainingByBill.get(bid) ?? 0)) : requested;
+        if (take <= 0) continue;
+        if (hasCap) remainingByBill.set(bid, Math.max(0, (remainingByBill.get(bid) ?? 0) - take));
+        logCash += take;
+        coveredByBill.set(bid, (coveredByBill.get(bid) ?? 0) + take);
+        const arr = paymentsByBill.get(bid) ?? [];
+        arr.push({ date: pdate, amt: take, method });
+        paymentsByBill.set(bid, arr);
+      }
+      cashByPaymentLog.set(String(r.id), logCash);
+    }
+
+    return { cashByPaymentLog, coveredByBill, paymentsByBill };
+  }, [rows, paidCol, isCustomer]);
+
 
   const beginEdit = () => {
     const nums = (contact?.phone ?? "").split(",").map((p) => p.trim());
@@ -948,23 +1003,6 @@ export function PartyLedgerPage({
       // 1) Prepare each visible row with its effective count-date and fields.
       type Prep = Omit<Stmt, "previous" | "balance"> & { sortKey: string; cash: number; bill: number };
       const prepped: Prep[] = [];
-      // Map: bill row id -> amount already covered by a green PAYMENT row.
-      // Each PAYMENT log stores alloc_detail.items = the exact bills it paid. We
-      // use it so the same money is never shown twice: the covered portion of a
-      // bill's paid_amount is represented by the green Payment row instead of
-      // being repeated in that bill's own Payment column.
-      const coveredByBill = new Map<string, number>();
-      for (const r of rows) {
-        if (String(r.service_type ?? "").toUpperCase() !== "PAYMENT") continue;
-        const det = (r as Record<string, unknown>).alloc_detail as
-          | { items?: Array<{ id?: string; amt?: number }> }
-          | null;
-        for (const it of det?.items ?? []) {
-          const bid = String(it?.id ?? "");
-          if (!bid) continue;
-          coveredByBill.set(bid, (coveredByBill.get(bid) ?? 0) + Number(it?.amt ?? 0));
-        }
-      }
       for (const r of rows) {
         const svc = String(r.service_type ?? "").toUpperCase();
         // 'PAYMENT' rows are the green payment record. The money they paid is
@@ -988,13 +1026,9 @@ export function PartyLedgerPage({
         if (isPaymentLog) {
           // Green Payment row: count exactly what it allocated to bills so it
           // cancels the covered portion removed from those bills; show the
-          // headline amount paid.
-          const det = (r as Record<string, unknown>).alloc_detail as
-            | { items?: Array<{ amt?: number }> }
-            | null;
-          const allocSum = (det?.items ?? []).reduce((s, it) => s + Number(it?.amt ?? 0), 0);
-          cash = allocSum;
-          displayPaid = rawPaid;
+          // currently effective amount paid.
+          cash = vendorPaymentAlloc.cashByPaymentLog.get(String(r.id)) ?? 0;
+          displayPaid = cash;
           bill = 0;
         } else if (isDeposit) {
           cash = rawPaid;
@@ -1004,7 +1038,7 @@ export function PartyLedgerPage({
           // Bill row: show its cost as Credit. Only the portion of paid_amount
           // NOT already shown on a green Payment row appears in the Payment
           // column (e.g. direct / Vendor-Received settlements that have no log).
-          const covered = coveredByBill.get(String(r.id)) ?? 0;
+          const covered = vendorPaymentAlloc.coveredByBill.get(String(r.id)) ?? 0;
           const net = Math.max(0, rawPaid - covered);
           cash = net;
           displayPaid = net;
@@ -1251,12 +1285,11 @@ export function PartyLedgerPage({
     });
     // Latest entry on top (same as the vendor ledger).
     return out.reverse();
-  }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap]);
+  }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap, vendorPaymentAlloc]);
 
   // Per-bill breakdown for "এক একটা বিল" (Bill-by-Bill) parties. Each booking is
   // shown with its own বাকি / আংশিক / পরিশোধিত status so one-by-one settlement is
   // crystal clear.
-  type BillPay = { date: string; amt: number; method: string };
   type BillItem = {
     id: string;
     ledgerId: string;
@@ -1311,20 +1344,8 @@ export function PartyLedgerPage({
         payByBill.set(rec.ledgerRowId, arr);
       }
     } else {
-      for (const r of rows) {
-        if (String(r.service_type ?? "").toUpperCase() !== "PAYMENT") continue;
-        const det = (r as Record<string, unknown>).alloc_detail as
-          | { items?: Array<{ id?: string; amt?: number }> }
-          | null;
-        const pdate = String(r.payment_date ?? r.entry_date ?? "");
-        const method = String(r.payment_method ?? "");
-        for (const it of det?.items ?? []) {
-          const bid = String(it?.id ?? "");
-          if (!bid) continue;
-          const arr = payByBill.get(bid) ?? [];
-          arr.push({ date: pdate, amt: Number(it?.amt ?? 0), method });
-          payByBill.set(bid, arr);
-        }
+      for (const [bid, list] of vendorPaymentAlloc.paymentsByBill.entries()) {
+        payByBill.set(bid, [...list]);
       }
     }
     const out: BillItem[] = [];
@@ -1408,7 +1429,7 @@ export function PartyLedgerPage({
     }
     // বাকি/আংশিক বিল সব একসাথে উপরে; সেই গ্রুপের মধ্যে নতুন উপরে, পুরনো নিচে।
     return sortBillsDueFirstNewest(out);
-  }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap]);
+  }, [rows, receiptRows, billCol, paidCol, isCustomer, srcMap, vendorPaymentAlloc]);
 
   const billStats = useMemo(() => {
     let dueCount = 0,
