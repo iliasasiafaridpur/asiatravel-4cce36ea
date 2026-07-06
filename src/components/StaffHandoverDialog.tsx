@@ -128,7 +128,7 @@ export function StaffHandoverDialog({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [r, e, md] = await Promise.all([
+      const [r, e, md, ag] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -153,6 +153,10 @@ export function StaffHandoverDialog({
           .select("notify_email,role")
           .in("role", ["md", "admin"])
           .not("notify_email", "is", null),
+        supabase
+          .from("agents")
+          .select("name")
+          .eq("settle_mode", "total"),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
