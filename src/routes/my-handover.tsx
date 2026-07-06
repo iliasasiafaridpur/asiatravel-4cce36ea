@@ -202,6 +202,15 @@ function svcLine(rec: Receipt): string {
   return bits.join(" · ");
 }
 
+const partyKey = (name?: string | null) => String(name ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
+
+const withoutTotalAgencyStatusRows = (rows: Receipt[], totalAgents: Set<string>) =>
+  rows.filter((rec) => {
+    if (!isStatusEvent(rec)) return true;
+    const agent = partyKey(rec.svc?.agent);
+    return !(agent && totalAgents.has(agent));
+  });
+
 function MyHandoverPage() {
   const { user, profile } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
@@ -243,6 +252,12 @@ function MyHandoverPage() {
       // ---- OFFLINE: hydrate everything from the saved snapshot (off_ / cache_v2_) ----
       if (isOffline()) {
         const allRec = (cacheRead<Receipt[]>("payment_receipts") ?? []);
+        const totalAgents = new Set(
+          (cacheRead<Array<{ name?: string | null; settle_mode?: string | null }>>("agents") ?? [])
+            .filter((a) => (a.settle_mode ?? "total") === "total")
+            .map((a) => partyKey(a.name))
+            .filter(Boolean),
+        );
         const allExp = (cacheRead<Expense[]>("cash_expenses") ?? []) as (Expense & {
           spent_by?: string | null; handover_id?: string | null;
         })[];
@@ -303,13 +318,13 @@ function MyHandoverPage() {
         if (cancelled) return;
         setMdEmail("");
         setRecByService(byService);
-        setReceipts(recs);
+        setReceipts(withoutTotalAgencyStatusRows(recs, totalAgents));
         setExpenses(exps);
         setLoading(false);
         return;
       }
 
-      const [r, e, md] = await Promise.all([
+      const [r, e, md, ag] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -334,6 +349,10 @@ function MyHandoverPage() {
           .select("notify_email,role")
           .in("role", ["md", "admin"])
           .not("notify_email", "is", null),
+        supabase
+          .from("agents")
+          .select("name,settle_mode")
+          .eq("settle_mode", "total"),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
@@ -393,7 +412,12 @@ function MyHandoverPage() {
       setRecByService(byService);
 
 
-      setReceipts(recs);
+      const totalAgents = new Set(
+        (((ag?.data ?? []) as Array<{ name?: string | null }>))
+          .map((a) => partyKey(a.name))
+          .filter(Boolean),
+      );
+      setReceipts(withoutTotalAgencyStatusRows(recs, totalAgents));
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
