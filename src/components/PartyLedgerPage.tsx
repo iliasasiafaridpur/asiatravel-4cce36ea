@@ -3154,19 +3154,20 @@ export function PartyLedgerPage({
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
                   <TableHead className={`w-[128px] text-right px-4 pr-6`}>Balance</TableHead>
+                  {isCustomer && <TableHead className="w-[48px] text-center px-1"> </TableHead>}
 
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : filteredStatement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
