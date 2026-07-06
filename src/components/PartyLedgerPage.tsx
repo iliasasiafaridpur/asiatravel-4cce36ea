@@ -1300,6 +1300,9 @@ export function PartyLedgerPage({
         sortKey: `${date || "0000-00-00"}|${earliest}|1`,
         deltaBalance: -amount,
         advanceDelta: 0,
+        paymentTargets: items
+          .filter((i) => i.amount > 0 && (i.rowId || i.ledgerRowId))
+          .map((i) => ({ rowId: i.rowId || undefined, ledgerRowId: i.ledgerRowId || undefined, amount: i.amount })),
       });
     }
 
