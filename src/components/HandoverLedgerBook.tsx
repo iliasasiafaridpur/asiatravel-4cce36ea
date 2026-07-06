@@ -253,7 +253,8 @@ export function HandoverLedgerInline({
             .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
             .eq("service_table", t)
             .in("service_row_id", rowIds)
-            .not("source", "eq", "discount");
+            .not("source", "eq", "discount")
+            .not("approval_status", "eq", "cancelled");
           for (const r of ((more ?? []) as Receipt[])) {
             if (!r.service_table || !r.service_row_id) continue;
             (byService[`${r.service_table}:${r.service_row_id}`] ??= []).push(r);

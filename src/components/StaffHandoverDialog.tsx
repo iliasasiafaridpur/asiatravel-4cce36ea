@@ -84,6 +84,10 @@ const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknow
     cols: "id,service_name,airline,trip_road,flight_date,country_route,agency_sold",
     map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_route as string, agent: r.agency_sold as string }),
   },
+  agency_ledger: {
+    cols: "id,agent_name",
+    map: (r) => ({ agent: r.agent_name as string }),
+  },
 };
 
 // Build the secondary line: module/service name, country, then ticket details.
