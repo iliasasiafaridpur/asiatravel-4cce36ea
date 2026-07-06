@@ -47,6 +47,7 @@ const serviceKey = (r: Receipt) => r.service_table && r.service_row_id ? `${r.se
 type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
   service_name?: string | null; flight_date?: string | null;
+  agent?: string | null;
 };
 
 const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
