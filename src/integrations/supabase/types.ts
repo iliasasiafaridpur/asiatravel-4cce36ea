@@ -1440,6 +1440,14 @@ export type Database = {
       }
       approve_handover_by_token: { Args: { _token: string }; Returns: Json }
       cancel_handover: { Args: { _handover_id: string }; Returns: undefined }
+      delete_agent_payment: {
+        Args: {
+          _amount?: number
+          _ledger_row_id?: string
+          _receipt_id?: string
+        }
+        Returns: undefined
+      }
       delete_payment_receipt_and_revert: {
         Args: { _receipt_id: string }
         Returns: Json

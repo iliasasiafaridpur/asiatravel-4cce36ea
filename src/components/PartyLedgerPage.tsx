@@ -189,6 +189,31 @@ export function PartyLedgerPage({
     toast.success(`"${partyName}" তালিকা থেকে মুছে ফেলা হয়েছে`);
     setPartyRefresh((v) => v + 1);
   };
+  /**
+   * Reverse (delete) one or more agency "পেমেন্ট গ্রহণ" instalments. Each target
+   * either points at a concrete payment_receipts row (rowId) or, for cash that
+   * was never mirrored into a receipt, at the agency_ledger bill row + amount.
+   * The DB helper lowers the underlying booking's received amount and lets the
+   * existing triggers clean up the cash mirror / handover.
+   */
+  const deleteAgentPayments = async (
+    targets: { rowId?: string; ledgerRowId?: string; amount: number }[],
+  ) => {
+    for (const t of targets) {
+      if (!t.rowId && !t.ledgerRowId) continue;
+      const { error } = await supabase.rpc("delete_agent_payment" as never, {
+        _receipt_id: t.rowId ?? null,
+        _ledger_row_id: t.rowId ? null : (t.ledgerRowId ?? null),
+        _amount: t.amount,
+      } as never);
+      if (error) {
+        toast.error("পেমেন্ট গ্রহণ ডিলিট ব্যর্থ: " + error.message);
+        return;
+      }
+    }
+    toast.success("পেমেন্ট গ্রহণ ডিলিট হয়েছে");
+    await load();
+  };
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
   // Filter text for the on-page party list (shown when no party is selected).
@@ -702,7 +727,17 @@ export function PartyLedgerPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, table]);
 
-  type BillPay = { date: string; amt: number; method: string };
+  type BillPay = {
+    date: string;
+    amt: number;
+    method: string;
+    /** payment_receipts.id (uuid) when this instalment maps to a real receipt. */
+    rowId?: string;
+    /** agency_ledger row id this instalment settled. */
+    ledgerRowId?: string;
+    /** true = a real cash receipt that can be reversed/deleted (customer only). */
+    deletable?: boolean;
+  };
 
   const vendorPaymentAlloc = useMemo(() => {
     const cashByPaymentLog = new Map<string, number>();
@@ -987,6 +1022,8 @@ export function PartyLedgerPage({
       cancelled?: boolean;
       cancelReason?: string | null;
       cancelDate?: string | null;
+      // Reversible cash-receipt targets behind a "পেমেন্ট গ্রহণ" / advance row.
+      paymentTargets?: { rowId?: string; ledgerRowId?: string; amount: number }[];
     };
 
     // VENDOR: uniform ledger for every vendor.
@@ -1147,7 +1184,7 @@ export function PartyLedgerPage({
     // Collect every "Payment Receive" (cash actually received from the agent) so
     // multiple receipts landing on the SAME date are shown as ONE combined
     // payment-receive row (e.g. all the 21 Jun / 4 Jul receipts merge into one).
-    type PayItem = { date: string; amount: number; method: string; passenger: string; receiver: string; receiptId: string; createdAt: string };
+    type PayItem = { date: string; amount: number; method: string; passenger: string; receiver: string; receiptId: string; createdAt: string; rowId: string; ledgerRowId: string };
     const payItems: PayItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
@@ -1195,6 +1232,8 @@ export function PartyLedgerPage({
         cancelled: !advRow && Boolean(cInfo?.cancelled),
         cancelReason: cInfo?.cancelReason ?? null,
         cancelDate: cInfo?.cancelDate ?? null,
+        // Advance/opening deposit rows can be reversed via their ledger row.
+        paymentTargets: advRow && cash > 0 ? [{ ledgerRowId, amount: cash }] : undefined,
         sortKey: `${cDate || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
         deltaBalance: advRow ? 0 : bill - applied - discount,
         advanceDelta: advRow ? cash : -applied,
@@ -1210,6 +1249,8 @@ export function PartyLedgerPage({
             receiver: String(rec.received_by_name ?? "").trim(),
             receiptId: String(rec.receipt_id ?? rec.ref_id ?? r.ledger_id ?? ""),
             createdAt: String(rec.created_at ?? ""),
+            rowId: String(rec.id ?? ""),
+            ledgerRowId,
           });
         }
         if (unreceiptedCash > 0.0001) {
@@ -1221,6 +1262,8 @@ export function PartyLedgerPage({
             receiver: String((r as Record<string, unknown>).received_by_name ?? "").trim(),
             receiptId: String(r.ledger_id ?? ""),
             createdAt: String(r.updated_at ?? r.created_at ?? ""),
+            rowId: "",
+            ledgerRowId,
           });
         }
       }
@@ -1257,6 +1300,9 @@ export function PartyLedgerPage({
         sortKey: `${date || "0000-00-00"}|${earliest}|1`,
         deltaBalance: -amount,
         advanceDelta: 0,
+        paymentTargets: items
+          .filter((i) => i.amount > 0 && (i.rowId || i.ledgerRowId))
+          .map((i) => ({ rowId: i.rowId || undefined, ledgerRowId: i.ledgerRowId || undefined, amount: i.amount })),
       });
     }
 
@@ -1281,6 +1327,7 @@ export function PartyLedgerPage({
         cancelled: p.cancelled,
         cancelReason: p.cancelReason,
         cancelDate: p.cancelDate,
+        paymentTargets: p.paymentTargets,
       };
     });
     // Latest entry on top (same as the vendor ledger).
@@ -1340,6 +1387,9 @@ export function PartyLedgerPage({
           date: String(rec.entry_date ?? ""),
           amt: Number(rec.amount ?? 0),
           method: String(rec.method ?? ""),
+          rowId: rec.id,
+          ledgerRowId: rec.ledgerRowId,
+          deletable: true,
         });
         payByBill.set(rec.ledgerRowId, arr);
       }
@@ -1375,7 +1425,7 @@ export function PartyLedgerPage({
         for (const p of linked) payments.push(p);
         const covered = linked.reduce((s, p) => s + p.amt, 0);
         const directNet = Math.max(0, direct - covered);
-        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash" });
+        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash", ledgerRowId: String(r.id), deletable: true });
         if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
         if (disc > 0) payments.push({ date: rowPayDate, amt: disc, method: "ডিসকাউন্ট" });
       } else {
@@ -3000,6 +3050,16 @@ export function PartyLedgerPage({
                                             {p.method}
                                           </span>
                                         )}
+                                        {isCustomer && p.deletable && (p.rowId || p.ledgerRowId) && (
+                                          <ConfirmDeleteButton
+                                            allowOwner
+                                            title="পেমেন্ট গ্রহণ ডিলিট?"
+                                            description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং এই বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                                            onConfirm={() =>
+                                              deleteAgentPayments([{ rowId: p.rowId, ledgerRowId: p.ledgerRowId, amount: p.amt }])
+                                            }
+                                          />
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -3104,19 +3164,20 @@ export function PartyLedgerPage({
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
                   <TableHead className={`w-[128px] text-right px-4 pr-6`}>Balance</TableHead>
+                  {isCustomer && <TableHead className="w-[48px] text-center px-1"> </TableHead>}
 
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : filteredStatement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
@@ -3178,7 +3239,18 @@ export function PartyLedgerPage({
                           <span className="text-muted-foreground">0</span>
                         )}
                       </TableCell>
-
+                      {isCustomer && (
+                        <TableCell className="text-center px-1">
+                          {s.isPayment && s.paymentTargets && s.paymentTargets.length > 0 && (
+                            <ConfirmDeleteButton
+                              allowOwner
+                              title="পেমেন্ট গ্রহণ ডিলিট?"
+                              description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                              onConfirm={() => deleteAgentPayments(s.paymentTargets!)}
+                            />
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
