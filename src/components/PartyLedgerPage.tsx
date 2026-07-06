@@ -1232,6 +1232,8 @@ export function PartyLedgerPage({
         cancelled: !advRow && Boolean(cInfo?.cancelled),
         cancelReason: cInfo?.cancelReason ?? null,
         cancelDate: cInfo?.cancelDate ?? null,
+        // Advance/opening deposit rows can be reversed via their ledger row.
+        paymentTargets: advRow && cash > 0 ? [{ ledgerRowId, amount: cash }] : undefined,
         sortKey: `${cDate || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
         deltaBalance: advRow ? 0 : bill - applied - discount,
         advanceDelta: advRow ? cash : -applied,
