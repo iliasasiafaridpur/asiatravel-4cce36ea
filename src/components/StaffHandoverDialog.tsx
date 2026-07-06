@@ -220,7 +220,23 @@ export function StaffHandoverDialog({
         rec.svc = k ? svcMap[k] : undefined;
       }
 
-      setReceipts(recs);
+      // Total-mode agencies (হিসাব ধরন = "মোটের উপর") settle in aggregate at the
+      // agency ledger — exactly like total-mode vendors. Their per-booking
+      // delivery markers must NOT clutter the cash handover; only the received
+      // amount (agency_ledger_payment receipt) should appear. So drop the
+      // delivery/status rows whose booking belongs to a total-mode agent.
+      const totalAgents = new Set(
+        (((ag?.data ?? []) as Array<{ name?: string | null }>))
+          .map((a) => String(a.name ?? "").trim())
+          .filter(Boolean)
+      );
+      const filtered = recs.filter((rec) => {
+        if (!isStatusEvent(rec)) return true;
+        const agent = String(rec.svc?.agent ?? "").trim();
+        return !(agent && totalAgents.has(agent));
+      });
+
+      setReceipts(filtered);
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
