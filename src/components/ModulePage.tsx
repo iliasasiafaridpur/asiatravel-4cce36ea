@@ -1202,8 +1202,10 @@ export function ModulePage({ module: mod }: Props) {
       statusOrder: mod.statuses,
       moduleKey: mod.key,
       anchorEl: anchorEl ?? null,
+      // "মোটের উপর" এজেন্সির যাত্রী হলে ডেলিভারির সাথে পেমেন্টের সম্পর্ক থাকবে না।
+      agencyTotalSettle: agencyIsTotalSettle(row.agency_sold),
     });
-  }, [mod, selectRow]);
+  }, [mod, selectRow, agencyIsTotalSettle]);
 
 
   const startGroupPayment = (groupKey: string, dueAmount: number) => {

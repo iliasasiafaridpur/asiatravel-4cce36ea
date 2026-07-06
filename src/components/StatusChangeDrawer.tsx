@@ -53,6 +53,12 @@ export interface StatusChangeRequest {
   statusOrder?: string[];
   moduleKey?: string;
   anchorEl?: HTMLElement | null;
+  /**
+   * এজেন্সির হিসাব ধরন "মোটের উপর" (total) হলে true। এমন এজেন্সির যাত্রীর
+   * ডেলিভারি স্ট্যাটাসের সাথে পেমেন্টের কোনো সম্পর্ক থাকবে না — ডেলিভারি জাস্ট
+   * একটা নোট; টাকা এজেন্সি লেজারে মোট হিসাবে গ্রহণ করা হয় (ভেন্ডর মোট হিসাবের মতো)।
+   */
+  agencyTotalSettle?: boolean;
 }
 
 function idxOfIn(order: string[], s: string): number {
@@ -106,7 +112,12 @@ export function StatusChangeDrawer({
   const received = Number(request?.row[request?.recvCol ?? ""] ?? 0);
   const existingDiscount = Number(request?.row.discount_amount ?? 0);
   const due = Math.max(0, sold - received - existingDiscount);
-  const isDeliveredWithDue = eq(next, "Delivered") || eq(next, "DELIVERED") || eq(next, "Delivery") ? due > 0 : false;
+  // "মোটের উপর" এজেন্সি: ডেলিভারির সাথে পেমেন্টের কোনো সম্পর্ক নেই — তাই কখনোই
+  // Due Receive ফর্ম দেখাবে না, রসিদও তৈরি হবে না। ডেলিভারি শুধু একটা নোট।
+  const agencyTotalSettle = Boolean(request?.agencyTotalSettle);
+  const isDeliveredWithDue = agencyTotalSettle
+    ? false
+    : eq(next, "Delivered") || eq(next, "DELIVERED") || eq(next, "Delivery") ? due > 0 : false;
   const isFileProcess = eq(next, "File Process");
   const isPendingDelivery = eq(next, "Pending Delivery");
   const isDeliveryButDue = eq(next, "Delivery But Due");
@@ -705,6 +716,12 @@ export function StatusChangeDrawer({
             );
           })()}
 
+
+          {agencyTotalSettle && isDeliveredAny && due > 0 && (
+            <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-2 text-[11px] text-sky-700 dark:text-sky-300">
+              🏢 মোটের উপর হিসাবের এজেন্সি — ডেলিভারি শুধু একটা নোট, এর সাথে পেমেন্টের সম্পর্ক নেই। বকেয়া ৳{due.toLocaleString()} এজেন্সি লেজারে মোট হিসাবে গ্রহণ করুন।
+            </div>
+          )}
 
           {isDeliveredAny && due === 0 && (
             <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px]">
