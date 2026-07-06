@@ -1260,6 +1260,8 @@ export function PartyLedgerPage({
             receiver: String((r as Record<string, unknown>).received_by_name ?? "").trim(),
             receiptId: String(r.ledger_id ?? ""),
             createdAt: String(r.updated_at ?? r.created_at ?? ""),
+            rowId: "",
+            ledgerRowId,
           });
         }
       }
