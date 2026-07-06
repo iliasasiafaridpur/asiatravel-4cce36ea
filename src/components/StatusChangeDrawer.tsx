@@ -53,6 +53,12 @@ export interface StatusChangeRequest {
   statusOrder?: string[];
   moduleKey?: string;
   anchorEl?: HTMLElement | null;
+  /**
+   * এজেন্সির হিসাব ধরন "মোটের উপর" (total) হলে true। এমন এজেন্সির যাত্রীর
+   * ডেলিভারি স্ট্যাটাসের সাথে পেমেন্টের কোনো সম্পর্ক থাকবে না — ডেলিভারি জাস্ট
+   * একটা নোট; টাকা এজেন্সি লেজারে মোট হিসাবে গ্রহণ করা হয় (ভেন্ডর মোট হিসাবের মতো)।
+   */
+  agencyTotalSettle?: boolean;
 }
 
 function idxOfIn(order: string[], s: string): number {
