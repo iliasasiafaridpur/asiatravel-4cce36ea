@@ -702,7 +702,17 @@ export function PartyLedgerPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, table]);
 
-  type BillPay = { date: string; amt: number; method: string };
+  type BillPay = {
+    date: string;
+    amt: number;
+    method: string;
+    /** payment_receipts.id (uuid) when this instalment maps to a real receipt. */
+    rowId?: string;
+    /** agency_ledger row id this instalment settled. */
+    ledgerRowId?: string;
+    /** true = a real cash receipt that can be reversed/deleted (customer only). */
+    deletable?: boolean;
+  };
 
   const vendorPaymentAlloc = useMemo(() => {
     const cashByPaymentLog = new Map<string, number>();
