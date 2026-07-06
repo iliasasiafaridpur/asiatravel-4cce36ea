@@ -3050,6 +3050,16 @@ export function PartyLedgerPage({
                                             {p.method}
                                           </span>
                                         )}
+                                        {isCustomer && p.deletable && (p.rowId || p.ledgerRowId) && (
+                                          <ConfirmDeleteButton
+                                            allowOwner
+                                            title="পেমেন্ট গ্রহণ ডিলিট?"
+                                            description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং এই বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                                            onConfirm={() =>
+                                              deleteAgentPayments([{ rowId: p.rowId, ledgerRowId: p.ledgerRowId, amount: p.amt }])
+                                            }
+                                          />
+                                        )}
                                       </div>
                                     ))}
                                   </div>
