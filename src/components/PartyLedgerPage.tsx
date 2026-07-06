@@ -189,6 +189,31 @@ export function PartyLedgerPage({
     toast.success(`"${partyName}" তালিকা থেকে মুছে ফেলা হয়েছে`);
     setPartyRefresh((v) => v + 1);
   };
+  /**
+   * Reverse (delete) one or more agency "পেমেন্ট গ্রহণ" instalments. Each target
+   * either points at a concrete payment_receipts row (rowId) or, for cash that
+   * was never mirrored into a receipt, at the agency_ledger bill row + amount.
+   * The DB helper lowers the underlying booking's received amount and lets the
+   * existing triggers clean up the cash mirror / handover.
+   */
+  const deleteAgentPayments = async (
+    targets: { rowId?: string; ledgerRowId?: string; amount: number }[],
+  ) => {
+    for (const t of targets) {
+      if (!t.rowId && !t.ledgerRowId) continue;
+      const { error } = await supabase.rpc("delete_agent_payment" as never, {
+        _receipt_id: t.rowId ?? null,
+        _ledger_row_id: t.rowId ? null : (t.ledgerRowId ?? null),
+        _amount: t.amount,
+      } as never);
+      if (error) {
+        toast.error("পেমেন্ট গ্রহণ ডিলিট ব্যর্থ: " + error.message);
+        return;
+      }
+    }
+    toast.success("পেমেন্ট গ্রহণ ডিলিট হয়েছে");
+    await load();
+  };
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(!!autoPayTarget);
   // Filter text for the on-page party list (shown when no party is selected).
