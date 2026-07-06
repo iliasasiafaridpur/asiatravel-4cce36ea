@@ -47,6 +47,7 @@ const serviceKey = (r: Receipt) => r.service_table && r.service_row_id ? `${r.se
 type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
   service_name?: string | null; flight_date?: string | null;
+  agent?: string | null;
 };
 
 const DISCOUNT_TABLES = ["tickets", "bmet_cards", "saudi_visas", "kuwait_visas", "agency_ledger"] as const;
@@ -64,24 +65,24 @@ const TABLE_LABELS: Record<string, string> = {
 // Columns + mapper to pull service/route info per table.
 const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
   tickets: {
-    cols: "id,airline,trip_road,flight_date",
-    map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string }),
+    cols: "id,airline,trip_road,flight_date,agency_sold",
+    map: (r) => ({ airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, agent: r.agency_sold as string }),
   },
   bmet_cards: {
-    cols: "id,country_name",
-    map: (r) => ({ country: r.country_name as string }),
+    cols: "id,country_name,agency_sold",
+    map: (r) => ({ country: r.country_name as string, agent: r.agency_sold as string }),
   },
   saudi_visas: {
-    cols: "id",
-    map: () => ({ country: "Saudi Arabia" }),
+    cols: "id,agency_sold",
+    map: (r) => ({ country: "Saudi Arabia", agent: r.agency_sold as string }),
   },
   kuwait_visas: {
-    cols: "id",
-    map: () => ({ country: "Kuwait" }),
+    cols: "id,agency_sold",
+    map: (r) => ({ country: "Kuwait", agent: r.agency_sold as string }),
   },
   others: {
-    cols: "id,service_name,airline,trip_road,flight_date,country_route",
-    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_route as string }),
+    cols: "id,service_name,airline,trip_road,flight_date,country_route,agency_sold",
+    map: (r) => ({ service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string, country: r.country_route as string, agent: r.agency_sold as string }),
   },
 };
 
@@ -127,7 +128,7 @@ export function StaffHandoverDialog({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [r, e, md] = await Promise.all([
+      const [r, e, md, ag] = await Promise.all([
         supabase
           .from("payment_receipts")
           .select("id,receipt_id,amount,passenger_name,entry_date,created_at,service_table,service_row_id,service_type,method,source,remarks")
@@ -152,6 +153,10 @@ export function StaffHandoverDialog({
           .select("notify_email,role")
           .in("role", ["md", "admin"])
           .not("notify_email", "is", null),
+        supabase
+          .from("agents")
+          .select("name")
+          .eq("settle_mode", "total"),
       ]);
       if (cancelled) return;
       if (r.error) toast.error(r.error.message);
@@ -215,7 +220,23 @@ export function StaffHandoverDialog({
         rec.svc = k ? svcMap[k] : undefined;
       }
 
-      setReceipts(recs);
+      // Total-mode agencies (হিসাব ধরন = "মোটের উপর") settle in aggregate at the
+      // agency ledger — exactly like total-mode vendors. Their per-booking
+      // delivery markers must NOT clutter the cash handover; only the received
+      // amount (agency_ledger_payment receipt) should appear. So drop the
+      // delivery/status rows whose booking belongs to a total-mode agent.
+      const totalAgents = new Set(
+        (((ag?.data ?? []) as Array<{ name?: string | null }>))
+          .map((a) => String(a.name ?? "").trim())
+          .filter(Boolean)
+      );
+      const filtered = recs.filter((rec) => {
+        if (!isStatusEvent(rec)) return true;
+        const agent = String(rec.svc?.agent ?? "").trim();
+        return !(agent && totalAgents.has(agent));
+      });
+
+      setReceipts(filtered);
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
