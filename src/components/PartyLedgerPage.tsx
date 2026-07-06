@@ -1375,6 +1375,9 @@ export function PartyLedgerPage({
           date: String(rec.entry_date ?? ""),
           amt: Number(rec.amount ?? 0),
           method: String(rec.method ?? ""),
+          rowId: rec.id,
+          ledgerRowId: rec.ledgerRowId,
+          deletable: true,
         });
         payByBill.set(rec.ledgerRowId, arr);
       }
