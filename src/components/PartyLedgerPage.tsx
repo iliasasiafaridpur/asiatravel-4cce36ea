@@ -596,8 +596,21 @@ export function PartyLedgerPage({
       grouped.set(rec.ledgerRowId, [...(grouped.get(rec.ledgerRowId) ?? []), rec]);
     }
     const next: LedgerReceipt[] = [];
-    const byDate = (a: LedgerReceipt, b: LedgerReceipt) =>
-      `${a.entry_date ?? ""}|${a.created_at ?? ""}`.localeCompare(`${b.entry_date ?? ""}|${b.created_at ?? ""}`);
+    const receiptPriority = (r: LedgerReceipt) => {
+      const src = String(r.source ?? "").trim().toLowerCase();
+      // The database can keep an automatic service_form mirror and a real due /
+      // agency receipt for the same booking. For the passbook ledger, show the
+      // real payment first; otherwise the old booking-date mirror can consume
+      // the whole paid cap and display the wrong receive date/receiver.
+      if (src === "service_form") return 3;
+      if (src === "agency_ledger" || src === "agency_ledger_payment") return 2;
+      return 1;
+    };
+    const byDate = (a: LedgerReceipt, b: LedgerReceipt) => {
+      const p = receiptPriority(a) - receiptPriority(b);
+      if (p !== 0) return p;
+      return `${a.entry_date ?? ""}|${a.created_at ?? ""}`.localeCompare(`${b.entry_date ?? ""}|${b.created_at ?? ""}`);
+    };
     for (const [ledgerRowId, list] of grouped.entries()) {
       const ledgerRow = ledgerById.get(ledgerRowId);
       const cashCap = Math.max(0, Number(ledgerRow?.[paidCol] ?? 0));
