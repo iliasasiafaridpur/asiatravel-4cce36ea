@@ -1247,6 +1247,8 @@ export function PartyLedgerPage({
             receiver: String(rec.received_by_name ?? "").trim(),
             receiptId: String(rec.receipt_id ?? rec.ref_id ?? r.ledger_id ?? ""),
             createdAt: String(rec.created_at ?? ""),
+            rowId: String(rec.id ?? ""),
+            ledgerRowId,
           });
         }
         if (unreceiptedCash > 0.0001) {
