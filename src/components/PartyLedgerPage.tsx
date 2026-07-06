@@ -1413,7 +1413,7 @@ export function PartyLedgerPage({
         for (const p of linked) payments.push(p);
         const covered = linked.reduce((s, p) => s + p.amt, 0);
         const directNet = Math.max(0, direct - covered);
-        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash" });
+        if (directNet > 0) payments.push({ date: rowPayDate, amt: directNet, method: rowMethod || "Cash", ledgerRowId: String(r.id), deletable: true });
         if (adv > 0) payments.push({ date: rowPayDate, amt: adv, method: "অ্যাডভান্স" });
         if (disc > 0) payments.push({ date: rowPayDate, amt: disc, method: "ডিসকাউন্ট" });
       } else {
