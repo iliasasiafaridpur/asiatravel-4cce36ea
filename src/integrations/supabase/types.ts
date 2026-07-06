@@ -1538,6 +1538,15 @@ export type Database = {
         Returns: boolean
       }
       is_md: { Args: { _uid: string }; Returns: boolean }
+      is_total_agent_status_receipt: {
+        Args: {
+          _method: string
+          _service_row_id: string
+          _service_table: string
+          _source: string
+        }
+        Returns: boolean
+      }
       next_module_id: {
         Args: {
           _column: string
