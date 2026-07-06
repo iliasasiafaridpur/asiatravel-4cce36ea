@@ -1184,7 +1184,7 @@ export function PartyLedgerPage({
     // Collect every "Payment Receive" (cash actually received from the agent) so
     // multiple receipts landing on the SAME date are shown as ONE combined
     // payment-receive row (e.g. all the 21 Jun / 4 Jul receipts merge into one).
-    type PayItem = { date: string; amount: number; method: string; passenger: string; receiver: string; receiptId: string; createdAt: string };
+    type PayItem = { date: string; amount: number; method: string; passenger: string; receiver: string; receiptId: string; createdAt: string; rowId: string; ledgerRowId: string };
     const payItems: PayItem[] = [];
     for (const r of rows) {
       const svc = String(r.service_type ?? "").toUpperCase();
