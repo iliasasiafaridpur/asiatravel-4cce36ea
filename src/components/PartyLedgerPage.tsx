@@ -3229,7 +3229,18 @@ export function PartyLedgerPage({
                           <span className="text-muted-foreground">0</span>
                         )}
                       </TableCell>
-
+                      {isCustomer && (
+                        <TableCell className="text-center px-1">
+                          {s.isPayment && s.paymentTargets && s.paymentTargets.length > 0 && (
+                            <ConfirmDeleteButton
+                              allowOwner
+                              title="পেমেন্ট গ্রহণ ডিলিট?"
+                              description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                              onConfirm={() => deleteAgentPayments(s.paymentTargets!)}
+                            />
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
