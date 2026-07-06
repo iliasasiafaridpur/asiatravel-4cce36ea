@@ -161,6 +161,7 @@ export function HandoverLedgerInline({
   const [expensesByH, setExpensesByH] = useState<Record<string, Expense[]>>({});
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
+  const [totalAgents, setTotalAgents] = useState<Set<string>>(() => new Set());
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -181,6 +182,16 @@ export function HandoverLedgerInline({
       if (mode === "to-me") q = q.in("to_name", ["Kaium Khan (MD)", "MD Sir"]);
       const { data: hvData } = await q;
       const hvs = (hvData ?? []) as Handover[];
+
+      const { data: totalAgentRows } = await supabase
+        .from("agents")
+        .select("name")
+        .eq("settle_mode", "total");
+      const nextTotalAgents = new Set(
+        ((totalAgentRows ?? []) as Array<{ name?: string | null }>)
+          .map((a) => String(a.name ?? "").trim())
+          .filter(Boolean)
+      );
 
       const ids = hvs.map((h) => h.id);
       let recs: Receipt[] = [];
@@ -358,6 +369,7 @@ export function HandoverLedgerInline({
       setExpensesByH(expByH);
       setReceiptsByService(byService);
       setServiceMap(svcMap);
+      setTotalAgents(nextTotalAgents);
       setLoading(false);
     })();
 
@@ -474,6 +486,7 @@ export function HandoverLedgerInline({
               expenses={expensesByH[h.id] ?? []}
               receiptsByService={receiptsByService}
               serviceMap={serviceMap}
+              totalAgents={totalAgents}
               mode={mode}
               approveAction={approveAction}
               allowCancel={allowCancel}
@@ -534,13 +547,14 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, expenses = [], receiptsByService, serviceMap, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
   expenses?: Expense[];
   receiptsByService: Record<string, Receipt[]>;
   serviceMap: Record<string, ServiceInfo>;
+  totalAgents: Set<string>;
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
@@ -557,7 +571,13 @@ function HandoverCard({
   const moneyServiceKeys = new Set(
     receipts.filter((r) => !isStatusEventReceipt(r) && Number(r.amount || 0) > 0).map(receiptServiceKey).filter(Boolean)
   );
-  const visibleReceipts = receipts.filter((r) => !(isStatusEventReceipt(r) && moneyServiceKeys.has(receiptServiceKey(r))));
+  const visibleReceipts = receipts.filter((r) => {
+    if (!isStatusEventReceipt(r)) return true;
+    const key = receiptServiceKey(r);
+    if (moneyServiceKeys.has(key)) return false;
+    const agent = String(serviceMap[key]?.agent ?? "").trim();
+    return !(agent && totalAgents.has(agent));
+  });
   const isPending = status === "pending";
   const [cancelling, setCancelling] = useState(false);
 
