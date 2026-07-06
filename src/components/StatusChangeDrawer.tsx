@@ -717,6 +717,12 @@ export function StatusChangeDrawer({
           })()}
 
 
+          {agencyTotalSettle && isDeliveredAny && due > 0 && (
+            <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-2 text-[11px] text-sky-700 dark:text-sky-300">
+              🏢 মোটের উপর হিসাবের এজেন্সি — ডেলিভারি শুধু একটা নোট, এর সাথে পেমেন্টের সম্পর্ক নেই। বকেয়া ৳{due.toLocaleString()} এজেন্সি লেজারে মোট হিসাবে গ্রহণ করুন।
+            </div>
+          )}
+
           {isDeliveredAny && due === 0 && (
             <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px]">
               ✅ বকেয়া নেই — Delivered হবে
