@@ -1327,6 +1327,7 @@ export function PartyLedgerPage({
         cancelled: p.cancelled,
         cancelReason: p.cancelReason,
         cancelDate: p.cancelDate,
+        paymentTargets: p.paymentTargets,
       };
     });
     // Latest entry on top (same as the vendor ledger).
