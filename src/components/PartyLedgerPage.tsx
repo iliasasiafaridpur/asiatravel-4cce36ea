@@ -1022,6 +1022,8 @@ export function PartyLedgerPage({
       cancelled?: boolean;
       cancelReason?: string | null;
       cancelDate?: string | null;
+      // Reversible cash-receipt targets behind a "পেমেন্ট গ্রহণ" / advance row.
+      paymentTargets?: { rowId?: string; ledgerRowId?: string; amount: number }[];
     };
 
     // VENDOR: uniform ledger for every vendor.
