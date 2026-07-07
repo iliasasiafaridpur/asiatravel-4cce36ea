@@ -515,8 +515,27 @@ function MyHandoverPage() {
     // Email layout mirrors the Accounts PRINT page: a clean white A4-style
     // document with a real data table (not dark cards). All handover info is
     // kept; only the visual arrangement matches the print sheet.
-    const incomeRows = visibleReceipts
-      .map((r, i) => {
+    const incomeRows = incomeItems
+      .map((it, i) => {
+        if (it.kind === "agency") {
+          const vendorRecv = it.cat === "vendor";
+          const mdRecv = it.cat === "md";
+          const thisCell = vendorRecv
+            ? `<span class="vendor">(Vendor) ${money(it.amount)}</span>`
+            : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(it.amount)}</span>`;
+          return `<tr class="row-tint-${i % 4}">
+  <td class="num">${i + 1}</td>
+  <td>—</td>
+  <td class="wrap"><b>${it.agency}</b><div class="sub">🏢 এজেন্সি (মোটের উপর) · ${it.count} পেমেন্ট</div></td>
+  <td class="wrap">এজেন্সি পেমেন্ট</td>
+  <td class="wrap">—</td>
+  <td class="num"></td>
+  <td class="num"></td>
+  <td class="num">${thisCell}</td>
+  <td class="num"></td>
+</tr>`;
+        }
+        const r = it.r;
         const info = r.svc ?? {};
         const sk = serviceKey(r);
         const allForSvc = sk ? (recByService[sk] ?? []) : [];
