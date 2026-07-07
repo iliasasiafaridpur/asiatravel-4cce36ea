@@ -415,12 +415,13 @@ function MyHandoverPage() {
       setRecByService(byService);
 
 
-      const totalAgents = new Set(
+      const totalAgentSet = new Set(
         (((ag?.data ?? []) as Array<{ name?: string | null }>))
           .map((a) => partyKey(a.name))
           .filter(Boolean),
       );
-      setReceipts(withoutTotalAgencyStatusRows(recs, totalAgents));
+      setTotalAgents(totalAgentSet);
+      setReceipts(withoutTotalAgencyStatusRows(recs, totalAgentSet));
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
