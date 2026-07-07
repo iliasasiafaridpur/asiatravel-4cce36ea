@@ -686,10 +686,180 @@ function HandoverCard({
       status === "approved" ? "এমডি বুঝে নিয়েছেন"
         : status === "pending" ? "অপেক্ষমান" : status;
 
-    // "মোটের উপর" (total settle) agencies: their receipts are NOT tracked bill
-    // by bill, so on the slip they must collapse into ONE summary line per agent
-    // (total amount only) — never per-passenger.
-    const agentOf = (r: Receipt) => {
+    // Receipt rows — a 1:1 replica of the on-screen handover card so the printed
+    // slip shows EXACTLY what staff/MD see on the My Handover page.
+    const bodyRows = visibleReceipts.map((r, idx) => {
+      const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
+      const info = sk ? serviceMap[sk] : undefined;
+      const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+      const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
+      const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
+      const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+      const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
+      const lastPast = past.length
+        ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+        : null;
+      const lastFuture = future.length
+        ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
+        : null;
+      const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+      const bill = info?.sold_price ?? 0;
+      const discount = info?.discount ?? 0;
+      const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+      const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+      const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
+      const statusEvt = isStatusEventReceipt(r);
+      const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+      const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
+
+      // তারিখ
+      const dateCell = `${esc(formatDate(r.entry_date))}`
+        + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "")
+        + (r.received_by_name ? `<span class="sub">Rec:By ${esc(r.received_by_name.split(" ")[0])}</span>` : "");
+
+      // কাস্টমার
+      const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
+        + `<span class="sub">A: ${esc(info?.agent || "Self")}${info?.passport ? ` · ${esc(info.passport)}` : ""}</span>`;
+
+      // সার্ভিস
+      const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
+        + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
+        + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
+        + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "");
+
+      // মোট বিল
+      const vendorBit = info?.vendor
+        ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
+        : "";
+      const billCell = bill > 0
+        ? `<span class="b">${esc(fmt(bill))}</span>`
+          + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} (ডিসকাউন্ট)</span>` : "")
+          + (due > 0.005 ? `<span class="sub rose">বাকি: ${esc(fmt(due))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
+          + vendorBit
+        : `—${vendorBit}`;
+
+      // পূর্বের জমা
+      const prevCell = previousPaid > 0
+        ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
+        : `<span class="sub">— নতুন —</span>`;
+
+      // এই বারের জমা
+      const thisCell = statusEvt
+        ? `<span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span>`
+        : `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b ${vendorRecv ? "orange" : mdRecv ? "sky" : "emer"}">${esc(fmt(r.amount))}</span>`
+          + (mdRecv ? `<span class="sub sky">MD · ${esc(r.method)}</span>` : "")
+          + (vendorRecv ? `<span class="sub orange">Vendor Rece</span>` : "");
+
+      // বাকি (after this handover)
+      const dueCell = bill > 0
+        ? (dueAfterThis <= 0.005
+            ? `<span class="emer b">✓</span>`
+            : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
+        : "—";
+
+      return `<tr class="rt tint${idx % 2}">
+        <td class="nw">${dateCell}</td>
+        <td>${custCell}</td>
+        <td>${svcCell}</td>
+        <td class="r nw">${billCell}</td>
+        <td class="r nw">${prevCell}</td>
+        <td class="r nw">${thisCell}</td>
+        <td class="r nw">${dueCell}</td>
+      </tr>`;
+    }).join("");
+
+    const totalRow = `<tr class="sumrow">
+      <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
+      <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span>${mdReceipts > 0 ? `<span class="sub sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}</td>
+      <td></td>
+    </tr>`;
+
+    const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
+        <td class="nw">${esc(formatDate(e.entry_date))}${e.expense_id ? `<span class="sub mono">${esc(e.expense_id)}</span>` : ""}</td>
+        <td class="nw">${esc(e.category || "—")}</td>
+        <td>${esc(e.purpose || "—")}</td>
+        <td class="nw">${esc(e.spent_by_name || "—")}</td>
+        <td class="r nw rose b">−${esc(fmt(e.amount))}</td>
+      </tr>`).join("");
+
+    const docTitle = buildFileTitle(
+      "Cash_Handover",
+      handover.handover_id ?? handover.id.slice(0, 8),
+      handover.from_name ?? "",
+      formatDate(handover.closing_date || handover.entry_date),
+    );
+
+    const html = `<!doctype html><html><head><title>${esc(docTitle)}</title>
+      <style>
+        @page { size: A4; margin: 10mm; }
+        body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
+        .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
+        .h h1 { margin:0; font-size:16px; }
+        .h .meta { text-align:right; font-size:10px; line-height:1.5; }
+        .h .meta b { font-weight:600; }
+        h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
+        table { width:100%; border-collapse:collapse; font-size:10px; table-layout:auto; }
+        th, td { border:1px solid #bbb; padding:2px 5px; text-align:left; vertical-align:top; line-height:1.3; }
+        th { background:#eee; font-weight:600; }
+        td.r, th.r { text-align:right; }
+        td.nw, th.nw { white-space:nowrap; }
+        .b { font-weight:700; }
+        .sub { display:block; color:#555; font-size:8.5px; line-height:1.25; font-weight:400; }
+        .mono { font-family: ui-monospace, monospace; }
+        .sky { color:#0369a1; }
+        .rose { color:#be123c; }
+        .emer { color:#047857; }
+        .orange { color:#c2410c; }
+        .violet { color:#6d28d9; }
+        .tint1 { background:#f7f7f7; }
+        .sumrow td { background:#ececec; font-weight:700; }
+        .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
+        .tot { margin-top:5px; font-size:11px; font-weight:700; }
+        .bar { margin-top:6px; border:1px solid #111; border-radius:4px; padding:5px 8px; font-size:11px; font-weight:700; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+        .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
+        .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
+      </style></head><body>
+      <div class="h">
+        <h1>Asia Travels &amp; Tours</h1>
+        <div class="meta">
+          <b>Handover #${esc(handover.handover_id ?? handover.id.slice(0, 8))}</b> · ${esc(statusLabel)}<br/>
+          তারিখ: ${esc(formatDate(handover.closing_date || handover.entry_date))}<br/>
+          প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
+        </div>
+      </div>
+      <h2>জমার বিবরণ</h2>
+      <table>
+        <thead><tr>
+          <th class="nw">তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
+          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই বারের জমা</th><th class="r nw">বাকি</th>
+        </tr></thead>
+        <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="7" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
+      </table>
+      ${expenses.length > 0 ? `
+        <h2>💸 খরচের বিবরণ — ${expenses.length} টি</h2>
+        <table>
+          <thead><tr><th class="nw">তারিখ</th><th class="nw">খাত</th><th>বিবরণ</th><th class="nw">খরচকারী</th><th class="r nw">টাকা</th></tr></thead>
+          <tbody>${expenseRows}<tr class="sumrow"><td colspan="4" class="r">মোট খরচ (${expenses.length} টি)</td><td class="r nw rose">−${esc(fmt(totalExpenses))}</td></tr></tbody>
+        </table>
+      ` : ""}
+      ${confirmed > 0 && confirmed !== submitted ? `<div class="tot">Confirmed: ${esc(fmt(confirmed))} · Variance: ${confirmed - submitted > 0 ? "+" : ""}${esc(fmt(confirmed - submitted))}</div>` : ""}
+      ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
+      <div class="bar">
+        <span>মোট ${visibleReceipts.length} আইটেম থেকে আয়</span>
+        <span class="emer">নগদ ${esc(fmt(cashReceipts))}</span>
+        ${mdReceipts > 0 ? `<span class="sky">— MD ${esc(fmt(mdReceipts))}</span>` : ""}
+        ${vendorReceipts > 0 ? `<span class="orange">— Vendor ${esc(fmt(vendorReceipts))}</span>` : ""}
+        ${totalExpenses > 0 ? `<span class="rose">— মোট খরচ ${esc(fmt(totalExpenses))}</span>` : ""}
+        <span style="margin-left:auto">প্রেরক: ${esc(handover.from_name ?? "—")} · গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")} · জমা ${esc(fmt(submitted))}</span>
+      </div>
+      <div class="sig">
+        <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
+        <div>গ্রহীতা<br/>${esc(handover.to_name ?? "MD Sir")}</div>
+      </div>
+    </body></html>`;
+    printDocHtml(html, docTitle);
+  };
+
       const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
       const info = sk ? serviceMap[sk] : undefined;
       return String(info?.agent ?? "").trim();
