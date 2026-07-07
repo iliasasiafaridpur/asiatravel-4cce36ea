@@ -17,8 +17,9 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { toast } from "sonner";
-import { BookOpen, CheckCircle2, Clock, Search, User2, Users, XCircle } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, Printer, Search, User2, Users, XCircle } from "lucide-react";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { buildFileTitle, printDocHtml } from "@/lib/print-export";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 
