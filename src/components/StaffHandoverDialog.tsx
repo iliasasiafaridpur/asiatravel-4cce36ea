@@ -516,10 +516,36 @@ export function StaffHandoverDialog({
             <div className="max-h-32 overflow-y-auto divide-y text-xs">
               {loading ? (
                 <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
-              ) : visibleReceipts.length === 0 ? (
+              ) : incomeItems.length === 0 ? (
                 <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
               ) : (
-                visibleReceipts.map((r) => {
+                incomeItems.map((it) => {
+                  if (it.kind === "agency") {
+                    const vendorRecv = it.cat === "vendor";
+                    const mdRecv = it.cat === "md";
+                    return (
+                    <div key={it.key} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{it.agency}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">
+                          এজেন্সি (মোটের উপর) · {it.count} পেমেন্ট
+                        </div>
+                        {mdRecv && (
+                          <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {it.method}</div>
+                        )}
+                        {vendorRecv && (
+                          <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className={`tabular-nums font-semibold ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv || vendorRecv ? "" : "+"}{fmt(it.amount)}
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  }
+                  const r = it.r;
                   const statusEvt = isStatusEvent(r);
                   const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                   const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
