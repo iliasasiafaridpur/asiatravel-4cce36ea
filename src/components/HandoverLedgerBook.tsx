@@ -866,7 +866,6 @@ function HandoverCard({
       const billCell = bill > 0
         ? `<span class="b">${esc(fmt(bill))}</span>`
           + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} (ডিসকাউন্ট)</span>` : "")
-          + (due > 0.005 ? `<span class="sub rose">বাকি: ${esc(fmt(due))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
           + vendorBit
         : `—${vendorBit}`;
 
