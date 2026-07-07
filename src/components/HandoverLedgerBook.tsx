@@ -984,7 +984,7 @@ function HandoverCard({
             <th class="r" colspan="2">এই বারের জমা</th>
             <th class="r nw" rowspan="2">বাকি</th>
           </tr>
-          <tr><th class="r nw">MD রিসিভ</th><th class="r nw">স্টাফ রিসিভ</th></tr>
+          <tr><th class="r nw">MD</th><th class="r nw">নগদ</th></tr>
         </thead>
         <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="8" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
 
@@ -1112,8 +1112,8 @@ function HandoverCard({
               {approveAction && <th rowSpan={2} className="px-1 py-1.5 pr-2 font-semibold text-center align-bottom">✓</th>}
             </tr>
             <tr className="text-left">
-              <th className="px-1.5 py-1 font-semibold text-right text-xs text-sky-600 dark:text-sky-400">MD রিসিভ</th>
-              <th className="px-1.5 py-1 font-semibold text-right text-xs text-emerald-700 dark:text-emerald-400">স্টাফ রিসিভ</th>
+              <th className="px-1.5 py-1 font-semibold text-right text-xs text-sky-600 dark:text-sky-400">MD</th>
+              <th className="px-1.5 py-1 font-semibold text-right text-xs text-emerald-700 dark:text-emerald-400">নগদ</th>
             </tr>
           </thead>
 
