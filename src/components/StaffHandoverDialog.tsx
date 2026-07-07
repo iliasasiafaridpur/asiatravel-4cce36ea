@@ -276,6 +276,43 @@ export function StaffHandoverDialog({
   );
   const visibleReceipts = receipts.filter((r) => !(isStatusEvent(r) && moneyServiceKeys.has(serviceKey(r))));
 
+  // মোটের উপর হিসাবের agency (যেমন Jahangir QA): প্রতিটি passenger আলাদা করে
+  // receive দেখাবে না — passbook-এর মতো agency-র নামে এক লাইনে মোট received
+  // দেখাবে (total bill হিসাব), ঠিক total-mode vendor-এর মতো।
+  const agencyOf = (r: Receipt): string => {
+    const a = String(r.svc?.agent ?? "").trim();
+    if (a) return a;
+    const m = String(r.service_type ?? "").match(/Receipt:\s*(.+)$/i);
+    return m ? m[1].trim() : "";
+  };
+  const isTotalAgencyPay = (r: Receipt) =>
+    String(r.source ?? "") === "agency_ledger_payment" && totalAgents.has(agencyOf(r));
+
+  type IncomeItem =
+    | { kind: "receipt"; key: string; r: Receipt }
+    | { kind: "agency"; key: string; agency: string; amount: number; count: number; method?: string | null; cat: "cash" | "md" | "vendor" };
+
+  const incomeItems: IncomeItem[] = (() => {
+    const items: IncomeItem[] = [];
+    const groups = new Map<string, { agency: string; amount: number; count: number; method?: string | null; cat: "cash" | "md" | "vendor" }>();
+    for (const r of visibleReceipts) {
+      if (isTotalAgencyPay(r)) {
+        const agency = agencyOf(r);
+        const cat = isVendorReceivedMethod(r.method) ? "vendor" : isMdReceivedMethod(r.method) ? "md" : "cash";
+        const key = `${agency}|${cat}`;
+        const g = groups.get(key) ?? { agency, amount: 0, count: 0, method: r.method, cat };
+        g.amount += Number(r.amount || 0);
+        g.count += 1;
+        groups.set(key, g);
+      } else {
+        items.push({ kind: "receipt", key: r.id, r });
+      }
+    }
+    for (const [key, g] of groups) items.push({ kind: "agency", key, ...g });
+    return items;
+  })();
+
+
   const submit = async () => {
     const cashText = cash.trim();
     const amt = Number(cashText);
