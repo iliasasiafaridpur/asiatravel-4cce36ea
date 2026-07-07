@@ -776,6 +776,8 @@ function HandoverCard({
         totalBill, totalDiscount, totalPrevious,
         totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
         totalDueAfter, totalFuture,
+        ledgerDue: agentDue.get(agent)?.due ?? totalDueAfter,
+        ledgerAdvance: agentDue.get(agent)?.advance ?? 0,
         cash: recs.filter((x) => isCashMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
         md: recs.filter((x) => isMdReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
         vendor: recs.filter((x) => isVendorReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
