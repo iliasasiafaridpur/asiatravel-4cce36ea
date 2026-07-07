@@ -197,6 +197,20 @@ export function HandoverLedgerInline({
           .filter(Boolean)
       );
 
+      // Live agency balances → current outstanding due per agency (from ledger).
+      const { data: agentBalRows } = await supabase.rpc("get_agent_balances" as never);
+      const nextAgentDue = new Map<string, { due: number; advance: number }>();
+      for (const b of ((agentBalRows ?? []) as Array<Record<string, unknown>>)) {
+        const nm = String(b.agent_name ?? "").trim();
+        if (!nm) continue;
+        nextAgentDue.set(nm, {
+          due: Number(b.balance_due ?? 0),
+          advance: Number(b.advance_balance ?? 0),
+        });
+      }
+
+
+
       const ids = hvs.map((h) => h.id);
       let recs: Receipt[] = [];
       if (ids.length > 0) {
