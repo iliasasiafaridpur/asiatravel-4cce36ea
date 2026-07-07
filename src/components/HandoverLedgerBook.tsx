@@ -815,6 +815,16 @@ function HandoverCard({
         .mut { color:#666; font-size:9px; }
         .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
         .tot { margin-top:5px; font-size:11px; font-weight:700; text-align:right; }
+        .sum { display:flex; gap:8px; margin:6px 0 4px; }
+        .sumcol { flex:1; border:1px solid #111; border-radius:4px; overflow:hidden; }
+        .sumcol .st { background:#111; color:#fff; font-size:10px; font-weight:700; padding:3px 6px; }
+        .stab { width:100%; border-collapse:collapse; font-size:11px; }
+        .stab td { border:none; border-bottom:1px solid #ddd; padding:3px 6px; }
+        .stab td.r { text-align:right; font-weight:600; white-space:nowrap; }
+        .stab tr.net td { border-top:1px solid #111; border-bottom:none; font-size:12px; font-weight:800; background:#f2f2f2; }
+        .stab tr.chk td { border-bottom:none; font-weight:700; }
+        .ok { color:#166534; }
+        .bad { color:#b91c1c; }
         .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
         .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
       </style></head><body>
