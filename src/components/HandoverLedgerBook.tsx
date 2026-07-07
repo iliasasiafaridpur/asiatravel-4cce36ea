@@ -163,6 +163,9 @@ export function HandoverLedgerInline({
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [totalAgents, setTotalAgents] = useState<Set<string>>(() => new Set());
+  // Authoritative live agency balances (same RPC the Agency list/ledger use) —
+  // keyed by trimmed agent name → current outstanding due / advance.
+  const [agentDue, setAgentDue] = useState<Map<string, { due: number; advance: number }>>(() => new Map());
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
