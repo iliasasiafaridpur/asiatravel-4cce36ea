@@ -686,7 +686,28 @@ function HandoverCard({
       status === "approved" ? "এমডি বুঝে নিয়েছেন"
         : status === "pending" ? "অপেক্ষমান" : status;
 
-    const bodyRows = visibleReceipts.map((r) => {
+    // "মোটের উপর" (total settle) agencies: their receipts are NOT tracked bill
+    // by bill, so on the slip they must collapse into ONE summary line per agent
+    // (total amount only) — never per-passenger.
+    const agentOf = (r: Receipt) => {
+      const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
+      const info = sk ? serviceMap[sk] : undefined;
+      return String(info?.agent ?? "").trim();
+    };
+    const perPassenger: Receipt[] = [];
+    const totalGroups = new Map<string, Receipt[]>();
+    for (const r of visibleReceipts) {
+      const agent = agentOf(r);
+      if (agent && totalAgents.has(agent)) {
+        const arr = totalGroups.get(agent) ?? [];
+        arr.push(r);
+        totalGroups.set(agent, arr);
+      } else {
+        perPassenger.push(r);
+      }
+    }
+
+    const passengerRows = perPassenger.map((r) => {
       const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
       const info = sk ? serviceMap[sk] : undefined;
       const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
@@ -730,6 +751,38 @@ function HandoverCard({
         <td class="r nw">${bill > 0 ? (dueAfterThis <= 0.005 ? "✓" : esc(fmt(dueAfterThis))) : "—"}</td>
       </tr>`;
     }).join("");
+
+    const groupRows = Array.from(totalGroups.entries()).map(([agent, rows]) => {
+      const money = rows.filter((r) => !isStatusEventReceipt(r));
+      const sumThis = money.reduce((s, r) => s + Number(r.amount || 0), 0);
+      const count = money.length;
+      const methods = new Set(
+        money.map((r) =>
+          isVendorReceivedMethod(r.method)
+            ? "Vendor Rece"
+            : isMdReceivedMethod(r.method)
+              ? `MD · ${r.method ?? "—"}`
+              : (r.method?.trim() || "নগদ"),
+        ),
+      );
+      const methodLabel = methods.size === 1 ? Array.from(methods)[0] : "মিশ্র";
+      const latest = money.length
+        ? money.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+        : rows[0];
+      return `<tr>
+        <td class="nw">${esc(formatDate(latest?.entry_date))}</td>
+        <td><b>এজেন্সি: ${esc(agent)}</b> <span class="mut">(মোটের উপর · ${count} জন জমা)</span></td>
+        <td>মোট জমা</td>
+        <td class="r nw">—</td>
+        <td class="r nw">—</td>
+        <td class="r nw">${esc(fmt(sumThis))}</td>
+        <td class="nw">${esc(methodLabel)}</td>
+        <td class="r nw">—</td>
+      </tr>`;
+    }).join("");
+
+    const bodyRows = passengerRows + groupRows;
+
 
     const expenseRows = expenses.map((e) => `<tr>
         <td class="nw">${esc(formatDate(e.entry_date))}</td>
