@@ -320,7 +320,8 @@ function MyHandoverPage() {
         if (cancelled) return;
         setMdEmail("");
         setRecByService(byService);
-        setReceipts(withoutTotalAgencyStatusRows(recs, totalAgents));
+        setTotalAgents(totalAgentSet);
+        setReceipts(withoutTotalAgencyStatusRows(recs, totalAgentSet));
         setExpenses(exps);
         setLoading(false);
         return;
