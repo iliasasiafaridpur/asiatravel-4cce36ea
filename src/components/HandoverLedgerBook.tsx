@@ -866,6 +866,8 @@ function HandoverCard({
           প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
         </div>
       </div>
+      ${summary}
+      ${confirmed > 0 && confirmed !== submitted ? `<div class="tot" style="text-align:left">MD যাচাইকৃত নগদ: ${fmt(confirmed)}</div>` : ""}
       <h2>জমার বিবরণ</h2>
       <table>
         <thead><tr>
@@ -874,9 +876,6 @@ function HandoverCard({
         </tr></thead>
         <tbody>${bodyRows || `<tr><td colspan="8" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
       </table>
-      <div class="tot">
-        নগদ: ${fmt(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${fmt(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${fmt(vendorReceipts)}` : ""}
-      </div>
       ${expenses.length > 0 ? `
         <h2>খরচের বিবরণ</h2>
         <table>
@@ -885,7 +884,6 @@ function HandoverCard({
         </table>
         <div class="tot">মোট খরচ: −${fmt(totalExpenses)}</div>
       ` : ""}
-      <div class="tot" style="font-size:13px;border-top:2px solid #111;padding-top:4px">জমা দেওয়া নগদ: ${fmt(submitted)}${confirmed > 0 && confirmed !== submitted ? ` · Confirmed: ${fmt(confirmed)}` : ""}</div>
       ${handover.remarks ? `<div style="margin-top:6px;font-size:10px"><b>মন্তব্য:</b> ${esc(handover.remarks)}</div>` : ""}
       <div class="sig">
         <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
