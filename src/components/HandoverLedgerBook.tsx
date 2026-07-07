@@ -1139,11 +1139,22 @@ function HandoverCard({
                         <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(row.totalPrevious)}</div>
                       ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
                     </td>
+                    {/* MD রিসিভ */}
                     <td className="px-1.5 py-1 text-right tabular-nums align-top">
-                      <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(row.totalThis)}</b>
-                      {row.md > 0 && <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD: {fmt(row.md)}</div>}
-                      {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
+                      {row.md > 0 || row.vendor > 0 ? (
+                        <>
+                          {row.md > 0 && <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(row.md)}</b>}
+                          {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
                     </td>
+                    {/* স্টাফ রিসিভ */}
+                    <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                      {row.cash > 0 ? (
+                        <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(row.cash)}</b>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+
                     <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
                       {row.ledgerDue > 0.005 ? (
                         <>
