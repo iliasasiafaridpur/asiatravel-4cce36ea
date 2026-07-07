@@ -992,11 +992,10 @@ function HandoverCard({
       ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
       <div class="bar">
         <span>মোট ${visibleReceipts.length} আইটেম থেকে আয়</span>
+        ${mdReceipts > 0 ? `<span class="sky">MD ${esc(fmt(mdReceipts))}</span>` : ""}
         <span class="emer">নগদ ${esc(fmt(cashReceipts))}</span>
-        ${mdReceipts > 0 ? `<span class="sky">— MD ${esc(fmt(mdReceipts))}</span>` : ""}
-        ${vendorReceipts > 0 ? `<span class="orange">— Vendor ${esc(fmt(vendorReceipts))}</span>` : ""}
-        ${totalExpenses > 0 ? `<span class="rose">— মোট খরচ ${esc(fmt(totalExpenses))}</span>` : ""}
-        <span style="margin-left:auto">প্রেরক: ${esc(handover.from_name ?? "—")} · গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")} · জমা ${esc(fmt(submitted))}</span>
+        ${totalExpenses > 0 ? `<span class="rose">খরচ ${esc(fmt(totalExpenses))}</span>` : ""}
+        <span class="b">(= জমা ${esc(fmt(submitted))})</span>
       </div>
       <div class="sig">
         <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
