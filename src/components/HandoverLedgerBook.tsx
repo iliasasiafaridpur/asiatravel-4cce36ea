@@ -667,6 +667,102 @@ function HandoverCard({
   const cutoffRank = rank(handover.entry_date, handover.created_at);
   const firstPendingReceipt = receipts.find((r) => r.approval_status !== "approved") ?? receipts[0];
 
+  // Per-receipt FIFO metrics (পূর্বের জমা / বাকি) — shared by the on-screen
+  // table and the printed slip so both show identical numbers.
+  const metricsFor = (r: Receipt) => {
+    const sk = receiptServiceKey(r);
+    const info = sk ? serviceMap[sk] : undefined;
+    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const lastPast = past.length
+      ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const lastFuture = future.length
+      ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const bill = info?.sold_price ?? 0;
+    const discount = info?.discount ?? 0;
+    const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+    const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+    const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
+    const statusEvt = isStatusEventReceipt(r);
+    return {
+      sk, info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+      isAdvance, statusEvt,
+      mdRecv: isMdReceivedMethod(r.method) && !statusEvt,
+      vendorRecv: isVendorReceivedMethod(r.method) && !statusEvt,
+      past, future,
+    };
+  };
+
+  type SingleRow = { kind: "single"; r: Receipt; m: ReturnType<typeof metricsFor> };
+  type AgencyRow = {
+    kind: "agency"; agent: string; items: number; svcCount: number;
+    totalBill: number; totalDiscount: number; totalPrevious: number;
+    totalThis: number; totalDueAfter: number; totalFuture: number;
+    cash: number; md: number; vendor: number; date: string;
+  };
+  type DisplayRow = SingleRow | AgencyRow;
+
+  // মোটের উপর (total-settle) agencies: passenger-level detail belongs ONLY in the
+  // agency ledger. In the handover we collapse all of an agency's receipts into a
+  // single line showing that agency's মোট বিল / পূর্বের জমা / এই বারের জমা / মোট বাকি.
+  // Other parties keep their per-passenger rows.
+  const displayRows: DisplayRow[] = [];
+  {
+    const buckets = new Map<string, Receipt[]>();
+    for (const r of visibleReceipts) {
+      const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
+      if (agent && totalAgents.has(agent)) {
+        const arr = buckets.get(agent) ?? [];
+        arr.push(r);
+        buckets.set(agent, arr);
+      } else {
+        displayRows.push({ kind: "single", r, m: metricsFor(r) });
+      }
+    }
+    for (const [agent, recs] of buckets) {
+      const recIds = new Set(recs.map((x) => x.id));
+      const svcKeys = Array.from(new Set(recs.map(receiptServiceKey).filter(Boolean)));
+      let totalBill = 0, totalDiscount = 0, totalPrevious = 0, totalDueAfter = 0, totalFuture = 0;
+      for (const sk of svcKeys) {
+        const info = serviceMap[sk];
+        const allForSvc = receiptsByService[sk] ?? [];
+        const bill = info?.sold_price ?? 0;
+        const discount = info?.discount ?? 0;
+        const previousPaid = allForSvc
+          .filter((x) => !recIds.has(x.id) && rank(x.entry_date, x.created_at) < cutoffRank)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        const futurePaid = allForSvc
+          .filter((x) => !recIds.has(x.id) && rank(x.entry_date, x.created_at) > cutoffRank)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        const currentPaid = recs
+          .filter((x) => receiptServiceKey(x) === sk)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        totalBill += bill;
+        totalDiscount += discount;
+        totalPrevious += previousPaid;
+        totalFuture += futurePaid;
+        if (bill > 0) totalDueAfter += Math.max(0, bill - discount - previousPaid - currentPaid);
+      }
+      displayRows.push({
+        kind: "agency", agent, items: recs.length, svcCount: svcKeys.length,
+        totalBill, totalDiscount, totalPrevious,
+        totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
+        totalDueAfter, totalFuture,
+        cash: recs.filter((x) => isCashMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        md: recs.filter((x) => isMdReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        vendor: recs.filter((x) => isVendorReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        date: recs[0]?.entry_date ?? handover.entry_date,
+      });
+    }
+  }
+
+
   // Each handover gets a distinct, status-colored accent so one card is clearly
   // separated from the next at a glance. Pending cards get a much stronger,
   // eye-catching amber treatment so they never look like settled history.
