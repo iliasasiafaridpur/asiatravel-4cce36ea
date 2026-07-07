@@ -1063,32 +1063,66 @@ function HandoverCard({
             </tr>
           </thead>
           <tbody>
-            {visibleReceipts.length === 0 ? (
+            {displayRows.length === 0 ? (
               <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
-            ) : visibleReceipts.map((r, idx) => {
-              const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
-              const info = sk ? serviceMap[sk] : undefined;
-              const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-              const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
-              const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
-              const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const lastPast = past.length
-                ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
-                : null;
-              const lastFuture = future.length
-                ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
-                : null;
-              const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const bill = info?.sold_price ?? 0;
-              const discount = info?.discount ?? 0;
-              const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
-              const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+            ) : displayRows.map((row, idx) => {
+              if (row.kind === "agency") {
+                return (
+                  <tr key={`agency-${row.agent}`} className={`border-t align-top row-tint-${idx % 4}`}>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-medium leading-tight">{formatDate(row.date)}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">মোটের উপর</div>
+                    </td>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-semibold leading-tight">{row.agent}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">এজেন্সি · {row.items} টি passenger</div>
+                    </td>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-medium leading-tight">{row.svcCount} টি সার্ভিস (মোট হিসাব)</div>
+                      <div className="text-xs text-muted-foreground leading-tight">passenger তথ্য → এজেন্সি লেজার</div>
+                    </td>
+                    <td className="px-1.5 py-1 text-right align-top">
+                      {row.totalBill > 0 ? (
+                        <>
+                          <div className="text-sm font-bold tabular-nums leading-tight">{fmt(row.totalBill)}</div>
+                          {row.totalDiscount > 0 && (
+                            <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(row.totalDiscount)} (ডিসকাউন্ট)</div>
+                          )}
+                          {row.totalDueAfter > 0.005 ? (
+                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.totalDueAfter)}</div>
+                          ) : (
+                            <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                          )}
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right align-top">
+                      {row.totalPrevious > 0 ? (
+                        <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(row.totalPrevious)}</div>
+                      ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                      <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(row.totalThis)}</b>
+                      {row.md > 0 && <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD: {fmt(row.md)}</div>}
+                      {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
+                      {row.totalDueAfter <= 0.005 ? (
+                        <span className="text-emerald-600 text-base">✓</span>
+                      ) : (
+                        <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(row.totalDueAfter)}</div>
+                      )}
+                    </td>
+                    {approveAction && <td className="px-0.5 py-1 pr-2 text-center align-top" />}
+                  </tr>
+                );
+              }
+
+              const { r, m } = row;
+              const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+                isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
               const isHighlighted = highlightId === r.id;
-              const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
-              const statusEvt = isStatusEventReceipt(r);
-              const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
-              const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
+
 
               return (
                 <tr
