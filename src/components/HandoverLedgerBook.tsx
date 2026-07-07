@@ -798,6 +798,36 @@ function HandoverCard({
       formatDate(handover.closing_date || handover.entry_date),
     );
 
+    // Cash reconciliation: physical cash handed to MD = cash collected − cash spent.
+    // MD/Bank & Vendor-received amounts go straight to those accounts (not staff cash),
+    // so they are listed separately and never mixed into the handed-cash equation.
+    const netCash = cashReceipts - totalExpenses;
+    const diff = Math.round((submitted - netCash) * 100) / 100;
+    const matched = Math.abs(diff) <= 0.5;
+    const grandTotal = cashReceipts + mdReceipts + vendorReceipts;
+    const hasNonCash = mdReceipts > 0 || vendorReceipts > 0;
+    const summary = `
+      <div class="sum">
+        <div class="sumcol">
+          <div class="st">নগদ হিসাব — হাতে-হাতে জমা</div>
+          <table class="stab">
+            <tr><td>নগদ জমা গ্রহণ</td><td class="r">${fmt(cashReceipts)}</td></tr>
+            <tr><td>(−) নগদ খরচ</td><td class="r">−${fmt(totalExpenses)}</td></tr>
+            <tr class="net"><td>= জমা দেওয়া নগদ</td><td class="r">${fmt(submitted)}</td></tr>
+            <tr class="chk"><td>যাচাই (${fmt(netCash)} হওয়ার কথা)</td><td class="r ${matched ? "ok" : "bad"}">${matched ? "✓ মিলেছে" : `✗ গরমিল ${fmt(Math.abs(diff))}`}</td></tr>
+          </table>
+        </div>
+        <div class="sumcol">
+          <div class="st">${hasNonCash ? "নগদবিহীন জমা — সরাসরি অ্যাকাউন্টে" : "মোট জমা গ্রহণ"}</div>
+          <table class="stab">
+            ${mdReceipts > 0 ? `<tr><td>MD-কে সরাসরি (Bank / Md cash)</td><td class="r">${fmt(mdReceipts)}</td></tr>` : ""}
+            ${vendorReceipts > 0 ? `<tr><td>Vendor-কে সরাসরি (received)</td><td class="r">${fmt(vendorReceipts)}</td></tr>` : ""}
+            ${!hasNonCash ? `<tr><td>শুধু নগদ জমা</td><td class="r">${fmt(cashReceipts)}</td></tr>` : ""}
+            <tr class="net"><td>মোট জমা গ্রহণ (সব মিলে)</td><td class="r">${fmt(grandTotal)}</td></tr>
+          </table>
+        </div>
+      </div>`;
+
     const html = `<!doctype html><html><head><title>${esc(docTitle)}</title>
       <style>
         @page { size: A4; margin: 10mm; }
@@ -815,6 +845,16 @@ function HandoverCard({
         .mut { color:#666; font-size:9px; }
         .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
         .tot { margin-top:5px; font-size:11px; font-weight:700; text-align:right; }
+        .sum { display:flex; gap:8px; margin:6px 0 4px; }
+        .sumcol { flex:1; border:1px solid #111; border-radius:4px; overflow:hidden; }
+        .sumcol .st { background:#111; color:#fff; font-size:10px; font-weight:700; padding:3px 6px; }
+        .stab { width:100%; border-collapse:collapse; font-size:11px; }
+        .stab td { border:none; border-bottom:1px solid #ddd; padding:3px 6px; }
+        .stab td.r { text-align:right; font-weight:600; white-space:nowrap; }
+        .stab tr.net td { border-top:1px solid #111; border-bottom:none; font-size:12px; font-weight:800; background:#f2f2f2; }
+        .stab tr.chk td { border-bottom:none; font-weight:700; }
+        .ok { color:#166534; }
+        .bad { color:#b91c1c; }
         .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
         .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
       </style></head><body>
@@ -826,6 +866,8 @@ function HandoverCard({
           প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
         </div>
       </div>
+      ${summary}
+      ${confirmed > 0 && confirmed !== submitted ? `<div class="tot" style="text-align:left">MD যাচাইকৃত নগদ: ${fmt(confirmed)}</div>` : ""}
       <h2>জমার বিবরণ</h2>
       <table>
         <thead><tr>
@@ -834,9 +876,6 @@ function HandoverCard({
         </tr></thead>
         <tbody>${bodyRows || `<tr><td colspan="8" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
       </table>
-      <div class="tot">
-        নগদ: ${fmt(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${fmt(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${fmt(vendorReceipts)}` : ""}
-      </div>
       ${expenses.length > 0 ? `
         <h2>খরচের বিবরণ</h2>
         <table>
@@ -845,7 +884,6 @@ function HandoverCard({
         </table>
         <div class="tot">মোট খরচ: −${fmt(totalExpenses)}</div>
       ` : ""}
-      <div class="tot" style="font-size:13px;border-top:2px solid #111;padding-top:4px">জমা দেওয়া নগদ: ${fmt(submitted)}${confirmed > 0 && confirmed !== submitted ? ` · Confirmed: ${fmt(confirmed)}` : ""}</div>
       ${handover.remarks ? `<div style="margin-top:6px;font-size:10px"><b>মন্তব্য:</b> ${esc(handover.remarks)}</div>` : ""}
       <div class="sig">
         <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
