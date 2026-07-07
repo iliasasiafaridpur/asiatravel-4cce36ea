@@ -1279,23 +1279,39 @@ function HandoverCard({
                       </button>
                     ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
                   </td>
-                  {/* এই বারের জমা */}
-                  <td className="px-1.5 py-1 text-right tabular-nums align-top">
-                    {statusEvt ? (
+                  {/* এই বারের জমা → MD রিসিভ / স্টাফ রিসিভ */}
+                  {statusEvt ? (
+                    <td colSpan={2} className="px-1.5 py-1 text-right tabular-nums align-top">
                       <div className="text-sm font-semibold text-violet-600 dark:text-violet-400 leading-tight">📦 {cleanStatusText(r.remarks)}</div>
-                    ) : (
-                      <>
-                        {isAdvance && <AdvanceBadge advance className="mr-1" />}
-                        <b className={`text-sm ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
-                        {mdRecv && (
-                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
-                        )}
-                        {vendorRecv && (
-                          <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
-                        )}
-                      </>
-                    )}
-                  </td>
+                    </td>
+                  ) : (
+                    <>
+                      {/* MD রিসিভ */}
+                      <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                        {mdRecv ? (
+                          <>
+                            <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(r.amount)}</b>
+                            <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
+                          </>
+                        ) : vendorRecv ? (
+                          <>
+                            <b className="text-sm text-orange-600 dark:text-orange-400">{fmt(r.amount)}</b>
+                            <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
+                          </>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* স্টাফ রিসিভ */}
+                      <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                        {!mdRecv && !vendorRecv ? (
+                          <>
+                            {isAdvance && <AdvanceBadge advance className="mr-1" />}
+                            <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                          </>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    </>
+                  )}
+
                   {/* বাকি (after this handover) — bolder + larger */}
                   <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
                     {bill > 0 ? (
