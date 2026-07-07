@@ -692,21 +692,41 @@ function HandoverCard({
       const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
       const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
       const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+      const lastPast = past.length
+        ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+        : null;
       const bill = info?.sold_price ?? 0;
       const discount = info?.discount ?? 0;
       const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
       const statusEvt = isStatusEventReceipt(r);
+      const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
+      const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
+      const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
+      // Human-readable payment method for the accounting slip.
+      const methodLabel = statusEvt
+        ? "ডেলিভারি"
+        : vendorRecv
+          ? "Vendor Rece"
+          : mdRecv
+            ? `MD · ${r.method ?? "—"}`
+            : (r.method?.trim() || "নগদ");
       const svcBits = [primaryServiceLabel(r, info), info?.country, info?.airline].filter(Boolean).join(" · ");
       const custBits = [r.passenger_name || "—", info?.agent ? `A:${info.agent}` : "", info?.passport]
         .filter(Boolean).join(" · ");
-      const thisPaid = statusEvt ? cleanStatusText(r.remarks) : fmt(r.amount);
+      const prevCell = previousPaid > 0
+        ? `${esc(fmt(previousPaid))}${lastPast ? `<br/><span class="mut">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
+        : "— নতুন —";
+      const thisPaid = statusEvt
+        ? esc(cleanStatusText(r.remarks))
+        : `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}${esc(fmt(r.amount))}`;
       return `<tr>
         <td class="nw">${esc(formatDate(r.entry_date))}</td>
         <td>${esc(custBits)}</td>
         <td>${esc(svcBits)}</td>
         <td class="r nw">${bill > 0 ? esc(fmt(bill)) : "—"}${discount > 0 ? ` <span class="mut">(−${esc(fmt(discount))})</span>` : ""}</td>
-        <td class="r nw">${previousPaid > 0 ? esc(fmt(previousPaid)) : "—"}</td>
-        <td class="r nw">${esc(thisPaid)}</td>
+        <td class="r nw">${prevCell}</td>
+        <td class="r nw">${thisPaid}</td>
+        <td class="nw">${esc(methodLabel)}</td>
         <td class="r nw">${bill > 0 ? (dueAfterThis <= 0.005 ? "✓" : esc(fmt(dueAfterThis))) : "—"}</td>
       </tr>`;
     }).join("");
@@ -740,6 +760,7 @@ function HandoverCard({
         td.r, th.r { text-align:right; }
         td.nw, th.nw { white-space:nowrap; }
         .mut { color:#666; font-size:9px; }
+        .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
         .tot { margin-top:5px; font-size:11px; font-weight:700; text-align:right; }
         .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
         .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
@@ -756,9 +777,9 @@ function HandoverCard({
       <table>
         <thead><tr>
           <th class="nw">তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
-          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই জমা</th><th class="r nw">বাকি</th>
+          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই জমা</th><th class="nw">মাধ্যম</th><th class="r nw">বাকি</th>
         </tr></thead>
-        <tbody>${bodyRows || `<tr><td colspan="7" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
+        <tbody>${bodyRows || `<tr><td colspan="8" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
       </table>
       <div class="tot">
         নগদ: ${fmt(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${fmt(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${fmt(vendorReceipts)}` : ""}
