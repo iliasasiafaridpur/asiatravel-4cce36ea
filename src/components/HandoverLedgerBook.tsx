@@ -783,30 +783,38 @@ function HandoverCard({
         : status === "pending" ? "অপেক্ষমান" : status;
 
     // Receipt rows — a 1:1 replica of the on-screen handover card so the printed
-    // slip shows EXACTLY what staff/MD see on the My Handover page.
-    const bodyRows = visibleReceipts.map((r, idx) => {
-      const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
-      const info = sk ? serviceMap[sk] : undefined;
-      const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-      const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
-      const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
-      const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const lastPast = past.length
-        ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
-        : null;
-      const lastFuture = future.length
-        ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
-        : null;
-      const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const bill = info?.sold_price ?? 0;
-      const discount = info?.discount ?? 0;
-      const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
-      const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
-      const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
-      const statusEvt = isStatusEventReceipt(r);
-      const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
-      const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
+    // slip shows EXACTLY what staff/MD see on the My Handover page. মোটের উপর
+    // agencies collapse to a single aggregated line (no passenger detail).
+    const bodyRows = displayRows.map((row, idx) => {
+      if (row.kind === "agency") {
+        const billCell = row.totalBill > 0
+          ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
+            + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
+            + (row.totalDueAfter > 0.005 ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.totalDueAfter))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
+          : "—";
+        const prevCell = row.totalPrevious > 0
+          ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
+          : `<span class="sub">— নতুন —</span>`;
+        const thisCell = `<span class="b emer">${esc(fmt(row.totalThis))}</span>`
+          + (row.md > 0 ? `<span class="sub sky">MD: ${esc(fmt(row.md))}</span>` : "")
+          + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "");
+        const dueCell = row.totalDueAfter <= 0.005
+          ? `<span class="emer b">✓</span>`
+          : `<span class="b rose">${esc(fmt(row.totalDueAfter))}</span>`;
+        return `<tr class="rt tint${idx % 2}">
+          <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
+          <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
+          <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
+          <td class="r nw">${billCell}</td>
+          <td class="r nw">${prevCell}</td>
+          <td class="r nw">${thisCell}</td>
+          <td class="r nw">${dueCell}</td>
+        </tr>`;
+      }
+
+      const { r, m } = row;
+      const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+        isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
 
       // তারিখ
       const dateCell = `${esc(formatDate(r.entry_date))}`
@@ -863,6 +871,7 @@ function HandoverCard({
         <td class="r nw">${dueCell}</td>
       </tr>`;
     }).join("");
+
 
     const totalRow = `<tr class="sumrow">
       <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
