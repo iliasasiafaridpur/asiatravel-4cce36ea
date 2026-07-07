@@ -963,7 +963,6 @@ function HandoverCard({
       <div class="h">
         <h1>Asia Travels &amp; Tours</h1>
         <div class="meta">
-          <b>Handover #${esc(handover.handover_id ?? handover.id.slice(0, 8))}</b> · ${esc(statusLabel)}<br/>
           তারিখ: ${esc(formatDate(handover.closing_date || handover.entry_date))}<br/>
           প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
         </div>
