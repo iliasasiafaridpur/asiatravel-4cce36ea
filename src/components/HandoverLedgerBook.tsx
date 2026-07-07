@@ -814,7 +814,11 @@ function HandoverCard({
         const billCell = row.totalBill > 0
           ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
             + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
-            + (row.totalDueAfter > 0.005 ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.totalDueAfter))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
+            + (row.ledgerDue > 0.005
+                ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.ledgerDue))}</span>`
+                : row.ledgerAdvance > 0.005
+                  ? `<span class="sub sky">অগ্রিম জমা: ${esc(fmt(row.ledgerAdvance))}</span>`
+                  : `<span class="sub emer">✓ পরিশোধিত</span>`)
           : "—";
         const prevCell = row.totalPrevious > 0
           ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
@@ -822,9 +826,11 @@ function HandoverCard({
         const thisCell = `<span class="b emer">${esc(fmt(row.totalThis))}</span>`
           + (row.md > 0 ? `<span class="sub sky">MD: ${esc(fmt(row.md))}</span>` : "")
           + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "");
-        const dueCell = row.totalDueAfter <= 0.005
-          ? `<span class="emer b">✓</span>`
-          : `<span class="b rose">${esc(fmt(row.totalDueAfter))}</span>`;
+        const dueCell = row.ledgerDue > 0.005
+          ? `<span class="b rose">${esc(fmt(row.ledgerDue))}</span><span class="sub">মোট বাকি</span>`
+          : row.ledgerAdvance > 0.005
+            ? `<span class="b sky">+${esc(fmt(row.ledgerAdvance))}</span><span class="sub">অগ্রিম</span>`
+            : `<span class="emer b">✓</span>`;
         return `<tr class="rt tint${idx % 2}">
           <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
           <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
