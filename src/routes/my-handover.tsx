@@ -253,12 +253,13 @@ function MyHandoverPage() {
       // ---- OFFLINE: hydrate everything from the saved snapshot (off_ / cache_v2_) ----
       if (isOffline()) {
         const allRec = (cacheRead<Receipt[]>("payment_receipts") ?? []);
-        const totalAgents = new Set(
+        const totalAgentSet = new Set(
           (cacheRead<Array<{ name?: string | null; settle_mode?: string | null }>>("agents") ?? [])
             .filter((a) => (a.settle_mode ?? "total") === "total")
             .map((a) => partyKey(a.name))
             .filter(Boolean),
         );
+
         const allExp = (cacheRead<Expense[]>("cash_expenses") ?? []) as (Expense & {
           spent_by?: string | null; handover_id?: string | null;
         })[];
