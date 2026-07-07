@@ -823,9 +823,11 @@ function HandoverCard({
         const prevCell = row.totalPrevious > 0
           ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
           : `<span class="sub">— নতুন —</span>`;
-        const thisCell = `<span class="b emer">${esc(fmt(row.totalThis))}</span>`
-          + (row.md > 0 ? `<span class="sub sky">MD: ${esc(fmt(row.md))}</span>` : "")
-          + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "");
+        const mdCell = (row.md > 0 || row.vendor > 0)
+          ? (row.md > 0 ? `<span class="b sky">${esc(fmt(row.md))}</span>` : "")
+            + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "")
+          : "—";
+        const staffCell = row.cash > 0 ? `<span class="b emer">${esc(fmt(row.cash))}</span>` : "—";
         const dueCell = row.ledgerDue > 0.005
           ? `<span class="b rose">${esc(fmt(row.ledgerDue))}</span><span class="sub">মোট বাকি</span>`
           : row.ledgerAdvance > 0.005
@@ -837,9 +839,11 @@ function HandoverCard({
           <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
           <td class="r nw">${billCell}</td>
           <td class="r nw">${prevCell}</td>
-          <td class="r nw">${thisCell}</td>
+          <td class="r nw">${mdCell}</td>
+          <td class="r nw">${staffCell}</td>
           <td class="r nw">${dueCell}</td>
         </tr>`;
+
       }
 
       const { r, m } = row;
@@ -877,12 +881,18 @@ function HandoverCard({
         ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
         : `<span class="sub">— নতুন —</span>`;
 
-      // এই বারের জমা
-      const thisCell = statusEvt
-        ? `<span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span>`
-        : `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b ${vendorRecv ? "orange" : mdRecv ? "sky" : "emer"}">${esc(fmt(r.amount))}</span>`
-          + (mdRecv ? `<span class="sub sky">MD · ${esc(r.method)}</span>` : "")
-          + (vendorRecv ? `<span class="sub orange">Vendor Rece</span>` : "");
+      // এই বারের জমা → MD রিসিভ / স্টাফ রিসিভ
+      const mdCell = mdRecv
+        ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(r.method)}</span>`
+        : vendorRecv
+          ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
+          : "—";
+      const staffCell = (!mdRecv && !vendorRecv)
+        ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b emer">${esc(fmt(r.amount))}</span>`
+        : "—";
+      const payCells = statusEvt
+        ? `<td class="r nw" colspan="2"><span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span></td>`
+        : `<td class="r nw">${mdCell}</td><td class="r nw">${staffCell}</td>`;
 
       // বাকি (after this handover)
       const dueCell = bill > 0
@@ -897,17 +907,20 @@ function HandoverCard({
         <td>${svcCell}</td>
         <td class="r nw">${billCell}</td>
         <td class="r nw">${prevCell}</td>
-        <td class="r nw">${thisCell}</td>
+        ${payCells}
         <td class="r nw">${dueCell}</td>
+
       </tr>`;
     }).join("");
 
 
     const totalRow = `<tr class="sumrow">
       <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
-      <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span>${mdReceipts > 0 ? `<span class="sub sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}</td>
+      <td class="r nw">${mdReceipts > 0 ? `<span class="b sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}${mdReceipts <= 0 && vendorReceipts <= 0 ? "—" : ""}</td>
+      <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span></td>
       <td></td>
     </tr>`;
+
 
     const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
         <td class="nw">${esc(formatDate(e.entry_date))}${e.expense_id ? `<span class="sub mono">${esc(e.expense_id)}</span>` : ""}</td>
@@ -964,11 +977,17 @@ function HandoverCard({
       </div>
       <h2>জমার বিবরণ</h2>
       <table>
-        <thead><tr>
-          <th class="nw">তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
-          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই বারের জমা</th><th class="r nw">বাকি</th>
-        </tr></thead>
-        <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="7" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
+        <thead>
+          <tr>
+            <th class="nw" rowspan="2">তারিখ</th><th rowspan="2">কাস্টমার</th><th rowspan="2">সার্ভিস</th>
+            <th class="r nw" rowspan="2">মোট বিল</th><th class="r nw" rowspan="2">পূর্বের জমা</th>
+            <th class="r" colspan="2">এই বারের জমা</th>
+            <th class="r nw" rowspan="2">বাকি</th>
+          </tr>
+          <tr><th class="r nw">MD রিসিভ</th><th class="r nw">স্টাফ রিসিভ</th></tr>
+        </thead>
+        <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="8" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
+
       </table>
       ${expenses.length > 0 ? `
         <h2>💸 খরচের বিবরণ — ${expenses.length} টি</h2>
@@ -1071,30 +1090,36 @@ function HandoverCard({
       <div className="overflow-x-auto">
         <table className="w-full table-fixed text-sm">
           <colgroup>
-            <col className="w-[12%]" />
-            <col className="w-[27%]" />
-            <col className="w-[15%]" />
-            <col className="w-[13%]" />
             <col className="w-[11%]" />
-            <col className="w-[12%]" />
+            <col className="w-[22%]" />
+            <col className="w-[14%]" />
+            <col className="w-[13%]" />
+            <col className="w-[10%]" />
+            <col className="w-[8%]" />
+            <col className="w-[9%]" />
             <col className="w-[5%]" />
             {approveAction && <col className="w-[5%]" />}
           </colgroup>
           <thead className="bg-muted/30">
             <tr className="text-left">
-              <th className="px-1.5 py-1.5 font-semibold">তারিখ</th>
-              <th className="px-1.5 py-1.5 font-semibold">কাস্টমার</th>
-              <th className="px-1.5 py-1.5 font-semibold">সার্ভিস</th>
-              <th className="px-1.5 py-1.5 font-semibold text-right">মোট বিল</th>
-              <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
-              <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
-              <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-1 py-1.5 pr-2 font-semibold text-center">✓</th>}
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold align-bottom">তারিখ</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold align-bottom">কাস্টমার</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold align-bottom">সার্ভিস</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold text-right align-bottom">মোট বিল</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold text-right align-bottom">পূর্বের জমা</th>
+              <th colSpan={2} className="px-1.5 py-1 font-semibold text-center border-b border-border">এই বারের জমা</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-bold text-right text-sm align-bottom">বাকি</th>
+              {approveAction && <th rowSpan={2} className="px-1 py-1.5 pr-2 font-semibold text-center align-bottom">✓</th>}
+            </tr>
+            <tr className="text-left">
+              <th className="px-1.5 py-1 font-semibold text-right text-xs text-sky-600 dark:text-sky-400">MD রিসিভ</th>
+              <th className="px-1.5 py-1 font-semibold text-right text-xs text-emerald-700 dark:text-emerald-400">স্টাফ রিসিভ</th>
             </tr>
           </thead>
+
           <tbody>
             {displayRows.length === 0 ? (
-              <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
+              <tr><td colSpan={approveAction ? 9 : 8} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
             ) : displayRows.map((row, idx) => {
               if (row.kind === "agency") {
                 return (
@@ -1133,11 +1158,22 @@ function HandoverCard({
                         <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(row.totalPrevious)}</div>
                       ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
                     </td>
+                    {/* MD রিসিভ */}
                     <td className="px-1.5 py-1 text-right tabular-nums align-top">
-                      <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(row.totalThis)}</b>
-                      {row.md > 0 && <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD: {fmt(row.md)}</div>}
-                      {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
+                      {row.md > 0 || row.vendor > 0 ? (
+                        <>
+                          {row.md > 0 && <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(row.md)}</b>}
+                          {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
                     </td>
+                    {/* স্টাফ রিসিভ */}
+                    <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                      {row.cash > 0 ? (
+                        <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(row.cash)}</b>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+
                     <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
                       {row.ledgerDue > 0.005 ? (
                         <>
@@ -1262,23 +1298,39 @@ function HandoverCard({
                       </button>
                     ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
                   </td>
-                  {/* এই বারের জমা */}
-                  <td className="px-1.5 py-1 text-right tabular-nums align-top">
-                    {statusEvt ? (
+                  {/* এই বারের জমা → MD রিসিভ / স্টাফ রিসিভ */}
+                  {statusEvt ? (
+                    <td colSpan={2} className="px-1.5 py-1 text-right tabular-nums align-top">
                       <div className="text-sm font-semibold text-violet-600 dark:text-violet-400 leading-tight">📦 {cleanStatusText(r.remarks)}</div>
-                    ) : (
-                      <>
-                        {isAdvance && <AdvanceBadge advance className="mr-1" />}
-                        <b className={`text-sm ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-700 dark:text-emerald-400"}`}>{fmt(r.amount)}</b>
-                        {mdRecv && (
-                          <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
-                        )}
-                        {vendorRecv && (
-                          <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
-                        )}
-                      </>
-                    )}
-                  </td>
+                    </td>
+                  ) : (
+                    <>
+                      {/* MD রিসিভ */}
+                      <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                        {mdRecv ? (
+                          <>
+                            <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(r.amount)}</b>
+                            <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
+                          </>
+                        ) : vendorRecv ? (
+                          <>
+                            <b className="text-sm text-orange-600 dark:text-orange-400">{fmt(r.amount)}</b>
+                            <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
+                          </>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* স্টাফ রিসিভ */}
+                      <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                        {!mdRecv && !vendorRecv ? (
+                          <>
+                            {isAdvance && <AdvanceBadge advance className="mr-1" />}
+                            <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(r.amount)}</b>
+                          </>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    </>
+                  )}
+
                   {/* বাকি (after this handover) — bolder + larger */}
                   <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
                     {bill > 0 ? (
@@ -1311,16 +1363,20 @@ function HandoverCard({
             <tr className="border-t bg-muted/30 font-semibold">
               <td className="px-1.5 py-1.5 text-right" colSpan={5}>মোট ({visibleReceipts.length} আইটেম)</td>
               <td className="px-1.5 py-1.5 text-right tabular-nums">
-                <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
                 {mdReceipts > 0 && (
-                  <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">MD: {fmt(mdReceipts)}</div>
+                  <div className="text-sky-600 dark:text-sky-400">MD: {fmt(mdReceipts)}</div>
                 )}
                 {vendorReceipts > 0 && (
                   <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">Vendor: {fmt(vendorReceipts)}</div>
                 )}
+                {mdReceipts <= 0 && vendorReceipts <= 0 && <span className="text-muted-foreground">—</span>}
+              </td>
+              <td className="px-1.5 py-1.5 text-right tabular-nums">
+                <div className="text-emerald-700 dark:text-emerald-400">নগদ: {fmt(cashReceipts)}</div>
               </td>
               <td className="px-1.5 py-1.5" colSpan={approveAction ? 2 : 1} />
             </tr>
+
           </tbody>
         </table>
       </div>
