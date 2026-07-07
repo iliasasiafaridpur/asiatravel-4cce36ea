@@ -352,8 +352,17 @@ export function StaffHandoverDialog({
   const buildReportHtml = () => {
     const row = (label: string, value: string, color: string) =>
       `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee;color:#555;">${label}</td><td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:${color};">${value}</td></tr>`;
-    const incomeRows = visibleReceipts
-      .map((r) => {
+    const incomeRows = incomeItems
+      .map((it) => {
+        if (it.kind === "agency") {
+          const vendorRecv = it.cat === "vendor";
+          const mdRecv = it.cat === "md";
+          const color = vendorRecv ? "#ea580c" : mdRecv ? "#0284c7" : "#059669";
+          const tag = vendorRecv ? "(Vendor) " : mdRecv ? "(MD) " : "";
+          const amt = `${tag}৳ ${it.amount.toLocaleString()}`;
+          return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;"><b>${it.agency}</b><br><span style="color:#999;font-size:11px;">এজেন্সি (মোটের উপর) · ${it.count} পেমেন্ট</span></td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:${color};font-weight:600;">${amt}</td></tr>`;
+        }
+        const r = it.r;
         const evt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !evt;
         const vendorRecv = isVendorReceivedMethod(r.method) && !evt;
