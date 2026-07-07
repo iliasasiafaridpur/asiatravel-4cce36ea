@@ -692,35 +692,31 @@ function HandoverCard({
       const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
       const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
       const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
       const bill = info?.sold_price ?? 0;
       const discount = info?.discount ?? 0;
       const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
       const statusEvt = isStatusEventReceipt(r);
       const svcBits = [primaryServiceLabel(r, info), info?.country, info?.airline].filter(Boolean).join(" · ");
-      const custBits = [r.passenger_name || "—", info?.agent ? `A: ${info.agent}` : "", info?.passport]
+      const custBits = [r.passenger_name || "—", info?.agent ? `A:${info.agent}` : "", info?.passport]
         .filter(Boolean).join(" · ");
-      const thisPaid = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : fmt(r.amount);
+      const thisPaid = statusEvt ? cleanStatusText(r.remarks) : fmt(r.amount);
       return `<tr>
-        <td>${esc(formatDate(r.entry_date))}${r.ref_id ? `<div class="mut">${esc(r.ref_id)}</div>` : ""}</td>
+        <td class="nw">${esc(formatDate(r.entry_date))}</td>
         <td>${esc(custBits)}</td>
         <td>${esc(svcBits)}</td>
-        <td class="r">${bill > 0 ? esc(fmt(bill)) : "—"}${discount > 0 ? `<div class="mut">−${esc(fmt(discount))} ডিসকাউন্ট</div>` : ""}</td>
-        <td class="r">${previousPaid > 0 ? esc(fmt(previousPaid)) : "—"}</td>
-        <td class="r">${esc(thisPaid)}</td>
-        <td class="r">${bill > 0 ? (dueAfterThis <= 0.005 ? "✓" : esc(fmt(dueAfterThis))) : "—"}</td>
+        <td class="r nw">${bill > 0 ? esc(fmt(bill)) : "—"}${discount > 0 ? ` <span class="mut">(−${esc(fmt(discount))})</span>` : ""}</td>
+        <td class="r nw">${previousPaid > 0 ? esc(fmt(previousPaid)) : "—"}</td>
+        <td class="r nw">${esc(thisPaid)}</td>
+        <td class="r nw">${bill > 0 ? (dueAfterThis <= 0.005 ? "✓" : esc(fmt(dueAfterThis))) : "—"}</td>
       </tr>`;
     }).join("");
 
     const expenseRows = expenses.map((e) => `<tr>
-        <td>${esc(formatDate(e.entry_date))}</td>
-        <td>${esc(e.category || "—")}</td>
+        <td class="nw">${esc(formatDate(e.entry_date))}</td>
+        <td class="nw">${esc(e.category || "—")}</td>
         <td>${esc(e.purpose || "—")}</td>
-        <td class="r">−${esc(fmt(e.amount))}</td>
+        <td class="r nw">−${esc(fmt(e.amount))}</td>
       </tr>`).join("");
-
-    const info = (label: string, value: string) =>
-      `<div class="row"><b>${esc(label)}</b><span>${esc(value)}</span></div>`;
 
     const docTitle = buildFileTitle(
       "Cash_Handover",
@@ -731,42 +727,36 @@ function HandoverCard({
 
     const html = `<!doctype html><html><head><title>${esc(docTitle)}</title>
       <style>
-        @page { size: A4; margin: 12mm; }
-        body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:16px; }
-        .h { text-align:center; border-bottom:2px solid #111; padding-bottom:8px; margin-bottom:12px; }
-        .h h1 { margin:0; font-size:20px; }
-        .h .sub { font-size:12px; color:#555; }
-        .meta { display:grid; grid-template-columns:1fr 1fr; gap:2px 24px; margin-bottom:12px; }
-        .row { display:flex; justify-content:space-between; gap:8px; font-size:12px; padding:2px 0; border-bottom:1px dotted #ddd; }
-        .row b { font-weight:600; }
-        h2 { font-size:13px; margin:14px 0 6px; border-left:4px solid #111; padding-left:6px; }
-        table { width:100%; border-collapse:collapse; font-size:11px; }
-        th, td { border:1px solid #ccc; padding:4px 6px; text-align:left; vertical-align:top; }
-        th { background:#f2f2f2; }
+        @page { size: A4; margin: 10mm; }
+        body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
+        .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
+        .h h1 { margin:0; font-size:16px; }
+        .h .meta { text-align:right; font-size:10px; line-height:1.5; }
+        .h .meta b { font-weight:600; }
+        h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
+        table { width:100%; border-collapse:collapse; font-size:10px; table-layout:auto; }
+        th, td { border:1px solid #bbb; padding:2px 5px; text-align:left; vertical-align:middle; line-height:1.3; }
+        th { background:#eee; font-weight:600; }
         td.r, th.r { text-align:right; }
-        .mut { color:#777; font-size:10px; }
-        .tot { margin-top:10px; font-size:14px; font-weight:700; text-align:right; border-top:2px solid #111; padding-top:6px; }
-        .sig { margin-top:40px; display:flex; justify-content:space-between; font-size:11px; }
-        .sig div { border-top:1px solid #111; padding-top:4px; width:40%; text-align:center; }
-        .ft { margin-top:16px; font-size:10px; color:#666; text-align:center; }
+        td.nw, th.nw { white-space:nowrap; }
+        .mut { color:#666; font-size:9px; }
+        .tot { margin-top:5px; font-size:11px; font-weight:700; text-align:right; }
+        .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
+        .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
       </style></head><body>
       <div class="h">
         <h1>Asia Travels &amp; Tours</h1>
-        <div class="sub">Cash Handover Slip</div>
+        <div class="meta">
+          <b>Handover #${esc(handover.handover_id ?? handover.id.slice(0, 8))}</b> · ${esc(statusLabel)}<br/>
+          তারিখ: ${esc(formatDate(handover.closing_date || handover.entry_date))}<br/>
+          প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
+        </div>
       </div>
-      <div class="meta">
-        ${info("Handover #", handover.handover_id ?? handover.id.slice(0, 8))}
-        ${info("Status", statusLabel)}
-        ${info("Submitted", formatDateTime(handover.created_at))}
-        ${info("Closing Date", formatDate(handover.closing_date || handover.entry_date))}
-        ${info("প্রেরক (From)", handover.from_name ?? "—")}
-        ${info("গ্রহীতা (To)", handover.to_name ?? "MD Sir")}
-      </div>
-      <h2>জমার বিবরণ (Receipts)</h2>
+      <h2>জমার বিবরণ</h2>
       <table>
         <thead><tr>
-          <th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
-          <th class="r">মোট বিল</th><th class="r">পূর্বের জমা</th><th class="r">এই বারের জমা</th><th class="r">বাকি</th>
+          <th class="nw">তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
+          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই জমা</th><th class="r nw">বাকি</th>
         </tr></thead>
         <tbody>${bodyRows || `<tr><td colspan="7" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
       </table>
@@ -774,20 +764,19 @@ function HandoverCard({
         নগদ: ${fmt(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${fmt(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${fmt(vendorReceipts)}` : ""}
       </div>
       ${expenses.length > 0 ? `
-        <h2>খরচের বিবরণ (Expenses)</h2>
+        <h2>খরচের বিবরণ</h2>
         <table>
-          <thead><tr><th>তারিখ</th><th>খাত</th><th>বিবরণ</th><th class="r">টাকা</th></tr></thead>
+          <thead><tr><th class="nw">তারিখ</th><th class="nw">খাত</th><th>বিবরণ</th><th class="r nw">টাকা</th></tr></thead>
           <tbody>${expenseRows}</tbody>
         </table>
         <div class="tot">মোট খরচ: −${fmt(totalExpenses)}</div>
       ` : ""}
-      <div class="tot">Submitted Amount: ${fmt(submitted)}${confirmed > 0 && confirmed !== submitted ? ` · Confirmed: ${fmt(confirmed)}` : ""}</div>
-      ${handover.remarks ? `<div style="margin-top:10px;font-size:12px"><b>📝 Remarks:</b> ${esc(handover.remarks)}</div>` : ""}
+      <div class="tot" style="font-size:13px;border-top:2px solid #111;padding-top:4px">জমা দেওয়া নগদ: ${fmt(submitted)}${confirmed > 0 && confirmed !== submitted ? ` · Confirmed: ${fmt(confirmed)}` : ""}</div>
+      ${handover.remarks ? `<div style="margin-top:6px;font-size:10px"><b>মন্তব্য:</b> ${esc(handover.remarks)}</div>` : ""}
       <div class="sig">
         <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
         <div>গ্রহীতা<br/>${esc(handover.to_name ?? "MD Sir")}</div>
       </div>
-      <div class="ft">Computer generated cash handover slip · ${esc(formatDateTime(new Date().toISOString()))}</div>
     </body></html>`;
     printDocHtml(html, docTitle);
   };
