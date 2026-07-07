@@ -230,7 +230,7 @@ export function StaffHandoverDialog({
       // delivery markers must NOT clutter the cash handover; only the received
       // amount (agency_ledger_payment receipt) should appear. So drop the
       // delivery/status rows whose booking belongs to a total-mode agent.
-      const totalAgents = new Set(
+      const totalAgentSet = new Set(
         (((ag?.data ?? []) as Array<{ name?: string | null }>))
           .map((a) => String(a.name ?? "").trim())
           .filter(Boolean)
@@ -238,9 +238,10 @@ export function StaffHandoverDialog({
       const filtered = recs.filter((rec) => {
         if (!isStatusEvent(rec)) return true;
         const agent = String(rec.svc?.agent ?? "").trim();
-        return !(agent && totalAgents.has(agent));
+        return !(agent && totalAgentSet.has(agent));
       });
 
+      setTotalAgents(totalAgentSet);
       setReceipts(filtered);
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
