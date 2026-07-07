@@ -881,12 +881,18 @@ function HandoverCard({
         ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
         : `<span class="sub">— নতুন —</span>`;
 
-      // এই বারের জমা
-      const thisCell = statusEvt
-        ? `<span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span>`
-        : `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b ${vendorRecv ? "orange" : mdRecv ? "sky" : "emer"}">${esc(fmt(r.amount))}</span>`
-          + (mdRecv ? `<span class="sub sky">MD · ${esc(r.method)}</span>` : "")
-          + (vendorRecv ? `<span class="sub orange">Vendor Rece</span>` : "");
+      // এই বারের জমা → MD রিসিভ / স্টাফ রিসিভ
+      const mdCell = mdRecv
+        ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(r.method)}</span>`
+        : vendorRecv
+          ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
+          : "—";
+      const staffCell = (!mdRecv && !vendorRecv)
+        ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b emer">${esc(fmt(r.amount))}</span>`
+        : "—";
+      const payCells = statusEvt
+        ? `<td class="r nw" colspan="2"><span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span></td>`
+        : `<td class="r nw">${mdCell}</td><td class="r nw">${staffCell}</td>`;
 
       // বাকি (after this handover)
       const dueCell = bill > 0
@@ -901,8 +907,9 @@ function HandoverCard({
         <td>${svcCell}</td>
         <td class="r nw">${billCell}</td>
         <td class="r nw">${prevCell}</td>
-        <td class="r nw">${thisCell}</td>
+        ${payCells}
         <td class="r nw">${dueCell}</td>
+
       </tr>`;
     }).join("");
 
