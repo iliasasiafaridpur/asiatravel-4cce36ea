@@ -1118,8 +1118,10 @@ function HandoverCard({
                           {row.totalDiscount > 0 && (
                             <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(row.totalDiscount)} (ডিসকাউন্ট)</div>
                           )}
-                          {row.totalDueAfter > 0.005 ? (
-                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.totalDueAfter)}</div>
+                          {row.ledgerDue > 0.005 ? (
+                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.ledgerDue)}</div>
+                          ) : row.ledgerAdvance > 0.005 ? (
+                            <div className="text-sm tabular-nums text-sky-600 leading-tight">অগ্রিম জমা: {fmt(row.ledgerAdvance)}</div>
                           ) : (
                             <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
                           )}
