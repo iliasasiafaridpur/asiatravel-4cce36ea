@@ -815,6 +815,16 @@ function HandoverCard({
           <span className="flex items-center gap-1"><Users className="h-3 w-3" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b></span>
         </div>
         <div className="text-base font-bold tabular-nums text-primary">{fmt(submitted)}</div>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={printThis}
+          title="এই handover প্রিন্ট / PDF করুন"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          <Printer className="h-4 w-4" />
+        </Button>
         {allowCancel && isPending && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
