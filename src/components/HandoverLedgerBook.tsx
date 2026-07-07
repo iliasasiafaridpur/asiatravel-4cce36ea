@@ -508,6 +508,7 @@ export function HandoverLedgerInline({
               receiptsByService={receiptsByService}
               serviceMap={serviceMap}
               totalAgents={totalAgents}
+              agentDue={agentDue}
               mode={mode}
               approveAction={approveAction}
               allowCancel={allowCancel}
