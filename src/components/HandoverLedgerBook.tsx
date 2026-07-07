@@ -1125,21 +1125,25 @@ function HandoverCard({
                       <div className="text-xs text-muted-foreground leading-tight">passenger তথ্য → এজেন্সি লেজার</div>
                     </td>
                     <td className="px-1.5 py-1 text-right align-top">
-                      {row.totalBill > 0 ? (
-                        <>
-                          <div className="text-sm font-bold tabular-nums leading-tight">{fmt(row.totalBill)}</div>
-                          {row.totalDiscount > 0 && (
-                            <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(row.totalDiscount)} (ডিসকাউন্ট)</div>
-                          )}
-                          {row.ledgerDue > 0.005 ? (
-                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.ledgerDue)}</div>
-                          ) : row.ledgerAdvance > 0.005 ? (
-                            <div className="text-sm tabular-nums text-sky-600 leading-tight">অগ্রিম জমা: {fmt(row.ledgerAdvance)}</div>
-                          ) : (
-                            <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
-                          )}
-                        </>
-                      ) : <span className="text-muted-foreground">—</span>}
+                      {(() => {
+                        const prevDue = row.ledgerDue + row.totalThis - row.ledgerAdvance;
+                        return (
+                          <>
+                            {prevDue > 0.005 ? (
+                              <div className="text-sm tabular-nums text-muted-foreground leading-tight">আগের বাকি: {fmt(prevDue)}</div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                            {row.ledgerDue > 0.005 ? (
+                              <div className="text-sm tabular-nums text-rose-600 leading-tight font-semibold">মোট বাকি: {fmt(row.ledgerDue)}</div>
+                            ) : row.ledgerAdvance > 0.005 ? (
+                              <div className="text-sm tabular-nums text-sky-600 leading-tight">অগ্রিম জমা: {fmt(row.ledgerAdvance)}</div>
+                            ) : (
+                              <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-1.5 py-1 text-right align-top">
                       {row.totalPrevious > 0 ? (
