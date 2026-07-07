@@ -725,6 +725,7 @@ function HandoverCard({
     kind: "agency"; agent: string; items: number; svcCount: number;
     totalBill: number; totalDiscount: number; totalPrevious: number;
     totalThis: number; totalDueAfter: number; totalFuture: number;
+    ledgerDue: number; ledgerAdvance: number;
     cash: number; md: number; vendor: number; date: string;
   };
   type DisplayRow = SingleRow | AgencyRow;
