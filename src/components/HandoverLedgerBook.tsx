@@ -777,9 +777,9 @@ function HandoverCard({
       <table>
         <thead><tr>
           <th class="nw">তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
-          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই জমা</th><th class="r nw">বাকি</th>
+          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই জমা</th><th class="nw">মাধ্যম</th><th class="r nw">বাকি</th>
         </tr></thead>
-        <tbody>${bodyRows || `<tr><td colspan="7" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
+        <tbody>${bodyRows || `<tr><td colspan="8" style="text-align:center">কোনো receipt নেই</td></tr>`}</tbody>
       </table>
       <div class="tot">
         নগদ: ${fmt(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${fmt(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${fmt(vendorReceipts)}` : ""}
