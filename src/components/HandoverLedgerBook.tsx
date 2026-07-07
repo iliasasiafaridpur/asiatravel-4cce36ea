@@ -802,9 +802,8 @@ function HandoverCard({
   const printThis = () => {
     const esc = (v: unknown) =>
       String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const statusLabel =
-      status === "approved" ? "এমডি বুঝে নিয়েছেন"
-        : status === "pending" ? "অপেক্ষমান" : status;
+
+
 
     // Receipt rows — a 1:1 replica of the on-screen handover card so the printed
     // slip shows EXACTLY what staff/MD see on the My Handover page. মোটের উপর
@@ -814,11 +813,6 @@ function HandoverCard({
         const billCell = row.totalBill > 0
           ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
             + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
-            + (row.ledgerDue > 0.005
-                ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.ledgerDue))}</span>`
-                : row.ledgerAdvance > 0.005
-                  ? `<span class="sub sky">অগ্রিম জমা: ${esc(fmt(row.ledgerAdvance))}</span>`
-                  : `<span class="sub emer">✓ পরিশোধিত</span>`)
           : "—";
         const prevCell = row.totalPrevious > 0
           ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
@@ -852,12 +846,11 @@ function HandoverCard({
 
       // তারিখ
       const dateCell = `${esc(formatDate(r.entry_date))}`
-        + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "")
-        + (r.received_by_name ? `<span class="sub">Rec:By ${esc(r.received_by_name.split(" ")[0])}</span>` : "");
+        + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "");
 
       // কাস্টমার
       const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
-        + `<span class="sub">A: ${esc(info?.agent || "Self")}${info?.passport ? ` · ${esc(info.passport)}` : ""}</span>`;
+        + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
 
       // সার্ভিস
       const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
@@ -872,7 +865,6 @@ function HandoverCard({
       const billCell = bill > 0
         ? `<span class="b">${esc(fmt(bill))}</span>`
           + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} (ডিসকাউন্ট)</span>` : "")
-          + (due > 0.005 ? `<span class="sub rose">বাকি: ${esc(fmt(due))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
           + vendorBit
         : `—${vendorBit}`;
 
@@ -970,7 +962,6 @@ function HandoverCard({
       <div class="h">
         <h1>Asia Travels &amp; Tours</h1>
         <div class="meta">
-          <b>Handover #${esc(handover.handover_id ?? handover.id.slice(0, 8))}</b> · ${esc(statusLabel)}<br/>
           তারিখ: ${esc(formatDate(handover.closing_date || handover.entry_date))}<br/>
           প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
         </div>
@@ -1000,11 +991,10 @@ function HandoverCard({
       ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
       <div class="bar">
         <span>মোট ${visibleReceipts.length} আইটেম থেকে আয়</span>
+        ${mdReceipts > 0 ? `<span class="sky">MD ${esc(fmt(mdReceipts))}</span>` : ""}
         <span class="emer">নগদ ${esc(fmt(cashReceipts))}</span>
-        ${mdReceipts > 0 ? `<span class="sky">— MD ${esc(fmt(mdReceipts))}</span>` : ""}
-        ${vendorReceipts > 0 ? `<span class="orange">— Vendor ${esc(fmt(vendorReceipts))}</span>` : ""}
-        ${totalExpenses > 0 ? `<span class="rose">— মোট খরচ ${esc(fmt(totalExpenses))}</span>` : ""}
-        <span style="margin-left:auto">প্রেরক: ${esc(handover.from_name ?? "—")} · গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")} · জমা ${esc(fmt(submitted))}</span>
+        ${totalExpenses > 0 ? `<span class="rose">খরচ ${esc(fmt(totalExpenses))}</span>` : ""}
+        <span class="b">(= জমা ${esc(fmt(submitted))})</span>
       </div>
       <div class="sig">
         <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
