@@ -190,7 +190,18 @@ function HandList({ rows, loading, emptyText }: { rows: Hand[]; loading: boolean
                 <Badge variant="outline" className={cls}>{status}</Badge>
                 <span className="font-mono text-[11px] text-muted-foreground">{h.handover_id ?? h.id.slice(0, 8)}</span>
               </div>
-              <div className="text-sm font-bold tabular-nums text-sky-500">{fmt(sub)}</div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <div className="text-sm font-bold tabular-nums text-sky-500">{fmt(sub)}</div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title="Print / PDF"
+                  onClick={() => printHandover(h)}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
               <span>📅 Submitted: {formatDateTime(h.created_at)}</span>
