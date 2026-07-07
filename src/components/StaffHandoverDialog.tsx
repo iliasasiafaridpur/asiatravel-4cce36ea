@@ -477,7 +477,7 @@ export function StaffHandoverDialog({
                 <TrendingUp className="h-3 w-3" /> নগদ আয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-              <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
+              <div className="text-[10px] text-muted-foreground">{incomeItems.length} item</div>
               {totalMdReceived > 0 && (
                 <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD: {fmt(totalMdReceived)}</div>
               )}
