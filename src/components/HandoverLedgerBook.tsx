@@ -823,9 +823,11 @@ function HandoverCard({
         const prevCell = row.totalPrevious > 0
           ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
           : `<span class="sub">— নতুন —</span>`;
-        const thisCell = `<span class="b emer">${esc(fmt(row.totalThis))}</span>`
-          + (row.md > 0 ? `<span class="sub sky">MD: ${esc(fmt(row.md))}</span>` : "")
-          + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "");
+        const mdCell = (row.md > 0 || row.vendor > 0)
+          ? (row.md > 0 ? `<span class="b sky">${esc(fmt(row.md))}</span>` : "")
+            + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "")
+          : "—";
+        const staffCell = row.cash > 0 ? `<span class="b emer">${esc(fmt(row.cash))}</span>` : "—";
         const dueCell = row.ledgerDue > 0.005
           ? `<span class="b rose">${esc(fmt(row.ledgerDue))}</span><span class="sub">মোট বাকি</span>`
           : row.ledgerAdvance > 0.005
@@ -837,9 +839,11 @@ function HandoverCard({
           <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
           <td class="r nw">${billCell}</td>
           <td class="r nw">${prevCell}</td>
-          <td class="r nw">${thisCell}</td>
+          <td class="r nw">${mdCell}</td>
+          <td class="r nw">${staffCell}</td>
           <td class="r nw">${dueCell}</td>
         </tr>`;
+
       }
 
       const { r, m } = row;
