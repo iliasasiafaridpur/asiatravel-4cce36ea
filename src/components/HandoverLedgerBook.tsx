@@ -760,6 +760,7 @@ function HandoverCard({
         td.r, th.r { text-align:right; }
         td.nw, th.nw { white-space:nowrap; }
         .mut { color:#666; font-size:9px; }
+        .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
         .tot { margin-top:5px; font-size:11px; font-weight:700; text-align:right; }
         .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
         .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
