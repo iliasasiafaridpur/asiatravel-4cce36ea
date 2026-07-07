@@ -569,7 +569,7 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
@@ -577,6 +577,7 @@ function HandoverCard({
   receiptsByService: Record<string, Receipt[]>;
   serviceMap: Record<string, ServiceInfo>;
   totalAgents: Set<string>;
+  agentDue: Map<string, { due: number; advance: number }>;
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
