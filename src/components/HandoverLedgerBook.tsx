@@ -667,6 +667,102 @@ function HandoverCard({
   const cutoffRank = rank(handover.entry_date, handover.created_at);
   const firstPendingReceipt = receipts.find((r) => r.approval_status !== "approved") ?? receipts[0];
 
+  // Per-receipt FIFO metrics (পূর্বের জমা / বাকি) — shared by the on-screen
+  // table and the printed slip so both show identical numbers.
+  const metricsFor = (r: Receipt) => {
+    const sk = receiptServiceKey(r);
+    const info = sk ? serviceMap[sk] : undefined;
+    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const lastPast = past.length
+      ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const lastFuture = future.length
+      ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const bill = info?.sold_price ?? 0;
+    const discount = info?.discount ?? 0;
+    const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+    const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+    const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
+    const statusEvt = isStatusEventReceipt(r);
+    return {
+      sk, info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+      isAdvance, statusEvt,
+      mdRecv: isMdReceivedMethod(r.method) && !statusEvt,
+      vendorRecv: isVendorReceivedMethod(r.method) && !statusEvt,
+      past, future,
+    };
+  };
+
+  type SingleRow = { kind: "single"; r: Receipt; m: ReturnType<typeof metricsFor> };
+  type AgencyRow = {
+    kind: "agency"; agent: string; items: number; svcCount: number;
+    totalBill: number; totalDiscount: number; totalPrevious: number;
+    totalThis: number; totalDueAfter: number; totalFuture: number;
+    cash: number; md: number; vendor: number; date: string;
+  };
+  type DisplayRow = SingleRow | AgencyRow;
+
+  // মোটের উপর (total-settle) agencies: passenger-level detail belongs ONLY in the
+  // agency ledger. In the handover we collapse all of an agency's receipts into a
+  // single line showing that agency's মোট বিল / পূর্বের জমা / এই বারের জমা / মোট বাকি.
+  // Other parties keep their per-passenger rows.
+  const displayRows: DisplayRow[] = [];
+  {
+    const buckets = new Map<string, Receipt[]>();
+    for (const r of visibleReceipts) {
+      const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
+      if (agent && totalAgents.has(agent)) {
+        const arr = buckets.get(agent) ?? [];
+        arr.push(r);
+        buckets.set(agent, arr);
+      } else {
+        displayRows.push({ kind: "single", r, m: metricsFor(r) });
+      }
+    }
+    for (const [agent, recs] of buckets) {
+      const recIds = new Set(recs.map((x) => x.id));
+      const svcKeys = Array.from(new Set(recs.map(receiptServiceKey).filter(Boolean)));
+      let totalBill = 0, totalDiscount = 0, totalPrevious = 0, totalDueAfter = 0, totalFuture = 0;
+      for (const sk of svcKeys) {
+        const info = serviceMap[sk];
+        const allForSvc = receiptsByService[sk] ?? [];
+        const bill = info?.sold_price ?? 0;
+        const discount = info?.discount ?? 0;
+        const previousPaid = allForSvc
+          .filter((x) => !recIds.has(x.id) && rank(x.entry_date, x.created_at) < cutoffRank)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        const futurePaid = allForSvc
+          .filter((x) => !recIds.has(x.id) && rank(x.entry_date, x.created_at) > cutoffRank)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        const currentPaid = recs
+          .filter((x) => receiptServiceKey(x) === sk)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        totalBill += bill;
+        totalDiscount += discount;
+        totalPrevious += previousPaid;
+        totalFuture += futurePaid;
+        if (bill > 0) totalDueAfter += Math.max(0, bill - discount - previousPaid - currentPaid);
+      }
+      displayRows.push({
+        kind: "agency", agent, items: recs.length, svcCount: svcKeys.length,
+        totalBill, totalDiscount, totalPrevious,
+        totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
+        totalDueAfter, totalFuture,
+        cash: recs.filter((x) => isCashMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        md: recs.filter((x) => isMdReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        vendor: recs.filter((x) => isVendorReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        date: recs[0]?.entry_date ?? handover.entry_date,
+      });
+    }
+  }
+
+
   // Each handover gets a distinct, status-colored accent so one card is clearly
   // separated from the next at a glance. Pending cards get a much stronger,
   // eye-catching amber treatment so they never look like settled history.
@@ -687,30 +783,38 @@ function HandoverCard({
         : status === "pending" ? "অপেক্ষমান" : status;
 
     // Receipt rows — a 1:1 replica of the on-screen handover card so the printed
-    // slip shows EXACTLY what staff/MD see on the My Handover page.
-    const bodyRows = visibleReceipts.map((r, idx) => {
-      const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
-      const info = sk ? serviceMap[sk] : undefined;
-      const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-      const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
-      const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
-      const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const lastPast = past.length
-        ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
-        : null;
-      const lastFuture = future.length
-        ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
-        : null;
-      const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
-      const bill = info?.sold_price ?? 0;
-      const discount = info?.discount ?? 0;
-      const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
-      const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
-      const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
-      const statusEvt = isStatusEventReceipt(r);
-      const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
-      const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
+    // slip shows EXACTLY what staff/MD see on the My Handover page. মোটের উপর
+    // agencies collapse to a single aggregated line (no passenger detail).
+    const bodyRows = displayRows.map((row, idx) => {
+      if (row.kind === "agency") {
+        const billCell = row.totalBill > 0
+          ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
+            + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
+            + (row.totalDueAfter > 0.005 ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.totalDueAfter))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
+          : "—";
+        const prevCell = row.totalPrevious > 0
+          ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
+          : `<span class="sub">— নতুন —</span>`;
+        const thisCell = `<span class="b emer">${esc(fmt(row.totalThis))}</span>`
+          + (row.md > 0 ? `<span class="sub sky">MD: ${esc(fmt(row.md))}</span>` : "")
+          + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "");
+        const dueCell = row.totalDueAfter <= 0.005
+          ? `<span class="emer b">✓</span>`
+          : `<span class="b rose">${esc(fmt(row.totalDueAfter))}</span>`;
+        return `<tr class="rt tint${idx % 2}">
+          <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
+          <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
+          <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
+          <td class="r nw">${billCell}</td>
+          <td class="r nw">${prevCell}</td>
+          <td class="r nw">${thisCell}</td>
+          <td class="r nw">${dueCell}</td>
+        </tr>`;
+      }
+
+      const { r, m } = row;
+      const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+        isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
 
       // তারিখ
       const dateCell = `${esc(formatDate(r.entry_date))}`
@@ -767,6 +871,7 @@ function HandoverCard({
         <td class="r nw">${dueCell}</td>
       </tr>`;
     }).join("");
+
 
     const totalRow = `<tr class="sumrow">
       <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
@@ -958,32 +1063,66 @@ function HandoverCard({
             </tr>
           </thead>
           <tbody>
-            {visibleReceipts.length === 0 ? (
+            {displayRows.length === 0 ? (
               <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
-            ) : visibleReceipts.map((r, idx) => {
-              const sk = r.service_table && r.service_row_id ? `${r.service_table}:${r.service_row_id}` : "";
-              const info = sk ? serviceMap[sk] : undefined;
-              const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-              const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
-              const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
-              const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const lastPast = past.length
-                ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
-                : null;
-              const lastFuture = future.length
-                ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
-                : null;
-              const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
-              const bill = info?.sold_price ?? 0;
-              const discount = info?.discount ?? 0;
-              const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
-              const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+            ) : displayRows.map((row, idx) => {
+              if (row.kind === "agency") {
+                return (
+                  <tr key={`agency-${row.agent}`} className={`border-t align-top row-tint-${idx % 4}`}>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-medium leading-tight">{formatDate(row.date)}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">মোটের উপর</div>
+                    </td>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-semibold leading-tight">{row.agent}</div>
+                      <div className="text-xs text-muted-foreground leading-tight">এজেন্সি · {row.items} টি passenger</div>
+                    </td>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-medium leading-tight">{row.svcCount} টি সার্ভিস (মোট হিসাব)</div>
+                      <div className="text-xs text-muted-foreground leading-tight">passenger তথ্য → এজেন্সি লেজার</div>
+                    </td>
+                    <td className="px-1.5 py-1 text-right align-top">
+                      {row.totalBill > 0 ? (
+                        <>
+                          <div className="text-sm font-bold tabular-nums leading-tight">{fmt(row.totalBill)}</div>
+                          {row.totalDiscount > 0 && (
+                            <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(row.totalDiscount)} (ডিসকাউন্ট)</div>
+                          )}
+                          {row.totalDueAfter > 0.005 ? (
+                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.totalDueAfter)}</div>
+                          ) : (
+                            <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                          )}
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right align-top">
+                      {row.totalPrevious > 0 ? (
+                        <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(row.totalPrevious)}</div>
+                      ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                      <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(row.totalThis)}</b>
+                      {row.md > 0 && <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD: {fmt(row.md)}</div>}
+                      {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
+                      {row.totalDueAfter <= 0.005 ? (
+                        <span className="text-emerald-600 text-base">✓</span>
+                      ) : (
+                        <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(row.totalDueAfter)}</div>
+                      )}
+                    </td>
+                    {approveAction && <td className="px-0.5 py-1 pr-2 text-center align-top" />}
+                  </tr>
+                );
+              }
+
+              const { r, m } = row;
+              const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+                isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
               const isHighlighted = highlightId === r.id;
-              const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
-              const statusEvt = isStatusEventReceipt(r);
-              const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
-              const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
+
 
               return (
                 <tr
