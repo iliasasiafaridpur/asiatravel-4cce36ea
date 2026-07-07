@@ -511,7 +511,7 @@ export function StaffHandoverDialog({
           {/* Income detail */}
           <div className="rounded-lg border">
             <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-              আয়/ডেলিভারি বিবরণ — {visibleReceipts.length}
+              আয়/ডেলিভারি বিবরণ — {incomeItems.length}
             </div>
             <div className="max-h-32 overflow-y-auto divide-y text-xs">
               {loading ? (
