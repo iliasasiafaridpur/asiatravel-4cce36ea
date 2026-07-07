@@ -802,9 +802,8 @@ function HandoverCard({
   const printThis = () => {
     const esc = (v: unknown) =>
       String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const statusLabel =
-      status === "approved" ? "এমডি বুঝে নিয়েছেন"
-        : status === "pending" ? "অপেক্ষমান" : status;
+
+
 
     // Receipt rows — a 1:1 replica of the on-screen handover card so the printed
     // slip shows EXACTLY what staff/MD see on the My Handover page. মোটের উপর
