@@ -916,9 +916,11 @@ function HandoverCard({
 
     const totalRow = `<tr class="sumrow">
       <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
-      <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span>${mdReceipts > 0 ? `<span class="sub sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}</td>
+      <td class="r nw">${mdReceipts > 0 ? `<span class="b sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}${mdReceipts <= 0 && vendorReceipts <= 0 ? "—" : ""}</td>
+      <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span></td>
       <td></td>
     </tr>`;
+
 
     const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
         <td class="nw">${esc(formatDate(e.entry_date))}${e.expense_id ? `<span class="sub mono">${esc(e.expense_id)}</span>` : ""}</td>
