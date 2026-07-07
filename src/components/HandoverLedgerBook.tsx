@@ -915,7 +915,7 @@ function HandoverCard({
 
 
     const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
-        <td class="nw">${esc(formatDate(e.entry_date))}${e.expense_id ? `<span class="sub mono">${esc(e.expense_id)}</span>` : ""}</td>
+        <td class="nw">${esc(formatDate(e.entry_date))}</td>
         <td class="nw">${esc(e.category || "—")}</td>
         <td>${esc(e.purpose || "—")}</td>
         <td class="nw">${esc(e.spent_by_name || "—")}</td>
