@@ -654,7 +654,7 @@ function MyHandoverPage() {
     <div><span class="lbl">Variance</span><span class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</span></div>
   </div>
 
-  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${money(vendorReceipts)}` : ""}</span></div>
+  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${incomeItems.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${money(vendorReceipts)}` : ""}</span></div>
   ${incomeRows ? `<table>
     <thead><tr>
       <th class="num">#</th><th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th><th>দেশ/রোড</th>
