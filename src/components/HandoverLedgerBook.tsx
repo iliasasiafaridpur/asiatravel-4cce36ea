@@ -828,6 +828,7 @@ function HandoverCard({
         </div>
       </div>`;
 
+    const html = `<!doctype html><html><head><title>${esc(docTitle)}</title>
       <style>
         @page { size: A4; margin: 10mm; }
         body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
