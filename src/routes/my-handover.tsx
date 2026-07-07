@@ -215,6 +215,7 @@ function MyHandoverPage() {
   const { user, profile } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [totalAgents, setTotalAgents] = useState<Set<string>>(new Set());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cash, setCash] = useState("");
   const [remarks, setRemarks] = useState("");
