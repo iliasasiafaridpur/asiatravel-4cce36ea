@@ -1100,7 +1100,7 @@ function HandoverCard({
 
           <tbody>
             {displayRows.length === 0 ? (
-              <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
+              <tr><td colSpan={approveAction ? 9 : 8} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
             ) : displayRows.map((row, idx) => {
               if (row.kind === "agency") {
                 return (
