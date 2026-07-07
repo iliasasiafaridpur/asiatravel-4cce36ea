@@ -163,6 +163,9 @@ export function HandoverLedgerInline({
   const [receiptsByService, setReceiptsByService] = useState<Record<string, Receipt[]>>({});
   const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({});
   const [totalAgents, setTotalAgents] = useState<Set<string>>(() => new Set());
+  // Authoritative live agency balances (same RPC the Agency list/ledger use) —
+  // keyed by trimmed agent name → current outstanding due / advance.
+  const [agentDue, setAgentDue] = useState<Map<string, { due: number; advance: number }>>(() => new Map());
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -193,6 +196,20 @@ export function HandoverLedgerInline({
           .map((a) => String(a.name ?? "").trim())
           .filter(Boolean)
       );
+
+      // Live agency balances → current outstanding due per agency (from ledger).
+      const { data: agentBalRows } = await supabase.rpc("get_agent_balances" as never);
+      const nextAgentDue = new Map<string, { due: number; advance: number }>();
+      for (const b of ((agentBalRows ?? []) as Array<Record<string, unknown>>)) {
+        const nm = String(b.agent_name ?? "").trim();
+        if (!nm) continue;
+        nextAgentDue.set(nm, {
+          due: Number(b.balance_due ?? 0),
+          advance: Number(b.advance_balance ?? 0),
+        });
+      }
+
+
 
       const ids = hvs.map((h) => h.id);
       let recs: Receipt[] = [];
@@ -372,6 +389,8 @@ export function HandoverLedgerInline({
       setReceiptsByService(byService);
       setServiceMap(svcMap);
       setTotalAgents(nextTotalAgents);
+      setAgentDue(nextAgentDue);
+
       setLoading(false);
     })();
 
@@ -489,6 +508,7 @@ export function HandoverLedgerInline({
               receiptsByService={receiptsByService}
               serviceMap={serviceMap}
               totalAgents={totalAgents}
+              agentDue={agentDue}
               mode={mode}
               approveAction={approveAction}
               allowCancel={allowCancel}
@@ -549,7 +569,7 @@ export function HandoverLedgerBook({
 }
 
 function HandoverCard({
-  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, mode, approveAction, allowCancel, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
@@ -557,6 +577,7 @@ function HandoverCard({
   receiptsByService: Record<string, Receipt[]>;
   serviceMap: Record<string, ServiceInfo>;
   totalAgents: Set<string>;
+  agentDue: Map<string, { due: number; advance: number }>;
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
@@ -704,6 +725,7 @@ function HandoverCard({
     kind: "agency"; agent: string; items: number; svcCount: number;
     totalBill: number; totalDiscount: number; totalPrevious: number;
     totalThis: number; totalDueAfter: number; totalFuture: number;
+    ledgerDue: number; ledgerAdvance: number;
     cash: number; md: number; vendor: number; date: string;
   };
   type DisplayRow = SingleRow | AgencyRow;
@@ -754,6 +776,8 @@ function HandoverCard({
         totalBill, totalDiscount, totalPrevious,
         totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
         totalDueAfter, totalFuture,
+        ledgerDue: agentDue.get(agent)?.due ?? totalDueAfter,
+        ledgerAdvance: agentDue.get(agent)?.advance ?? 0,
         cash: recs.filter((x) => isCashMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
         md: recs.filter((x) => isMdReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
         vendor: recs.filter((x) => isVendorReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
@@ -790,7 +814,11 @@ function HandoverCard({
         const billCell = row.totalBill > 0
           ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
             + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
-            + (row.totalDueAfter > 0.005 ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.totalDueAfter))}</span>` : `<span class="sub emer">✓ পরিশোধিত</span>`)
+            + (row.ledgerDue > 0.005
+                ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.ledgerDue))}</span>`
+                : row.ledgerAdvance > 0.005
+                  ? `<span class="sub sky">অগ্রিম জমা: ${esc(fmt(row.ledgerAdvance))}</span>`
+                  : `<span class="sub emer">✓ পরিশোধিত</span>`)
           : "—";
         const prevCell = row.totalPrevious > 0
           ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
@@ -798,9 +826,11 @@ function HandoverCard({
         const thisCell = `<span class="b emer">${esc(fmt(row.totalThis))}</span>`
           + (row.md > 0 ? `<span class="sub sky">MD: ${esc(fmt(row.md))}</span>` : "")
           + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "");
-        const dueCell = row.totalDueAfter <= 0.005
-          ? `<span class="emer b">✓</span>`
-          : `<span class="b rose">${esc(fmt(row.totalDueAfter))}</span>`;
+        const dueCell = row.ledgerDue > 0.005
+          ? `<span class="b rose">${esc(fmt(row.ledgerDue))}</span><span class="sub">মোট বাকি</span>`
+          : row.ledgerAdvance > 0.005
+            ? `<span class="b sky">+${esc(fmt(row.ledgerAdvance))}</span><span class="sub">অগ্রিম</span>`
+            : `<span class="emer b">✓</span>`;
         return `<tr class="rt tint${idx % 2}">
           <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
           <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
@@ -1088,8 +1118,10 @@ function HandoverCard({
                           {row.totalDiscount > 0 && (
                             <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(row.totalDiscount)} (ডিসকাউন্ট)</div>
                           )}
-                          {row.totalDueAfter > 0.005 ? (
-                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.totalDueAfter)}</div>
+                          {row.ledgerDue > 0.005 ? (
+                            <div className="text-sm tabular-nums text-rose-600 leading-tight">মোট বাকি: {fmt(row.ledgerDue)}</div>
+                          ) : row.ledgerAdvance > 0.005 ? (
+                            <div className="text-sm tabular-nums text-sky-600 leading-tight">অগ্রিম জমা: {fmt(row.ledgerAdvance)}</div>
                           ) : (
                             <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
                           )}
@@ -1107,10 +1139,18 @@ function HandoverCard({
                       {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
                     </td>
                     <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
-                      {row.totalDueAfter <= 0.005 ? (
-                        <span className="text-emerald-600 text-base">✓</span>
+                      {row.ledgerDue > 0.005 ? (
+                        <>
+                          <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(row.ledgerDue)}</div>
+                          <div className="text-xs text-muted-foreground font-normal leading-tight">মোট বাকি</div>
+                        </>
+                      ) : row.ledgerAdvance > 0.005 ? (
+                        <>
+                          <div className="text-sky-600 text-sm font-extrabold leading-tight">+{fmt(row.ledgerAdvance)}</div>
+                          <div className="text-xs text-muted-foreground font-normal leading-tight">অগ্রিম</div>
+                        </>
                       ) : (
-                        <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(row.totalDueAfter)}</div>
+                        <span className="text-emerald-600 text-base">✓</span>
                       )}
                     </td>
                     {approveAction && <td className="px-0.5 py-1 pr-2 text-center align-top" />}
