@@ -1071,27 +1071,33 @@ function HandoverCard({
       <div className="overflow-x-auto">
         <table className="w-full table-fixed text-sm">
           <colgroup>
-            <col className="w-[12%]" />
-            <col className="w-[27%]" />
-            <col className="w-[15%]" />
-            <col className="w-[13%]" />
             <col className="w-[11%]" />
-            <col className="w-[12%]" />
+            <col className="w-[22%]" />
+            <col className="w-[14%]" />
+            <col className="w-[13%]" />
+            <col className="w-[10%]" />
+            <col className="w-[8%]" />
+            <col className="w-[9%]" />
             <col className="w-[5%]" />
             {approveAction && <col className="w-[5%]" />}
           </colgroup>
           <thead className="bg-muted/30">
             <tr className="text-left">
-              <th className="px-1.5 py-1.5 font-semibold">তারিখ</th>
-              <th className="px-1.5 py-1.5 font-semibold">কাস্টমার</th>
-              <th className="px-1.5 py-1.5 font-semibold">সার্ভিস</th>
-              <th className="px-1.5 py-1.5 font-semibold text-right">মোট বিল</th>
-              <th className="px-1.5 py-1.5 font-semibold text-right">পূর্বের জমা</th>
-              <th className="px-1.5 py-1.5 font-semibold text-right">এই বারের জমা</th>
-              <th className="px-1.5 py-1.5 font-bold text-right text-sm">বাকি</th>
-              {approveAction && <th className="px-1 py-1.5 pr-2 font-semibold text-center">✓</th>}
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold align-bottom">তারিখ</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold align-bottom">কাস্টমার</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold align-bottom">সার্ভিস</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold text-right align-bottom">মোট বিল</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-semibold text-right align-bottom">পূর্বের জমা</th>
+              <th colSpan={2} className="px-1.5 py-1 font-semibold text-center border-b border-border">এই বারের জমা</th>
+              <th rowSpan={2} className="px-1.5 py-1.5 font-bold text-right text-sm align-bottom">বাকি</th>
+              {approveAction && <th rowSpan={2} className="px-1 py-1.5 pr-2 font-semibold text-center align-bottom">✓</th>}
+            </tr>
+            <tr className="text-left">
+              <th className="px-1.5 py-1 font-semibold text-right text-xs text-sky-600 dark:text-sky-400">MD রিসিভ</th>
+              <th className="px-1.5 py-1 font-semibold text-right text-xs text-emerald-700 dark:text-emerald-400">স্টাফ রিসিভ</th>
             </tr>
           </thead>
+
           <tbody>
             {displayRows.length === 0 ? (
               <tr><td colSpan={approveAction ? 8 : 7} className="px-3 py-4 text-center text-muted-foreground">কোনো passenger receipt নেই</td></tr>
