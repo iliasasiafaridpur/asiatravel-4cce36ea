@@ -814,11 +814,6 @@ function HandoverCard({
         const billCell = row.totalBill > 0
           ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
             + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
-            + (row.ledgerDue > 0.005
-                ? `<span class="sub rose">মোট বাকি: ${esc(fmt(row.ledgerDue))}</span>`
-                : row.ledgerAdvance > 0.005
-                  ? `<span class="sub sky">অগ্রিম জমা: ${esc(fmt(row.ledgerAdvance))}</span>`
-                  : `<span class="sub emer">✓ পরিশোধিত</span>`)
           : "—";
         const prevCell = row.totalPrevious > 0
           ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
