@@ -1434,7 +1434,7 @@ function HandoverCard({
       {/* Footer summary bar — mirrors the top header */}
       <div className="bg-muted/40 px-4 py-3 border-t flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0 flex-1 text-sm sm:text-base font-semibold">
-          <span className="whitespace-nowrap">মোট {visibleReceipts.length} আইটেম থেকে আয়</span>
+          <span className="whitespace-nowrap">মোট {visibleReceipts.length} আইটেম থেকে মোট আয় <b className="tabular-nums text-primary">{fmt(cashReceipts + mdReceipts + vendorReceipts)}</b></span>
           <span className="tabular-nums text-emerald-700 dark:text-emerald-400 whitespace-nowrap">নগদ {fmt(cashReceipts)}</span>
           {mdReceipts > 0 && (
             <span className="tabular-nums text-sky-600 dark:text-sky-400 whitespace-nowrap">— MD {fmt(mdReceipts)}</span>
