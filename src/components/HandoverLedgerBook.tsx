@@ -990,7 +990,7 @@ function HandoverCard({
       ${confirmed > 0 && confirmed !== submitted ? `<div class="tot">Confirmed: ${esc(fmt(confirmed))} · Variance: ${confirmed - submitted > 0 ? "+" : ""}${esc(fmt(confirmed - submitted))}</div>` : ""}
       ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
       <div class="bar">
-        <span>মোট ${visibleReceipts.length} আইটেম থেকে মোট আয়</span>
+        <span>মোট ${visibleReceipts.length} আইটেম থেকে মোট আয় <span class="b">৳ ${esc(fmt(mdReceipts + cashReceipts))}</span></span>
         ${mdReceipts > 0 ? `<span class="sky">MD ৳ ${esc(fmt(mdReceipts))}</span>` : ""}
         <span>(নগদ ৳ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ৳ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ৳ ${esc(fmt(submitted))}</span>)</span>
       </div>
