@@ -2,12 +2,72 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Clock, CheckCircle2, History as HistoryIcon } from "lucide-react";
+import { Clock, CheckCircle2, History as HistoryIcon, Printer } from "lucide-react";
 import { formatDateTime, formatDate } from "@/lib/modules";
+import { buildFileTitle, printDocHtml } from "@/lib/print-export";
 
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
+
+function printHandover(h: Hand) {
+  const status = h.status ?? "approved";
+  const sub = Number(h.submitted_amount ?? h.amount ?? 0);
+  const conf = Number(h.confirmed_amount ?? 0);
+  const variance = conf > 0 ? conf - sub : 0;
+  const docTitle = buildFileTitle(
+    "Cash_Handover",
+    h.handover_id ?? h.id.slice(0, 8),
+    h.from_name ?? "",
+    formatDate(h.closing_date || h.entry_date),
+  );
+  const row = (label: string, value: string) =>
+    `<div class="row"><b>${label}</b><span>${value}</span></div>`;
+  const html = `<!doctype html><html><head><title>${docTitle}</title>
+    <style>
+      @page { size: A5; margin: 10mm; }
+      body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:16px; }
+      .r { max-width:520px; margin:0 auto; }
+      .h { text-align:center; border-bottom:2px solid #111; padding-bottom:8px; margin-bottom:12px; }
+      .h h1 { margin:0; font-size:18px; }
+      .h .sub { font-size:11px; color:#555; }
+      .row { display:flex; justify-content:space-between; gap:8px; font-size:12px; padding:3px 0; }
+      .row b { font-weight:600; }
+      .sect { margin-top:10px; padding-top:8px; border-top:1px dashed #aaa; }
+      .total { font-size:14px; font-weight:700; border-top:2px solid #111; margin-top:8px; padding-top:6px; display:flex; justify-content:space-between; }
+      .ft { margin-top:18px; font-size:10px; color:#666; text-align:center; }
+      .sig { margin-top:36px; display:flex; justify-content:space-between; font-size:11px; }
+      .sig div { border-top:1px solid #111; padding-top:4px; width:40%; text-align:center; }
+    </style></head><body>
+      <div class="r">
+        <div class="h">
+          <h1>Asia Travels & Tours</h1>
+          <div class="sub">Cash Handover Slip</div>
+        </div>
+        ${row("Handover #", h.handover_id ?? h.id.slice(0, 8))}
+        ${row("Status", status)}
+        ${row("Submitted", formatDateTime(h.created_at))}
+        ${row("Closing Date", formatDate(h.closing_date || h.entry_date))}
+        <div class="sect">
+          ${row("প্রেরক (From)", h.from_name ?? "—")}
+          ${h.to_name ? row("গ্রহীতা (To)", h.to_name) : ""}
+        </div>
+        <div class="sect">
+          <div class="total"><span>Submitted Amount</span><span>${fmt(sub)}</span></div>
+          ${conf > 0 ? row("Confirmed Amount", fmt(conf)) : ""}
+          ${variance !== 0 ? row("Variance", `${variance > 0 ? "+" : ""}${fmt(variance)}`) : ""}
+        </div>
+        ${h.remarks ? `<div class="sect" style="font-size:12px"><b>Remarks:</b> ${h.remarks}</div>` : ""}
+        <div class="sig">
+          <div>প্রেরক<br/>${h.from_name ?? ""}</div>
+          <div>গ্রহীতা<br/>${h.to_name ?? ""}</div>
+        </div>
+        <div class="ft">Computer generated cash handover slip.</div>
+      </div>
+    </body></html>`;
+  printDocHtml(html, docTitle);
+}
 
 interface Hand {
   id: string;
