@@ -215,6 +215,7 @@ function MyHandoverPage() {
   const { user, profile } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [totalAgents, setTotalAgents] = useState<Set<string>>(new Set());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cash, setCash] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -252,12 +253,13 @@ function MyHandoverPage() {
       // ---- OFFLINE: hydrate everything from the saved snapshot (off_ / cache_v2_) ----
       if (isOffline()) {
         const allRec = (cacheRead<Receipt[]>("payment_receipts") ?? []);
-        const totalAgents = new Set(
+        const totalAgentSet = new Set(
           (cacheRead<Array<{ name?: string | null; settle_mode?: string | null }>>("agents") ?? [])
             .filter((a) => (a.settle_mode ?? "total") === "total")
             .map((a) => partyKey(a.name))
             .filter(Boolean),
         );
+
         const allExp = (cacheRead<Expense[]>("cash_expenses") ?? []) as (Expense & {
           spent_by?: string | null; handover_id?: string | null;
         })[];
@@ -318,7 +320,8 @@ function MyHandoverPage() {
         if (cancelled) return;
         setMdEmail("");
         setRecByService(byService);
-        setReceipts(withoutTotalAgencyStatusRows(recs, totalAgents));
+        setTotalAgents(totalAgentSet);
+        setReceipts(withoutTotalAgencyStatusRows(recs, totalAgentSet));
         setExpenses(exps);
         setLoading(false);
         return;
@@ -412,12 +415,13 @@ function MyHandoverPage() {
       setRecByService(byService);
 
 
-      const totalAgents = new Set(
+      const totalAgentSet = new Set(
         (((ag?.data ?? []) as Array<{ name?: string | null }>))
           .map((a) => partyKey(a.name))
           .filter(Boolean),
       );
-      setReceipts(withoutTotalAgencyStatusRows(recs, totalAgents));
+      setTotalAgents(totalAgentSet);
+      setReceipts(withoutTotalAgencyStatusRows(recs, totalAgentSet));
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
     })();
@@ -457,6 +461,43 @@ function MyHandoverPage() {
     [receipts, moneyServiceKeys]
   );
 
+  // মোটের উপর হিসাবের agency (যেমন Jahangir QA): প্রতিটি passenger আলাদা করে
+  // receive দেখাবে না — passbook-এর মতো agency-র নামে এক লাইনে মোট received
+  // দেখাবে (total bill হিসাব), ঠিক total-mode vendor-এর মতো।
+  const agencyOf = (r: Receipt): string => {
+    const a = String(r.svc?.agent ?? "").trim();
+    if (a) return a;
+    const m = String(r.service_type ?? "").match(/Receipt:\s*(.+)$/i);
+    return m ? m[1].trim() : "";
+  };
+  const isTotalAgencyPay = (r: Receipt) =>
+    String(r.source ?? "") === "agency_ledger_payment" && totalAgents.has(partyKey(agencyOf(r)));
+
+  const incomeItems = useMemo(() => {
+    type Item =
+      | { kind: "receipt"; key: string; r: Receipt }
+      | { kind: "agency"; key: string; agency: string; amount: number; count: number; method?: string | null; cat: "cash" | "md" | "vendor" };
+    const items: Item[] = [];
+    const groups = new Map<string, { agency: string; amount: number; count: number; method?: string | null; cat: "cash" | "md" | "vendor" }>();
+    for (const r of visibleReceipts) {
+      if (isTotalAgencyPay(r)) {
+        const agency = agencyOf(r);
+        const cat = isVendorReceivedMethod(r.method) ? "vendor" : isMdReceivedMethod(r.method) ? "md" : "cash";
+        const key = `${agency}|${cat}`;
+        const g = groups.get(key) ?? { agency, amount: 0, count: 0, method: r.method, cat };
+        g.amount += Number(r.amount || 0);
+        g.count += 1;
+        groups.set(key, g);
+      } else {
+        items.push({ kind: "receipt", key: r.id, r });
+      }
+    }
+    for (const [key, g] of groups) items.push({ kind: "agency", key, ...g });
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleReceipts, totalAgents]);
+
+
   const buildReportHtml = (acceptToken?: string) => {
     const money = (n: number) => `৳&nbsp;${(Number(n) || 0).toLocaleString()}`;
     // Security: the email link only OPENS the software. Approval happens
@@ -474,8 +515,27 @@ function MyHandoverPage() {
     // Email layout mirrors the Accounts PRINT page: a clean white A4-style
     // document with a real data table (not dark cards). All handover info is
     // kept; only the visual arrangement matches the print sheet.
-    const incomeRows = visibleReceipts
-      .map((r, i) => {
+    const incomeRows = incomeItems
+      .map((it, i) => {
+        if (it.kind === "agency") {
+          const vendorRecv = it.cat === "vendor";
+          const mdRecv = it.cat === "md";
+          const thisCell = vendorRecv
+            ? `<span class="vendor">(Vendor) ${money(it.amount)}</span>`
+            : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(it.amount)}</span>`;
+          return `<tr class="row-tint-${i % 4}">
+  <td class="num">${i + 1}</td>
+  <td>—</td>
+  <td class="wrap"><b>${it.agency}</b><div class="sub">🏢 এজেন্সি (মোটের উপর) · ${it.count} পেমেন্ট</div></td>
+  <td class="wrap">এজেন্সি পেমেন্ট</td>
+  <td class="wrap">—</td>
+  <td class="num"></td>
+  <td class="num"></td>
+  <td class="num">${thisCell}</td>
+  <td class="num"></td>
+</tr>`;
+        }
+        const r = it.r;
         const info = r.svc ?? {};
         const sk = serviceKey(r);
         const allForSvc = sk ? (recByService[sk] ?? []) : [];
@@ -594,7 +654,7 @@ function MyHandoverPage() {
     <div><span class="lbl">Variance</span><span class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</span></div>
   </div>
 
-  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${visibleReceipts.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${money(vendorReceipts)}` : ""}</span></div>
+  <div class="sec"><span>🧾 আয় / জমার বিবরণ — ${incomeItems.length} টি</span><span class="amt">নগদ: ${money(cashReceipts)}${mdReceipts > 0 ? ` · MD: ${money(mdReceipts)}` : ""}${vendorReceipts > 0 ? ` · Vendor: ${money(vendorReceipts)}` : ""}</span></div>
   ${incomeRows ? `<table>
     <thead><tr>
       <th class="num">#</th><th>তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th><th>দেশ/রোড</th>
@@ -785,15 +845,41 @@ function MyHandoverPage() {
           <div className="grid lg:grid-cols-2 gap-3">
             <div className="rounded-lg border">
               <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-                আয়/ডেলিভারি বিবরণ — {visibleReceipts.length}
+                আয়/ডেলিভারি বিবরণ — {incomeItems.length}
               </div>
               <div className="max-h-48 overflow-y-auto text-sm">
                 {loading ? (
                   <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
-                ) : visibleReceipts.length === 0 ? (
+                ) : incomeItems.length === 0 ? (
                   <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
                 ) : (
-                  visibleReceipts.map((r, idx) => {
+                  incomeItems.map((it, idx) => {
+                    if (it.kind === "agency") {
+                      const vendorRecv = it.cat === "vendor";
+                      const mdRecv = it.cat === "md";
+                      return (
+                      <div key={it.key} className={`flex items-center justify-between gap-2 px-3 py-1.5 border-b last:border-b-0 row-tint-${idx % 4}`}>
+                        <div className="min-w-0">
+                          <div className="text-sm truncate font-medium">{it.agency}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            এজেন্সি (মোটের উপর) · {it.count} পেমেন্ট
+                          </div>
+                          {mdRecv && (
+                            <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {it.method}</div>
+                          )}
+                          {vendorRecv && (
+                            <div className="text-[11px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm tabular-nums font-semibold ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                            {mdRecv || vendorRecv ? "" : "+"}{fmt(it.amount)}
+                          </div>
+                        </div>
+                      </div>
+                      );
+                    }
+                    const r = it.r;
                     const statusEvt = isStatusEvent(r);
                     const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                     const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;

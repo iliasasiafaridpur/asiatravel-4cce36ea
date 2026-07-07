@@ -116,6 +116,7 @@ export function StaffHandoverDialog({
   const { user } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [totalAgents, setTotalAgents] = useState<Set<string>>(new Set());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cash, setCash] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -229,7 +230,7 @@ export function StaffHandoverDialog({
       // delivery markers must NOT clutter the cash handover; only the received
       // amount (agency_ledger_payment receipt) should appear. So drop the
       // delivery/status rows whose booking belongs to a total-mode agent.
-      const totalAgents = new Set(
+      const totalAgentSet = new Set(
         (((ag?.data ?? []) as Array<{ name?: string | null }>))
           .map((a) => String(a.name ?? "").trim())
           .filter(Boolean)
@@ -237,9 +238,10 @@ export function StaffHandoverDialog({
       const filtered = recs.filter((rec) => {
         if (!isStatusEvent(rec)) return true;
         const agent = String(rec.svc?.agent ?? "").trim();
-        return !(agent && totalAgents.has(agent));
+        return !(agent && totalAgentSet.has(agent));
       });
 
+      setTotalAgents(totalAgentSet);
       setReceipts(filtered);
       setExpenses((((e.data ?? []) as unknown) as Expense[]).filter(expenseHitsBalance));
       setLoading(false);
@@ -273,6 +275,43 @@ export function StaffHandoverDialog({
     receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
   );
   const visibleReceipts = receipts.filter((r) => !(isStatusEvent(r) && moneyServiceKeys.has(serviceKey(r))));
+
+  // মোটের উপর হিসাবের agency (যেমন Jahangir QA): প্রতিটি passenger আলাদা করে
+  // receive দেখাবে না — passbook-এর মতো agency-র নামে এক লাইনে মোট received
+  // দেখাবে (total bill হিসাব), ঠিক total-mode vendor-এর মতো।
+  const agencyOf = (r: Receipt): string => {
+    const a = String(r.svc?.agent ?? "").trim();
+    if (a) return a;
+    const m = String(r.service_type ?? "").match(/Receipt:\s*(.+)$/i);
+    return m ? m[1].trim() : "";
+  };
+  const isTotalAgencyPay = (r: Receipt) =>
+    String(r.source ?? "") === "agency_ledger_payment" && totalAgents.has(agencyOf(r));
+
+  type IncomeItem =
+    | { kind: "receipt"; key: string; r: Receipt }
+    | { kind: "agency"; key: string; agency: string; amount: number; count: number; method?: string | null; cat: "cash" | "md" | "vendor" };
+
+  const incomeItems: IncomeItem[] = (() => {
+    const items: IncomeItem[] = [];
+    const groups = new Map<string, { agency: string; amount: number; count: number; method?: string | null; cat: "cash" | "md" | "vendor" }>();
+    for (const r of visibleReceipts) {
+      if (isTotalAgencyPay(r)) {
+        const agency = agencyOf(r);
+        const cat = isVendorReceivedMethod(r.method) ? "vendor" : isMdReceivedMethod(r.method) ? "md" : "cash";
+        const key = `${agency}|${cat}`;
+        const g = groups.get(key) ?? { agency, amount: 0, count: 0, method: r.method, cat };
+        g.amount += Number(r.amount || 0);
+        g.count += 1;
+        groups.set(key, g);
+      } else {
+        items.push({ kind: "receipt", key: r.id, r });
+      }
+    }
+    for (const [key, g] of groups) items.push({ kind: "agency", key, ...g });
+    return items;
+  })();
+
 
   const submit = async () => {
     const cashText = cash.trim();
@@ -313,8 +352,17 @@ export function StaffHandoverDialog({
   const buildReportHtml = () => {
     const row = (label: string, value: string, color: string) =>
       `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee;color:#555;">${label}</td><td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:${color};">${value}</td></tr>`;
-    const incomeRows = visibleReceipts
-      .map((r) => {
+    const incomeRows = incomeItems
+      .map((it) => {
+        if (it.kind === "agency") {
+          const vendorRecv = it.cat === "vendor";
+          const mdRecv = it.cat === "md";
+          const color = vendorRecv ? "#ea580c" : mdRecv ? "#0284c7" : "#059669";
+          const tag = vendorRecv ? "(Vendor) " : mdRecv ? "(MD) " : "";
+          const amt = `${tag}৳ ${it.amount.toLocaleString()}`;
+          return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;"><b>${it.agency}</b><br><span style="color:#999;font-size:11px;">এজেন্সি (মোটের উপর) · ${it.count} পেমেন্ট</span></td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:${color};font-weight:600;">${amt}</td></tr>`;
+        }
+        const r = it.r;
         const evt = isStatusEvent(r);
         const mdRecv = isMdReceivedMethod(r.method) && !evt;
         const vendorRecv = isVendorReceivedMethod(r.method) && !evt;
@@ -429,7 +477,7 @@ export function StaffHandoverDialog({
                 <TrendingUp className="h-3 w-3" /> নগদ আয়
               </div>
               <div className="text-sm font-semibold tabular-nums mt-1">{fmt(totalReceived)}</div>
-              <div className="text-[10px] text-muted-foreground">{visibleReceipts.length} item</div>
+              <div className="text-[10px] text-muted-foreground">{incomeItems.length} item</div>
               {totalMdReceived > 0 && (
                 <div className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">MD: {fmt(totalMdReceived)}</div>
               )}
@@ -463,15 +511,41 @@ export function StaffHandoverDialog({
           {/* Income detail */}
           <div className="rounded-lg border">
             <div className="px-3 py-2 text-xs font-semibold border-b bg-muted/30">
-              আয়/ডেলিভারি বিবরণ — {visibleReceipts.length}
+              আয়/ডেলিভারি বিবরণ — {incomeItems.length}
             </div>
             <div className="max-h-32 overflow-y-auto divide-y text-xs">
               {loading ? (
                 <div className="p-3 text-muted-foreground">লোড হচ্ছে…</div>
-              ) : visibleReceipts.length === 0 ? (
+              ) : incomeItems.length === 0 ? (
                 <div className="p-3 text-muted-foreground">কোনো pending receipt নেই</div>
               ) : (
-                visibleReceipts.map((r) => {
+                incomeItems.map((it) => {
+                  if (it.kind === "agency") {
+                    const vendorRecv = it.cat === "vendor";
+                    const mdRecv = it.cat === "md";
+                    return (
+                    <div key={it.key} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{it.agency}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">
+                          এজেন্সি (মোটের উপর) · {it.count} পেমেন্ট
+                        </div>
+                        {mdRecv && (
+                          <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {it.method}</div>
+                        )}
+                        {vendorRecv && (
+                          <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className={`tabular-nums font-semibold ${vendorRecv ? "text-orange-600 dark:text-orange-400" : mdRecv ? "text-sky-600 dark:text-sky-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {mdRecv || vendorRecv ? "" : "+"}{fmt(it.amount)}
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  }
+                  const r = it.r;
                   const statusEvt = isStatusEvent(r);
                   const mdRecv = isMdReceivedMethod(r.method) && !statusEvt;
                   const vendorRecv = isVendorReceivedMethod(r.method) && !statusEvt;
