@@ -389,6 +389,8 @@ export function HandoverLedgerInline({
       setReceiptsByService(byService);
       setServiceMap(svcMap);
       setTotalAgents(nextTotalAgents);
+      setAgentDue(nextAgentDue);
+
       setLoading(false);
     })();
 
