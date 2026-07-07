@@ -847,12 +847,11 @@ function HandoverCard({
 
       // তারিখ
       const dateCell = `${esc(formatDate(r.entry_date))}`
-        + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "")
-        + (r.received_by_name ? `<span class="sub">Rec:By ${esc(r.received_by_name.split(" ")[0])}</span>` : "");
+        + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "");
 
       // কাস্টমার
       const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
-        + `<span class="sub">A: ${esc(info?.agent || "Self")}${info?.passport ? ` · ${esc(info.passport)}` : ""}</span>`;
+        + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
 
       // সার্ভিস
       const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
