@@ -1139,10 +1139,18 @@ function HandoverCard({
                       {row.vendor > 0 && <div className="text-sm text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor: {fmt(row.vendor)}</div>}
                     </td>
                     <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
-                      {row.totalDueAfter <= 0.005 ? (
-                        <span className="text-emerald-600 text-base">✓</span>
+                      {row.ledgerDue > 0.005 ? (
+                        <>
+                          <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(row.ledgerDue)}</div>
+                          <div className="text-xs text-muted-foreground font-normal leading-tight">মোট বাকি</div>
+                        </>
+                      ) : row.ledgerAdvance > 0.005 ? (
+                        <>
+                          <div className="text-sky-600 text-sm font-extrabold leading-tight">+{fmt(row.ledgerAdvance)}</div>
+                          <div className="text-xs text-muted-foreground font-normal leading-tight">অগ্রিম</div>
+                        </>
                       ) : (
-                        <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(row.totalDueAfter)}</div>
+                        <span className="text-emerald-600 text-base">✓</span>
                       )}
                     </td>
                     {approveAction && <td className="px-0.5 py-1 pr-2 text-center align-top" />}
