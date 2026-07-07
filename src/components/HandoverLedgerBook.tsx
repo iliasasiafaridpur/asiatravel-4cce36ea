@@ -977,11 +977,17 @@ function HandoverCard({
       </div>
       <h2>জমার বিবরণ</h2>
       <table>
-        <thead><tr>
-          <th class="nw">তারিখ</th><th>কাস্টমার</th><th>সার্ভিস</th>
-          <th class="r nw">মোট বিল</th><th class="r nw">পূর্বের জমা</th><th class="r nw">এই বারের জমা</th><th class="r nw">বাকি</th>
-        </tr></thead>
-        <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="7" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
+        <thead>
+          <tr>
+            <th class="nw" rowspan="2">তারিখ</th><th rowspan="2">কাস্টমার</th><th rowspan="2">সার্ভিস</th>
+            <th class="r nw" rowspan="2">মোট বিল</th><th class="r nw" rowspan="2">পূর্বের জমা</th>
+            <th class="r" colspan="2">এই বারের জমা</th>
+            <th class="r nw" rowspan="2">বাকি</th>
+          </tr>
+          <tr><th class="r nw">MD রিসিভ</th><th class="r nw">স্টাফ রিসিভ</th></tr>
+        </thead>
+        <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="8" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
+
       </table>
       ${expenses.length > 0 ? `
         <h2>💸 খরচের বিবরণ — ${expenses.length} টি</h2>
