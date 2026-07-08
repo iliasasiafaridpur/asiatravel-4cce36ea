@@ -145,6 +145,7 @@ export function HandoverLedgerInline({
   onlyPending = false,
   excludePending = false,
   allowCancel = false,
+  selectable = false,
   onChanged,
 }: {
   mode: "mine" | "to-me";
@@ -154,6 +155,7 @@ export function HandoverLedgerInline({
   onlyPending?: boolean;
   excludePending?: boolean;
   allowCancel?: boolean;
+  selectable?: boolean;
   onChanged?: (cancelledId?: string) => void;
 }) {
   const { user } = useCurrentUser();
