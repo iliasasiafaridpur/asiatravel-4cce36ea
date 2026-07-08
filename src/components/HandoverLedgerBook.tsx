@@ -679,8 +679,9 @@ function buildHandoverSlipBody(args: {
   serviceMap: Record<string, ServiceInfo>;
   totalAgents: Set<string>;
   agentDue: Map<string, { due: number; advance: number }>;
+  hideSig?: boolean;
 }): { body: string; title: string } {
-  const { handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue } = args;
+  const { handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, hideSig = false } = args;
   const esc = (v: unknown) =>
     String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
