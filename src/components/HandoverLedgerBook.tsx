@@ -172,6 +172,7 @@ export function HandoverLedgerInline({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
