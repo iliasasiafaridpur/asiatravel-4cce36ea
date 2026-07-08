@@ -1201,6 +1201,14 @@ function HandoverCard({
       <div className={`${isPending ? "bg-amber-500/20 border-amber-500/40" : "bg-muted/40"} px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2`}>
 
         <div className="flex items-center gap-2 min-w-0 flex-1">
+          {selectable && (
+            <Checkbox
+              checked={!!selected}
+              onCheckedChange={() => onToggleSelect?.()}
+              aria-label="প্রিন্টের জন্য নির্বাচন"
+              className="shrink-0"
+            />
+          )}
           {statusBadge}
           <span className="font-mono text-xs text-muted-foreground">{handover.handover_id}</span>
         </div>
