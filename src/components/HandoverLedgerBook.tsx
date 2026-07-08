@@ -576,10 +576,47 @@ export function HandoverLedgerInline({
             </Button>
           )}
           <Button type="button" size="sm" className="h-8 gap-1.5 ml-auto"
-            disabled={selectedIds.size === 0} onClick={printSelected}>
+            disabled={selectedIds.size === 0} onClick={openPrintDialog}>
             <Printer className="h-3.5 w-3.5" /> নির্বাচিত প্রিন্ট ({selectedIds.size})
           </Button>
         </div>
+      )}
+      {selectable && (
+        <Dialog open={printOpen} onOpenChange={setPrintOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>নির্বাচিত প্রিন্ট ({selectedIds.size} টি)</DialogTitle>
+              <DialogDescription>
+                যেটা আগে প্রিন্ট করা হয়ে গেছে সেটিতে টিক দিলে ঐ কাগজের জায়গা সাদা খালি প্রিন্ট হবে।
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
+              {visible.filter((h) => selectedIds.has(h.id)).map((h) => (
+                <label
+                  key={h.id}
+                  className="flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm cursor-pointer select-none hover:bg-muted/40"
+                >
+                  <Checkbox checked={blankIds.has(h.id)} onCheckedChange={() => toggleBlank(h.id)} />
+                  <span className="flex-1 min-w-0">
+                    <span className="font-medium">{formatDate(h.handover_date ?? h.created_at?.slice(0, 10))}</span>
+                    <span className="text-muted-foreground"> · প্রেরক {h.from_name ?? "—"} → {h.to_name ?? "MD Sir"}</span>
+                  </span>
+                  {blankIds.has(h.id) && (
+                    <span className="shrink-0 text-[11px] font-medium text-muted-foreground">সাদা খালি</span>
+                  )}
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-xs text-muted-foreground">
+                সাদা খালি: <span className="font-semibold text-foreground tabular-nums">{blankIds.size}</span> টি
+              </span>
+              <Button type="button" size="sm" className="gap-1.5" onClick={printSelected}>
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট করুন
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
       <div className="space-y-7">
         {loading ? (
