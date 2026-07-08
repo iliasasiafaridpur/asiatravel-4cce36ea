@@ -949,7 +949,7 @@ function buildHandoverSlipBody(args: {
 
 
 function HandoverCard({
-  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, mode, approveAction, allowCancel, selectable, selected, onToggleSelect, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
@@ -961,6 +961,9 @@ function HandoverCard({
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   onChanged?: (cancelledId?: string) => void;
 }) {
   const status = handover.status ?? "pending";
