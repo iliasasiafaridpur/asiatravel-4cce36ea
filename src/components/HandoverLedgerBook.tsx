@@ -497,11 +497,9 @@ export function HandoverLedgerInline({
   const printSelected = () => {
     const chosen = visible.filter((h) => selectedIds.has(h.id));
     if (chosen.length === 0) return;
-    const sections = chosen.map((h, i) => {
-      const isLast = i === chosen.length - 1;
-      const breakStyle = isLast ? "" : ' style="page-break-after:always"';
+    const sections = chosen.map((h) => {
       if (blankIds.has(h.id)) {
-        return `<div class="slip"${breakStyle}>&nbsp;</div>`;
+        return `<div class="slip blank">&nbsp;</div>`;
       }
       const { body } = buildHandoverSlipBody({
         handover: h,
@@ -513,9 +511,7 @@ export function HandoverLedgerInline({
         agentDue,
         hideSig: true,
       });
-      return isLast
-        ? body
-        : body.replace('<div class="slip">', `<div class="slip"${breakStyle}>`);
+      return body;
     }).join("");
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
