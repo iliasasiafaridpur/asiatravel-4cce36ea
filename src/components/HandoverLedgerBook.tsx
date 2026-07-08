@@ -697,7 +697,9 @@ export function HandoverLedgerBook({
 const SLIP_CSS = `
   @page { size: A4; margin: 10mm; }
   body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
-  .slip { page-break-inside:auto; }
+  .slip { page-break-inside:avoid; break-inside:avoid; }
+  .slip + .slip { margin-top:14px; padding-top:14px; border-top:1px dashed #999; }
+  .slip.blank { min-height:120px; }
   .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
   .h h1 { margin:0; font-size:16px; }
   .h .meta { text-align:right; font-size:10px; line-height:1.5; }
