@@ -992,7 +992,8 @@ function MyHandoverPage() {
             <BookOpen className="h-4 w-4" />
             আমার হিসাব বই (Handover History)
           </div>
-          <HandoverLedgerInline mode="mine" enabled={!!user?.id} allowCancel onChanged={() => setReloadTick((t) => t + 1)} />
+          <HandoverLedgerInline mode="mine" enabled={!!user?.id} allowCancel selectable onChanged={() => setReloadTick((t) => t + 1)} />
+          <p className="mt-2 text-[11px] text-muted-foreground">টিপস: একাধিক হ্যান্ডওভার চেকবক্সে নির্বাচন করে "নির্বাচিত প্রিন্ট" দিয়ে একসাথে প্রিন্ট করুন।</p>
         </CardContent>
       </Card>
     </div>

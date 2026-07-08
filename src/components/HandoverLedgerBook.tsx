@@ -12,6 +12,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
@@ -144,6 +145,7 @@ export function HandoverLedgerInline({
   onlyPending = false,
   excludePending = false,
   allowCancel = false,
+  selectable = false,
   onChanged,
 }: {
   mode: "mine" | "to-me";
@@ -153,6 +155,7 @@ export function HandoverLedgerInline({
   onlyPending?: boolean;
   excludePending?: boolean;
   allowCancel?: boolean;
+  selectable?: boolean;
   onChanged?: (cancelledId?: string) => void;
 }) {
   const { user } = useCurrentUser();
@@ -171,6 +174,7 @@ export function HandoverLedgerInline({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
@@ -442,6 +446,60 @@ export function HandoverLedgerInline({
     });
   }, [handovers, search, startDate, endDate, receiptsByH, expensesByH, serviceMap]);
 
+  const visible = useMemo(() => (onlyPending
+    ? filtered.filter((h) => (h.status ?? "pending") === "pending")
+    : excludePending
+      ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
+      : filtered), [filtered, onlyPending, excludePending]);
+
+  // Keep the selection in sync with what is actually visible (search/date filters).
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const visIds = new Set(visible.map((h) => h.id));
+      const next = new Set<string>();
+      for (const id of prev) if (visIds.has(id)) next.add(id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [visible]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const allSelected = visible.length > 0 && selectedIds.size === visible.length;
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(visible.map((h) => h.id)));
+  };
+
+  // Print all selected handovers as ONE document (each on its own page).
+  const printSelected = () => {
+    const chosen = visible.filter((h) => selectedIds.has(h.id));
+    if (chosen.length === 0) return;
+    const sections = chosen.map((h, i) => {
+      const { body } = buildHandoverSlipBody({
+        handover: h,
+        receipts: receiptsByH[h.id] ?? [],
+        expenses: expensesByH[h.id] ?? [],
+        receiptsByService,
+        serviceMap,
+        totalAgents,
+        agentDue,
+      });
+      const wrapped = i < chosen.length - 1
+        ? body.replace('<div class="slip">', '<div class="slip" style="page-break-after:always">')
+        : body;
+      return wrapped;
+    }).join("");
+    const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
+    const html = `<!doctype html><html><head><title>${docTitle}</title>
+      <style>${SLIP_CSS}</style></head><body>${sections}</body></html>`;
+    printDocHtml(html, docTitle);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {title && (
@@ -474,28 +532,35 @@ export function HandoverLedgerInline({
             <XCircle className="h-3.5 w-3.5" /> রিসেট
           </Button>
         )}
-        {(() => {
-          const visibleCount = (onlyPending
-            ? filtered.filter((h) => (h.status ?? "pending") === "pending")
-            : excludePending
-              ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
-              : filtered).length;
-          return (
-            <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
-              ফলাফল: <span className="font-semibold text-foreground tabular-nums">{visibleCount}</span>
-            </div>
-          );
-        })()}
+        <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
+          ফলাফল: <span className="font-semibold text-foreground tabular-nums">{visible.length}</span>
+        </div>
       </div>
+      {selectable && visible.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
+          <label className="flex items-center gap-2 text-xs font-medium cursor-pointer select-none">
+            <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+            সব নির্বাচন
+          </label>
+          <span className="text-xs text-muted-foreground">
+            নির্বাচিত: <span className="font-semibold text-foreground tabular-nums">{selectedIds.size}</span>
+          </span>
+          {selectedIds.size > 0 && (
+            <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground"
+              onClick={() => setSelectedIds(new Set())}>
+              <XCircle className="h-3.5 w-3.5" /> বাতিল
+            </Button>
+          )}
+          <Button type="button" size="sm" className="h-8 gap-1.5 ml-auto"
+            disabled={selectedIds.size === 0} onClick={printSelected}>
+            <Printer className="h-3.5 w-3.5" /> নির্বাচিত প্রিন্ট ({selectedIds.size})
+          </Button>
+        </div>
+      )}
       <div className="space-y-7">
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
         ) : (() => {
-          const visible = onlyPending
-            ? filtered.filter((h) => (h.status ?? "pending") === "pending")
-            : excludePending
-              ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
-              : filtered;
           if (visible.length === 0) {
             return <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>;
           }
@@ -512,6 +577,9 @@ export function HandoverLedgerInline({
               mode={mode}
               approveAction={approveAction}
               allowCancel={allowCancel}
+              selectable={selectable}
+              selected={selectedIds.has(h.id)}
+              onToggleSelect={() => toggleSelect(h.id)}
               onChanged={(cancelledId) => {
                 if (cancelledId) {
                   setHandovers((prev) => prev.filter((row) => row.id !== cancelledId));
@@ -568,8 +636,320 @@ export function HandoverLedgerBook({
   );
 }
 
+// Shared print CSS for a single cash-handover slip (used by single + multi print).
+const SLIP_CSS = `
+  @page { size: A4; margin: 10mm; }
+  body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
+  .slip { page-break-inside:auto; }
+  .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
+  .h h1 { margin:0; font-size:16px; }
+  .h .meta { text-align:right; font-size:10px; line-height:1.5; }
+  .h .meta b { font-weight:600; }
+  h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
+  table { width:100%; border-collapse:collapse; font-size:10px; table-layout:auto; }
+  th, td { border:1px solid #bbb; padding:2px 5px; text-align:left; vertical-align:top; line-height:1.3; }
+  th { background:#eee; font-weight:600; }
+  td.r, th.r { text-align:right; }
+  td.nw, th.nw { white-space:nowrap; }
+  .b { font-weight:700; }
+  .sub { display:block; color:#555; font-size:8.5px; line-height:1.25; font-weight:400; }
+  .mono { font-family: ui-monospace, monospace; }
+  .sky { color:#0369a1; }
+  .rose { color:#be123c; }
+  .emer { color:#047857; }
+  .orange { color:#c2410c; }
+  .violet { color:#6d28d9; }
+  .tint1 { background:#f7f7f7; }
+  .sumrow td { background:#ececec; font-weight:700; }
+  .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
+  .tot { margin-top:5px; font-size:11px; font-weight:700; }
+  .bar { margin-top:6px; border:1px solid #111; border-radius:4px; padding:5px 8px; font-size:11px; font-weight:700; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
+  .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
+`;
+
+// Build a full self-contained slip body (header + receipts + expenses + totals)
+// for ONE handover. Returns the inner <body> HTML + a suggested file title, so
+// both single-card print and multi-select print reuse identical math + layout.
+function buildHandoverSlipBody(args: {
+  handover: Handover;
+  receipts: Receipt[];
+  expenses?: Expense[];
+  receiptsByService: Record<string, Receipt[]>;
+  serviceMap: Record<string, ServiceInfo>;
+  totalAgents: Set<string>;
+  agentDue: Map<string, { due: number; advance: number }>;
+}): { body: string; title: string } {
+  const { handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue } = args;
+  const esc = (v: unknown) =>
+    String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const submitted = Number(handover.submitted_amount ?? handover.amount ?? 0);
+  const confirmed = Number(handover.confirmed_amount ?? 0);
+  const cashReceipts = receipts.reduce((s, r) => s + (isCashMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const mdReceipts = receipts.reduce((s, r) => s + (isMdReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const vendorReceipts = receipts.reduce((s, r) => s + (isVendorReceivedMethod(r.method) ? Number(r.amount || 0) : 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+  const moneyServiceKeys = new Set(
+    receipts.filter((r) => !isStatusEventReceipt(r) && Number(r.amount || 0) > 0).map(receiptServiceKey).filter(Boolean)
+  );
+  const visibleReceipts = receipts.filter((r) => {
+    if (!isStatusEventReceipt(r)) return true;
+    const key = receiptServiceKey(r);
+    if (moneyServiceKeys.has(key)) return false;
+    const agent = String(serviceMap[key]?.agent ?? "").trim();
+    return !(agent && totalAgents.has(agent));
+  });
+
+  const rank = (entry?: string | null, created?: string | null) =>
+    `${String(entry ?? "").slice(0, 10)}T${String(created ?? "")}`;
+  const cutoffRank = rank(handover.entry_date, handover.created_at);
+
+  const metricsFor = (r: Receipt) => {
+    const sk = receiptServiceKey(r);
+    const info = sk ? serviceMap[sk] : undefined;
+    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const lastPast = past.length
+      ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const lastFuture = future.length
+      ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const bill = info?.sold_price ?? 0;
+    const discount = info?.discount ?? 0;
+    const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+    const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + Number(r.amount || 0)) - discount) : 0;
+    const isAdvance = !!info?.has_delivery && isAdvancePayment(r.entry_date, info?.delivery_date);
+    const statusEvt = isStatusEventReceipt(r);
+    return {
+      sk, info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
+      isAdvance, statusEvt,
+      mdRecv: isMdReceivedMethod(r.method) && !statusEvt,
+      vendorRecv: isVendorReceivedMethod(r.method) && !statusEvt,
+      past, future,
+    };
+  };
+
+  type SingleRow = { kind: "single"; r: Receipt; m: ReturnType<typeof metricsFor> };
+  type AgencyRow = {
+    kind: "agency"; agent: string; items: number; svcCount: number;
+    totalBill: number; totalDiscount: number; totalPrevious: number;
+    totalThis: number; totalDueAfter: number; totalFuture: number;
+    ledgerDue: number; ledgerAdvance: number;
+    cash: number; md: number; vendor: number; date: string;
+  };
+  type DisplayRow = SingleRow | AgencyRow;
+
+  const displayRows: DisplayRow[] = [];
+  {
+    const buckets = new Map<string, Receipt[]>();
+    for (const r of visibleReceipts) {
+      const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
+      if (agent && totalAgents.has(agent)) {
+        const arr = buckets.get(agent) ?? [];
+        arr.push(r);
+        buckets.set(agent, arr);
+      } else {
+        displayRows.push({ kind: "single", r, m: metricsFor(r) });
+      }
+    }
+    for (const [agent, recs] of buckets) {
+      const recIds = new Set(recs.map((x) => x.id));
+      const svcKeys = Array.from(new Set(recs.map(receiptServiceKey).filter(Boolean)));
+      let totalBill = 0, totalDiscount = 0, totalPrevious = 0, totalDueAfter = 0, totalFuture = 0;
+      for (const sk of svcKeys) {
+        const info = serviceMap[sk];
+        const allForSvc = receiptsByService[sk] ?? [];
+        const bill = info?.sold_price ?? 0;
+        const discount = info?.discount ?? 0;
+        const previousPaid = allForSvc
+          .filter((x) => !recIds.has(x.id) && rank(x.entry_date, x.created_at) < cutoffRank)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        const futurePaid = allForSvc
+          .filter((x) => !recIds.has(x.id) && rank(x.entry_date, x.created_at) > cutoffRank)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        const currentPaid = recs
+          .filter((x) => receiptServiceKey(x) === sk)
+          .reduce((s, x) => s + Number(x.amount || 0), 0);
+        totalBill += bill;
+        totalDiscount += discount;
+        totalPrevious += previousPaid;
+        totalFuture += futurePaid;
+        if (bill > 0) totalDueAfter += Math.max(0, bill - discount - previousPaid - currentPaid);
+      }
+      displayRows.push({
+        kind: "agency", agent, items: recs.length, svcCount: svcKeys.length,
+        totalBill, totalDiscount, totalPrevious,
+        totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
+        totalDueAfter, totalFuture,
+        ledgerDue: agentDue.get(agent)?.due ?? totalDueAfter,
+        ledgerAdvance: agentDue.get(agent)?.advance ?? 0,
+        cash: recs.filter((x) => isCashMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        md: recs.filter((x) => isMdReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        vendor: recs.filter((x) => isVendorReceivedMethod(x.method)).reduce((s, x) => s + Number(x.amount || 0), 0),
+        date: recs[0]?.entry_date ?? handover.entry_date,
+      });
+    }
+  }
+
+  const bodyRows = displayRows.map((row, idx) => {
+    if (row.kind === "agency") {
+      const billCell = row.totalBill > 0
+        ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
+          + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
+        : "—";
+      const prevCell = row.totalPrevious > 0
+        ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
+        : `<span class="sub">— নতুন —</span>`;
+      const mdCell = (row.md > 0 || row.vendor > 0)
+        ? (row.md > 0 ? `<span class="b sky">${esc(fmt(row.md))}</span>` : "")
+          + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "")
+        : "—";
+      const staffCell = row.cash > 0 ? `<span class="b emer">${esc(fmt(row.cash))}</span>` : "—";
+      const dueCell = row.ledgerDue > 0.005
+        ? `<span class="b rose">${esc(fmt(row.ledgerDue))}</span><span class="sub">মোট বাকি</span>`
+        : row.ledgerAdvance > 0.005
+          ? `<span class="b sky">+${esc(fmt(row.ledgerAdvance))}</span><span class="sub">অগ্রিম</span>`
+          : `<span class="emer b">✓</span>`;
+      return `<tr class="rt tint${idx % 2}">
+        <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
+        <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
+        <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
+        <td class="r nw">${billCell}</td>
+        <td class="r nw">${prevCell}</td>
+        <td class="r nw">${mdCell}</td>
+        <td class="r nw">${staffCell}</td>
+        <td class="r nw">${dueCell}</td>
+      </tr>`;
+    }
+
+    const { r, m } = row;
+    const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, dueAfterThis,
+      isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
+
+    const dateCell = `${esc(formatDate(r.entry_date))}`
+      + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "");
+    const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
+      + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
+    const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
+      + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
+      + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
+      + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "");
+    const vendorBit = info?.vendor
+      ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
+      : "";
+    const billCell = bill > 0
+      ? `<span class="b">${esc(fmt(bill))}</span>`
+        + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} (ডিসকাউন্ট)</span>` : "")
+        + vendorBit
+      : `—${vendorBit}`;
+    const prevCell = previousPaid > 0
+      ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
+      : `<span class="sub">— নতুন —</span>`;
+    const mdCell = mdRecv
+      ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(r.method)}</span>`
+      : vendorRecv
+        ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
+        : "—";
+    const staffCell = (!mdRecv && !vendorRecv)
+      ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b emer">${esc(fmt(r.amount))}</span>`
+      : "—";
+    const payCells = statusEvt
+      ? `<td class="r nw" colspan="2"><span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span></td>`
+      : `<td class="r nw">${mdCell}</td><td class="r nw">${staffCell}</td>`;
+    const dueCell = bill > 0
+      ? (dueAfterThis <= 0.005
+          ? `<span class="emer b">✓</span>`
+          : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
+      : "—";
+
+    return `<tr class="rt tint${idx % 2}">
+      <td class="nw">${dateCell}</td>
+      <td>${custCell}</td>
+      <td>${svcCell}</td>
+      <td class="r nw">${billCell}</td>
+      <td class="r nw">${prevCell}</td>
+      ${payCells}
+      <td class="r nw">${dueCell}</td>
+    </tr>`;
+  }).join("");
+
+  const totalRow = `<tr class="sumrow">
+    <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
+    <td class="r nw">${mdReceipts > 0 ? `<span class="b sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}${mdReceipts <= 0 && vendorReceipts <= 0 ? "—" : ""}</td>
+    <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span></td>
+    <td></td>
+  </tr>`;
+
+  const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
+      <td class="nw">${esc(formatDate(e.entry_date))}</td>
+      <td class="nw">${esc(e.category || "—")}</td>
+      <td>${esc(e.purpose || "—")}</td>
+      <td class="nw">${esc(e.spent_by_name || "—")}</td>
+      <td class="r nw rose b">−${esc(fmt(e.amount))}</td>
+    </tr>`).join("");
+
+  const title = buildFileTitle(
+    "Cash_Handover",
+    handover.handover_id ?? handover.id.slice(0, 8),
+    handover.from_name ?? "",
+    formatDate(handover.closing_date || handover.entry_date),
+  );
+
+  const body = `<div class="slip">
+    <div class="h">
+      <h1>Asia Travels &amp; Tours</h1>
+      <div class="meta">
+        তারিখ: ${esc(formatDate(handover.closing_date || handover.entry_date))}<br/>
+        প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
+      </div>
+    </div>
+    <h2>জমার বিবরণ</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="nw" rowspan="2">তারিখ</th><th rowspan="2">কাস্টমার</th><th rowspan="2">সার্ভিস</th>
+          <th class="r nw" rowspan="2">মোট বিল</th><th class="r nw" rowspan="2">পূর্বের জমা</th>
+          <th class="r" colspan="2">এই বারের জমা</th>
+          <th class="r nw" rowspan="2">বাকি</th>
+        </tr>
+        <tr><th class="r nw">MD</th><th class="r nw">নগদ</th></tr>
+      </thead>
+      <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="8" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
+    </table>
+    ${expenses.length > 0 ? `
+      <h2>💸 খরচের বিবরণ — ${expenses.length} টি</h2>
+      <table>
+        <thead><tr><th class="nw">তারিখ</th><th class="nw">খাত</th><th>বিবরণ</th><th class="nw">খরচকারী</th><th class="r nw">টাকা</th></tr></thead>
+        <tbody>${expenseRows}<tr class="sumrow"><td colspan="4" class="r">মোট খরচ (${expenses.length} টি)</td><td class="r nw rose">−${esc(fmt(totalExpenses))}</td></tr></tbody>
+      </table>
+    ` : ""}
+    ${confirmed > 0 && confirmed !== submitted ? `<div class="tot">Confirmed: ${esc(fmt(confirmed))} · Variance: ${confirmed - submitted > 0 ? "+" : ""}${esc(fmt(confirmed - submitted))}</div>` : ""}
+    ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
+    <div class="bar">
+      <span>মোট ${visibleReceipts.length} আইটেম থেকে মোট আয় <span class="b">৳ ${esc(fmt(mdReceipts + cashReceipts))}</span></span>
+      ${mdReceipts > 0 ? `<span class="sky">MD ৳ ${esc(fmt(mdReceipts))}</span>` : ""}
+      <span>(নগদ ৳ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ৳ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ৳ ${esc(fmt(submitted))}</span>)</span>
+    </div>
+    <div class="sig">
+      <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
+      <div>গ্রহীতা<br/>${esc(handover.to_name ?? "MD Sir")}</div>
+    </div>
+  </div>`;
+
+  return { body, title };
+}
+
+
+
 function HandoverCard({
-  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, mode, approveAction, allowCancel, onChanged,
+  handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, mode, approveAction, allowCancel, selectable, selected, onToggleSelect, onChanged,
 }: {
   handover: Handover;
   receipts: Receipt[];
@@ -581,6 +961,9 @@ function HandoverCard({
   mode: "mine" | "to-me";
   approveAction?: { busyId: string | null; onApprove: (receipt: Receipt) => void };
   allowCancel?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   onChanged?: (cancelledId?: string) => void;
 }) {
   const status = handover.status ?? "pending";
@@ -800,206 +1183,13 @@ function HandoverCard({
   // Print a full, self-contained slip for THIS handover (header + all receipts
   // + expenses + totals), reusing the same per-row math shown on screen.
   const printThis = () => {
-    const esc = (v: unknown) =>
-      String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-
-
-    // Receipt rows — a 1:1 replica of the on-screen handover card so the printed
-    // slip shows EXACTLY what staff/MD see on the My Handover page. মোটের উপর
-    // agencies collapse to a single aggregated line (no passenger detail).
-    const bodyRows = displayRows.map((row, idx) => {
-      if (row.kind === "agency") {
-        const billCell = row.totalBill > 0
-          ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
-            + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
-          : "—";
-        const prevCell = row.totalPrevious > 0
-          ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
-          : `<span class="sub">— নতুন —</span>`;
-        const mdCell = (row.md > 0 || row.vendor > 0)
-          ? (row.md > 0 ? `<span class="b sky">${esc(fmt(row.md))}</span>` : "")
-            + (row.vendor > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(row.vendor))}</span>` : "")
-          : "—";
-        const staffCell = row.cash > 0 ? `<span class="b emer">${esc(fmt(row.cash))}</span>` : "—";
-        const dueCell = row.ledgerDue > 0.005
-          ? `<span class="b rose">${esc(fmt(row.ledgerDue))}</span><span class="sub">মোট বাকি</span>`
-          : row.ledgerAdvance > 0.005
-            ? `<span class="b sky">+${esc(fmt(row.ledgerAdvance))}</span><span class="sub">অগ্রিম</span>`
-            : `<span class="emer b">✓</span>`;
-        return `<tr class="rt tint${idx % 2}">
-          <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
-          <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
-          <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
-          <td class="r nw">${billCell}</td>
-          <td class="r nw">${prevCell}</td>
-          <td class="r nw">${mdCell}</td>
-          <td class="r nw">${staffCell}</td>
-          <td class="r nw">${dueCell}</td>
-        </tr>`;
-
-      }
-
-      const { r, m } = row;
-      const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
-        isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
-
-      // তারিখ
-      const dateCell = `${esc(formatDate(r.entry_date))}`
-        + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "");
-
-      // কাস্টমার
-      const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
-        + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
-
-      // সার্ভিস
-      const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
-        + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
-        + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
-        + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "");
-
-      // মোট বিল
-      const vendorBit = info?.vendor
-        ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
-        : "";
-      const billCell = bill > 0
-        ? `<span class="b">${esc(fmt(bill))}</span>`
-          + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} (ডিসকাউন্ট)</span>` : "")
-          + vendorBit
-        : `—${vendorBit}`;
-
-      // পূর্বের জমা
-      const prevCell = previousPaid > 0
-        ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
-        : `<span class="sub">— নতুন —</span>`;
-
-      // এই বারের জমা → MD রিসিভ / স্টাফ রিসিভ
-      const mdCell = mdRecv
-        ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(r.method)}</span>`
-        : vendorRecv
-          ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
-          : "—";
-      const staffCell = (!mdRecv && !vendorRecv)
-        ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b emer">${esc(fmt(r.amount))}</span>`
-        : "—";
-      const payCells = statusEvt
-        ? `<td class="r nw" colspan="2"><span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span></td>`
-        : `<td class="r nw">${mdCell}</td><td class="r nw">${staffCell}</td>`;
-
-      // বাকি (after this handover)
-      const dueCell = bill > 0
-        ? (dueAfterThis <= 0.005
-            ? `<span class="emer b">✓</span>`
-            : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
-        : "—";
-
-      return `<tr class="rt tint${idx % 2}">
-        <td class="nw">${dateCell}</td>
-        <td>${custCell}</td>
-        <td>${svcCell}</td>
-        <td class="r nw">${billCell}</td>
-        <td class="r nw">${prevCell}</td>
-        ${payCells}
-        <td class="r nw">${dueCell}</td>
-
-      </tr>`;
-    }).join("");
-
-
-    const totalRow = `<tr class="sumrow">
-      <td colspan="5" class="r">মোট (${visibleReceipts.length} আইটেম)</td>
-      <td class="r nw">${mdReceipts > 0 ? `<span class="b sky">MD: ${esc(fmt(mdReceipts))}</span>` : ""}${vendorReceipts > 0 ? `<span class="sub orange">Vendor: ${esc(fmt(vendorReceipts))}</span>` : ""}${mdReceipts <= 0 && vendorReceipts <= 0 ? "—" : ""}</td>
-      <td class="r nw"><span class="b emer">নগদ: ${esc(fmt(cashReceipts))}</span></td>
-      <td></td>
-    </tr>`;
-
-
-    const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
-        <td class="nw">${esc(formatDate(e.entry_date))}</td>
-        <td class="nw">${esc(e.category || "—")}</td>
-        <td>${esc(e.purpose || "—")}</td>
-        <td class="nw">${esc(e.spent_by_name || "—")}</td>
-        <td class="r nw rose b">−${esc(fmt(e.amount))}</td>
-      </tr>`).join("");
-
-    const docTitle = buildFileTitle(
-      "Cash_Handover",
-      handover.handover_id ?? handover.id.slice(0, 8),
-      handover.from_name ?? "",
-      formatDate(handover.closing_date || handover.entry_date),
-    );
-
-    const html = `<!doctype html><html><head><title>${esc(docTitle)}</title>
-      <style>
-        @page { size: A4; margin: 10mm; }
-        body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
-        .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
-        .h h1 { margin:0; font-size:16px; }
-        .h .meta { text-align:right; font-size:10px; line-height:1.5; }
-        .h .meta b { font-weight:600; }
-        h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
-        table { width:100%; border-collapse:collapse; font-size:10px; table-layout:auto; }
-        th, td { border:1px solid #bbb; padding:2px 5px; text-align:left; vertical-align:top; line-height:1.3; }
-        th { background:#eee; font-weight:600; }
-        td.r, th.r { text-align:right; }
-        td.nw, th.nw { white-space:nowrap; }
-        .b { font-weight:700; }
-        .sub { display:block; color:#555; font-size:8.5px; line-height:1.25; font-weight:400; }
-        .mono { font-family: ui-monospace, monospace; }
-        .sky { color:#0369a1; }
-        .rose { color:#be123c; }
-        .emer { color:#047857; }
-        .orange { color:#c2410c; }
-        .violet { color:#6d28d9; }
-        .tint1 { background:#f7f7f7; }
-        .sumrow td { background:#ececec; font-weight:700; }
-        .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
-        .tot { margin-top:5px; font-size:11px; font-weight:700; }
-        .bar { margin-top:6px; border:1px solid #111; border-radius:4px; padding:5px 8px; font-size:11px; font-weight:700; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-        .sig { margin-top:34px; display:flex; justify-content:space-between; font-size:10px; }
-        .sig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
-      </style></head><body>
-      <div class="h">
-        <h1>Asia Travels &amp; Tours</h1>
-        <div class="meta">
-          তারিখ: ${esc(formatDate(handover.closing_date || handover.entry_date))}<br/>
-          প্রেরক: ${esc(handover.from_name ?? "—")} → গ্রহীতা: ${esc(handover.to_name ?? "MD Sir")}
-        </div>
-      </div>
-      <h2>জমার বিবরণ</h2>
-      <table>
-        <thead>
-          <tr>
-            <th class="nw" rowspan="2">তারিখ</th><th rowspan="2">কাস্টমার</th><th rowspan="2">সার্ভিস</th>
-            <th class="r nw" rowspan="2">মোট বিল</th><th class="r nw" rowspan="2">পূর্বের জমা</th>
-            <th class="r" colspan="2">এই বারের জমা</th>
-            <th class="r nw" rowspan="2">বাকি</th>
-          </tr>
-          <tr><th class="r nw">MD</th><th class="r nw">নগদ</th></tr>
-        </thead>
-        <tbody>${bodyRows ? bodyRows + totalRow : `<tr><td colspan="8" style="text-align:center">কোনো passenger receipt নেই</td></tr>`}</tbody>
-
-      </table>
-      ${expenses.length > 0 ? `
-        <h2>💸 খরচের বিবরণ — ${expenses.length} টি</h2>
-        <table>
-          <thead><tr><th class="nw">তারিখ</th><th class="nw">খাত</th><th>বিবরণ</th><th class="nw">খরচকারী</th><th class="r nw">টাকা</th></tr></thead>
-          <tbody>${expenseRows}<tr class="sumrow"><td colspan="4" class="r">মোট খরচ (${expenses.length} টি)</td><td class="r nw rose">−${esc(fmt(totalExpenses))}</td></tr></tbody>
-        </table>
-      ` : ""}
-      ${confirmed > 0 && confirmed !== submitted ? `<div class="tot">Confirmed: ${esc(fmt(confirmed))} · Variance: ${confirmed - submitted > 0 ? "+" : ""}${esc(fmt(confirmed - submitted))}</div>` : ""}
-      ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
-      <div class="bar">
-        <span>মোট ${visibleReceipts.length} আইটেম থেকে মোট আয় <span class="b">৳ ${esc(fmt(mdReceipts + cashReceipts))}</span></span>
-        ${mdReceipts > 0 ? `<span class="sky">MD ৳ ${esc(fmt(mdReceipts))}</span>` : ""}
-        <span>(নগদ ৳ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ৳ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ৳ ${esc(fmt(submitted))}</span>)</span>
-      </div>
-      <div class="sig">
-        <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
-        <div>গ্রহীতা<br/>${esc(handover.to_name ?? "MD Sir")}</div>
-      </div>
-    </body></html>`;
-    printDocHtml(html, docTitle);
+    const { body, title } = buildHandoverSlipBody({
+      handover, receipts, expenses, receiptsByService, serviceMap, totalAgents, agentDue,
+    });
+    const safeTitle = title.replace(/</g, "").replace(/>/g, "");
+    const html = `<!doctype html><html><head><title>${safeTitle}</title>
+      <style>${SLIP_CSS}</style></head><body>${body}</body></html>`;
+    printDocHtml(html, title);
   };
 
 
@@ -1011,6 +1201,14 @@ function HandoverCard({
       <div className={`${isPending ? "bg-amber-500/20 border-amber-500/40" : "bg-muted/40"} px-4 py-2.5 border-b-2 flex flex-wrap items-center gap-2`}>
 
         <div className="flex items-center gap-2 min-w-0 flex-1">
+          {selectable && (
+            <Checkbox
+              checked={!!selected}
+              onCheckedChange={() => onToggleSelect?.()}
+              aria-label="প্রিন্টের জন্য নির্বাচন"
+              className="shrink-0"
+            />
+          )}
           {statusBadge}
           <span className="font-mono text-xs text-muted-foreground">{handover.handover_id}</span>
         </div>
