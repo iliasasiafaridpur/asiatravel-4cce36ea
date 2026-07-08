@@ -532,28 +532,35 @@ export function HandoverLedgerInline({
             <XCircle className="h-3.5 w-3.5" /> রিসেট
           </Button>
         )}
-        {(() => {
-          const visibleCount = (onlyPending
-            ? filtered.filter((h) => (h.status ?? "pending") === "pending")
-            : excludePending
-              ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
-              : filtered).length;
-          return (
-            <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
-              ফলাফল: <span className="font-semibold text-foreground tabular-nums">{visibleCount}</span>
-            </div>
-          );
-        })()}
+        <div className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border bg-muted/30 text-muted-foreground whitespace-nowrap">
+          ফলাফল: <span className="font-semibold text-foreground tabular-nums">{visible.length}</span>
+        </div>
       </div>
+      {selectable && visible.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
+          <label className="flex items-center gap-2 text-xs font-medium cursor-pointer select-none">
+            <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+            সব নির্বাচন
+          </label>
+          <span className="text-xs text-muted-foreground">
+            নির্বাচিত: <span className="font-semibold text-foreground tabular-nums">{selectedIds.size}</span>
+          </span>
+          {selectedIds.size > 0 && (
+            <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground"
+              onClick={() => setSelectedIds(new Set())}>
+              <XCircle className="h-3.5 w-3.5" /> বাতিল
+            </Button>
+          )}
+          <Button type="button" size="sm" className="h-8 gap-1.5 ml-auto"
+            disabled={selectedIds.size === 0} onClick={printSelected}>
+            <Printer className="h-3.5 w-3.5" /> নির্বাচিত প্রিন্ট ({selectedIds.size})
+          </Button>
+        </div>
+      )}
       <div className="space-y-7">
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">লোড হচ্ছে…</div>
         ) : (() => {
-          const visible = onlyPending
-            ? filtered.filter((h) => (h.status ?? "pending") === "pending")
-            : excludePending
-              ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
-              : filtered;
           if (visible.length === 0) {
             return <div className="p-8 text-center text-sm text-muted-foreground">কোনো record নেই</div>;
           }
@@ -570,6 +577,9 @@ export function HandoverLedgerInline({
               mode={mode}
               approveAction={approveAction}
               allowCancel={allowCancel}
+              selectable={selectable}
+              selected={selectedIds.has(h.id)}
+              onToggleSelect={() => toggleSelect(h.id)}
               onChanged={(cancelledId) => {
                 if (cancelledId) {
                   setHandovers((prev) => prev.filter((row) => row.id !== cancelledId));
