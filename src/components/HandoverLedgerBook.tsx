@@ -175,6 +175,8 @@ export function HandoverLedgerInline({
   const [endDate, setEndDate] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [printOpen, setPrintOpen] = useState(false);
+  const [blankIds, setBlankIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
@@ -475,11 +477,32 @@ export function HandoverLedgerInline({
     setSelectedIds(allSelected ? new Set() : new Set(visible.map((h) => h.id)));
   };
 
+  // Open the batch-print dialog (choose which selected slips to leave blank).
+  const openPrintDialog = () => {
+    if (selectedIds.size === 0) return;
+    setBlankIds(new Set());
+    setPrintOpen(true);
+  };
+  const toggleBlank = (id: string) => {
+    setBlankIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   // Print all selected handovers as ONE document (each on its own page).
+  // Batch prints omit the প্রেরক/গ্রহীতা signature area, and any handover
+  // marked "blank" prints an empty page (its slot on the paper stays white).
   const printSelected = () => {
     const chosen = visible.filter((h) => selectedIds.has(h.id));
     if (chosen.length === 0) return;
     const sections = chosen.map((h, i) => {
+      const isLast = i === chosen.length - 1;
+      const breakStyle = isLast ? "" : ' style="page-break-after:always"';
+      if (blankIds.has(h.id)) {
+        return `<div class="slip"${breakStyle}>&nbsp;</div>`;
+      }
       const { body } = buildHandoverSlipBody({
         handover: h,
         receipts: receiptsByH[h.id] ?? [],
@@ -488,16 +511,17 @@ export function HandoverLedgerInline({
         serviceMap,
         totalAgents,
         agentDue,
+        hideSig: true,
       });
-      const wrapped = i < chosen.length - 1
-        ? body.replace('<div class="slip">', '<div class="slip" style="page-break-after:always">')
-        : body;
-      return wrapped;
+      return isLast
+        ? body
+        : body.replace('<div class="slip">', `<div class="slip"${breakStyle}>`);
     }).join("");
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
       <style>${SLIP_CSS}</style></head><body>${sections}</body></html>`;
     printDocHtml(html, docTitle);
+    setPrintOpen(false);
   };
 
   return (
@@ -552,10 +576,47 @@ export function HandoverLedgerInline({
             </Button>
           )}
           <Button type="button" size="sm" className="h-8 gap-1.5 ml-auto"
-            disabled={selectedIds.size === 0} onClick={printSelected}>
+            disabled={selectedIds.size === 0} onClick={openPrintDialog}>
             <Printer className="h-3.5 w-3.5" /> নির্বাচিত প্রিন্ট ({selectedIds.size})
           </Button>
         </div>
+      )}
+      {selectable && (
+        <Dialog open={printOpen} onOpenChange={setPrintOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>নির্বাচিত প্রিন্ট ({selectedIds.size} টি)</DialogTitle>
+              <DialogDescription>
+                যেটা আগে প্রিন্ট করা হয়ে গেছে সেটিতে টিক দিলে ঐ কাগজের জায়গা সাদা খালি প্রিন্ট হবে।
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
+              {visible.filter((h) => selectedIds.has(h.id)).map((h) => (
+                <label
+                  key={h.id}
+                  className="flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm cursor-pointer select-none hover:bg-muted/40"
+                >
+                  <Checkbox checked={blankIds.has(h.id)} onCheckedChange={() => toggleBlank(h.id)} />
+                  <span className="flex-1 min-w-0">
+                    <span className="font-medium">{formatDate(h.entry_date ?? h.created_at?.slice(0, 10))}</span>
+                    <span className="text-muted-foreground"> · প্রেরক {h.from_name ?? "—"} → {h.to_name ?? "MD Sir"}</span>
+                  </span>
+                  {blankIds.has(h.id) && (
+                    <span className="shrink-0 text-[11px] font-medium text-muted-foreground">সাদা খালি</span>
+                  )}
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-xs text-muted-foreground">
+                সাদা খালি: <span className="font-semibold text-foreground tabular-nums">{blankIds.size}</span> টি
+              </span>
+              <Button type="button" size="sm" className="gap-1.5" onClick={printSelected}>
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট করুন
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
       <div className="space-y-7">
         {loading ? (
@@ -679,8 +740,9 @@ function buildHandoverSlipBody(args: {
   serviceMap: Record<string, ServiceInfo>;
   totalAgents: Set<string>;
   agentDue: Map<string, { due: number; advance: number }>;
+  hideSig?: boolean;
 }): { body: string; title: string } {
-  const { handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue } = args;
+  const { handover, receipts, expenses = [], receiptsByService, serviceMap, totalAgents, agentDue, hideSig = false } = args;
   const esc = (v: unknown) =>
     String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -937,10 +999,10 @@ function buildHandoverSlipBody(args: {
       ${mdReceipts > 0 ? `<span class="sky">MD ৳ ${esc(fmt(mdReceipts))}</span>` : ""}
       <span>(নগদ ৳ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ৳ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ৳ ${esc(fmt(submitted))}</span>)</span>
     </div>
-    <div class="sig">
+    ${hideSig ? "" : `<div class="sig">
       <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
       <div>গ্রহীতা<br/>${esc(handover.to_name ?? "MD Sir")}</div>
-    </div>
+    </div>`}
   </div>`;
 
   return { body, title };
