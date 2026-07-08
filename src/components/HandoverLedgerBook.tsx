@@ -446,6 +446,60 @@ export function HandoverLedgerInline({
     });
   }, [handovers, search, startDate, endDate, receiptsByH, expensesByH, serviceMap]);
 
+  const visible = useMemo(() => (onlyPending
+    ? filtered.filter((h) => (h.status ?? "pending") === "pending")
+    : excludePending
+      ? filtered.filter((h) => (h.status ?? "pending") !== "pending")
+      : filtered), [filtered, onlyPending, excludePending]);
+
+  // Keep the selection in sync with what is actually visible (search/date filters).
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const visIds = new Set(visible.map((h) => h.id));
+      const next = new Set<string>();
+      for (const id of prev) if (visIds.has(id)) next.add(id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [visible]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const allSelected = visible.length > 0 && selectedIds.size === visible.length;
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(visible.map((h) => h.id)));
+  };
+
+  // Print all selected handovers as ONE document (each on its own page).
+  const printSelected = () => {
+    const chosen = visible.filter((h) => selectedIds.has(h.id));
+    if (chosen.length === 0) return;
+    const sections = chosen.map((h, i) => {
+      const { body } = buildHandoverSlipBody({
+        handover: h,
+        receipts: receiptsByH[h.id] ?? [],
+        expenses: expensesByH[h.id] ?? [],
+        receiptsByService,
+        serviceMap,
+        totalAgents,
+        agentDue,
+      });
+      const wrapped = i < chosen.length - 1
+        ? body.replace('<div class="slip">', '<div class="slip" style="page-break-after:always">')
+        : body;
+      return wrapped;
+    }).join("");
+    const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
+    const html = `<!doctype html><html><head><title>${docTitle}</title>
+      <style>${SLIP_CSS}</style></head><body>${sections}</body></html>`;
+    printDocHtml(html, docTitle);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {title && (
