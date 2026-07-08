@@ -497,11 +497,9 @@ export function HandoverLedgerInline({
   const printSelected = () => {
     const chosen = visible.filter((h) => selectedIds.has(h.id));
     if (chosen.length === 0) return;
-    const sections = chosen.map((h, i) => {
-      const isLast = i === chosen.length - 1;
-      const breakStyle = isLast ? "" : ' style="page-break-after:always"';
+    const sections = chosen.map((h) => {
       if (blankIds.has(h.id)) {
-        return `<div class="slip"${breakStyle}>&nbsp;</div>`;
+        return `<div class="slip blank">&nbsp;</div>`;
       }
       const { body } = buildHandoverSlipBody({
         handover: h,
@@ -513,9 +511,7 @@ export function HandoverLedgerInline({
         agentDue,
         hideSig: true,
       });
-      return isLast
-        ? body
-        : body.replace('<div class="slip">', `<div class="slip"${breakStyle}>`);
+      return body;
     }).join("");
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
@@ -701,7 +697,9 @@ export function HandoverLedgerBook({
 const SLIP_CSS = `
   @page { size: A4; margin: 10mm; }
   body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
-  .slip { page-break-inside:auto; }
+  .slip { page-break-inside:avoid; break-inside:avoid; }
+  .slip + .slip { margin-top:14px; padding-top:14px; border-top:1px dashed #999; }
+  .slip.blank { min-height:120px; }
   .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
   .h h1 { margin:0; font-size:16px; }
   .h .meta { text-align:right; font-size:10px; line-height:1.5; }
