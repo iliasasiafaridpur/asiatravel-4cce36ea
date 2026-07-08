@@ -477,11 +477,32 @@ export function HandoverLedgerInline({
     setSelectedIds(allSelected ? new Set() : new Set(visible.map((h) => h.id)));
   };
 
+  // Open the batch-print dialog (choose which selected slips to leave blank).
+  const openPrintDialog = () => {
+    if (selectedIds.size === 0) return;
+    setBlankIds(new Set());
+    setPrintOpen(true);
+  };
+  const toggleBlank = (id: string) => {
+    setBlankIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   // Print all selected handovers as ONE document (each on its own page).
+  // Batch prints omit the প্রেরক/গ্রহীতা signature area, and any handover
+  // marked "blank" prints an empty page (its slot on the paper stays white).
   const printSelected = () => {
     const chosen = visible.filter((h) => selectedIds.has(h.id));
     if (chosen.length === 0) return;
     const sections = chosen.map((h, i) => {
+      const isLast = i === chosen.length - 1;
+      const breakStyle = isLast ? "" : ' style="page-break-after:always"';
+      if (blankIds.has(h.id)) {
+        return `<div class="slip"${breakStyle}>&nbsp;</div>`;
+      }
       const { body } = buildHandoverSlipBody({
         handover: h,
         receipts: receiptsByH[h.id] ?? [],
@@ -490,16 +511,17 @@ export function HandoverLedgerInline({
         serviceMap,
         totalAgents,
         agentDue,
+        hideSig: true,
       });
-      const wrapped = i < chosen.length - 1
-        ? body.replace('<div class="slip">', '<div class="slip" style="page-break-after:always">')
-        : body;
-      return wrapped;
+      return isLast
+        ? body
+        : body.replace('<div class="slip">', `<div class="slip"${breakStyle}>`);
     }).join("");
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
       <style>${SLIP_CSS}</style></head><body>${sections}</body></html>`;
     printDocHtml(html, docTitle);
+    setPrintOpen(false);
   };
 
   return (
