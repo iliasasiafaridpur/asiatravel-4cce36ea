@@ -938,10 +938,10 @@ function buildHandoverSlipBody(args: {
       ${mdReceipts > 0 ? `<span class="sky">MD ৳ ${esc(fmt(mdReceipts))}</span>` : ""}
       <span>(নগদ ৳ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ৳ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ৳ ${esc(fmt(submitted))}</span>)</span>
     </div>
-    <div class="sig">
+    ${hideSig ? "" : `<div class="sig">
       <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
       <div>গ্রহীতা<br/>${esc(handover.to_name ?? "MD Sir")}</div>
-    </div>
+    </div>`}
   </div>`;
 
   return { body, title };
