@@ -598,7 +598,7 @@ export function HandoverLedgerInline({
                 >
                   <Checkbox checked={blankIds.has(h.id)} onCheckedChange={() => toggleBlank(h.id)} />
                   <span className="flex-1 min-w-0">
-                    <span className="font-medium">{formatDate(h.handover_date ?? h.created_at?.slice(0, 10))}</span>
+                    <span className="font-medium">{formatDate(h.entry_date ?? h.created_at?.slice(0, 10))}</span>
                     <span className="text-muted-foreground"> · প্রেরক {h.from_name ?? "—"} → {h.to_name ?? "MD Sir"}</span>
                   </span>
                   {blankIds.has(h.id) && (
