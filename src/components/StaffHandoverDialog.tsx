@@ -562,7 +562,7 @@ export function StaffHandoverDialog({
                         </div>
                       )}
                       {mdRecv && (
-                        <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method}</div>
+                        <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {methodLabel(r.method)}</div>
                       )}
                       {vendorRecv && (
                         <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
