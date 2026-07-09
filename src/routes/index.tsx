@@ -171,7 +171,7 @@ function DashboardPage() {
             .from(m.table as never)
             .select(DASHBOARD_SELECTS[m.table] ?? "*")
             .order("created_at", { ascending: false })
-            .limit(100),
+            .limit(5000),
         );
         if (error) throw error;
         for (const r of (data as unknown as Record<string, unknown>[] | null) ?? []) {
