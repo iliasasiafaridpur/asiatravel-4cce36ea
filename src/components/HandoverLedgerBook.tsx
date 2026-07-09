@@ -516,7 +516,7 @@ export function HandoverLedgerInline({
         serviceMap,
         totalAgents,
         agentDue,
-        hideSig: true,
+        hideSig: !showSig,
       });
       // If this slip was already physically printed on the paper, render its
       // real layout but keep it invisible so the exact same vertical space
