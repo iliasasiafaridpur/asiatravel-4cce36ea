@@ -630,6 +630,10 @@ export function HandoverLedgerInline({
                 </label>
               ))}
             </div>
+            <label className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2 text-sm cursor-pointer select-none">
+              <Checkbox checked={showSig} onCheckedChange={(v) => setShowSig(v === true)} />
+              <span className="flex-1">Sign mark — প্রিন্ট পেইজের নিচে প্রেরক ও গ্রহীতার সাক্ষরের অপশন দেখাবে</span>
+            </label>
             <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-xs text-muted-foreground">
                 সাদা খালি: <span className="font-semibold text-foreground tabular-nums">{blankIds.size}</span> টি
