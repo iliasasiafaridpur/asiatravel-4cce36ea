@@ -713,6 +713,9 @@ const SLIP_CSS = `
   .slip { page-break-inside:avoid; break-inside:avoid; width:100%; max-width:100%; overflow:hidden; }
   .slip + .slip { margin-top:14px; padding-top:14px; border-top:1px dashed #999; }
   .slip.blank { min-height:120px; }
+  /* Already-printed slip: keep exact footprint, print nothing (white). */
+  .slip.blankfill { visibility:hidden; }
+  .slip.blankfill * { visibility:hidden !important; }
   .h { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:6px; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
   .h h1 { margin:0; font-size:15px; }
   .h .hid { font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:800; letter-spacing:.5px; border:1.5px solid #111; border-radius:5px; padding:2px 8px; white-space:nowrap; }
