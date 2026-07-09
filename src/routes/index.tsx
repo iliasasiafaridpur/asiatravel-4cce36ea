@@ -438,6 +438,17 @@ function DashboardPage() {
     });
   }, [receipts, range, customDate]);
 
+  // Actual cash/payment received within the selected period (payment-date based).
+  // This is the same source as the "কে কত টাকা রিসিভ করেছে" board and Accounts
+  // Methods, so the top "মোট Received" card stays consistent with them — a
+  // booking's `received` column is keyed to when the booking was created, which
+  // wrongly showed ৳0 for "আজ" even when money was collected today on old dues.
+  const periodReceived = useMemo(
+    () => filteredReceipts.reduce((s, r) => s + Number(r.amount || 0), 0),
+    [filteredReceipts],
+  );
+
+
   // === Per-user received ===
   // Cash physically reaches the staff member → counted under that user.
   // Non-cash (bank / bKash / Nagad / cheque …) goes straight to MD →
@@ -748,7 +759,7 @@ function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
         <GradientStat label="মোট এন্ট্রি" value={stats.total} icon={FileText} from="from-sky-500" to="to-blue-600" />
         <GradientStat label="মোট Sold" value={stats.sold} money icon={TrendingUp} from="from-emerald-500" to="to-teal-600" />
-        <GradientStat label="মোট Received" value={stats.received} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
+        <GradientStat label="মোট Received" sublabel="এই সময়ে গৃহীত" value={periodReceived} money icon={Wallet} from="from-blue-500" to="to-indigo-600" />
         <GradientStat label="মোট Due" value={stats.due} money icon={TrendingDown} from="from-rose-500" to="to-pink-600" />
         <GradientStat label="Estimated Profit" sublabel="আনুমানিক লাভ" value={stats.profit} money icon={BadgeDollarSign} from="from-violet-500" to="to-purple-600" />
         <GradientStat label="Realized Profit" sublabel="নগদ লাভ" value={Math.round(stats.realizedProfit)} money icon={BadgeDollarSign} from="from-fuchsia-500" to="to-pink-600" />
