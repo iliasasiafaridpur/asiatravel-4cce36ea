@@ -313,7 +313,9 @@ export function ModulePage({ module: mod }: Props) {
         const modeMap: Record<string, string> = {};
         for (const r of (data as { name?: string | null; settle_mode?: string | null }[] | null) ?? []) {
           const key = String(r.name ?? "").trim().replace(/[\s\-_,.]+/g, " ").toLowerCase();
-          if (key && key !== "self") modeMap[key] = (r.settle_mode ?? "").trim() || "total";
+          // সেট না থাকা এজেন্সি per-passenger (one_by_one) হিসেবেই থাকবে —
+          // শুধু স্পষ্টভাবে "total" সেট করা থাকলেই মোটের হিসাব ধরা হবে।
+          if (key && key !== "self") modeMap[key] = (r.settle_mode ?? "").trim();
         }
         setSettleModeByAgency(modeMap);
       });
