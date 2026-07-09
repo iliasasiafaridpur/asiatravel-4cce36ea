@@ -373,7 +373,7 @@ export function StaffHandoverDialog({
         const note = vendorRecv
           ? `<br><span style="color:#ea580c;font-size:10px;">Vendor Rece</span>`
           : mdRecv
-          ? `<br><span style="color:#0284c7;font-size:10px;">MD রিসিভ · ${r.method}</span>`
+          ? `<br><span style="color:#0284c7;font-size:10px;">MD রিসিভ · ${methodLabel(r.method)}</span>`
           : "";
         return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${r.passenger_name || "—"}<br><span style="color:#999;font-size:11px;">${svcLine(r) || (r.receipt_id || "")}</span>${note}</td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:${color};font-weight:600;">${amt}</td></tr>`;
       })
