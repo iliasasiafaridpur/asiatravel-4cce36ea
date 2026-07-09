@@ -533,10 +533,12 @@ export function HandoverLedgerInline({
       .pagesig { position: fixed; bottom: 0; left: 0; right: 0; display:flex; justify-content:space-between; gap:40px; padding:6px 4mm 9mm; font-size:10px; }
       .pagesig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
     ` : "";
+    const escName = (v: unknown) =>
+      String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
     const uniqFrom = Array.from(new Set(chosen.map((h) => h.from_name).filter(Boolean)));
     const uniqTo = Array.from(new Set(chosen.map((h) => h.to_name).filter(Boolean)));
-    const fromName = uniqFrom.length === 1 ? esc(String(uniqFrom[0])) : "";
-    const toName = uniqTo.length === 1 ? esc(String(uniqTo[0])) : "MD Sir";
+    const fromName = uniqFrom.length === 1 ? escName(uniqFrom[0]) : "";
+    const toName = uniqTo.length === 1 ? escName(uniqTo[0]) : "MD Sir";
     const sigFooter = showSig
       ? `<div class="pagesig"><div>প্রেরক<br/>${fromName}</div><div>গ্রহীতা<br/>${toName}</div></div>`
       : "";
