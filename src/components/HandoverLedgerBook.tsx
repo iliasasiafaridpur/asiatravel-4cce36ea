@@ -506,9 +506,6 @@ export function HandoverLedgerInline({
       });
     if (chosen.length === 0) return;
     const sections = chosen.map((h) => {
-      if (blankIds.has(h.id)) {
-        return `<div class="slip blank">&nbsp;</div>`;
-      }
       const { body } = buildHandoverSlipBody({
         handover: h,
         receipts: receiptsByH[h.id] ?? [],
@@ -519,6 +516,12 @@ export function HandoverLedgerInline({
         agentDue,
         hideSig: true,
       });
+      // If this slip was already physically printed on the paper, render its
+      // real layout but keep it invisible so the exact same vertical space
+      // stays blank/white — the next slip then lands in the right position.
+      if (blankIds.has(h.id)) {
+        return body.replace('class="slip"', 'class="slip blankfill"');
+      }
       return body;
     }).join("");
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
@@ -710,6 +713,9 @@ const SLIP_CSS = `
   .slip { page-break-inside:avoid; break-inside:avoid; width:100%; max-width:100%; overflow:hidden; }
   .slip + .slip { margin-top:14px; padding-top:14px; border-top:1px dashed #999; }
   .slip.blank { min-height:120px; }
+  /* Already-printed slip: keep exact footprint, print nothing (white). */
+  .slip.blankfill { visibility:hidden; }
+  .slip.blankfill * { visibility:hidden !important; }
   .h { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:6px; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
   .h h1 { margin:0; font-size:15px; }
   .h .hid { font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:800; letter-spacing:.5px; border:1.5px solid #111; border-radius:5px; padding:2px 8px; white-space:nowrap; }
