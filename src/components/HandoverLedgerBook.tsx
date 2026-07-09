@@ -177,6 +177,7 @@ export function HandoverLedgerInline({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [printOpen, setPrintOpen] = useState(false);
   const [blankIds, setBlankIds] = useState<Set<string>>(() => new Set());
+  const [showSig, setShowSig] = useState(false);
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
@@ -481,6 +482,7 @@ export function HandoverLedgerInline({
   const openPrintDialog = () => {
     if (selectedIds.size === 0) return;
     setBlankIds(new Set());
+    setShowSig(false);
     setPrintOpen(true);
   };
   const toggleBlank = (id: string) => {
@@ -514,7 +516,7 @@ export function HandoverLedgerInline({
         serviceMap,
         totalAgents,
         agentDue,
-        hideSig: true,
+        hideSig: !showSig,
       });
       // If this slip was already physically printed on the paper, render its
       // real layout but keep it invisible so the exact same vertical space
@@ -628,6 +630,10 @@ export function HandoverLedgerInline({
                 </label>
               ))}
             </div>
+            <label className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2 text-sm cursor-pointer select-none">
+              <Checkbox checked={showSig} onCheckedChange={(v) => setShowSig(v === true)} />
+              <span className="flex-1">Sign mark — প্রিন্ট পেইজের নিচে প্রেরক ও গ্রহীতার সাক্ষরের অপশন দেখাবে</span>
+            </label>
             <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-xs text-muted-foreground">
                 সাদা খালি: <span className="font-semibold text-foreground tabular-nums">{blankIds.size}</span> টি
