@@ -598,15 +598,29 @@ export function HandoverLedgerInline({
               </DialogDescription>
             </DialogHeader>
             <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
-              {visible.filter((h) => selectedIds.has(h.id)).map((h) => (
+              {visible
+                .filter((h) => selectedIds.has(h.id))
+                .slice()
+                .sort((a, b) => {
+                  // Same chronological order as the actual print output
+                  // (oldest first) so a ticked row's blank space lands in the
+                  // matching position on paper — no more reversed feeling.
+                  const ka = a.created_at || a.closing_date || a.entry_date || "";
+                  const kb = b.created_at || b.closing_date || b.entry_date || "";
+                  return ka < kb ? -1 : ka > kb ? 1 : 0;
+                })
+                .map((h) => (
                 <label
                   key={h.id}
                   className="flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm cursor-pointer select-none hover:bg-muted/40"
                 >
                   <Checkbox checked={blankIds.has(h.id)} onCheckedChange={() => toggleBlank(h.id)} />
                   <span className="flex-1 min-w-0">
-                    <span className="font-medium">{formatDate(h.entry_date ?? h.created_at?.slice(0, 10))}</span>
-                    <span className="text-muted-foreground"> · প্রেরক {h.from_name ?? "—"} → {h.to_name ?? "MD Sir"}</span>
+                    <span className="block font-semibold text-foreground truncate">{h.handover_id ?? "—"}</span>
+                    <span className="block text-xs">
+                      <span className="font-medium">{formatDate(h.entry_date ?? h.created_at?.slice(0, 10))}</span>
+                      <span className="text-muted-foreground"> · {h.from_name ?? "—"} → {h.to_name ?? "MD Sir"}</span>
+                    </span>
                   </span>
                   {blankIds.has(h.id) && (
                     <span className="shrink-0 text-[11px] font-medium text-muted-foreground">সাদা খালি</span>
