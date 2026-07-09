@@ -264,7 +264,7 @@ export function RowDetailDrawer({
                         <span className="text-xs text-muted-foreground">{formatDate(r.entry_date)}</span>
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        {r.method && <span>মাধ্যম: {r.method}</span>}
+                        {r.method && <span>মাধ্যম: {methodLabel(r.method)}</span>}
                         {r.received_by_name && <span>গ্রহীতা: {r.received_by_name}</span>}
                         {r.receipt_id && <span className="font-mono">#{r.receipt_id}</span>}
                         {r.approval_status && (
