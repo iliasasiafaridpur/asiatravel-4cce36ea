@@ -303,7 +303,12 @@ export function PartyLedgerPage({
     settleMode: "total",
   });
 
-  const settleMode = (contact?.settle_mode ?? "total") === "one_by_one" ? "one_by_one" : "total";
+  // সেট না থাকলে: এজেন্সি (customer) ডিফল্ট one_by_one, ভেন্ডর ডিফল্ট total।
+  const settleModeRaw = (contact?.settle_mode ?? "").trim();
+  const settleMode =
+    (settleModeRaw || (isCustomer ? "one_by_one" : "total")) === "one_by_one"
+      ? "one_by_one"
+      : "total";
 
   useEffect(() => {
     setDisplayName(name);
@@ -650,9 +655,13 @@ export function PartyLedgerPage({
           phone: contactRows.find((c) => c.phone)?.phone ?? null,
           phone_labels: contactRows.find((c) => c.phone)?.phone_labels ?? null,
           address: contactRows.find((c) => c.address)?.address ?? null,
+          // স্পষ্ট মান থাকলে তা-ই রাখি; না থাকলে null রেখে দিই যাতে উপরের
+          // kind-ভিত্তিক ডিফল্ট (এজেন্সি→one_by_one, ভেন্ডর→total) প্রয়োগ হয়।
           settle_mode: contactRows.some((c) => c.settle_mode === "one_by_one")
             ? "one_by_one"
-            : "total",
+            : contactRows.some((c) => c.settle_mode === "total")
+              ? "total"
+              : null,
           serial_no: contactRows.find((c) => c.serial_no != null)?.serial_no ?? null,
           full_name: contactRows.find((c) => c.full_name)?.full_name ?? null,
           notes: contactRows.find((c) => c.notes)?.notes ?? null,
