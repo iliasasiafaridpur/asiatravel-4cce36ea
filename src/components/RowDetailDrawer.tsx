@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, type ModuleSchema, type Section } from "@/lib/modules";
 import { ReceiptText, Layers, FileText, Clock, User, Building2, Truck } from "lucide-react";
+import { methodLabel } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
