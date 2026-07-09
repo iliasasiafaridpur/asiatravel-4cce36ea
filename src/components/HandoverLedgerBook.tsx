@@ -516,7 +516,7 @@ export function HandoverLedgerInline({
         serviceMap,
         totalAgents,
         agentDue,
-        hideSig: !showSig,
+        hideSig: true,
       });
       // If this slip was already physically printed on the paper, render its
       // real layout but keep it invisible so the exact same vertical space
@@ -526,9 +526,17 @@ export function HandoverLedgerInline({
       }
       return body;
     }).join("");
+    // "Sign" toggle: show ONE signature line fixed at the bottom of every
+    // printed page (repeats per page), not one per handover slip.
+    const sigCss = showSig ? `
+      @page { size: A4; margin: 8mm 8mm 26mm 8mm; }
+      .pagesig { position: fixed; bottom: 0; left: 0; right: 0; display:flex; justify-content:space-between; gap:40px; padding:6px 4mm 9mm; font-size:10px; }
+      .pagesig div { border-top:1px solid #111; padding-top:3px; width:38%; text-align:center; }
+    ` : "";
+    const sigFooter = showSig ? `<div class="pagesig"><div>প্রেরক</div><div>গ্রহীতা</div></div>` : "";
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
-      <style>${SLIP_CSS}</style></head><body>${sections}</body></html>`;
+      <style>${SLIP_CSS}${sigCss}</style></head><body>${sections}${sigFooter}</body></html>`;
     printDocHtml(html, docTitle);
     setPrintOpen(false);
   };
