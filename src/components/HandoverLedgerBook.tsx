@@ -482,6 +482,7 @@ export function HandoverLedgerInline({
   const openPrintDialog = () => {
     if (selectedIds.size === 0) return;
     setBlankIds(new Set());
+    setShowSig(false);
     setPrintOpen(true);
   };
   const toggleBlank = (id: string) => {
