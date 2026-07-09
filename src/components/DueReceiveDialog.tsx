@@ -755,7 +755,7 @@ export function DueReceiveDialog({
                         <CardContent className="p-3 flex items-center justify-between gap-2 text-sm">
                           <div className="min-w-0">
                             <p className="font-mono text-xs text-primary">{h.receipt_id}</p>
-                            <p className="text-xs text-muted-foreground">{formatDate(h.entry_date)} • {h.method} • {h.received_by_name ?? "—"}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(h.entry_date)} • {methodLabel(h.method)} • {h.received_by_name ?? "—"}</p>
                             {h.remarks && <p className="text-xs italic mt-0.5">{h.remarks}</p>}
                           </div>
                           <p className="text-lg font-bold tabular-nums text-emerald-600">{Number(h.amount).toLocaleString()}</p>
