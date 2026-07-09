@@ -912,7 +912,7 @@ function MyHandoverPage() {
                         )}
                         {Number(r.discount || 0) > 0 && (
                           <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
-                            ডিসকাউন্ট: {fmt(Number(r.discount))}
+                            {DISCOUNT_LABEL} {fmt(Number(r.discount))}
                           </div>
                         )}
                       </div>
