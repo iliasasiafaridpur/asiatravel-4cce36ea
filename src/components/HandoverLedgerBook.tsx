@@ -630,17 +630,25 @@ export function HandoverLedgerInline({
                 </label>
               ))}
             </div>
-            <label className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2 text-sm cursor-pointer select-none">
-              <Checkbox checked={showSig} onCheckedChange={(v) => setShowSig(v === true)} />
-              <span className="flex-1">Sign mark — প্রিন্ট পেইজের নিচে প্রেরক ও গ্রহীতার সাক্ষরের অপশন দেখাবে</span>
-            </label>
             <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-xs text-muted-foreground">
                 সাদা খালি: <span className="font-semibold text-foreground tabular-nums">{blankIds.size}</span> টি
               </span>
-              <Button type="button" size="sm" className="gap-1.5" onClick={printSelected}>
-                <Printer className="h-3.5 w-3.5" /> প্রিন্ট করুন
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={showSig ? "default" : "outline"}
+                  className="h-7 px-2 text-[11px]"
+                  onClick={() => setShowSig((v) => !v)}
+                  title="প্রিন্টে প্রেরক ও গ্রহীতার সাক্ষরের জায়গা"
+                >
+                  Sign
+                </Button>
+                <Button type="button" size="sm" className="gap-1.5" onClick={printSelected}>
+                  <Printer className="h-3.5 w-3.5" /> প্রিন্ট করুন
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
