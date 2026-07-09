@@ -66,6 +66,24 @@ export function vendorReceivedNote(): string {
   return `Vendor Rece — ব্যালেন্সে যোগ হয়নি`;
 }
 
+/** Short display label for a discount tag (kept intentionally tiny). */
+export const DISCOUNT_LABEL = "Dis.";
+
+/**
+ * Compact display label for a payment method. Long method names are shortened
+ * everywhere they are shown to the user so slips/ledgers stay compact — most
+ * importantly "Bank Transfer" → "Bank" and any discount marker → "Dis.".
+ */
+export function methodLabel(method?: string | null): string {
+  const m = (method ?? "").trim();
+  if (!m) return "";
+  const lower = m.toLowerCase();
+  if (lower === "bank transfer" || lower === "bank-transfer" || lower === "bank") return "Bank";
+  if (lower === "discount" || m === "ডিসকাউন্ট") return DISCOUNT_LABEL;
+  return m;
+}
+
+
 /**
  * A cash handover leaves the staff member's drawer the moment it is SUBMITTED
  * to MD (status "pending") — not only after MD approval. So a pending handover

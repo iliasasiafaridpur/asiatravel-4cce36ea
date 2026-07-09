@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, BookOpen, Mail } from "lucide-react";
 import { HandoverLedgerBook } from "@/components/HandoverLedgerBook";
 import { formatDateTime, formatDate } from "@/lib/modules";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number) => `৳ ${(n || 0).toLocaleString()}`;
@@ -373,7 +373,7 @@ export function StaffHandoverDialog({
         const note = vendorRecv
           ? `<br><span style="color:#ea580c;font-size:10px;">Vendor Rece</span>`
           : mdRecv
-          ? `<br><span style="color:#0284c7;font-size:10px;">MD রিসিভ · ${r.method}</span>`
+          ? `<br><span style="color:#0284c7;font-size:10px;">MD রিসিভ · ${methodLabel(r.method)}</span>`
           : "";
         return `<tr><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;">${r.passenger_name || "—"}<br><span style="color:#999;font-size:11px;">${svcLine(r) || (r.receipt_id || "")}</span>${note}</td><td style="padding:5px 12px;border-bottom:1px solid #f1f1f1;text-align:right;color:${color};font-weight:600;">${amt}</td></tr>`;
       })
@@ -531,7 +531,7 @@ export function StaffHandoverDialog({
                           এজেন্সি (মোটের উপর) · {it.count} পেমেন্ট
                         </div>
                         {mdRecv && (
-                          <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {it.method}</div>
+                          <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {methodLabel(it.method)}</div>
                         )}
                         {vendorRecv && (
                           <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
@@ -562,7 +562,7 @@ export function StaffHandoverDialog({
                         </div>
                       )}
                       {mdRecv && (
-                        <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method}</div>
+                        <div className="text-[10px] text-sky-600 dark:text-sky-400">MD রিসিভ · {methodLabel(r.method)}</div>
                       )}
                       {vendorRecv && (
                         <div className="text-[10px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
@@ -578,7 +578,7 @@ export function StaffHandoverDialog({
                       )}
                       {Number(r.discount || 0) > 0 && (
                         <div className="text-[10px] tabular-nums text-amber-600 dark:text-amber-400">
-                          ডিসকাউন্ট: {fmt(Number(r.discount))}
+                          {DISCOUNT_LABEL} {fmt(Number(r.discount))}
                         </div>
                       )}
                     </div>

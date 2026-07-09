@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, type ModuleSchema, type Section } from "@/lib/modules";
 import { ReceiptText, Layers, FileText, Clock, User, Building2, Truck } from "lucide-react";
+import { methodLabel } from "@/lib/payment-methods";
 
 type Row = Record<string, unknown> & { id: string };
 
@@ -263,7 +264,7 @@ export function RowDetailDrawer({
                         <span className="text-xs text-muted-foreground">{formatDate(r.entry_date)}</span>
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        {r.method && <span>মাধ্যম: {r.method}</span>}
+                        {r.method && <span>মাধ্যম: {methodLabel(r.method)}</span>}
                         {r.received_by_name && <span>গ্রহীতা: {r.received_by_name}</span>}
                         {r.receipt_id && <span className="font-mono">#{r.receipt_id}</span>}
                         {r.approval_status && (

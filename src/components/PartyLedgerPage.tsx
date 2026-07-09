@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
 import { partySerialCode } from "@/lib/format";
+import { methodLabel } from "@/lib/payment-methods";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { LedgerPage } from "@/components/LedgerPage";
 import { NewPartyDialog } from "@/components/NewPartyDialog";
@@ -3060,7 +3061,7 @@ export function PartyLedgerPage({
                                         </span>
                                         {p.method && (
                                           <span className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                            {p.method}
+                                            {methodLabel(p.method)}
                                           </span>
                                         )}
                                         {isCustomer && p.deletable && (p.rowId || p.ledgerRowId) && (
