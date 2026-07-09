@@ -1530,6 +1530,7 @@ export type Database = {
           payable_due: number
         }[]
       }
+      handover_code_initials: { Args: { _name: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
