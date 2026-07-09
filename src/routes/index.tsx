@@ -438,6 +438,17 @@ function DashboardPage() {
     });
   }, [receipts, range, customDate]);
 
+  // Actual cash/payment received within the selected period (payment-date based).
+  // This is the same source as the "কে কত টাকা রিসিভ করেছে" board and Accounts
+  // Methods, so the top "মোট Received" card stays consistent with them — a
+  // booking's `received` column is keyed to when the booking was created, which
+  // wrongly showed ৳0 for "আজ" even when money was collected today on old dues.
+  const periodReceived = useMemo(
+    () => filteredReceipts.reduce((s, r) => s + Number(r.amount || 0), 0),
+    [filteredReceipts],
+  );
+
+
   // === Per-user received ===
   // Cash physically reaches the staff member → counted under that user.
   // Non-cash (bank / bKash / Nagad / cheque …) goes straight to MD →
