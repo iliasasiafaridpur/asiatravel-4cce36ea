@@ -702,6 +702,7 @@ const SLIP_CSS = `
   .slip.blank { min-height:120px; }
   .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
   .h h1 { margin:0; font-size:16px; }
+  .h .hid { font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:800; letter-spacing:.5px; border:1.5px solid #111; border-radius:5px; padding:2px 8px; }
   .h .meta { text-align:right; font-size:10px; line-height:1.5; }
   .h .meta b { font-weight:600; }
   h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
