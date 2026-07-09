@@ -506,9 +506,6 @@ export function HandoverLedgerInline({
       });
     if (chosen.length === 0) return;
     const sections = chosen.map((h) => {
-      if (blankIds.has(h.id)) {
-        return `<div class="slip blank">&nbsp;</div>`;
-      }
       const { body } = buildHandoverSlipBody({
         handover: h,
         receipts: receiptsByH[h.id] ?? [],
@@ -519,6 +516,12 @@ export function HandoverLedgerInline({
         agentDue,
         hideSig: true,
       });
+      // If this slip was already physically printed on the paper, render its
+      // real layout but keep it invisible so the exact same vertical space
+      // stays blank/white — the next slip then lands in the right position.
+      if (blankIds.has(h.id)) {
+        return body.replace('class="slip"', 'class="slip blankfill"');
+      }
       return body;
     }).join("");
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
