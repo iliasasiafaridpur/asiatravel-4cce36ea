@@ -177,6 +177,7 @@ export function HandoverLedgerInline({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [printOpen, setPrintOpen] = useState(false);
   const [blankIds, setBlankIds] = useState<Set<string>>(() => new Set());
+  const [showSig, setShowSig] = useState(false);
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
