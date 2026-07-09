@@ -19,7 +19,7 @@ import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Printer, Search, User2, Users, XCircle } from "lucide-react";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
 import { buildFileTitle, printDocHtml } from "@/lib/print-export";
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
@@ -495,7 +495,15 @@ export function HandoverLedgerInline({
   // Batch prints omit the প্রেরক/গ্রহীতা signature area, and any handover
   // marked "blank" prints an empty page (its slot on the paper stays white).
   const printSelected = () => {
-    const chosen = visible.filter((h) => selectedIds.has(h.id));
+    // Serial / chronological order: oldest handover prints first (top), newest last.
+    const chosen = visible
+      .filter((h) => selectedIds.has(h.id))
+      .slice()
+      .sort((a, b) => {
+        const ka = a.created_at || a.closing_date || a.entry_date || "";
+        const kb = b.created_at || b.closing_date || b.entry_date || "";
+        return ka < kb ? -1 : ka > kb ? 1 : 0;
+      });
     if (chosen.length === 0) return;
     const sections = chosen.map((h) => {
       if (blankIds.has(h.id)) {
@@ -695,22 +703,24 @@ export function HandoverLedgerBook({
 
 // Shared print CSS for a single cash-handover slip (used by single + multi print).
 const SLIP_CSS = `
-  @page { size: A4; margin: 10mm; }
+  * { box-sizing:border-box; }
+  @page { size: A4; margin: 8mm; }
+  html, body { width:100%; }
   body { font-family: ui-sans-serif, system-ui, sans-serif; color:#111; margin:0; padding:0; font-size:11px; }
-  .slip { page-break-inside:avoid; break-inside:avoid; }
+  .slip { page-break-inside:avoid; break-inside:avoid; width:100%; max-width:100%; overflow:hidden; }
   .slip + .slip { margin-top:14px; padding-top:14px; border-top:1px dashed #999; }
   .slip.blank { min-height:120px; }
-  .h { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
-  .h h1 { margin:0; font-size:16px; }
-  .h .hid { font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:800; letter-spacing:.5px; border:1.5px solid #111; border-radius:5px; padding:2px 8px; }
+  .h { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:6px; border-bottom:2px solid #111; padding-bottom:4px; margin-bottom:6px; }
+  .h h1 { margin:0; font-size:15px; }
+  .h .hid { font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:800; letter-spacing:.5px; border:1.5px solid #111; border-radius:5px; padding:2px 8px; white-space:nowrap; }
   .h .meta { text-align:right; font-size:10px; line-height:1.5; }
   .h .meta b { font-weight:600; }
   h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
-  table { width:100%; border-collapse:collapse; font-size:10px; table-layout:auto; }
-  th, td { border:1px solid #bbb; padding:2px 5px; text-align:left; vertical-align:top; line-height:1.3; }
+  table { width:100%; max-width:100%; border-collapse:collapse; font-size:9.5px; table-layout:auto; }
+  th, td { border:1px solid #bbb; padding:2px 4px; text-align:left; vertical-align:top; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; }
   th { background:#eee; font-weight:600; }
   td.r, th.r { text-align:right; }
-  td.nw, th.nw { white-space:nowrap; }
+  td.nw, th.nw { white-space:nowrap; overflow-wrap:normal; word-break:normal; }
   .b { font-weight:700; }
   .sub { display:block; color:#555; font-size:8.5px; line-height:1.25; font-weight:400; }
   .mono { font-family: ui-monospace, monospace; }
@@ -863,7 +873,7 @@ function buildHandoverSlipBody(args: {
     if (row.kind === "agency") {
       const billCell = row.totalBill > 0
         ? `<span class="b">${esc(fmt(row.totalBill))}</span>`
-          + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} (ডিসকাউন্ট)</span>` : "")
+          + (row.totalDiscount > 0 ? `<span class="sub emer">${esc(fmt(row.totalDiscount))} ${DISCOUNT_LABEL}</span>` : "")
         : "—";
       const prevCell = row.totalPrevious > 0
         ? `<span class="b sky">${esc(fmt(row.totalPrevious))}</span>`
@@ -907,14 +917,14 @@ function buildHandoverSlipBody(args: {
       : "";
     const billCell = bill > 0
       ? `<span class="b">${esc(fmt(bill))}</span>`
-        + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} (ডিসকাউন্ট)</span>` : "")
+        + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} ${DISCOUNT_LABEL}</span>` : "")
         + vendorBit
       : `—${vendorBit}`;
     const prevCell = previousPaid > 0
       ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
       : `<span class="sub">— নতুন —</span>`;
     const mdCell = mdRecv
-      ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(r.method)}</span>`
+      ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(r.method))}</span>`
       : vendorRecv
         ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
         : "—";
@@ -1499,7 +1509,7 @@ function HandoverCard({
                       <>
                         <div className="text-sm font-bold tabular-nums leading-tight">{fmt(bill)}</div>
                         {discount > 0 && (
-                          <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(discount)} (ডিসকাউন্ট)</div>
+                          <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(discount)} {DISCOUNT_LABEL}</div>
                         )}
                         {due > 0.005 && (
                           <div className="text-sm tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
@@ -1562,7 +1572,7 @@ function HandoverCard({
                         {mdRecv ? (
                           <>
                             <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(r.amount)}</b>
-                            <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {r.method}</div>
+                            <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {methodLabel(r.method)}</div>
                           </>
                         ) : vendorRecv ? (
                           <>

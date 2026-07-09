@@ -17,7 +17,7 @@ import {
 import { formatDateTime, formatDate } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/my-handover")({
@@ -560,7 +560,7 @@ function MyHandoverPage() {
         ].filter(Boolean).join(" · ");
 
         const billCell = bill > 0
-          ? `${money(bill)}${discount > 0 ? `<div class="sub">− ${money(discount)} ডিসকাউন্ট</div>` : ""}`
+          ? `${money(bill)}${discount > 0 ? `<div class="sub">− ${money(discount)} ${DISCOUNT_LABEL}</div>` : ""}`
           : "";
         const prevCell = previousPaid > 0
           ? `${money(previousPaid)}${lastPast ? `<div class="sub">${formatDate(lastPast.entry_date)}${past.length > 1 ? ` +${past.length - 1}` : ""}</div>` : ""}`
@@ -569,7 +569,7 @@ function MyHandoverPage() {
           ? `<span class="hand">📦 ${cleanStatusText(r.remarks)}</span>`
           : vendorRecv
           ? `<span class="vendor">(Vendor) ${money(r.amount || 0)}</span><div class="sub">Vendor Rece</div>`
-          : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(r.amount || 0)}</span>${mdRecv ? `<div class="sub">MD · ${r.method}</div>` : ""}`;
+          : `<span class="${mdRecv ? "hand" : "in"}">${mdRecv ? "(MD) " : "+ "}${money(r.amount || 0)}</span>${mdRecv ? `<div class="sub">MD · ${methodLabel(r.method)}</div>` : ""}`;
         const dueCell = bill > 0
           ? (dueAfterThis <= 0.005 ? `<span class="paid">✓ পরিশোধিত</span>` : `<span class="due">${money(dueAfterThis)}</span>`)
           : "";
@@ -581,7 +581,7 @@ function MyHandoverPage() {
   <td class="num">${i + 1}</td>
   <td>${formatDate(r.entry_date)}${r.receipt_id ? `<div class="sub mono">${r.receipt_id}</div>` : ""}</td>
   <td class="wrap"><b>${r.passenger_name || "—"}</b><div class="sub">👤 ${info.agent || "Self"}${info.passport ? ` · 🛂 ${info.passport}` : ""}</div></td>
-  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv && !vendorRecv ? `<div class="sub">${r.method}</div>` : ""}</td>
+  <td class="wrap">${svcTitle}${!statusEvt && r.method && !mdRecv && !vendorRecv ? `<div class="sub">${methodLabel(r.method)}</div>` : ""}</td>
   <td class="wrap">${region || "—"}${vendorLine}</td>
   <td class="num">${billCell}</td>
   <td class="num">${prevCell}</td>
@@ -865,7 +865,7 @@ function MyHandoverPage() {
                             এজেন্সি (মোটের উপর) · {it.count} পেমেন্ট
                           </div>
                           {mdRecv && (
-                            <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {it.method}</div>
+                            <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {methodLabel(it.method)}</div>
                           )}
                           {vendorRecv && (
                             <div className="text-[11px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
@@ -896,7 +896,7 @@ function MyHandoverPage() {
                           </div>
                         )}
                         {mdRecv && (
-                          <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {r.method}</div>
+                          <div className="text-[11px] text-sky-600 dark:text-sky-400">MD রিসিভ · {methodLabel(r.method)}</div>
                         )}
                         {vendorRecv && (
                           <div className="text-[11px] text-orange-600 dark:text-orange-400">Vendor Rece</div>
