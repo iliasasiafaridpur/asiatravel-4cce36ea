@@ -768,8 +768,8 @@ const SLIP_CSS = `
   h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
   table { width:100%; max-width:100%; border-collapse:collapse; font-size:9.5px; table-layout:auto; }
   th, td { border:1px solid #bbb; padding:2px 4px; text-align:left; vertical-align:top; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; }
-  th { background:#eee; font-weight:600; }
-  td.r, th.r { text-align:right; }
+   th { background:#eee; font-weight:600; text-align:center; }
+   td.r { text-align:right; }
   td.nw, th.nw { white-space:nowrap; overflow-wrap:normal; word-break:normal; }
   .b { font-weight:700; }
   .sub { display:block; color:#555; font-size:8.5px; line-height:1.25; font-weight:400; }
@@ -1055,9 +1055,9 @@ function buildHandoverSlipBody(args: {
     ${confirmed > 0 && confirmed !== submitted ? `<div class="tot">Confirmed: ${esc(fmt(confirmed))} · Variance: ${confirmed - submitted > 0 ? "+" : ""}${esc(fmt(confirmed - submitted))}</div>` : ""}
     ${handover.remarks ? `<div class="tot" style="font-weight:400">📝 ${esc(handover.remarks)}</div>` : ""}
     <div class="bar">
-      <span>মোট ${visibleReceipts.length} আইটেম থেকে মোট আয় <span class="b">৳ ${esc(fmt(mdReceipts + cashReceipts))}</span></span>
-      ${mdReceipts > 0 ? `<span class="sky">MD ৳ ${esc(fmt(mdReceipts))}</span>` : ""}
-      <span>(নগদ ৳ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ৳ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ৳ ${esc(fmt(submitted))}</span>)</span>
+       <span>মোট ${visibleReceipts.length} আইটেম থেকে মোট আয় <span class="b">${esc(fmt(mdReceipts + cashReceipts))}</span></span>
+       ${mdReceipts > 0 ? `<span class="sky">MD ${esc(fmt(mdReceipts))}</span>` : ""}
+       <span>(নগদ ${esc(fmt(cashReceipts))} − <span class="rose">খরচ ${esc(fmt(totalExpenses))}</span> = <span class="b emer" style="font-size:1.25em">জমা ${esc(fmt(submitted))}</span>)</span>
     </div>
     ${hideSig ? "" : `<div class="sig">
       <div>প্রেরক<br/>${esc(handover.from_name ?? "")}</div>
