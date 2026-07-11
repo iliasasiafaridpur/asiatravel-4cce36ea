@@ -1396,7 +1396,7 @@ function HandoverCard({
 
 
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed text-sm">
+        <table className="w-full table-fixed text-sm min-w-[720px]">
           <colgroup>
             <col className="w-[11%]" />
             <col className="w-[22%]" />
@@ -1701,7 +1701,7 @@ function HandoverCard({
             <span className="tabular-nums">মোট খরচ: {fmt(totalExpenses)}</span>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[520px]">
               <thead className="bg-muted/30">
                 <tr className="text-left">
                   <th className="px-3 py-1.5 font-semibold">তারিখ</th>
@@ -1765,7 +1765,7 @@ function HandoverCard({
           {totalExpenses > 0 && (
             <span className="tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">— মোট খরচ {fmt(totalExpenses)}</span>
           )}
-          <span className="flex items-center gap-1 whitespace-nowrap">
+          <span className="flex items-center gap-1 flex-wrap">
             <User2 className="h-4 w-4" /> প্রেরক: <b className="text-foreground">{handover.from_name ?? "—"}</b>
             <Users className="h-4 w-4 ml-1" /> গ্রহীতা: <b className="text-foreground">{handover.to_name ?? "MD Sir"}</b>
             <b className="text-primary tabular-nums ml-1">{fmt(submitted)}</b>
