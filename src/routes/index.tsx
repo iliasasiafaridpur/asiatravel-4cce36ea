@@ -21,8 +21,10 @@ import { isCashMethod, vendorExpenseHitsUserBalance, handoverReducesBalance } fr
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
-  BellRing,
+  BellRing, Search, StickyNote,
 } from "lucide-react";
+import { MasterSearch } from "@/components/MasterSearch";
+import { NotePad } from "@/components/NotePad";
 
 export const Route = createFileRoute("/")({
   head: () => ({
