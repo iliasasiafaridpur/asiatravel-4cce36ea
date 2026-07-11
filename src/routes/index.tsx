@@ -880,6 +880,9 @@ function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <MasterSearch open={masterSearchOpen} onOpenChange={setMasterSearchOpen} />
+      <NotePad open={notePadOpen} onOpenChange={setNotePadOpen} />
     </div>
   );
 }
