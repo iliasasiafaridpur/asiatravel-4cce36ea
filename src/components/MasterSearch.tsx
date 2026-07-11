@@ -1,0 +1,177 @@
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+
+/** One searchable module: table + id column + the columns we pull + how it looks in the route. */
+type ModuleCfg = {
+  key: string;
+  label: string;
+  table: string;
+  idCol: string;
+  path: string;
+  cols: string;
+  color: string;
+};
+
+const MODULE_CFG: ModuleCfg[] = [
+  { key: "tickets", label: "Air Ticket", table: "tickets", idCol: "ticket_id", path: "/tickets",
+    cols: "ticket_id,passenger_name,passport,mobile,airline,trip_road,agency_sold,vendor_bought,status",
+    color: "text-cyan-600 dark:text-cyan-400" },
+  { key: "bmet", label: "BMET Card", table: "bmet_cards", idCol: "bmet_id", path: "/bmet",
+    cols: "bmet_id,passenger_name,passport,mobile,country_name,agency_sold,vendor_bought,status",
+    color: "text-emerald-600 dark:text-emerald-400" },
+  { key: "saudi-visa", label: "Saudi Visa", table: "saudi_visas", idCol: "saudi_id", path: "/saudi-visa",
+    cols: "saudi_id,passenger_name,passport,mobile,visa_type,status",
+    color: "text-orange-600 dark:text-orange-400" },
+  { key: "kuwait-visa", label: "Kuwait Visa", table: "kuwait_visas", idCol: "kuwait_id", path: "/kuwait-visa",
+    cols: "kuwait_id,passenger_name,passport,mobile,visa_type,status",
+    color: "text-violet-600 dark:text-violet-400" },
+  { key: "other", label: "Other", table: "others", idCol: "other_id", path: "/other",
+    cols: "other_id,passenger_name,mobile,service_name,status",
+    color: "text-fuchsia-600 dark:text-fuchsia-400" },
+];
+
+type Item = {
+  key: string;
+  label: string;
+  path: string;
+  color: string;
+  id: string;
+  title: string;
+  sub: string;
+  blob: string;
+};
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function MasterSearch({ open, onOpenChange }: Props) {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+
+  const { data: items = [], isLoading } = useQuery<Item[]>({
+    queryKey: ["master-search"],
+    enabled: open,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const out: Item[] = [];
+      const results = await Promise.allSettled(
+        MODULE_CFG.map(async (m) => {
+          const { data, error } = await supabase
+            .from(m.table as never)
+            .select(m.cols)
+            .order("created_at", { ascending: false })
+            .limit(5000);
+          if (error) throw error;
+          for (const row of (data as unknown as Record<string, unknown>[] | null) ?? []) {
+            const val = (k: string) => {
+              const v = row[k];
+              return v == null ? "" : String(v);
+            };
+            const id = val(m.idCol);
+            const subParts = [
+              val("passport"),
+              val("mobile"),
+              val("country_name") || val("trip_road") || val("visa_type") || val("service_name") || val("airline"),
+              val("agency_sold"),
+              val("status"),
+            ].filter(Boolean);
+            out.push({
+              key: m.key,
+              label: m.label,
+              path: m.path,
+              color: m.color,
+              id,
+              title: val("passenger_name") || id || "—",
+              sub: subParts.join(" · "),
+              blob: Object.values(row).map((v) => String(v ?? "")).join(" ").toLowerCase(),
+            });
+          }
+        }),
+      );
+      results.forEach((r) => {
+        if (r.status === "rejected") console.warn("[master-search]", r.reason);
+      });
+      return out;
+    },
+  });
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return [] as Item[];
+    return items.filter((it) => it.blob.includes(term)).slice(0, 60);
+  }, [items, q]);
+
+  const pick = (it: Item) => {
+    try {
+      sessionStorage.setItem("master_focus", JSON.stringify({ module: it.key, id: it.id }));
+    } catch {
+      /* ignore */
+    }
+    onOpenChange(false);
+    setQ("");
+    navigate({ to: it.path });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setQ(""); }}>
+      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-4 pt-4 pb-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Search className="h-4 w-4 text-primary" /> মাস্টার সার্চ
+          </DialogTitle>
+        </DialogHeader>
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="নাম / আইডি / পাসপোর্ট / মোবাইল / এজেন্সি / ভেন্ডর…"
+              className="pl-8"
+            />
+          </div>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto border-t">
+          {q.trim() === "" ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              সার্চ করতে টাইপ করুন — একটি অক্ষরেও ফলাফল আসবে।
+            </p>
+          ) : isLoading && items.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">লোড হচ্ছে…</p>
+          ) : filtered.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">কিছু পাওয়া যায়নি</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {filtered.map((it, i) => (
+                <li key={`${it.key}-${it.id}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => pick(it)}
+                    className="flex w-full items-start gap-2 px-4 py-2 text-left transition-colors hover:bg-primary/10"
+                  >
+                    <span className={`shrink-0 text-[10px] font-semibold mt-0.5 ${it.color}`}>{it.label}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold leading-tight">{it.title}</span>
+                      {it.sub && (
+                        <span className="block truncate text-[11px] text-muted-foreground leading-tight">{it.sub}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground mt-0.5">{it.id}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
