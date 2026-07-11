@@ -679,10 +679,23 @@ function DashboardPage() {
           <div className="flex md:justify-center md:flex-1">
             <DigitalClock />
           </div>
-          <div className="flex md:justify-end md:flex-shrink-0 flex-wrap gap-2">
-            <Link to="/action-board">
-              <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
-            </Link>
+          <div className="flex flex-col md:items-end md:flex-shrink-0 gap-2 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={() => setMasterSearchOpen(true)}
+              className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 h-8 text-sm text-muted-foreground hover:bg-muted/60 transition-colors w-full md:w-64"
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              <span className="truncate">সব কিছু খুঁজুন…</span>
+            </button>
+            <div className="flex flex-wrap gap-2 md:justify-end">
+              <Link to="/action-board">
+                <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
+              </Link>
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => setNotePadOpen(true)}>
+                <StickyNote className="h-4 w-4" /> Note Pad
+              </Button>
+            </div>
           </div>
         </div>
       </div>
