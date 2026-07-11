@@ -1754,6 +1754,29 @@ export function ModulePage({ module: mod }: Props) {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [selectRow]);
 
+  // Master Search (dashboard) → open this module already focused on one row.
+  useEffect(() => {
+    if (rows.length === 0) return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem("master_focus"); } catch { /* ignore */ }
+    if (!raw) return;
+    let parsed: { module?: string; id?: string } | null = null;
+    try { parsed = JSON.parse(raw); } catch { parsed = null; }
+    if (!parsed || parsed.module !== mod.key || !parsed.id) return;
+    const focusId = String(parsed.id);
+    const target = rows.find((r) => String(r[mod.idColumn] ?? "") === focusId);
+    try { sessionStorage.removeItem("master_focus"); } catch { /* ignore */ }
+    if (!target) return;
+    setSearch(focusId);
+    selectRow(String(target.id));
+    const doScroll = () => {
+      const el = document.getElementById(`row-${target.id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+    window.setTimeout(doScroll, 200);
+    window.setTimeout(doScroll, 500);
+  }, [rows, mod.key, mod.idColumn, selectRow]);
+
 
 
 
