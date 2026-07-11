@@ -134,6 +134,8 @@ function DashboardPage() {
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [country, setCountry] = useState<string>("all");
+  const [masterSearchOpen, setMasterSearchOpen] = useState(false);
+  const [notePadOpen, setNotePadOpen] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
