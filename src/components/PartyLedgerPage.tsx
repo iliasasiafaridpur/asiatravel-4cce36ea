@@ -1366,6 +1366,10 @@ export function PartyLedgerPage({
     date: string;
     service: string;
     description: string;
+    /** Passenger name only (shown first + bold in bill-by-bill print). */
+    passenger: string;
+    /** Trip/route/country only, without the passenger name. */
+    route: string;
     bill: number;
     paid: number;
     due: number;
@@ -1487,6 +1491,8 @@ export function PartyLedgerPage({
         date,
         service: moduleLabel[src] || String(r.service_type ?? "—"),
         description: desc,
+        passenger: pax,
+        route,
         bill,
         paid,
         due,
@@ -1629,10 +1635,16 @@ export function PartyLedgerPage({
                     ? "আংশিক"
                     : "বাকি";
               const cls = b.cancelled ? ' class="cancel"' : "";
+              // বিবরণ: passenger নাম প্রথমে ও বোল্ড, তারপর সার্ভিস · রুট।
+              const paxHtml = b.passenger ? `<strong>${esc(b.passenger)}</strong>` : "";
+              const restHtml = esc([b.service, b.route].filter(Boolean).join(" · "));
+              const descHtml =
+                [paxHtml, restHtml].filter(Boolean).join(" · ") ||
+                esc([b.service, b.description].filter(Boolean).join(" · "));
               return `<tr${cls}>
                 <td class="nw">${esc(formatDate(b.date))}</td>
                 <td class="nw">${esc(b.ledgerId)}</td>
-                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}</td>
+                <td>${descHtml}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
                 <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
@@ -1687,7 +1699,7 @@ export function PartyLedgerPage({
           return true;
         });
       } else {
-        subtitle = "সম্পূর্ণ হিসাবের লেজার";
+        subtitle = isCustomer ? "মোট বিলের হিসাব (পাসবই)" : "সম্পূর্ণ হিসাবের লেজার";
       }
       summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
       theadHtml = `<tr>
