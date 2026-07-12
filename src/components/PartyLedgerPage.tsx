@@ -1366,6 +1366,10 @@ export function PartyLedgerPage({
     date: string;
     service: string;
     description: string;
+    /** Passenger name only (shown first + bold in bill-by-bill print). */
+    passenger: string;
+    /** Trip/route/country only, without the passenger name. */
+    route: string;
     bill: number;
     paid: number;
     due: number;
