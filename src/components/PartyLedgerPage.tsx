@@ -1635,10 +1635,16 @@ export function PartyLedgerPage({
                     ? "আংশিক"
                     : "বাকি";
               const cls = b.cancelled ? ' class="cancel"' : "";
+              // বিবরণ: passenger নাম প্রথমে ও বোল্ড, তারপর সার্ভিস · রুট।
+              const paxHtml = b.passenger ? `<strong>${esc(b.passenger)}</strong>` : "";
+              const restHtml = esc([b.service, b.route].filter(Boolean).join(" · "));
+              const descHtml =
+                [paxHtml, restHtml].filter(Boolean).join(" · ") ||
+                esc([b.service, b.description].filter(Boolean).join(" · "));
               return `<tr${cls}>
                 <td class="nw">${esc(formatDate(b.date))}</td>
                 <td class="nw">${esc(b.ledgerId)}</td>
-                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}</td>
+                <td>${descHtml}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
                 <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
