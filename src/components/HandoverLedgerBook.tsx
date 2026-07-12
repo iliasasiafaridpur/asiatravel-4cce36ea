@@ -882,7 +882,13 @@ function buildHandoverSlipBody(args: {
     }
     for (const [agent, recs] of buckets) {
       const recIds = new Set(recs.map((x) => x.id));
-      const svcKeys = Array.from(new Set(recs.map(receiptServiceKey).filter(Boolean)));
+      // মোটের উপর (total-settle): the agency is ONE pool. মোট বিল / পূর্বের জমা /
+      // মোট বাকি must reflect the WHOLE agency, not only the passenger-services
+      // that happen to appear in this handover. Aggregate across every loaded
+      // service that belongs to this agency.
+      const svcKeys = Object.keys(serviceMap).filter(
+        (k) => String(serviceMap[k]?.agent ?? "").trim() === agent
+      );
       let totalBill = 0, totalDiscount = 0, totalPrevious = 0, totalDueAfter = 0, totalFuture = 0;
       for (const sk of svcKeys) {
         const info = serviceMap[sk];
@@ -906,6 +912,7 @@ function buildHandoverSlipBody(args: {
       }
       displayRows.push({
         kind: "agency", agent, items: recs.length, svcCount: svcKeys.length,
+
         totalBill, totalDiscount, totalPrevious,
         totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
         totalDueAfter, totalFuture,
