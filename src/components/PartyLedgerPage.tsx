@@ -1491,6 +1491,8 @@ export function PartyLedgerPage({
         date,
         service: moduleLabel[src] || String(r.service_type ?? "—"),
         description: desc,
+        passenger: pax,
+        route,
         bill,
         paid,
         due,
