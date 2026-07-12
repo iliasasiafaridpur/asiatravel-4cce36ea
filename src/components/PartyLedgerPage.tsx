@@ -1699,7 +1699,7 @@ export function PartyLedgerPage({
           return true;
         });
       } else {
-        subtitle = "সম্পূর্ণ হিসাবের লেজার";
+        subtitle = isCustomer ? "মোট বিলের হিসাব (পাসবই)" : "সম্পূর্ণ হিসাবের লেজার";
       }
       summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
       theadHtml = `<tr>
