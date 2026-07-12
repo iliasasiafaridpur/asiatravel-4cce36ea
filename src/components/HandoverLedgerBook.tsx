@@ -1261,7 +1261,11 @@ function HandoverCard({
     }
     for (const [agent, recs] of buckets) {
       const recIds = new Set(recs.map((x) => x.id));
-      const svcKeys = Array.from(new Set(recs.map(receiptServiceKey).filter(Boolean)));
+      // মোটের উপর (total-settle): aggregate the WHOLE agency pool (মোট বিল /
+      // পূর্বের জমা / মোট বাকি), not just the passenger-services in this handover.
+      const svcKeys = Object.keys(serviceMap).filter(
+        (k) => String(serviceMap[k]?.agent ?? "").trim() === agent
+      );
       let totalBill = 0, totalDiscount = 0, totalPrevious = 0, totalDueAfter = 0, totalFuture = 0;
       for (const sk of svcKeys) {
         const info = serviceMap[sk];
@@ -1286,6 +1290,7 @@ function HandoverCard({
       displayRows.push({
         kind: "agency", agent, items: recs.length, svcCount: svcKeys.length,
         totalBill, totalDiscount, totalPrevious,
+
         totalThis: recs.reduce((s, x) => s + Number(x.amount || 0), 0),
         totalDueAfter, totalFuture,
         ledgerDue: agentDue.get(agent)?.due ?? totalDueAfter,
