@@ -414,6 +414,7 @@ function InvoicePage() {
             <div className="text-right shrink-0">
               <p className="invoice-title font-black tracking-[0.22em] leading-none whitespace-nowrap text-[#496a9d]">INVOICE</p>
               <p className="font-mono text-xs mt-1.5 text-slate-500">{invoiceNo}</p>
+              <p className="text-[11px] mt-1 text-slate-500"><span className="uppercase tracking-widest text-slate-400 text-[9px]">Date: </span><span className="font-semibold text-slate-700">{formatDate(invoiceDate)}</span></p>
             </div>
           </div>
           <div className="relative flex justify-between items-center text-slate-600 mt-4 gap-4 border-t border-slate-200 pt-3">
@@ -436,10 +437,6 @@ function InvoicePage() {
                 </span>
                 <span>{AGENCY.email}</span>
               </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="uppercase tracking-widest text-slate-400 text-[9px]">Issue Date</p>
-              <p className="font-semibold text-slate-700 text-xs">{formatDate(invoiceDate)}</p>
             </div>
           </div>
         </div>
