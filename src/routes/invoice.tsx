@@ -545,6 +545,12 @@ function InvoicePage() {
             box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
             font-size: 13pt !important;
           }
+          /* A5 = half of A4: keep the full A4 layout but scale it to 70.4%
+             (148mm / 210mm) so the complete invoice fits one A5 sheet. */
+          .invoice-print.paper-a5 {
+            zoom: 0.704 !important;
+            width: 210mm !important; max-width: 210mm !important;
+          }
           .invoice-print .inv-banner { border-radius: 0 !important; }
           .invoice-print p, .invoice-print td, .invoice-print th, .invoice-print div, .invoice-print span, .invoice-print li {
             font-size: 13pt !important;
