@@ -217,6 +217,7 @@ export type Database = {
           updated_at: string
           vendor_bought: string | null
           vendor_sent_date: string | null
+          without_passport: boolean
         }
         Insert: {
           agency_sold?: string | null
@@ -252,6 +253,7 @@ export type Database = {
           updated_at?: string
           vendor_bought?: string | null
           vendor_sent_date?: string | null
+          without_passport?: boolean
         }
         Update: {
           agency_sold?: string | null
@@ -287,6 +289,7 @@ export type Database = {
           updated_at?: string
           vendor_bought?: string | null
           vendor_sent_date?: string | null
+          without_passport?: boolean
         }
         Relationships: []
       }
