@@ -131,23 +131,11 @@ export function BlankPadDialog({ open, onClose }: { open: boolean; onClose: () =
   <div class="page">
     <div class="wm"><img src="${logoUrl}" alt=""/></div>
     <div class="inner">
-      <div class="head">
-        <div class="head-top">
-          <div class="brand">
-            <div class="logo"><img src="${logoUrl}" alt="logo"/></div>
-            <div>
-              <div class="name">${AGENCY.name}</div>
-              <div class="slogan">"${AGENCY.slogan}"</div>
-            </div>
-          </div>
-          <div class="meta">${metaRows.join("") || "&nbsp;"}</div>
-        </div>
-        <div class="head-contact">
-          <span>📍 <b></b>${AGENCY.address}, Bangladesh</span>
-          <span>📞 <b></b>${AGENCY.phone}</span>
-          <span>✉️ <b></b>${AGENCY.email}</span>
-        </div>
-      </div>
+      ${buildPadHeaderHtml(logoUrl, {
+        padding: "12mm 14mm 6mm",
+        marginBottom: "0",
+        metaRowsHtml: metaRows.join(""),
+      })}
 
       ${showTo || showSubject ? `<div class="reci">${toBlock}${subjectBlock}</div>` : ""}
 
