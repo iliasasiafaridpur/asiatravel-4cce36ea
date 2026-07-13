@@ -119,6 +119,8 @@ type ServiceInfo = {
   airline: string | null;
   passport: string | null;
   sold_price: number;
+  /** Amount actually received on the source row itself (authoritative paid total). */
+  received: number;
   discount: number;
   vendor_price: number;
   /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
@@ -129,13 +131,23 @@ type ServiceInfo = {
 };
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
-  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
-  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
-  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: null },
-  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: "delivery_date" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
+  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", receivedField: "received", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: null },
+  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: "delivery_date" },
+  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", receivedField: "received_amount", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
 ] as const;
+
+// Real outstanding due for a service, using the source row's authoritative
+// received amount (not just handover receipts). Payments recorded directly on
+// the booking (e.g. at entry time) have no payment_receipts row, so a
+// receipts-only due calc would wrongly show a fully-paid item as due.
+const serviceRealDue = (info?: { sold_price?: number; received?: number; discount?: number } | null) => {
+  const bill = Number(info?.sold_price ?? 0);
+  if (bill <= 0) return 0;
+  return Math.max(0, bill - Number(info?.received ?? 0) - Number(info?.discount ?? 0));
+};
 
 export function HandoverLedgerInline({
   mode,
@@ -298,7 +310,7 @@ export function HandoverLedgerInline({
           if (rowIds.length === 0) return;
           const cols = ["id", "passport"];
           if (typeof cfg.country === "string") cols.push(cfg.country);
-          cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.discountField);
+          cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.receivedField, cfg.discountField);
           if (cfg.airlineField) cols.push(cfg.airlineField);
           if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
           if (cfg.costField) cols.push(cfg.costField);
@@ -335,6 +347,7 @@ export function HandoverLedgerInline({
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
               passport: (row.passport as string | null) ?? null,
               sold_price: Number(row[cfg.soldField] ?? 0),
+              received: Number(row[cfg.receivedField] ?? 0),
               discount: Number(row[cfg.discountField] ?? 0),
               vendor_price: isTicketBook ? 0 : (cfg.costField ? Number(row[cfg.costField] ?? 0) : 0),
               tracks_cost: !isTicketBook && Boolean(cfg.costField),
@@ -819,6 +832,9 @@ function buildHandoverSlipBody(args: {
     if (!isStatusEventReceipt(r)) return true;
     const key = receiptServiceKey(r);
     if (moneyServiceKeys.has(key)) return false;
+    // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
+    // বাকি থাকলে ডেলিভারি তথ্য দেখাবে।
+    if (serviceRealDue(serviceMap[key]) <= 0.005) return false;
     const agent = String(serviceMap[key]?.agent ?? "").trim();
     return !(agent && totalAgents.has(agent));
   });
@@ -991,7 +1007,10 @@ function buildHandoverSlipBody(args: {
     const payCells = statusEvt
       ? `<td class="r nw" colspan="2"><span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span></td>`
       : `<td class="r nw">${mdCell}</td><td class="r nw">${staffCell}</td>`;
-    const dueCell = bill > 0
+    const realDue = serviceRealDue(info);
+    const dueCell = statusEvt
+      ? (realDue > 0.005 ? `<span class="b rose">${esc(fmt(realDue))}</span>` : `<span class="emer b">✓</span>`)
+      : bill > 0
       ? (dueAfterThis <= 0.005
           ? `<span class="emer b">✓</span>`
           : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
@@ -1110,6 +1129,9 @@ function HandoverCard({
     if (!isStatusEventReceipt(r)) return true;
     const key = receiptServiceKey(r);
     if (moneyServiceKeys.has(key)) return false;
+    // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
+    // বাকি থাকলে ডেলিভারি তথ্য দেখাবে।
+    if (serviceRealDue(serviceMap[key]) <= 0.005) return false;
     const agent = String(serviceMap[key]?.agent ?? "").trim();
     return !(agent && totalAgents.has(agent));
   });
@@ -1657,7 +1679,13 @@ function HandoverCard({
 
                   {/* বাকি (after this handover) — bolder + larger */}
                   <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
-                    {bill > 0 ? (
+                    {statusEvt ? (
+                      serviceRealDue(info) > 0.005 ? (
+                        <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(serviceRealDue(info))}</div>
+                      ) : (
+                        <span className="text-emerald-600 text-base">✓</span>
+                      )
+                    ) : bill > 0 ? (
                       dueAfterThis <= 0.005 ? (
                         <span className="text-emerald-600 text-base">✓</span>
                       ) : (
