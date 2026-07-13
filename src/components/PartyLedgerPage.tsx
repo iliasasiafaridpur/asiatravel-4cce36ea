@@ -1802,8 +1802,13 @@ export function PartyLedgerPage({
   };
 
   const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
-    const html = buildPrintHtml(mode, from, to);
+    let html = buildPrintHtml(mode, from, to);
     if (!html) return;
+    if (padPrint) {
+      // পাসবই/লেজার প্রিন্ট pad-এর উপরের অংশ (লেটারহেড) + ওয়াটারমার্কসহ ছাপা হবে।
+      const padHeader = buildPadHeaderHtml(`${window.location.origin}${logoAsset.url}`);
+      html = html.replace("<body>", `<body>${padHeader}`);
+    }
     const modeLabel =
       mode === "due" ? "Due" : mode === "bill" ? "Bill_by_Bill" : mode === "range" ? "Range" : "Full";
     const datePart = mode === "range" && (from || to) ? `${from || "শুরু"}_to_${to || todayISO()}` : todayISO();
