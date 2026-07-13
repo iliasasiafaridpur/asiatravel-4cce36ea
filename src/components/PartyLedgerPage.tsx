@@ -12,7 +12,8 @@ import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { useRole } from "@/hooks/useRole";
 import { PageWatermark } from "@/components/PageWatermark";
 import logoAsset from "@/assets/logo.png.asset.json";
-import { printDocHtml, buildFileTitle } from "@/lib/print-export";
+import { printDocHtml, buildFileTitle, buildPadHeaderHtml } from "@/lib/print-export";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -242,6 +243,7 @@ export function PartyLedgerPage({
   // Flexible ledger print dialog state.
   const [printOpen, setPrintOpen] = useState(false);
   const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
+  const [padPrint, setPadPrint] = useState(false);
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
   const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
@@ -1800,8 +1802,13 @@ export function PartyLedgerPage({
   };
 
   const runPrint = (mode: "all" | "due" | "range" | "bill", from: string, to: string) => {
-    const html = buildPrintHtml(mode, from, to);
+    let html = buildPrintHtml(mode, from, to);
     if (!html) return;
+    if (padPrint) {
+      // পাসবই/লেজার প্রিন্ট pad-এর উপরের অংশ (লেটারহেড) + ওয়াটারমার্কসহ ছাপা হবে।
+      const padHeader = buildPadHeaderHtml(`${window.location.origin}${logoAsset.url}`);
+      html = html.replace("<body>", `<body>${padHeader}`);
+    }
     const modeLabel =
       mode === "due" ? "Due" : mode === "bill" ? "Bill_by_Bill" : mode === "range" ? "Range" : "Full";
     const datePart = mode === "range" && (from || to) ? `${from || "শুরু"}_to_${to || todayISO()}` : todayISO();
@@ -2136,7 +2143,11 @@ export function PartyLedgerPage({
               </div>
             )}
           </div>
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="flex-row items-center justify-end gap-2 sm:gap-2">
+            <label className="mr-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium">
+              <Checkbox checked={padPrint} onCheckedChange={(v) => setPadPrint(v === true)} />
+              Pad page print
+            </label>
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
             </Button>
