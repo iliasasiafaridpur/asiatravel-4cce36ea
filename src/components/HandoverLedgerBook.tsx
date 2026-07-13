@@ -131,13 +131,23 @@ type ServiceInfo = {
 };
 
 const SERVICE_TABLES = [
-  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
-  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
-  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
-  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: null },
-  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: "delivery_date" },
-  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
+  { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "kuwait_visas", country: () => "Kuwait", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "bmet_cards", country: "country_name", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
+  { table: "tickets", country: "trip_road", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", receivedField: "received", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: null },
+  { table: "others", country: "trip_road", serviceNameField: "service_name", vendorField: "vendor_bought", agentField: "agency_sold", airlineField: "airline", soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: "flight_date", deliveryField: "delivery_date" },
+  { table: "agency_ledger", country: "country_route", serviceNameField: "service_type", vendorField: "agent_name", agentField: "agent_name", airlineField: null, soldField: "total_bill", receivedField: "received_amount", discountField: "discount_amount", costField: null, flightDateField: null, deliveryField: null },
 ] as const;
+
+// Real outstanding due for a service, using the source row's authoritative
+// received amount (not just handover receipts). Payments recorded directly on
+// the booking (e.g. at entry time) have no payment_receipts row, so a
+// receipts-only due calc would wrongly show a fully-paid item as due.
+const serviceRealDue = (info?: { sold_price?: number; received?: number; discount?: number } | null) => {
+  const bill = Number(info?.sold_price ?? 0);
+  if (bill <= 0) return 0;
+  return Math.max(0, bill - Number(info?.received ?? 0) - Number(info?.discount ?? 0));
+};
 
 export function HandoverLedgerInline({
   mode,
