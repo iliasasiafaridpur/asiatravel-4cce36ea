@@ -3134,53 +3134,11 @@ export function PartyLedgerPage({
         </Card>
       )}
 
-      {/* Total-bill running ledger — Agency one-by-one parties use only the bill-by-bill table above. */}
-      {isCustomer && settleMode === "total" && (() => {
-        const payHist = statement.filter((s) => s.isPayment && s.paymentTargets && s.paymentTargets.length > 0);
-        if (!payHist.length) return null;
-        return (
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold">পেমেন্ট গ্রহণ ইতিহাস</h3>
-                <Badge variant="secondary" className="text-[11px] font-medium">মোট {payHist.length} টি</Badge>
-                <span className="text-xs text-muted-foreground">এখান থেকে যেকোনো পেমেন্ট গ্রহণ ডিলিট করা যাবে</span>
-              </div>
-              <div className="overflow-x-auto rounded-md border">
-                <Table className="w-full min-w-[520px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[120px] whitespace-nowrap">তারিখ</TableHead>
-                      <TableHead className="w-[150px] whitespace-nowrap">রসিদ</TableHead>
-                      <TableHead>বিবরণ</TableHead>
-                      <TableHead className="w-[130px] text-right">পরিমাণ</TableHead>
-                      <TableHead className="w-[48px] text-center"> </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payHist.map((s, idx) => (
-                      <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
-                        <TableCell className="whitespace-nowrap text-xs font-medium text-emerald-600">{formatDate(s.date)}</TableCell>
-                        <TableCell className="font-mono text-xs">{s.ledgerId}</TableCell>
-                        <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold text-emerald-600">{s.deposit ? s.deposit.toLocaleString() : "—"}</TableCell>
-                        <TableCell className="text-center px-1">
-                          <ConfirmDeleteButton
-                            allowOwner
-                            title="পেমেন্ট গ্রহণ ডিলিট?"
-                            description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
-                            onConfirm={() => deleteAgentPayments(s.paymentTargets!)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
+      {/* Total-bill running ledger — Agency one-by-one parties use only the bill-by-bill table above.
+          পেমেন্ট গ্রহণ ডিলিট এখন আলাদা কার্ডে নয় — লেজারের "পেমেন্ট গ্রহণ" রো-তে ক্লিক করলে
+          একটা স্লাইড খোলে, সেখানে ডিলিট অপশন থাকে (অন্য এজেন্সির মতই)। */}
+
+
 
       {(!isCustomer || settleMode === "total") && (
       <Card>
