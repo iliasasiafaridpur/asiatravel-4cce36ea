@@ -176,6 +176,26 @@ export function PartyLedgerPage({
   const backTo = isCustomer ? "/agency-ledger" : "/vendor-ledger";
   const navigate = useNavigate();
   const { user } = useCurrentUser();
+  // চলতি user-এর নাম/পদবি/ফোন — লেজার প্রিন্টে "Prepared By" অংশে দেখানোর জন্য।
+  const [preparerInfo, setPreparerInfo] = useState<{ name: string; designation: string; mobile: string } | null>(null);
+  useEffect(() => {
+    if (!user?.id) { setPreparerInfo(null); return; }
+    let alive = true;
+    void supabase
+      .from("profiles")
+      .select("full_name,designation,mobile")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        setPreparerInfo({
+          name: (data?.full_name ?? "").trim(),
+          designation: (data?.designation ?? "").trim(),
+          mobile: (data?.mobile ?? "").trim(),
+        });
+      });
+    return () => { alive = false; };
+  }, [user?.id]);
 
   // Manual vendor income / expense entry (vendor ledger only).
   const [manualKind, setManualKind] = useState<"income" | "expense" | null>(null);
@@ -244,6 +264,7 @@ export function PartyLedgerPage({
   const [printOpen, setPrintOpen] = useState(false);
   const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
   const [padPrint, setPadPrint] = useState(false);
+  const [preparedBy, setPreparedBy] = useState(false);
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
   const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
@@ -1810,6 +1831,21 @@ export function PartyLedgerPage({
       const padHeader = buildPadHeaderHtml(`${window.location.origin}${logoAsset.url}`);
       html = html.replace("<body>", `<body>${padHeader}`);
     }
+    if (preparedBy && preparerInfo?.name) {
+      // "Prepared By" — চলতি user-এর নাম/পদবি/ফোন লেজার প্রিন্টের নিচে ডানে।
+      const escP = (s: string) =>
+        String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const line2 = [preparerInfo.designation, preparerInfo.mobile].filter(Boolean).map(escP).join(" · ");
+      const preparedHtml =
+        `<div style="margin-top:40px;display:flex;justify-content:flex-end;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+           <div style="text-align:center;min-width:200px;">
+             <div style="border-top:1px solid #0f172a;padding-top:6px;font-size:13px;font-weight:700;color:#0f172a;">Prepared By</div>
+             <div style="font-size:14px;font-weight:700;color:#0f172a;margin-top:4px;">${escP(preparerInfo.name)}</div>
+             ${line2 ? `<div style="font-size:12px;color:#475569;margin-top:2px;">${line2}</div>` : ""}
+           </div>
+         </div>`;
+      html = html.replace("</body>", `${preparedHtml}</body>`);
+    }
     const modeLabel =
       mode === "due" ? "Due" : mode === "bill" ? "Bill_by_Bill" : mode === "range" ? "Range" : "Full";
     const datePart = mode === "range" && (from || to) ? `${from || "শুরু"}_to_${to || todayISO()}` : todayISO();
@@ -2144,11 +2180,17 @@ export function PartyLedgerPage({
               </div>
             )}
           </div>
-          <DialogFooter className="flex-row items-center justify-end gap-2 sm:gap-2">
-            <label className="mr-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium">
-              <Checkbox checked={padPrint} onCheckedChange={(v) => setPadPrint(v === true)} />
-              Pad page print
-            </label>
+          <DialogFooter className="flex-row flex-wrap items-center justify-end gap-2 sm:gap-2">
+            <div className="mr-auto flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
+                <Checkbox checked={padPrint} onCheckedChange={(v) => setPadPrint(v === true)} />
+                Pad page print
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
+                <Checkbox checked={preparedBy} onCheckedChange={(v) => setPreparedBy(v === true)} />
+                Prepared By
+              </label>
+            </div>
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
             </Button>
