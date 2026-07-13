@@ -1126,6 +1126,9 @@ function HandoverCard({
     if (!isStatusEventReceipt(r)) return true;
     const key = receiptServiceKey(r);
     if (moneyServiceKeys.has(key)) return false;
+    // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
+    // বাকি থাকলে ডেলিভারি তথ্য দেখাবে।
+    if (serviceRealDue(serviceMap[key]) <= 0.005) return false;
     const agent = String(serviceMap[key]?.agent ?? "").trim();
     return !(agent && totalAgents.has(agent));
   });
