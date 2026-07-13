@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X, Plane } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { TicketRefundDialog } from "@/components/TicketRefundDialog";
