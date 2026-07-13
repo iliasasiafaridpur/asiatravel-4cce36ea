@@ -470,7 +470,14 @@ function MyHandoverPage() {
     receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
   ), [receipts]);
   const visibleReceipts = useMemo(
-    () => receipts.filter((r) => !(isStatusEvent(r) && moneyServiceKeys.has(serviceKey(r)))),
+    () => receipts.filter((r) => {
+      if (!isStatusEvent(r)) return true;
+      // status event = ডেলিভারি নোট। একই service-এ টাকা receive হলে সেটি দেখাবে।
+      if (moneyServiceKeys.has(serviceKey(r))) return false;
+      // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
+      if (svcRealDue(r.svc) <= 0.005) return false;
+      return true;
+    }),
     [receipts, moneyServiceKeys]
   );
 
