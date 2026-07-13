@@ -1766,6 +1766,7 @@ export function PartyLedgerPage({
         .head-right{flex:0 0 auto;text-align:right;max-width:48%}
         .head-right .meta{color:#64748b;font-size:11px;margin-bottom:4px}
         .head-right .sum{font-size:12px;font-weight:600;line-height:1.5}
+        .due-hl{color:#dc2626;font-weight:800;font-size:15px;white-space:nowrap}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
         .sum{font-size:13px;margin-bottom:12px;font-weight:600}
         table{width:100%;border-collapse:collapse;font-size:12px}
