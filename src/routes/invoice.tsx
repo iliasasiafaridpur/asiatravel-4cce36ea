@@ -174,6 +174,9 @@ function InvoicePage() {
   const [discount, setDiscount] = useState<number>(0);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [blankPadOpen, setBlankPadOpen] = useState(false);
+  // Paper size for printing. "A5" scales the whole invoice down so the complete
+  // content prints on half of an A4 page (A5 area ≈ half of A4).
+  const [paperSize, setPaperSize] = useState<"A4" | "A5">("A4");
   // Tracks how much of `received` was auto-contributed by each loaded service line
   // (keyed by item uid), so replacing/removing a line can subtract its old
   // contribution instead of leaving stale amounts that inflate Received / hide Due.
