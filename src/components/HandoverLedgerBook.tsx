@@ -347,6 +347,7 @@ export function HandoverLedgerInline({
               airline: cfg.airlineField ? ((row[cfg.airlineField] as string | null) ?? null) : null,
               passport: (row.passport as string | null) ?? null,
               sold_price: Number(row[cfg.soldField] ?? 0),
+              received: Number(row[cfg.receivedField] ?? 0),
               discount: Number(row[cfg.discountField] ?? 0),
               vendor_price: isTicketBook ? 0 : (cfg.costField ? Number(row[cfg.costField] ?? 0) : 0),
               tracks_cost: !isTicketBook && Boolean(cfg.costField),
