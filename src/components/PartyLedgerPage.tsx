@@ -2957,8 +2957,8 @@ export function PartyLedgerPage({
                 </div>
               )}
               <div className="text-right">
-                <div className="text-xs text-muted-foreground">{headline}</div>
-                <div className={`text-2xl font-bold tabular-nums ${amtColor}`}>
+                <div className={`text-sm font-bold ${amtColor}`}>{headline}</div>
+                <div className={`text-3xl font-extrabold tabular-nums ${amtColor}`}>
                   {amount > 0 ? fmtMoney(amount) : "৳0"}
                 </div>
               </div>
