@@ -3368,6 +3368,53 @@ export function PartyLedgerPage({
       )}
         </>
       )}
+
+      {/* পেমেন্ট গ্রহণ রো-তে ক্লিক করলে খোলে — বিস্তারিত + ডিলিট অপশন (স্লাইড) */}
+      <Sheet open={!!payDetail} onOpenChange={(v) => { if (!v) setPayDetail(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>পেমেন্ট গ্রহণ</SheetTitle>
+            <SheetDescription>এই পেমেন্ট গ্রহণটি ডিলিট করলে সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে।</SheetDescription>
+          </SheetHeader>
+          {payDetail && (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-md border p-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">তারিখ</span>
+                  <span className="font-medium text-emerald-600">{formatDate(payDetail.date)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">রসিদ</span>
+                  <span className="font-mono text-xs">{payDetail.ledgerId || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">বিবরণ</span>
+                  <span className="text-right">{payDetail.description || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t pt-2">
+                  <span className="text-muted-foreground">পরিমাণ</span>
+                  <span className="font-semibold tabular-nums text-emerald-600">৳ {payDetail.deposit.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <ConfirmDeleteButton
+                  allowOwner
+                  title="পেমেন্ট গ্রহণ ডিলিট?"
+                  description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                  onConfirm={async () => {
+                    if (payDetail.paymentTargets?.length) {
+                      await deleteAgentPayments(payDetail.paymentTargets);
+                    }
+                    setPayDetail(null);
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">ডিলিট করতে ট্র্যাশ আইকনে ক্লিক করুন</span>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
+
 }
