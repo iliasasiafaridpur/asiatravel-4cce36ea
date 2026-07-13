@@ -1243,12 +1243,13 @@ export function PartyLedgerPage({
         date: cDate,
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
-        // এক রো → এক কলাম: ডিপোজিট রো (advance) শুধু পেমেন্ট দেখাবে; বিল রো শুধু
-        // Credit দেখাবে। বিলের যে অংশ আগেই জমা করা advance বা ডিসকাউন্ট দিয়ে
-        // মেটানো হয়েছে তা এখানে আবার "ডিপোজিট" হিসেবে দেখানো হয় না (তাহলে
-        // advance দুইবার দেখা যেত)। Credit = বিলের নিট বকেয়া অংশ।
+        // পাসবই লজিক: advance/জমা রো "ডিপোজিট" হিসেবে চলমান বাকি (Balance)
+        // সরাসরি কমায়; আর প্রতিটি বিল তার পুরো নিট পরিমাণ (বিল − ডিসকাউন্ট)
+        // "Credit" হিসেবে বাকি বাড়ায়। এভাবে জমা করা advance পরের বিলে
+        // স্বয়ংক্রিয়ভাবে সমন্বয় হয়ে বাকি পরিশোধ হয়ে যায় দেখা যায়। (আগে
+        // advance_applied বিল থেকে বাদ দেওয়ায় জমাটা বাকির সাথে মিলত না।)
         deposit: advRow ? cash : 0,
-        credit: advRow ? 0 : bill - applied - discount,
+        credit: advRow ? 0 : bill - discount,
         advance: 0,
         isPayment: advRow,
         incomplete,
@@ -1258,8 +1259,9 @@ export function PartyLedgerPage({
         // Advance/opening deposit rows can be reversed via their ledger row.
         paymentTargets: advRow && cash > 0 ? [{ ledgerRowId, amount: cash }] : undefined,
         sortKey: `${cDate || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
-        deltaBalance: advRow ? 0 : bill - applied - discount,
+        deltaBalance: advRow ? -cash : bill - discount,
         advanceDelta: advRow ? cash : -applied,
+
       });
 
       if (!advRow) {
