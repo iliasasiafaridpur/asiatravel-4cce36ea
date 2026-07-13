@@ -46,10 +46,10 @@ export function buildPadHeaderHtml(
       </div>
       ${meta}
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:14px;padding-top:11px;border-top:1px solid #e2e8f0;font-size:13px;color:#475569;">
-      <span>📍 ${PAD_AGENCY.address}, Bangladesh</span>
-      <span>📞 ${PAD_AGENCY.phone}</span>
-      <span>✉️ ${PAD_AGENCY.email}</span>
+    <div style="display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding-top:11px;border-top:1px solid #e2e8f0;font-size:13px;color:#475569;white-space:nowrap;">
+      <span style="white-space:nowrap;">📍 ${PAD_AGENCY.address}, Bangladesh</span>
+      <span style="white-space:nowrap;">📞 ${PAD_AGENCY.phone}</span>
+      <span style="white-space:nowrap;">✉️ ${PAD_AGENCY.email}</span>
     </div>
   </div>`;
 
