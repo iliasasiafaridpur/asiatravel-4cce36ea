@@ -3314,7 +3314,9 @@ export function PartyLedgerPage({
                         )}
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
+
                 )}
               </TableBody>
             </Table>
