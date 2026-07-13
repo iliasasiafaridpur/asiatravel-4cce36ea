@@ -45,6 +45,7 @@ import { useMobileColors, mobileColorTextClass, normalizeMobileForColor } from "
 import { DUE_RECEIVE_METHODS, isCashMethod } from "@/lib/payment-methods";
 
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
+import { AirlinesPadDialog } from "@/components/AirlinesPadDialog";
 import { CopyInlineButton } from "@/components/CopyInlineButton";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
