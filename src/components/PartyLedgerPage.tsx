@@ -2180,11 +2180,17 @@ export function PartyLedgerPage({
               </div>
             )}
           </div>
-          <DialogFooter className="flex-row items-center justify-end gap-2 sm:gap-2">
-            <label className="mr-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium">
-              <Checkbox checked={padPrint} onCheckedChange={(v) => setPadPrint(v === true)} />
-              Pad page print
-            </label>
+          <DialogFooter className="flex-row flex-wrap items-center justify-end gap-2 sm:gap-2">
+            <div className="mr-auto flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
+                <Checkbox checked={padPrint} onCheckedChange={(v) => setPadPrint(v === true)} />
+                Pad page print
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
+                <Checkbox checked={preparedBy} onCheckedChange={(v) => setPreparedBy(v === true)} />
+                Prepared By
+              </label>
+            </div>
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
             </Button>
