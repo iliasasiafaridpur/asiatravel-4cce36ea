@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, FileText, X } from "lucide-react";
-import { printDocHtml, buildFileTitle } from "@/lib/print-export";
+import { printDocHtml, buildFileTitle, buildPadHeaderHtml } from "@/lib/print-export";
 import { formatDate } from "@/lib/modules";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { toast } from "sonner";
