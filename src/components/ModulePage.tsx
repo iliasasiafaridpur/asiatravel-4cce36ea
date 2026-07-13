@@ -1792,6 +1792,11 @@ export function ModulePage({ module: mod }: Props) {
           <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
         <div className="flex items-center gap-2">
+          {mod.key === "other" && (
+            <Button variant="outline" onClick={() => setAirlinesPadOpen(true)} className="gap-1.5">
+              <Plane className="h-4 w-4" /> Airlines Pad
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setSmartOpen(true)} className="gap-1.5">
             <Search className="h-4 w-4" /> Smart Search
           </Button>
