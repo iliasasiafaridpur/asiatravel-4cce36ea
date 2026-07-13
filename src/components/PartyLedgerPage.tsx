@@ -301,6 +301,16 @@ export function PartyLedgerPage({
   const [noteSaving, setNoteSaving] = useState(false);
   // Bill-by-bill: which bill row's payment history is expanded ("" = none).
   const [expandedBill, setExpandedBill] = useState<string | null>(null);
+  // পেমেন্ট গ্রহণ রো-তে ক্লিক করলে যে স্লাইড (Sheet) খোলে তার নির্বাচিত রো।
+  const [payDetail, setPayDetail] = useState<{
+    id: string;
+    date: string;
+    ledgerId: string;
+    service: string;
+    description: string;
+    deposit: number;
+    paymentTargets?: { rowId?: string; ledgerRowId?: string; amount: number }[];
+  } | null>(null);
   const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
