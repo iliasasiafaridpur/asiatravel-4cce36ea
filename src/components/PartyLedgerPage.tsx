@@ -1793,7 +1793,7 @@ export function PartyLedgerPage({
         </div>
         <div class="head-right">
           <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
-          <div class="sum">${esc(summaryLine)}</div>
+          <div class="sum">${summaryLine}</div>
         </div>
       </div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
