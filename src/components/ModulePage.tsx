@@ -266,6 +266,7 @@ export function ModulePage({ module: mod }: Props) {
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [detailRow, setDetailRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
+  const [airlinesPadOpen, setAirlinesPadOpen] = useState(false);
   // Persistent "row I just worked on" — stays RED until another row is acted on.
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Remembers list scroll position so it is restored after an action overlay closes.
