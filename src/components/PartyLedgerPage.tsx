@@ -2143,7 +2143,11 @@ export function PartyLedgerPage({
               </div>
             )}
           </div>
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="flex-row items-center justify-end gap-2 sm:gap-2">
+            <label className="mr-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium">
+              <Checkbox checked={padPrint} onCheckedChange={(v) => setPadPrint(v === true)} />
+              Pad page print
+            </label>
             <Button variant="outline" size="sm" onClick={() => setPrintOpen(false)}>
               বাতিল
             </Button>
