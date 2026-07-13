@@ -119,6 +119,8 @@ type ServiceInfo = {
   airline: string | null;
   passport: string | null;
   sold_price: number;
+  /** Amount actually received on the source row itself (authoritative paid total). */
+  received: number;
   discount: number;
   vendor_price: number;
   /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
