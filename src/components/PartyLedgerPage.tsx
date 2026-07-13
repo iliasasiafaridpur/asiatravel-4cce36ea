@@ -1831,6 +1831,21 @@ export function PartyLedgerPage({
       const padHeader = buildPadHeaderHtml(`${window.location.origin}${logoAsset.url}`);
       html = html.replace("<body>", `<body>${padHeader}`);
     }
+    if (preparedBy && preparerInfo?.name) {
+      // "Prepared By" — চলতি user-এর নাম/পদবি/ফোন লেজার প্রিন্টের নিচে ডানে।
+      const escP = (s: string) =>
+        String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const line2 = [preparerInfo.designation, preparerInfo.mobile].filter(Boolean).map(escP).join(" · ");
+      const preparedHtml =
+        `<div style="margin-top:40px;display:flex;justify-content:flex-end;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+           <div style="text-align:center;min-width:200px;">
+             <div style="border-top:1px solid #0f172a;padding-top:6px;font-size:13px;font-weight:700;color:#0f172a;">Prepared By</div>
+             <div style="font-size:14px;font-weight:700;color:#0f172a;margin-top:4px;">${escP(preparerInfo.name)}</div>
+             ${line2 ? `<div style="font-size:12px;color:#475569;margin-top:2px;">${line2}</div>` : ""}
+           </div>
+         </div>`;
+      html = html.replace("</body>", `${preparedHtml}</body>`);
+    }
     const modeLabel =
       mode === "due" ? "Due" : mode === "bill" ? "Bill_by_Bill" : mode === "range" ? "Range" : "Full";
     const datePart = mode === "range" && (from || to) ? `${from || "শুরু"}_to_${to || todayISO()}` : todayISO();
