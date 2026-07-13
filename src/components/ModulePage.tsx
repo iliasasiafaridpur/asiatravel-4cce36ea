@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X, Plane } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { TicketRefundDialog } from "@/components/TicketRefundDialog";
@@ -45,6 +45,7 @@ import { useMobileColors, mobileColorTextClass, normalizeMobileForColor } from "
 import { DUE_RECEIVE_METHODS, isCashMethod } from "@/lib/payment-methods";
 
 import { SmartSearchPanel } from "@/components/SmartSearchPanel";
+import { AirlinesPadDialog } from "@/components/AirlinesPadDialog";
 import { CopyInlineButton } from "@/components/CopyInlineButton";
 
 // Map module table → (received column, service-type label) used by StatusChangeDrawer
@@ -265,6 +266,7 @@ export function ModulePage({ module: mod }: Props) {
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [detailRow, setDetailRow] = useState<Row | null>(null);
   const [smartOpen, setSmartOpen] = useState(false);
+  const [airlinesPadOpen, setAirlinesPadOpen] = useState(false);
   // Persistent "row I just worked on" — stays RED until another row is acted on.
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Remembers list scroll position so it is restored after an action overlay closes.
@@ -1790,6 +1792,11 @@ export function ModulePage({ module: mod }: Props) {
           <p className="text-sm text-muted-foreground">মোট {rows.length} এন্ট্রি</p>
         </div>
         <div className="flex items-center gap-2">
+          {mod.key === "other" && (
+            <Button variant="outline" onClick={() => setAirlinesPadOpen(true)} className="gap-1.5">
+              <Plane className="h-4 w-4" /> Airlines Pad
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setSmartOpen(true)} className="gap-1.5">
             <Search className="h-4 w-4" /> Smart Search
           </Button>
@@ -2426,6 +2433,9 @@ export function ModulePage({ module: mod }: Props) {
         moduleLabel={mod.label}
         onPick={scrollToRow}
       />
+      {mod.key === "other" && (
+        <AirlinesPadDialog open={airlinesPadOpen} onClose={() => setAirlinesPadOpen(false)} />
+      )}
     </div>
   );
 }
