@@ -67,6 +67,7 @@ const AGENCY = {
   slogan: "Customer satisfaction is our primary goal.",
   address: "Bariplaza 4th Floor, Thana Road, Faridpur",
   phone: "+8801721-399599",
+  email: "kaiumkhan449@gmail.com",
 };
 
 const genUid = () => Math.random().toString(36).slice(2, 10);
