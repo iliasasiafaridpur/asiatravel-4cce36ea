@@ -37,21 +37,22 @@ export function buildPadHeaderHtml(
     : "";
   return `<div style="border-bottom:2px solid ${ACCENT};padding:${padding};margin-bottom:${marginBottom};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
-      <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-        <div style="height:64px;width:64px;border-radius:12px;background:#fff;border:1px solid ${ACCENT}33;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;"><img src="${logoUrl}" alt="logo" style="height:100%;width:100%;object-fit:contain;"/></div>
+      <div style="display:flex;align-items:center;gap:18px;min-width:0;">
+        <div style="height:96px;width:96px;border-radius:16px;background:#fff;border:1px solid ${ACCENT}33;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;"><img src="${logoUrl}" alt="logo" style="height:100%;width:100%;object-fit:contain;"/></div>
         <div>
-          <div style="font-size:22px;font-weight:800;letter-spacing:-0.3px;color:${DARK};line-height:1.1;">${PAD_AGENCY.name}</div>
-          <div style="font-size:11px;font-style:italic;color:${GOLD};font-weight:600;margin-top:3px;">"${PAD_AGENCY.slogan}"</div>
+          <div style="font-size:31px;font-weight:800;letter-spacing:-0.4px;color:${DARK};line-height:1.1;">${PAD_AGENCY.name}</div>
+          <div style="font-size:14px;font-style:italic;color:${GOLD};font-weight:600;margin-top:5px;">"${PAD_AGENCY.slogan}"</div>
         </div>
       </div>
       ${meta}
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:11px;color:#475569;">
+    <div style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:14px;padding-top:11px;border-top:1px solid #e2e8f0;font-size:13px;color:#475569;">
       <span>📍 ${PAD_AGENCY.address}, Bangladesh</span>
       <span>📞 ${PAD_AGENCY.phone}</span>
       <span>✉️ ${PAD_AGENCY.email}</span>
     </div>
   </div>`;
+
 }
 
 
