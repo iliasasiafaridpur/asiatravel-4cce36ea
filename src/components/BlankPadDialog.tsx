@@ -94,18 +94,18 @@ export function BlankPadDialog({ open, onClose }: { open: boolean; onClose: () =
   .inner { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; }
 
   /* header */
-  .head { border-bottom: 2px solid ${ACCENT}; padding: 12mm 14mm 6mm; }
+  .head { border-bottom: 3px solid ${ACCENT}; padding: 14mm 14mm 8mm; }
   .head-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .brand .logo { height: 64px; width: 64px; border-radius: 12px; background: #fff; border: 1px solid ${ACCENT}33; display: flex; align-items: center; justify-content: center; overflow: hidden; flex: none; }
+  .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .brand .logo { height: 92px; width: 92px; border-radius: 14px; background: #fff; border: 1px solid ${ACCENT}33; display: flex; align-items: center; justify-content: center; overflow: hidden; flex: none; }
   .brand .logo img { height: 100%; width: 100%; object-fit: contain; }
-  .brand .name { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: ${DARK}; line-height: 1.1; white-space: nowrap; }
-  .brand .slogan { font-size: 11px; font-style: italic; color: ${GOLD}; font-weight: 600; margin-top: 3px; }
+  .brand .name { font-size: 31px; font-weight: 800; letter-spacing: -0.3px; color: ${DARK}; line-height: 1.1; white-space: nowrap; }
+  .brand .slogan { font-size: 13.5px; font-style: italic; color: ${GOLD}; font-weight: 600; margin-top: 5px; }
   .meta { text-align: right; min-width: 130px; }
   .metarow { display: flex; justify-content: flex-end; gap: 8px; font-size: 11.5px; margin-bottom: 4px; }
   .metarow .ml { color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; font-size: 9px; padding-top: 3px; }
   .metarow .mv { min-width: 80px; border-bottom: 1px solid #cbd5e1; font-weight: 600; color: #334155; text-align: left; padding: 0 4px 2px; }
-  .head-contact { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #475569; }
+  .head-contact { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569; }
   .head-contact b { color: ${ACCENT}; font-weight: 700; }
 
   /* recipient + subject */
