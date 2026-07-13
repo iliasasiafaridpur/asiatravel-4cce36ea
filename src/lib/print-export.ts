@@ -23,15 +23,17 @@ export function buildPadHeaderHtml(logoUrl: string): string {
   const ACCENT = "#496a9d";
   const DARK = "#0b2545";
   const GOLD = "#b08a3e";
-  return `<div style="border-bottom:2px solid ${ACCENT};padding:0 0 10px;margin-bottom:16px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-      <div style="height:64px;width:64px;border-radius:12px;background:#fff;border:1px solid ${ACCENT}33;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;"><img src="${logoUrl}" alt="logo" style="height:100%;width:100%;object-fit:contain;"/></div>
-      <div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:-0.3px;color:${DARK};line-height:1.1;">${PAD_AGENCY.name}</div>
-        <div style="font-size:11px;font-style:italic;color:${GOLD};font-weight:600;margin-top:3px;">"${PAD_AGENCY.slogan}"</div>
+  return `<div style="border-bottom:3px solid ${ACCENT};padding:0 0 12px;margin-bottom:18px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+      <div style="display:flex;align-items:center;gap:16px;min-width:0;">
+        <div style="height:92px;width:92px;border-radius:14px;background:#fff;border:1px solid ${ACCENT}33;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;"><img src="${logoUrl}" alt="logo" style="height:100%;width:100%;object-fit:contain;"/></div>
+        <div>
+          <div style="font-size:31px;font-weight:800;letter-spacing:-0.3px;color:${DARK};line-height:1.1;white-space:nowrap;">${PAD_AGENCY.name}</div>
+          <div style="font-size:13.5px;font-style:italic;color:${GOLD};font-weight:600;margin-top:5px;">"${PAD_AGENCY.slogan}"</div>
+        </div>
       </div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:11px;color:#475569;">
+    <div style="display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:13px;color:#475569;">
       <span>📍 ${PAD_AGENCY.address}, Bangladesh</span>
       <span>📞 ${PAD_AGENCY.phone}</span>
       <span>✉️ ${PAD_AGENCY.email}</span>
