@@ -1806,10 +1806,8 @@ export function PartyLedgerPage({
     if (!html) return;
     if (padPrint) {
       // পাসবই/লেজার প্রিন্ট pad-এর উপরের অংশ (লেটারহেড) + ওয়াটারমার্কসহ ছাপা হবে।
-      const logoSrc = `${window.location.origin}${logoAsset.url}`;
-      const padHeader = buildPadHeaderHtml(logoSrc);
-      const watermark = `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;"><img src="${logoSrc}" alt="" style="width:62%;max-width:420px;object-fit:contain;opacity:0.05;"/></div>`;
-      html = html.replace("<body>", `<body>${watermark}${padHeader}`);
+      const padHeader = buildPadHeaderHtml(`${window.location.origin}${logoAsset.url}`);
+      html = html.replace("<body>", `<body>${padHeader}`);
     }
     const modeLabel =
       mode === "due" ? "Due" : mode === "bill" ? "Bill_by_Bill" : mode === "range" ? "Range" : "Full";
@@ -2861,9 +2859,9 @@ export function PartyLedgerPage({
                 </div>
                 <div className="text-sm font-semibold tabular-nums text-emerald-600">{fmtMoney(totals.paid)}</div>
               </div>
-              <div className={`rounded-md border px-3 py-2 ${totals.due > 0 ? "border-rose-500/50 bg-rose-500/10" : "bg-muted/30"}`}>
-                <div className={`text-[11px] font-bold uppercase tracking-wide ${totals.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>মোট বাকি</div>
-                <div className={`text-2xl font-extrabold tabular-nums ${totals.due > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+              <div className="rounded-md border bg-muted/30 px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Due</div>
+                <div className={`text-sm font-semibold tabular-nums ${totals.due > 0 ? "text-rose-600" : "text-emerald-600"}`}>
                   {fmtMoney(totals.due)}
                 </div>
               </div>
@@ -2959,8 +2957,8 @@ export function PartyLedgerPage({
                 </div>
               )}
               <div className="text-right">
-                <div className={`text-sm font-bold ${amtColor}`}>{headline}</div>
-                <div className={`text-3xl font-extrabold tabular-nums ${amtColor}`}>
+                <div className="text-xs text-muted-foreground">{headline}</div>
+                <div className={`text-2xl font-bold tabular-nums ${amtColor}`}>
                   {amount > 0 ? fmtMoney(amount) : "৳0"}
                 </div>
               </div>
