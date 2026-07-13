@@ -3251,12 +3251,17 @@ export function PartyLedgerPage({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  pagedStatement.map((s, idx) => (
+                  pagedStatement.map((s, idx) => {
+                    const canDelete =
+                      isCustomer && s.isPayment && !!s.paymentTargets && s.paymentTargets.length > 0;
+                    return (
                     <TableRow
                       key={s.id}
-                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""} ${s.incomplete ? "opacity-50 italic" : ""}`}
-                      title={s.incomplete ? "এই কাজটি এখনো সম্পন্ন হয়নি (ভেন্ডর থেকে আসেনি / ডেলিভারির উপযোগী নয়)" : undefined}
+                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""} ${s.incomplete ? "opacity-50 italic" : ""} ${canDelete ? "cursor-pointer" : ""}`}
+                      title={canDelete ? "ক্লিক করুন — এই পেমেন্ট গ্রহণ ডিলিট করতে" : s.incomplete ? "এই কাজটি এখনো সম্পন্ন হয়নি (ভেন্ডর থেকে আসেনি / ডেলিভারির উপযোগী নয়)" : undefined}
+                      onClick={canDelete ? () => setPayDetail(s) : undefined}
                     >
+
                       <TableCell className={`whitespace-nowrap pr-2 text-xs ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}>{formatDate(s.date)}</TableCell>
                       <TableCell className={`truncate font-mono text-xs pl-2 ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.service}>{s.service}</TableCell>
