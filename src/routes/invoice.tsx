@@ -360,12 +360,26 @@ function InvoicePage() {
 
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
-      <div className="flex justify-end gap-2 print:hidden">
+      <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
+        <div className="inline-flex items-center rounded-md border p-0.5">
+          {(["A4", "A5"] as const).map((sz) => (
+            <Button
+              key={sz}
+              type="button"
+              size="sm"
+              variant={paperSize === sz ? "default" : "ghost"}
+              className="h-8 px-3"
+              onClick={() => setPaperSize(sz)}
+            >
+              {sz}
+            </Button>
+          ))}
+        </div>
         <Button variant="outline" onClick={() => setBlankPadOpen(true)} className="gap-2">
           <FileText className="h-4 w-4" /> Blank Pad
         </Button>
         <Button onClick={handleInvoicePrint} className="gap-2">
-          <Printer className="h-4 w-4" /> Print / PDF
+          <Printer className="h-4 w-4" /> Print / PDF {paperSize === "A5" ? "(A5)" : ""}
         </Button>
       </div>
       <BlankPadDialog open={blankPadOpen} onClose={() => setBlankPadOpen(false)} />
