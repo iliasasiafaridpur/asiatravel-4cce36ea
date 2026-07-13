@@ -529,7 +529,8 @@ function InvoicePage() {
         .invoice-print .inv-watermark { opacity: 0.06 !important; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 18pt; }
-        .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
+        .invoice-print .inv-contact { flex-wrap: nowrap; gap: 0.9rem; }
+        .invoice-print .inv-contact p { font-size: 10.5pt; line-height: 1.3; white-space: nowrap; }
         .invoice-print .inv-ico { height: 22pt; width: 22pt; }
         .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
         /* On-screen preview of A5: shrink so what you see matches the half-page print. */
