@@ -2433,6 +2433,9 @@ export function ModulePage({ module: mod }: Props) {
         moduleLabel={mod.label}
         onPick={scrollToRow}
       />
+      {mod.key === "other" && (
+        <AirlinesPadDialog open={airlinesPadOpen} onClose={() => setAirlinesPadOpen(false)} />
+      )}
     </div>
   );
 }
