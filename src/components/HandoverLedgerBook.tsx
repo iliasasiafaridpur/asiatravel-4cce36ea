@@ -310,7 +310,7 @@ export function HandoverLedgerInline({
           if (rowIds.length === 0) return;
           const cols = ["id", "passport"];
           if (typeof cfg.country === "string") cols.push(cfg.country);
-          cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.discountField);
+          cols.push(cfg.vendorField, cfg.agentField, cfg.soldField, cfg.receivedField, cfg.discountField);
           if (cfg.airlineField) cols.push(cfg.airlineField);
           if (cfg.serviceNameField) cols.push(cfg.serviceNameField);
           if (cfg.costField) cols.push(cfg.costField);
