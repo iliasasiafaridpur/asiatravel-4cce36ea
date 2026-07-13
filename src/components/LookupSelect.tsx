@@ -264,20 +264,30 @@ export function LookupSelect({ kind, value, onChange, defaults, compact }: Props
         ? current.map((x) => x === oldVal ? nv : x)
         : [...current, nv]
       ).sort((a, b) => a.localeCompare(b));
-    } else if (wasDefault) {
-      const { error } = await supabase.from("lookups").insert({ kind, value: nv });
-      if (error) { toast.error(error.message); return; }
-      const key = `lookup_hidden_defaults:${kind}`;
-      try {
-        const cur: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
-        if (!cur.includes(oldVal)) localStorage.setItem(key, JSON.stringify([...cur, oldVal]));
-      } catch { /* ignore */ }
-      cache[kind] = [...(cache[kind] ?? []), nv].sort((a, b) => a.localeCompare(b));
     } else {
-      const { error } = await supabase.from("lookups").update({ value: nv }).eq("kind", kind).eq("value", oldVal);
+      // Non-party dropdowns (country, airline, route/trip road, visa type, …):
+      // cascade the rename to EVERY booking/ledger row that stores the old
+      // text so nothing is left pointing at the previous name.
+      const { error } = await supabase.rpc("rename_lookup", {
+        p_kind: kind,
+        p_old_value: oldVal,
+        p_new_value: nv,
+      });
       if (error) { toast.error(error.message); return; }
-      cache[kind] = (cache[kind] ?? []).map((x) => x === oldVal ? nv : x).sort((a, b) => a.localeCompare(b));
+      if (wasDefault) {
+        // A built-in default has no lookups row until now; hide the old default
+        // so it no longer reappears alongside the new value.
+        const key = `lookup_hidden_defaults:${kind}`;
+        try {
+          const cur: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
+          if (!cur.includes(oldVal)) localStorage.setItem(key, JSON.stringify([...cur, oldVal]));
+        } catch { /* ignore */ }
+        cache[kind] = [...(cache[kind] ?? []).filter((x) => x !== oldVal), nv].sort((a, b) => a.localeCompare(b));
+      } else {
+        cache[kind] = (cache[kind] ?? []).map((x) => x === oldVal ? nv : x).sort((a, b) => a.localeCompare(b));
+      }
     }
+
     notify(kind);
     if (value === oldVal) onChange(nv);
     setRenamingOrig(null);
