@@ -324,6 +324,12 @@ export const MODULES: ModuleSchema[] = [
         section: "agency",
       },
       {
+        name: "without_passport",
+        label: "Without Passport (পাসপোর্ট ছাড়া — পেমেন্ট হলেই ডেলিভারি)",
+        type: "boolean",
+        section: "agency",
+      },
+      {
         name: "received_amount",
         label: "Received Amount",
         type: "number",
