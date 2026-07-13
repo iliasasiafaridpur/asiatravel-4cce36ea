@@ -533,7 +533,7 @@ function InvoicePage() {
           color-adjust: exact !important;
         }
         @media print {
-          @page { size: A4; margin: 0; }
+          @page { size: ${paperSize}; margin: 0; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           body * { visibility: hidden !important; }
           .invoice-print, .invoice-print * { visibility: visible !important; }
