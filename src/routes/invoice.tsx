@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Plus, Trash2, FileText } from "lucide-react";
+import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Mail, Plus, Trash2, FileText } from "lucide-react";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { BlankPadDialog } from "@/components/BlankPadDialog";
 
@@ -67,6 +67,7 @@ const AGENCY = {
   slogan: "Customer satisfaction is our primary goal.",
   address: "Bariplaza 4th Floor, Thana Road, Faridpur",
   phone: "+8801721-399599",
+  email: "kaiumkhan449@gmail.com",
 };
 
 const genUid = () => Math.random().toString(36).slice(2, 10);
@@ -415,22 +416,28 @@ function InvoicePage() {
               <p className="font-mono text-xs mt-1.5 text-slate-500">{invoiceNo}</p>
             </div>
           </div>
-          <div className="relative flex justify-between items-end text-slate-600 mt-4 gap-4 border-t border-slate-200 pt-3">
-            <div className="inv-contact space-y-1.5">
-              <p className="flex items-center gap-2">
+          <div className="relative flex justify-between items-center text-slate-600 mt-4 gap-4 border-t border-slate-200 pt-3">
+            <div className="inv-contact flex flex-nowrap items-center gap-x-4 whitespace-nowrap">
+              <p className="flex items-center gap-1.5">
                 <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
                   <MapPin className="h-3.5 w-3.5 text-[#496a9d]" />
                 </span>
-                <span>{AGENCY.address}, Bangladesh</span>
+                <span>{AGENCY.address}</span>
               </p>
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-1.5">
                 <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
                   <Phone className="h-3.5 w-3.5 text-[#496a9d]" />
                 </span>
                 <span>{AGENCY.phone}</span>
               </p>
+              <p className="flex items-center gap-1.5">
+                <span className="inv-ico h-6 w-6 rounded-lg bg-[#496a9d]/10 ring-1 ring-[#496a9d]/15 flex items-center justify-center shrink-0">
+                  <Mail className="h-3.5 w-3.5 text-[#496a9d]" />
+                </span>
+                <span>{AGENCY.email}</span>
+              </p>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <p className="uppercase tracking-widest text-slate-400 text-[9px]">Issue Date</p>
               <p className="font-semibold text-slate-700 text-xs">{formatDate(invoiceDate)}</p>
             </div>
@@ -522,7 +529,8 @@ function InvoicePage() {
         .invoice-print .inv-watermark { opacity: 0.06 !important; }
         .invoice-print .invoice-agency-name { font-size: 20pt; }
         .invoice-print .invoice-title { font-size: 18pt; }
-        .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
+        .invoice-print .inv-contact { flex-wrap: nowrap; gap: 0.9rem; }
+        .invoice-print .inv-contact p { font-size: 10.5pt; line-height: 1.3; white-space: nowrap; }
         .invoice-print .inv-ico { height: 22pt; width: 22pt; }
         .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
         /* On-screen preview of A5: shrink so what you see matches the half-page print. */
