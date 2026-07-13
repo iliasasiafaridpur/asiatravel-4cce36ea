@@ -525,6 +525,8 @@ function InvoicePage() {
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
         .invoice-print .inv-ico { height: 22pt; width: 22pt; }
         .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
+        /* On-screen preview of A5: shrink so what you see matches the half-page print. */
+        .invoice-print.paper-a5 { zoom: 0.704; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
