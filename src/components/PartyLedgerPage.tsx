@@ -264,6 +264,7 @@ export function PartyLedgerPage({
   const [printOpen, setPrintOpen] = useState(false);
   const [printMode, setPrintMode] = useState<"all" | "due" | "range" | "bill">("all");
   const [padPrint, setPadPrint] = useState(false);
+  const [preparedBy, setPreparedBy] = useState(false);
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
   const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
