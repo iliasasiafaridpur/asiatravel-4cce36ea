@@ -176,6 +176,26 @@ export function PartyLedgerPage({
   const backTo = isCustomer ? "/agency-ledger" : "/vendor-ledger";
   const navigate = useNavigate();
   const { user } = useCurrentUser();
+  // চলতি user-এর নাম/পদবি/ফোন — লেজার প্রিন্টে "Prepared By" অংশে দেখানোর জন্য।
+  const [preparerInfo, setPreparerInfo] = useState<{ name: string; designation: string; mobile: string } | null>(null);
+  useEffect(() => {
+    if (!user?.id) { setPreparerInfo(null); return; }
+    let alive = true;
+    void supabase
+      .from("profiles")
+      .select("full_name,designation,mobile")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        setPreparerInfo({
+          name: (data?.full_name ?? "").trim(),
+          designation: (data?.designation ?? "").trim(),
+          mobile: (data?.mobile ?? "").trim(),
+        });
+      });
+    return () => { alive = false; };
+  }, [user?.id]);
 
   // Manual vendor income / expense entry (vendor ledger only).
   const [manualKind, setManualKind] = useState<"income" | "expense" | null>(null);
