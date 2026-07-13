@@ -40,6 +40,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -294,6 +301,16 @@ export function PartyLedgerPage({
   const [noteSaving, setNoteSaving] = useState(false);
   // Bill-by-bill: which bill row's payment history is expanded ("" = none).
   const [expandedBill, setExpandedBill] = useState<string | null>(null);
+  // পেমেন্ট গ্রহণ রো-তে ক্লিক করলে যে স্লাইড (Sheet) খোলে তার নির্বাচিত রো।
+  const [payDetail, setPayDetail] = useState<{
+    id: string;
+    date: string;
+    ledgerId: string;
+    service: string;
+    description: string;
+    deposit: number;
+    paymentTargets?: { rowId?: string; ledgerRowId?: string; amount: number }[];
+  } | null>(null);
   const [form, setForm] = useState<{ name: string; fullName: string; phones: string[]; phoneLabels: string[]; address: string; settleMode: "total" | "one_by_one" }>({
     name: "",
     fullName: "",
@@ -1243,12 +1260,13 @@ export function PartyLedgerPage({
         date: cDate,
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
         description: String(r.passenger_name ?? "").trim(),
-        // এক রো → এক কলাম: ডিপোজিট রো (advance) শুধু পেমেন্ট দেখাবে; বিল রো শুধু
-        // Credit দেখাবে। বিলের যে অংশ আগেই জমা করা advance বা ডিসকাউন্ট দিয়ে
-        // মেটানো হয়েছে তা এখানে আবার "ডিপোজিট" হিসেবে দেখানো হয় না (তাহলে
-        // advance দুইবার দেখা যেত)। Credit = বিলের নিট বকেয়া অংশ।
+        // পাসবই লজিক: advance/জমা রো "ডিপোজিট" হিসেবে চলমান বাকি (Balance)
+        // সরাসরি কমায়; আর প্রতিটি বিল তার পুরো নিট পরিমাণ (বিল − ডিসকাউন্ট)
+        // "Credit" হিসেবে বাকি বাড়ায়। এভাবে জমা করা advance পরের বিলে
+        // স্বয়ংক্রিয়ভাবে সমন্বয় হয়ে বাকি পরিশোধ হয়ে যায় দেখা যায়। (আগে
+        // advance_applied বিল থেকে বাদ দেওয়ায় জমাটা বাকির সাথে মিলত না।)
         deposit: advRow ? cash : 0,
-        credit: advRow ? 0 : bill - applied - discount,
+        credit: advRow ? 0 : bill - discount,
         advance: 0,
         isPayment: advRow,
         incomplete,
@@ -1258,8 +1276,9 @@ export function PartyLedgerPage({
         // Advance/opening deposit rows can be reversed via their ledger row.
         paymentTargets: advRow && cash > 0 ? [{ ledgerRowId, amount: cash }] : undefined,
         sortKey: `${cDate || "0000-00-00"}|${String(r.created_at ?? "")}|0`,
-        deltaBalance: advRow ? 0 : bill - applied - discount,
+        deltaBalance: advRow ? -cash : bill - discount,
         advanceDelta: advRow ? cash : -applied,
+
       });
 
       if (!advRow) {
@@ -3115,53 +3134,11 @@ export function PartyLedgerPage({
         </Card>
       )}
 
-      {/* Total-bill running ledger — Agency one-by-one parties use only the bill-by-bill table above. */}
-      {isCustomer && settleMode === "total" && (() => {
-        const payHist = statement.filter((s) => s.isPayment && s.paymentTargets && s.paymentTargets.length > 0);
-        if (!payHist.length) return null;
-        return (
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold">পেমেন্ট গ্রহণ ইতিহাস</h3>
-                <Badge variant="secondary" className="text-[11px] font-medium">মোট {payHist.length} টি</Badge>
-                <span className="text-xs text-muted-foreground">এখান থেকে যেকোনো পেমেন্ট গ্রহণ ডিলিট করা যাবে</span>
-              </div>
-              <div className="overflow-x-auto rounded-md border">
-                <Table className="w-full min-w-[520px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[120px] whitespace-nowrap">তারিখ</TableHead>
-                      <TableHead className="w-[150px] whitespace-nowrap">রসিদ</TableHead>
-                      <TableHead>বিবরণ</TableHead>
-                      <TableHead className="w-[130px] text-right">পরিমাণ</TableHead>
-                      <TableHead className="w-[48px] text-center"> </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payHist.map((s, idx) => (
-                      <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
-                        <TableCell className="whitespace-nowrap text-xs font-medium text-emerald-600">{formatDate(s.date)}</TableCell>
-                        <TableCell className="font-mono text-xs">{s.ledgerId}</TableCell>
-                        <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold text-emerald-600">{s.deposit ? s.deposit.toLocaleString() : "—"}</TableCell>
-                        <TableCell className="text-center px-1">
-                          <ConfirmDeleteButton
-                            allowOwner
-                            title="পেমেন্ট গ্রহণ ডিলিট?"
-                            description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
-                            onConfirm={() => deleteAgentPayments(s.paymentTargets!)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
+      {/* Total-bill running ledger — Agency one-by-one parties use only the bill-by-bill table above.
+          পেমেন্ট গ্রহণ ডিলিট এখন আলাদা কার্ডে নয় — লেজারের "পেমেন্ট গ্রহণ" রো-তে ক্লিক করলে
+          একটা স্লাইড খোলে, সেখানে ডিলিট অপশন থাকে (অন্য এজেন্সির মতই)। */}
+
+
 
       {(!isCustomer || settleMode === "total") && (
       <Card>
@@ -3274,12 +3251,17 @@ export function PartyLedgerPage({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  pagedStatement.map((s, idx) => (
+                  pagedStatement.map((s, idx) => {
+                    const canDelete =
+                      isCustomer && s.isPayment && !!s.paymentTargets && s.paymentTargets.length > 0;
+                    return (
                     <TableRow
                       key={s.id}
-                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""} ${s.incomplete ? "opacity-50 italic" : ""}`}
-                      title={s.incomplete ? "এই কাজটি এখনো সম্পন্ন হয়নি (ভেন্ডর থেকে আসেনি / ডেলিভারির উপযোগী নয়)" : undefined}
+                      className={`row-tint-${idx % 4} ${s.isPayment ? "ledger-payment-row font-medium" : ""} ${s.incomplete ? "opacity-50 italic" : ""} ${canDelete ? "cursor-pointer" : ""}`}
+                      title={canDelete ? "ক্লিক করুন — এই পেমেন্ট গ্রহণ ডিলিট করতে" : s.incomplete ? "এই কাজটি এখনো সম্পন্ন হয়নি (ভেন্ডর থেকে আসেনি / ডেলিভারির উপযোগী নয়)" : undefined}
+                      onClick={canDelete ? () => setPayDetail(s) : undefined}
                     >
+
                       <TableCell className={`whitespace-nowrap pr-2 text-xs ${s.isPayment ? "text-emerald-600 font-medium" : ""}`}>{formatDate(s.date)}</TableCell>
                       <TableCell className={`truncate font-mono text-xs pl-2 ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.ledgerId}>{s.ledgerId}</TableCell>
                       <TableCell className={`truncate ${s.isPayment ? "text-emerald-600 font-medium" : ""}`} title={s.service}>{s.service}</TableCell>
@@ -3332,7 +3314,9 @@ export function PartyLedgerPage({
                         )}
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
+
                 )}
               </TableBody>
             </Table>
@@ -3384,6 +3368,53 @@ export function PartyLedgerPage({
       )}
         </>
       )}
+
+      {/* পেমেন্ট গ্রহণ রো-তে ক্লিক করলে খোলে — বিস্তারিত + ডিলিট অপশন (স্লাইড) */}
+      <Sheet open={!!payDetail} onOpenChange={(v) => { if (!v) setPayDetail(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>পেমেন্ট গ্রহণ</SheetTitle>
+            <SheetDescription>এই পেমেন্ট গ্রহণটি ডিলিট করলে সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে।</SheetDescription>
+          </SheetHeader>
+          {payDetail && (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-md border p-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">তারিখ</span>
+                  <span className="font-medium text-emerald-600">{formatDate(payDetail.date)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">রসিদ</span>
+                  <span className="font-mono text-xs">{payDetail.ledgerId || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">বিবরণ</span>
+                  <span className="text-right">{payDetail.description || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t pt-2">
+                  <span className="text-muted-foreground">পরিমাণ</span>
+                  <span className="font-semibold tabular-nums text-emerald-600">৳ {payDetail.deposit.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <ConfirmDeleteButton
+                  allowOwner
+                  title="পেমেন্ট গ্রহণ ডিলিট?"
+                  description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                  onConfirm={async () => {
+                    if (payDetail.paymentTargets?.length) {
+                      await deleteAgentPayments(payDetail.paymentTargets);
+                    }
+                    setPayDetail(null);
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">ডিলিট করতে ট্র্যাশ আইকনে ক্লিক করুন</span>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
+
 }
