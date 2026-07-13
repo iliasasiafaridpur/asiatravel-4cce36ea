@@ -32,6 +32,7 @@ type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
   service_name?: string | null; flight_date?: string | null;
   bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null; discount?: number;
+  received?: number;
   vendor_price?: number; tracks_cost?: boolean;
   delivery_date?: string | null; has_delivery?: boolean;
   src_table?: string | null; src_id?: string | null;
@@ -92,64 +93,76 @@ const cleanSvcType = (text?: string | null) => {
 // Columns + mapper to pull full service/financial info per table (mirrors Handover Book).
 const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknown>) => SvcDetail }> = {
   tickets: {
-    cols: "id,airline,trip_road,flight_date,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,status",
+    cols: "id,airline,trip_road,flight_date,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,received,status",
     map: (r) => {
       const isBook = String(r.status ?? "").toUpperCase() === "BOOK";
       return {
         airline: r.airline as string, route: r.trip_road as string, flight_date: r.flight_date as string,
         bill: Number(r.sold_price ?? 0), vendor: isBook ? null : (r.vendor_bought as string),
         agent: r.agency_sold as string, passport: r.passport as string,
-        discount: Number(r.discount_amount ?? 0), vendor_price: isBook ? 0 : Number(r.cost_price ?? 0),
+        discount: Number(r.discount_amount ?? 0), received: Number(r.received ?? 0), vendor_price: isBook ? 0 : Number(r.cost_price ?? 0),
         tracks_cost: !isBook, has_delivery: false,
       };
     },
   },
   bmet_cards: {
-    cols: "id,country_name,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    cols: "id,country_name,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,received_amount,delivery_date",
     map: (r) => ({
       country: r.country_name as string, bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
       agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      received: Number(r.received_amount ?? 0),
       vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
     }),
   },
   saudi_visas: {
-    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,received_amount,delivery_date",
     map: (r) => ({
       country: "Saudi Arabia", bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
       agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      received: Number(r.received_amount ?? 0),
       vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
     }),
   },
   kuwait_visas: {
-    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    cols: "id,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,received,delivery_date",
     map: (r) => ({
       country: "Kuwait", bill: Number(r.sold_price ?? 0), vendor: r.vendor_bought as string,
       agent: r.agency_sold as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0),
+      received: Number(r.received ?? 0),
       vendor_price: Number(r.cost_price ?? 0), tracks_cost: true, delivery_date: r.delivery_date as string, has_delivery: true,
     }),
   },
   others: {
-    cols: "id,service_name,airline,trip_road,flight_date,country_route,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,delivery_date",
+    cols: "id,service_name,airline,trip_road,flight_date,country_route,sold_price,vendor_bought,agency_sold,passport,discount_amount,cost_price,received_amount,delivery_date",
     map: (r) => ({
       service_name: r.service_name as string, airline: r.airline as string, route: r.trip_road as string,
       flight_date: r.flight_date as string, country: r.country_route as string, bill: Number(r.sold_price ?? 0),
       vendor: r.vendor_bought as string, agent: r.agency_sold as string, passport: r.passport as string,
-      discount: Number(r.discount_amount ?? 0), vendor_price: Number(r.cost_price ?? 0), tracks_cost: true,
+      discount: Number(r.discount_amount ?? 0), received: Number(r.received_amount ?? 0), vendor_price: Number(r.cost_price ?? 0), tracks_cost: true,
       delivery_date: r.delivery_date as string, has_delivery: true,
     }),
   },
   agency_ledger: {
-    cols: "id,country_route,agent_name,total_bill,discount_amount,service_type,source_table,source_id",
+    cols: "id,country_route,agent_name,total_bill,discount_amount,received_amount,service_type,source_table,source_id",
     map: (r) => ({
       service_name: TABLE_LABELS[r.service_type as string] || undefined,
       // Agency ledger has NO vendor of its own — the agency is the customer.
       // The real vendor lives in the underlying source job; keep vendor null
       // here and let resolveAgencyVendors() fill in the true vendor name.
       country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: null,
-      agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), tracks_cost: false, has_delivery: false,
+      agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), received: Number(r.received_amount ?? 0), tracks_cost: false, has_delivery: false,
       src_table: (r.source_table as string | null) ?? null, src_id: (r.source_id as string | null) ?? null,
     }),
   },
+};
+
+// পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) কিনা যাচাই করতে source row-এর প্রকৃত
+// received amount ব্যবহার করা হয়। booking-এর সময় সরাসরি জমা করা টাকার কোনো
+// আলাদা receipt থাকে না, তাই শুধু receipt দিয়ে হিসাব করলে ভুল হয়।
+const svcRealDue = (svc?: SvcDetail | null) => {
+  const bill = Number(svc?.bill ?? 0);
+  if (bill <= 0) return 0;
+  return Math.max(0, bill - Number(svc?.received ?? 0) - Number(svc?.discount ?? 0));
 };
 
 // Resolve the true vendor name (and cost) for agency_ledger service rows from
@@ -457,7 +470,14 @@ function MyHandoverPage() {
     receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
   ), [receipts]);
   const visibleReceipts = useMemo(
-    () => receipts.filter((r) => !(isStatusEvent(r) && moneyServiceKeys.has(serviceKey(r)))),
+    () => receipts.filter((r) => {
+      if (!isStatusEvent(r)) return true;
+      // status event = ডেলিভারি নোট। একই service-এ টাকা receive হলে সেটি দেখাবে।
+      if (moneyServiceKeys.has(serviceKey(r))) return false;
+      // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
+      if (svcRealDue(r.svc) <= 0.005) return false;
+      return true;
+    }),
     [receipts, moneyServiceKeys]
   );
 
