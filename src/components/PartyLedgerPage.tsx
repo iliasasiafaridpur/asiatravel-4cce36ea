@@ -2026,6 +2026,7 @@ export function PartyLedgerPage({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          {!(isCustomer && settleMode === "total") && (
           <Button
             variant="outline"
             size="sm"
@@ -2035,6 +2036,7 @@ export function PartyLedgerPage({
             <Printer className="h-4 w-4" />
             লেজার প্রিন্ট
           </Button>
+          )}
           <Button
             variant="secondary"
             size="sm"
@@ -3114,6 +3116,53 @@ export function PartyLedgerPage({
       )}
 
       {/* Total-bill running ledger — Agency one-by-one parties use only the bill-by-bill table above. */}
+      {isCustomer && settleMode === "total" && (() => {
+        const payHist = statement.filter((s) => s.isPayment && s.paymentTargets && s.paymentTargets.length > 0);
+        if (!payHist.length) return null;
+        return (
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold">পেমেন্ট গ্রহণ ইতিহাস</h3>
+                <Badge variant="secondary" className="text-[11px] font-medium">মোট {payHist.length} টি</Badge>
+                <span className="text-xs text-muted-foreground">এখান থেকে যেকোনো পেমেন্ট গ্রহণ ডিলিট করা যাবে</span>
+              </div>
+              <div className="overflow-x-auto rounded-md border">
+                <Table className="w-full min-w-[520px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[120px] whitespace-nowrap">তারিখ</TableHead>
+                      <TableHead className="w-[150px] whitespace-nowrap">রসিদ</TableHead>
+                      <TableHead>বিবরণ</TableHead>
+                      <TableHead className="w-[130px] text-right">পরিমাণ</TableHead>
+                      <TableHead className="w-[48px] text-center"> </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payHist.map((s, idx) => (
+                      <TableRow key={s.id} className={`row-tint-${idx % 4}`}>
+                        <TableCell className="whitespace-nowrap text-xs font-medium text-emerald-600">{formatDate(s.date)}</TableCell>
+                        <TableCell className="font-mono text-xs">{s.ledgerId}</TableCell>
+                        <TableCell className="truncate" title={s.description}>{s.description || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold text-emerald-600">{s.deposit ? s.deposit.toLocaleString() : "—"}</TableCell>
+                        <TableCell className="text-center px-1">
+                          <ConfirmDeleteButton
+                            allowOwner
+                            title="পেমেন্ট গ্রহণ ডিলিট?"
+                            description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
+                            onConfirm={() => deleteAgentPayments(s.paymentTargets!)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {(!isCustomer || settleMode === "total") && (
       <Card>
         <CardContent className="p-3 sm:p-4">
@@ -3129,6 +3178,14 @@ export function PartyLedgerPage({
                   ফলাফল {filteredStatement.length} টি
                 </Badge>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 text-xs"
+                onClick={() => { setPrintMode("all"); setPrintOpen(true); }}
+              >
+                <Printer className="h-3.5 w-3.5" /> প্রিন্ট
+              </Button>
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex flex-col w-full sm:w-[200px] sm:flex-1 sm:min-w-[160px]">
@@ -3199,20 +3256,20 @@ export function PartyLedgerPage({
                   </TableHead>
                   <TableHead className="w-[104px] text-right px-4 text-amber-600">Credit</TableHead>
                   <TableHead className={`w-[128px] text-right px-4 pr-6`}>Balance</TableHead>
-                  {isCustomer && <TableHead className="w-[48px] text-center px-1"> </TableHead>}
+                  
 
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : filteredStatement.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isCustomer ? 9 : 8} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       কোনো হিসাব নেই
                     </TableCell>
                   </TableRow>
@@ -3274,18 +3331,6 @@ export function PartyLedgerPage({
                           <span className="text-muted-foreground">0</span>
                         )}
                       </TableCell>
-                      {isCustomer && (
-                        <TableCell className="text-center px-1">
-                          {s.isPayment && s.paymentTargets && s.paymentTargets.length > 0 && (
-                            <ConfirmDeleteButton
-                              allowOwner
-                              title="পেমেন্ট গ্রহণ ডিলিট?"
-                              description="এই পেমেন্ট গ্রহণ মুছে ফেলা হবে এবং সংশ্লিষ্ট বিলের বকেয়া আবার ফিরে আসবে। নিশ্চিত করতে আপনার লগইন পাসওয়ার্ড দিন।"
-                              onConfirm={() => deleteAgentPayments(s.paymentTargets!)}
-                            />
-                          )}
-                        </TableCell>
-                      )}
                     </TableRow>
                   ))
                 )}
