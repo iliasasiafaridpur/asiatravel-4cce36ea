@@ -32,6 +32,7 @@ type SvcDetail = {
   country?: string | null; route?: string | null; airline?: string | null;
   service_name?: string | null; flight_date?: string | null;
   bill?: number; vendor?: string | null; agent?: string | null; passport?: string | null; discount?: number;
+  received?: number;
   vendor_price?: number; tracks_cost?: boolean;
   delivery_date?: string | null; has_delivery?: boolean;
   src_table?: string | null; src_id?: string | null;
