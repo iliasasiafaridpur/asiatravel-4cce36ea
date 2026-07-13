@@ -1591,6 +1591,10 @@ export type Database = {
         Args: { _handover_id: string; _reason?: string }
         Returns: undefined
       }
+      rename_lookup: {
+        Args: { p_kind: string; p_new_value: string; p_old_value: string }
+        Returns: undefined
+      }
       rename_party: {
         Args: { p_kind: string; p_new_name: string; p_old_name: string }
         Returns: undefined
