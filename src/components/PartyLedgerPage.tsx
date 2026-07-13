@@ -1722,7 +1722,7 @@ export function PartyLedgerPage({
       } else {
         subtitle = isCustomer ? "মোট বিলের হিসাব (পাসবই)" : "সম্পূর্ণ হিসাবের লেজার";
       }
-      summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
+      summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)} · <span class="due-hl">মোট বাকি: ৳${num(totals.due)}</span>`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>সার্ভিস</th><th>বিবরণ</th>
         <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>
