@@ -33,7 +33,7 @@ export function buildPadHeaderHtml(
   const padding = opts?.padding ?? "0 0 10px";
   const marginBottom = opts?.marginBottom ?? "16px";
   const meta = opts?.metaRowsHtml
-    ? `<div style="text-align:right;white-space:nowrap;flex:none;">${opts.metaRowsHtml}</div>`
+    ? `<div style="text-align:right;min-width:130px;flex:none;">${opts.metaRowsHtml}</div>`
     : "";
   return `<div style="border-bottom:2px solid ${ACCENT};padding:${padding};margin-bottom:${marginBottom};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
@@ -44,12 +44,12 @@ export function buildPadHeaderHtml(
           <div style="font-size:14px;font-style:italic;color:${GOLD};font-weight:600;margin-top:5px;">"${PAD_AGENCY.slogan}"</div>
         </div>
       </div>
+      ${meta}
     </div>
     <div style="display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding-top:11px;border-top:1px solid #e2e8f0;font-size:13px;color:#475569;white-space:nowrap;">
       <span style="white-space:nowrap;">📍 ${PAD_AGENCY.address}, Bangladesh</span>
       <span style="white-space:nowrap;">📞 ${PAD_AGENCY.phone}</span>
       <span style="white-space:nowrap;">✉️ ${PAD_AGENCY.email}</span>
-      ${meta}
     </div>
   </div>`;
 
