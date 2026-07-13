@@ -1679,7 +1679,13 @@ function HandoverCard({
 
                   {/* বাকি (after this handover) — bolder + larger */}
                   <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
-                    {bill > 0 ? (
+                    {statusEvt ? (
+                      serviceRealDue(info) > 0.005 ? (
+                        <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(serviceRealDue(info))}</div>
+                      ) : (
+                        <span className="text-emerald-600 text-base">✓</span>
+                      )
+                    ) : bill > 0 ? (
                       dueAfterThis <= 0.005 ? (
                         <span className="text-emerald-600 text-base">✓</span>
                       ) : (
