@@ -1007,7 +1007,10 @@ function buildHandoverSlipBody(args: {
     const payCells = statusEvt
       ? `<td class="r nw" colspan="2"><span class="b violet">📦 ${esc(cleanStatusText(r.remarks))}</span></td>`
       : `<td class="r nw">${mdCell}</td><td class="r nw">${staffCell}</td>`;
-    const dueCell = bill > 0
+    const realDue = serviceRealDue(info);
+    const dueCell = statusEvt
+      ? (realDue > 0.005 ? `<span class="b rose">${esc(fmt(realDue))}</span>` : `<span class="emer b">✓</span>`)
+      : bill > 0
       ? (dueAfterThis <= 0.005
           ? `<span class="emer b">✓</span>`
           : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
