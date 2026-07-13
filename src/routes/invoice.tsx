@@ -174,6 +174,9 @@ function InvoicePage() {
   const [discount, setDiscount] = useState<number>(0);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [blankPadOpen, setBlankPadOpen] = useState(false);
+  // Paper size for printing. "A5" scales the whole invoice down so the complete
+  // content prints on half of an A4 page (A5 area ≈ half of A4).
+  const [paperSize, setPaperSize] = useState<"A4" | "A5">("A4");
   // Tracks how much of `received` was auto-contributed by each loaded service line
   // (keyed by item uid), so replacing/removing a line can subtract its old
   // contribution instead of leaving stale amounts that inflate Received / hide Due.
@@ -357,17 +360,31 @@ function InvoicePage() {
 
 
       {/* === PRINTABLE INVOICE (live preview = exact print) === */}
-      <div className="flex justify-end gap-2 print:hidden">
+      <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
+        <div className="inline-flex items-center rounded-md border p-0.5">
+          {(["A4", "A5"] as const).map((sz) => (
+            <Button
+              key={sz}
+              type="button"
+              size="sm"
+              variant={paperSize === sz ? "default" : "ghost"}
+              className="h-8 px-3"
+              onClick={() => setPaperSize(sz)}
+            >
+              {sz}
+            </Button>
+          ))}
+        </div>
         <Button variant="outline" onClick={() => setBlankPadOpen(true)} className="gap-2">
           <FileText className="h-4 w-4" /> Blank Pad
         </Button>
         <Button onClick={handleInvoicePrint} className="gap-2">
-          <Printer className="h-4 w-4" /> Print / PDF
+          <Printer className="h-4 w-4" /> Print / PDF {paperSize === "A5" ? "(A5)" : ""}
         </Button>
       </div>
       <BlankPadDialog open={blankPadOpen} onClose={() => setBlankPadOpen(false)} />
 
-      <div ref={invoiceRef} className="invoice-print relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0">
+      <div ref={invoiceRef} className={`invoice-print paper-${paperSize.toLowerCase()} relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0`}>
         {/* logo watermark */}
         <div
           aria-hidden
@@ -508,13 +525,15 @@ function InvoicePage() {
         .invoice-print .inv-contact p { font-size: 12pt; line-height: 1.45; }
         .invoice-print .inv-ico { height: 22pt; width: 22pt; }
         .invoice-print .inv-ico svg { height: 13pt; width: 13pt; }
+        /* On-screen preview of A5: shrink so what you see matches the half-page print. */
+        .invoice-print.paper-a5 { zoom: 0.704; }
         .invoice-print, .invoice-print * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           color-adjust: exact !important;
         }
         @media print {
-          @page { size: A4; margin: 0; }
+          @page { size: ${paperSize}; margin: 0; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           body * { visibility: hidden !important; }
           .invoice-print, .invoice-print * { visibility: visible !important; }
@@ -525,6 +544,12 @@ function InvoicePage() {
             min-height: 297mm !important;
             box-shadow: none !important; border: 0 !important; border-radius: 0 !important;
             font-size: 13pt !important;
+          }
+          /* A5 = half of A4: keep the full A4 layout but scale it to 70.4%
+             (148mm / 210mm) so the complete invoice fits one A5 sheet. */
+          .invoice-print.paper-a5 {
+            zoom: 0.704 !important;
+            width: 210mm !important; max-width: 210mm !important;
           }
           .invoice-print .inv-banner { border-radius: 0 !important; }
           .invoice-print p, .invoice-print td, .invoice-print th, .invoice-print div, .invoice-print span, .invoice-print li {
