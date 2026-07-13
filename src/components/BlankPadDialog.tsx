@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, FileText, X } from "lucide-react";
-import { printDocHtml, buildFileTitle } from "@/lib/print-export";
+import { printDocHtml, buildFileTitle, buildPadHeaderHtml } from "@/lib/print-export";
 import { formatDate } from "@/lib/modules";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { toast } from "sonner";
@@ -131,23 +131,11 @@ export function BlankPadDialog({ open, onClose }: { open: boolean; onClose: () =
   <div class="page">
     <div class="wm"><img src="${logoUrl}" alt=""/></div>
     <div class="inner">
-      <div class="head">
-        <div class="head-top">
-          <div class="brand">
-            <div class="logo"><img src="${logoUrl}" alt="logo"/></div>
-            <div>
-              <div class="name">${AGENCY.name}</div>
-              <div class="slogan">"${AGENCY.slogan}"</div>
-            </div>
-          </div>
-          <div class="meta">${metaRows.join("") || "&nbsp;"}</div>
-        </div>
-        <div class="head-contact">
-          <span>📍 <b></b>${AGENCY.address}, Bangladesh</span>
-          <span>📞 <b></b>${AGENCY.phone}</span>
-          <span>✉️ <b></b>${AGENCY.email}</span>
-        </div>
-      </div>
+      ${buildPadHeaderHtml(logoUrl, {
+        padding: "12mm 14mm 6mm",
+        marginBottom: "0",
+        metaRowsHtml: metaRows.join(""),
+      })}
 
       ${showTo || showSubject ? `<div class="reci">${toBlock}${subjectBlock}</div>` : ""}
 

@@ -1638,7 +1638,7 @@ export function PartyLedgerPage({
       const totBill = bills.reduce((s, b) => s + b.bill, 0);
       const totPaid = bills.reduce((s, b) => s + b.paid, 0);
       const totDue = bills.reduce((s, b) => s + b.due, 0);
-      summaryLine = `মোট বিল: ${bills.length} টি · মোট বিল মূল্য: ৳${num(totBill)} · মোট ${payHead}: ৳${num(totPaid)} · মোট বাকি: ৳${num(totDue)} · (পরিশোধিত ${billStats.paidCount} · আংশিক ${billStats.partialCount} · বাকি ${billStats.dueCount})`;
+      summaryLine = `মোট বিল: ${bills.length} টি · মোট বিল মূল্য: ৳${num(totBill)} · মোট ${payHead}: ৳${num(totPaid)} · <span class="due-hl">মোট বাকি: ৳${num(totDue)}</span> · (পরিশোধিত ${billStats.paidCount} · আংশিক ${billStats.partialCount} · বাকি ${billStats.dueCount})`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
@@ -1681,7 +1681,7 @@ export function PartyLedgerPage({
       const dueBills = bills
         .filter((b) => b.status !== "paid")
         .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · মোট বাকি: ৳${num(billStats.dueAmount)}`;
+      summaryLine = `মোট বাকি বিল: ${dueBills.length} টি · <span class="due-hl">মোট বাকি: ৳${num(billStats.dueAmount)}</span>`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>বিবরণ</th>
         <th class="r">বিল</th><th class="r">${payHead}</th><th>${payDateHead}</th><th class="r">বাকি</th><th>স্ট্যাটাস</th>
@@ -1722,7 +1722,7 @@ export function PartyLedgerPage({
       } else {
         subtitle = isCustomer ? "মোট বিলের হিসাব (পাসবই)" : "সম্পূর্ণ হিসাবের লেজার";
       }
-      summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)}`;
+      summaryLine = `মোট এন্ট্রি: ${list.length} টি · মোট বিল: ৳${num(totals.bill)} · মোট ${payHead}: ৳${num(totals.paid)} · <span class="due-hl">মোট বাকি: ৳${num(totals.due)}</span>`;
       theadHtml = `<tr>
         <th class="nw">তারিখ</th><th class="nw">ID</th><th>সার্ভিস</th><th>বিবরণ</th>
         <th class="r">${payHead}</th><th class="r">বিল/Credit</th><th class="r">ব্যালেন্স</th>
@@ -1766,6 +1766,7 @@ export function PartyLedgerPage({
         .head-right{flex:0 0 auto;text-align:right;max-width:48%}
         .head-right .meta{color:#64748b;font-size:11px;margin-bottom:4px}
         .head-right .sum{font-size:12px;font-weight:600;line-height:1.5}
+        .due-hl{color:#dc2626;font-weight:800;font-size:15px;white-space:nowrap}
         .meta{color:#64748b;font-size:11px;margin-bottom:10px}
         .sum{font-size:13px;margin-bottom:12px;font-weight:600}
         table{width:100%;border-collapse:collapse;font-size:12px}
@@ -1792,7 +1793,7 @@ export function PartyLedgerPage({
         </div>
         <div class="head-right">
           <div class="meta">প্রিন্ট তারিখ: ${esc(formatDate(todayISO()))}</div>
-          <div class="sum">${esc(summaryLine)}</div>
+          <div class="sum">${summaryLine}</div>
         </div>
       </div>
       <table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table>
