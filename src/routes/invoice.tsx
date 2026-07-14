@@ -508,8 +508,9 @@ function InvoicePage() {
             </div>
           </div>
 
-          {/* signatures */}
-          <div className="mt-12 grid grid-cols-2 gap-10 text-center text-xs text-slate-500">
+          {/* signatures — pinned to bottom of page */}
+          <div className="mt-auto grid grid-cols-2 gap-10 text-center text-xs text-slate-500 pt-12">
+
             <div className="border-t border-slate-300 pt-2">Customer Signature</div>
             <div className="border-t border-slate-300 pt-2">Authorized Signature</div>
           </div>
