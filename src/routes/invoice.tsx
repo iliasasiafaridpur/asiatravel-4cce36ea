@@ -557,7 +557,7 @@ function InvoicePage() {
             zoom: 0.704 !important;
             width: 210mm !important; max-width: 210mm !important;
           }
-          .invoice-print .inv-banner { border-radius: 0 !important; }
+          .invoice-print .inv-banner { border-radius: 0 !important; padding-left: 8mm !important; padding-right: 8mm !important; }
           .invoice-print p, .invoice-print td, .invoice-print th, .invoice-print div, .invoice-print span, .invoice-print li {
             font-size: 13pt !important;
             line-height: 1.4 !important;
@@ -566,6 +566,11 @@ function InvoicePage() {
           .invoice-print .invoice-title { font-size: 18pt !important; }
           .invoice-print th { font-size: 12pt !important; }
           .invoice-print .text-xs, .invoice-print .text-\\[11px\\], .invoice-print .text-\\[10px\\], .invoice-print .text-\\[9px\\] { font-size: 10.5pt !important; }
+          /* Contact strip: must never overflow — force small, tight and shrinkable */
+          .invoice-print .inv-contact { flex-wrap: nowrap !important; gap: 0.4rem !important; width: 100% !important; justify-content: space-between !important; }
+          .invoice-print .inv-contact p, .invoice-print .inv-contact span { font-size: 8.5pt !important; line-height: 1.2 !important; white-space: nowrap !important; }
+          .invoice-print .inv-ico { height: 16pt !important; width: 16pt !important; }
+          .invoice-print .inv-ico svg { height: 10pt !important; width: 10pt !important; }
         }
       `}</style>
     </div>
