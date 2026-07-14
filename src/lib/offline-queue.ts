@@ -100,9 +100,16 @@ export async function resilientInsert(
   table: string,
   payload: Record<string, unknown>,
 ): Promise<{ offline: boolean }> {
+  // The offline ID-regeneration marker is a client-only field; it must never
+  // hit the server (PostgREST would reject the unknown column). Strip it for
+  // the online attempt but preserve it on the queued copy so the drainer can
+  // regenerate a proper sequential ID before its own insert.
+  const META_KEY = "__offline_id_meta__";
+  const onlinePayload: Record<string, unknown> = { ...payload };
+  delete onlinePayload[META_KEY];
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from(table as any) as any).insert(payload);
+    const { error } = await (supabase.from(table as any) as any).insert(onlinePayload);
     if (error) {
       if (isNetworkError(error)) {
         enqueue({ op: "insert", table, payload });
@@ -233,7 +240,24 @@ async function runItem(item: QueueItem) {
     for (const [k, v] of Object.entries(item.match ?? {})) q = q.eq(k, v);
     return q;
   }
-  return t.insert(item.payload);
+  // For inserts: if the payload carries an offline ID-regeneration marker,
+  // call the DB RPC now (we're online) to get a proper sequential ID and
+  // overwrite the temporary random local ID before inserting. Falls back to
+  // whatever ID is already in the payload if the RPC fails.
+  const payload = { ...item.payload };
+  const META_KEY = "__offline_id_meta__";
+  const meta = payload[META_KEY] as
+    | { fn: string; params: Record<string, unknown>; column: string }
+    | undefined;
+  if (meta && typeof meta === "object" && meta.fn && meta.column) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await supabase.rpc(meta.fn as any, meta.params as any);
+      if (!error && data) payload[meta.column] = data as unknown;
+    } catch { /* keep existing local ID as fallback */ }
+    delete payload[META_KEY];
+  }
+  return t.insert(payload);
 }
 
 export async function drainQueue(

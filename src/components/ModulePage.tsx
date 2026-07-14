@@ -2,7 +2,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
-import { generateNextId } from "@/lib/idgen";
+import { generateNextId, buildOfflineIdMeta, OFFLINE_ID_META } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, type Field, type ModuleSchema, type Section } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
@@ -851,6 +851,13 @@ export function ModulePage({ module: mod }: Props) {
       const entryDateForId = typeof payload.entry_date === "string" ? (payload.entry_date as string) : undefined;
       let finalId = !isEdit && !isPartyModule ? await generateNextId(mod, entryDateForId) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
+      // Always attach an ID-regeneration marker for new non-party rows. It's
+      // stripped before the online insert and only used by the offline queue
+      // drainer to replace a random local ID with a proper sequential DB ID
+      // at sync time — so an offline entry never keeps its random suffix.
+      if (!isEdit && !isPartyModule) {
+        (payload as Record<string, unknown>)[OFFLINE_ID_META] = buildOfflineIdMeta(mod, entryDateForId);
+      }
 
       // --- Edit-form status automation (mirror of the Status badge drawer) ---
       // Changing the status from the Edit form now auto-stamps the workflow
