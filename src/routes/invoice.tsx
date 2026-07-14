@@ -385,7 +385,7 @@ function InvoicePage() {
       </div>
       <BlankPadDialog open={blankPadOpen} onClose={() => setBlankPadOpen(false)} />
 
-      <div ref={invoiceRef} className={`invoice-print paper-${paperSize.toLowerCase()} relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0`}>
+      <div ref={invoiceRef} className={`invoice-print paper-${paperSize.toLowerCase()} relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0 flex flex-col min-h-[297mm]`}>
         {/* logo watermark */}
         <div
           aria-hidden
@@ -397,7 +397,7 @@ function InvoicePage() {
             className="inv-watermark w-[70%] max-w-[420px] object-contain opacity-[0.06]"
           />
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 flex-1 flex flex-col">
         {/* top banner — light / low-ink */}
         <div className="inv-banner relative bg-white border-b-2 border-[#496a9d] px-8 sm:px-10 py-6">
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
@@ -441,7 +441,7 @@ function InvoicePage() {
           </div>
         </div>
 
-        <div className="px-8 sm:px-10 pt-7 pb-8 flex flex-col">
+        <div className="px-8 sm:px-10 pt-7 pb-8 flex flex-col flex-1">
           {/* bill to */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-[#0b2545] flex items-center justify-center text-white shrink-0">
@@ -508,8 +508,9 @@ function InvoicePage() {
             </div>
           </div>
 
-          {/* signatures */}
-          <div className="mt-12 grid grid-cols-2 gap-10 text-center text-xs text-slate-500">
+          {/* signatures — pinned to bottom of page */}
+          <div className="mt-auto grid grid-cols-2 gap-10 text-center text-xs text-slate-500 pt-12">
+
             <div className="border-t border-slate-300 pt-2">Customer Signature</div>
             <div className="border-t border-slate-300 pt-2">Authorized Signature</div>
           </div>
