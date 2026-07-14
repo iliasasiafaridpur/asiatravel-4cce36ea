@@ -100,9 +100,16 @@ export async function resilientInsert(
   table: string,
   payload: Record<string, unknown>,
 ): Promise<{ offline: boolean }> {
+  // The offline ID-regeneration marker is a client-only field; it must never
+  // hit the server (PostgREST would reject the unknown column). Strip it for
+  // the online attempt but preserve it on the queued copy so the drainer can
+  // regenerate a proper sequential ID before its own insert.
+  const META_KEY = "__offline_id_meta__";
+  const onlinePayload: Record<string, unknown> = { ...payload };
+  delete onlinePayload[META_KEY];
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from(table as any) as any).insert(payload);
+    const { error } = await (supabase.from(table as any) as any).insert(onlinePayload);
     if (error) {
       if (isNetworkError(error)) {
         enqueue({ op: "insert", table, payload });
