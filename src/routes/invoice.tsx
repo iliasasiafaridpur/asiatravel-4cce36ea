@@ -441,7 +441,7 @@ function InvoicePage() {
           </div>
         </div>
 
-        <div className="px-8 sm:px-10 pt-7 pb-8 flex flex-col">
+        <div className="px-8 sm:px-10 pt-7 pb-8 flex flex-col flex-1">
           {/* bill to */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-[#0b2545] flex items-center justify-center text-white shrink-0">
