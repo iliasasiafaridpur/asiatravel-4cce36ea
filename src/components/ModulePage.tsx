@@ -851,11 +851,11 @@ export function ModulePage({ module: mod }: Props) {
       const entryDateForId = typeof payload.entry_date === "string" ? (payload.entry_date as string) : undefined;
       let finalId = !isEdit && !isPartyModule ? await generateNextId(mod, entryDateForId) : undefined;
       if (finalId) (payload as Record<string, unknown>)[mod.idColumn] = finalId;
-      // If this row is likely to go through the offline queue (browser is
-      // offline right now), attach a regenerate-ID marker so the drainer can
-      // replace the random local ID with a proper sequential DB ID at sync
-      // time. Harmless online — the drainer only runs on queued items.
-      if (!isEdit && !isPartyModule && typeof navigator !== "undefined" && navigator.onLine === false) {
+      // Always attach an ID-regeneration marker for new non-party rows. It's
+      // stripped before the online insert and only used by the offline queue
+      // drainer to replace a random local ID with a proper sequential DB ID
+      // at sync time — so an offline entry never keeps its random suffix.
+      if (!isEdit && !isPartyModule) {
         (payload as Record<string, unknown>)[OFFLINE_ID_META] = buildOfflineIdMeta(mod, entryDateForId);
       }
 
