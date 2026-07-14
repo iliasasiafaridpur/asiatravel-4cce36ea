@@ -61,11 +61,10 @@ function buildRpcSpec(mod: ModuleSchema, entryDate?: string): OfflineIdMeta {
 // generated within the month of the selected entry date (e.g. a back-dated
 // entry gets a serial in that earlier month).
 export async function generateNextId(mod: ModuleSchema, entryDate?: string): Promise<string> {
-  // Fast-path: if the browser reports offline, skip the RPC entirely so the
-  // save is instant instead of stalling on a hung fetch. The offline queue
-  // drainer will regenerate a proper sequential ID before inserting online.
+  // Offline writes are disabled — block early with a clear message instead of
+  // handing back a random local ID that would later fail to insert.
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    return localId(mod, entryDate);
+    throw new Error("ইন্টারনেট নেই — নতুন এন্ট্রি করা যাবে না।");
   }
   try {
     const spec = buildRpcSpec(mod, entryDate);
@@ -76,7 +75,8 @@ export async function generateNextId(mod: ModuleSchema, entryDate?: string): Pro
     );
     if (error || !data) return localId(mod, entryDate);
     return data as string;
-  } catch {
+  } catch (e) {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) throw e;
     return localId(mod, entryDate);
   }
 }
