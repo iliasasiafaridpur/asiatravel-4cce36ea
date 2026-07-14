@@ -2,7 +2,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
-import { generateNextId } from "@/lib/idgen";
+import { generateNextId, buildOfflineIdMeta, OFFLINE_ID_META } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, type Field, type ModuleSchema, type Section } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
