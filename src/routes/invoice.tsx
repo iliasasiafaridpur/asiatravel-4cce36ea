@@ -397,7 +397,7 @@ function InvoicePage() {
             className="inv-watermark w-[70%] max-w-[420px] object-contain opacity-[0.06]"
           />
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 flex-1 flex flex-col">
         {/* top banner — light / low-ink */}
         <div className="inv-banner relative bg-white border-b-2 border-[#496a9d] px-8 sm:px-10 py-6">
           <div className="relative flex justify-between items-start gap-4 flex-nowrap">
