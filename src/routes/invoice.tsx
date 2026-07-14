@@ -385,7 +385,7 @@ function InvoicePage() {
       </div>
       <BlankPadDialog open={blankPadOpen} onClose={() => setBlankPadOpen(false)} />
 
-      <div ref={invoiceRef} className={`invoice-print paper-${paperSize.toLowerCase()} relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0`}>
+      <div ref={invoiceRef} className={`invoice-print paper-${paperSize.toLowerCase()} relative bg-white text-slate-900 mx-auto shadow-xl print:shadow-none print:rounded-none rounded-2xl overflow-hidden border border-slate-200 print:border-0 flex flex-col min-h-[297mm]`}>
         {/* logo watermark */}
         <div
           aria-hidden
