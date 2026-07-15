@@ -1197,8 +1197,23 @@ function HandoverCard({
     return () => document.removeEventListener("click", onDocClick);
   }, [highlightId]);
 
-  const scrollToReceipt = (id: string) => {
+  const scrollToReceipt = (id: string, fallback?: { date?: string | null; amount?: number; hid?: string | null }) => {
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
+    // If the target receipt's card is filtered out (date range / pending-only /
+    // search) it never scrolls. Give the user a clear, actionable hint instead
+    // of a silent no-op.
+    setTimeout(() => {
+      const el = document.getElementById(`receipt-row-${id}`);
+      if (el) return;
+      const parts: string[] = [];
+      if (fallback?.date) parts.push(`তারিখ: ${formatDate(fallback.date)}`);
+      if (fallback?.amount != null) parts.push(`পরিমাণ: ${fallback.amount.toLocaleString()}/-`);
+      if (fallback?.hid) parts.push(`Handover: ${fallback.hid}`);
+      toast.info(
+        `পূর্বের জমা এই ভিউতে নেই${parts.length ? ` — ${parts.join(" · ")}` : ""}. তারিখ ফিল্টার/সার্চ বাদ দিয়ে আবার চেষ্টা করুন।`,
+        { duration: 6000 },
+      );
+    }, 250);
   };
 
   const statusBadge =
