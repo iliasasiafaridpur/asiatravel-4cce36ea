@@ -1613,6 +1613,134 @@ function HandoverCard({
                 );
               }
 
+              if (row.kind === "batch") {
+                const first = row.recs[0];
+                const { info, previousPaid, lastPast, bill, discount, due, dueAfterThis, isAdvance, past, cashSum, mdSum, vendorSum, futurePaid, lastFuture } = row.m;
+                const isHighlighted = row.recs.some((x) => x.id === highlightId);
+                const methodsLabel = Array.from(new Set(row.recs.map((x) => methodLabel(x.method)).filter(Boolean))).join(" + ");
+                return (
+                  <tr
+                    key={`batch-${first.id}`}
+                    id={`receipt-row-${first.id}`}
+                    data-receipt-row
+                    onClick={() => setHighlightId(first.id)}
+                    className={`border-t align-top transition-colors cursor-pointer ${isHighlighted ? "bg-yellow-300 dark:bg-yellow-500/40 ring-2 ring-yellow-500" : `row-tint-${idx % 4} hover:bg-yellow-200/80 dark:hover:bg-yellow-500/25`}`}
+                  >
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-medium leading-tight">{formatDate(first.entry_date)}</div>
+                      {first.ref_id && (
+                        <div className="text-sm text-muted-foreground font-mono leading-tight">{first.ref_id}</div>
+                      )}
+                      {first.received_by_name && (
+                        <div className="text-sm text-muted-foreground leading-tight">Rec:By {first.received_by_name.split(" ")[0]}</div>
+                      )}
+                      <div className="text-[11px] text-muted-foreground leading-tight">🔗 {row.recs.length} মেথড</div>
+                    </td>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-semibold leading-tight">{first.passenger_name || "—"}</div>
+                      <div className="text-sm text-muted-foreground leading-tight">
+                        A: {info?.agent || "Self"}{info?.passport ? ` · ${info.passport}` : ""}
+                      </div>
+                    </td>
+                    <td className="px-1.5 py-1 align-top">
+                      <div className="text-sm font-medium leading-tight">{primaryServiceLabel(first, info)}</div>
+                      {info?.service_name && first.service_table !== "agency_ledger" && (
+                        <div className="text-sm text-muted-foreground leading-tight">{info.service_name}</div>
+                      )}
+                      {info?.country && (
+                        <div className="text-sm text-muted-foreground leading-tight">{info.country}</div>
+                      )}
+                      {methodsLabel && (
+                        <div className="text-[11px] text-muted-foreground leading-tight">{methodsLabel}</div>
+                      )}
+                    </td>
+                    <td className="px-1.5 py-1 text-right align-top">
+                      {bill > 0 ? (
+                        <>
+                          <div className="text-sm font-bold tabular-nums leading-tight">{fmt(bill)}</div>
+                          {discount > 0 && (
+                            <div className="text-sm tabular-nums text-emerald-600 leading-tight">{fmt(discount)} {DISCOUNT_LABEL}</div>
+                          )}
+                          {due > 0.005 ? (
+                            <div className="text-sm tabular-nums text-rose-600 leading-tight">বাকি: {fmt(due)}</div>
+                          ) : (
+                            <div className="text-sm text-emerald-600 leading-tight">✓ পরিশোধিত</div>
+                          )}
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right align-top">
+                      {previousPaid > 0 ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); if (lastPast) scrollToReceipt(lastPast.id, { date: lastPast.entry_date, amount: Number(lastPast.amount || 0), hid: null }); }}
+                          className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
+                          title="পূর্বের জমা দেখাও"
+                        >
+                          <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(previousPaid)}</div>
+                          {lastPast && (
+                            <div className="text-sm text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
+                          )}
+                        </button>
+                      ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
+                    </td>
+                    {/* MD */}
+                    <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                      {mdSum > 0 || vendorSum > 0 ? (
+                        <>
+                          {mdSum > 0 && (
+                            <div>
+                              <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(mdSum)}</b>
+                              <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD</div>
+                            </div>
+                          )}
+                          {vendorSum > 0 && (
+                            <div>
+                              <b className="text-sm text-orange-600 dark:text-orange-400">{fmt(vendorSum)}</b>
+                              <div className="text-[11px] text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
+                            </div>
+                          )}
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    {/* নগদ */}
+                    <td className="px-1.5 py-1 text-right tabular-nums align-top">
+                      {cashSum > 0 ? (
+                        <>
+                          {isAdvance && <AdvanceBadge advance className="mr-1" />}
+                          <b className="text-sm text-emerald-700 dark:text-emerald-400">{fmt(cashSum)}</b>
+                        </>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-1.5 py-1 text-right tabular-nums text-sm font-bold align-top">
+                      {bill > 0 ? (
+                        dueAfterThis <= 0.005 ? (
+                          <span className="text-emerald-600 text-base">✓</span>
+                        ) : (
+                          <>
+                            <div className="text-rose-600 text-sm font-extrabold leading-tight">{fmt(dueAfterThis)}</div>
+                            {futurePaid > 0 && lastFuture && (
+                              <div className="text-sm text-emerald-600 font-semibold leading-tight">
+                                জমা: {fmt(futurePaid)} {formatDate(lastFuture.entry_date)}
+                              </div>
+                            )}
+                          </>
+                        )
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    {approveAction && (
+                      <td className="px-0.5 py-1 pr-2 text-center align-top">
+                        {row.recs.every((x) => x.approval_status === "approved") ? (
+                          <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-600" aria-label="Approved" />
+                        ) : (
+                          <Clock className="h-5 w-5 mx-auto text-amber-500" aria-label="অপেক্ষমাণ" />
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              }
+
               const { r, m } = row;
               const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis,
                 isAdvance, statusEvt, mdRecv, vendorRecv, past } = m;
