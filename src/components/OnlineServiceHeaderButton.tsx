@@ -162,11 +162,11 @@ export function OnlineServiceHeaderButton() {
             <Globe className="h-5 w-5 text-sky-400" />
             Online Service
             <span className="ml-auto text-[10px] flex items-center gap-1 text-muted-foreground font-normal">
-              {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> ক্লাউড সেভ</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
+              {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> সবাই দেখবে</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
             </span>
           </SheetTitle>
           <SheetDescription className="text-xs">
-            {folders.length} ফোল্ডার · {totalCount} লিংক — সকল ডিভাইসে সিঙ্ক হয়
+            {folders.length} ফোল্ডার · {totalCount} লিংক — সকল ব্যবহারকারীর জন্য শেয়ার করা
           </SheetDescription>
         </SheetHeader>
 
