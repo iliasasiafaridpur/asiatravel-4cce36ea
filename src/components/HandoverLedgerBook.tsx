@@ -1688,18 +1688,18 @@ function HandoverCard({
                     <td className="px-1.5 py-1 text-right tabular-nums align-top">
                       {mdSum > 0 || vendorSum > 0 ? (
                         <>
-                          {mdSum > 0 && (
-                            <div>
-                              <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(mdSum)}</b>
-                              <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD</div>
+                          {row.recs.filter((x) => isMdReceivedMethod(x.method)).map((x) => (
+                            <div key={`md-${x.id}`}>
+                              <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(Number(x.amount || 0))}</b>
+                              <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {methodLabel(x.method)}</div>
                             </div>
-                          )}
-                          {vendorSum > 0 && (
-                            <div>
-                              <b className="text-sm text-orange-600 dark:text-orange-400">{fmt(vendorSum)}</b>
+                          ))}
+                          {row.recs.filter((x) => isVendorReceivedMethod(x.method)).map((x) => (
+                            <div key={`vr-${x.id}`}>
+                              <b className="text-sm text-orange-600 dark:text-orange-400">{fmt(Number(x.amount || 0))}</b>
                               <div className="text-[11px] text-orange-600 dark:text-orange-400 font-semibold leading-tight">Vendor Rece</div>
                             </div>
-                          )}
+                          ))}
                         </>
                       ) : <span className="text-muted-foreground">—</span>}
                     </td>
