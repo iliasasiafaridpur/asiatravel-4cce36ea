@@ -1651,7 +1651,7 @@ function HandoverCard({
                     {previousPaid > 0 ? (
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); if (lastPast) scrollToReceipt(lastPast.id); }}
+                        onClick={(e) => { e.stopPropagation(); if (lastPast) scrollToReceipt(lastPast.id, { date: lastPast.entry_date, amount: Number(lastPast.amount || 0), hid: null }); }}
                         className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
                         title="পূর্বের জমা দেখাও"
                       >
