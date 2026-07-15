@@ -135,7 +135,7 @@ function DashboardPage() {
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [country, setCountry] = useState<string>("all");
   
-  const [notePadOpen, setNotePadOpen] = useState(false);
+  
   const refreshTimerRef = useRef<number | null>(null);
 
   // === Realtime: invalidate queries whenever ANY of these tables change ===
@@ -682,16 +682,6 @@ function DashboardPage() {
 
           <div className="flex md:justify-center md:flex-1">
             <DigitalClock />
-          </div>
-          <div className="flex flex-col md:items-end md:flex-shrink-0 gap-2 w-full md:w-auto">
-            <div className="flex flex-wrap gap-2 md:justify-end">
-              <Link to="/action-board">
-                <Button size="sm" variant="outline" className="gap-1"><ClipboardList className="h-4 w-4" /> Action Board</Button>
-              </Link>
-              <Button size="sm" variant="outline" className="gap-1" onClick={() => setNotePadOpen(true)}>
-                <StickyNote className="h-4 w-4" /> Note Pad
-              </Button>
-            </div>
           </div>
         </div>
       </div>
