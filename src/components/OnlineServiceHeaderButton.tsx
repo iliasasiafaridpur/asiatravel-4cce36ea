@@ -1,38 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
-import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X } from "lucide-react";
+import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X, Cloud, CloudOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type Bookmark = { id: string; name: string; url: string };
 type Folder = { id: string; name: string; bookmarks: Bookmark[] };
 
 const STORAGE_KEY = "online-service-bookmarks:v1";
 
-function loadFolders(): Folder[] {
+function loadLocal(): Folder[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
-  } catch {
-    return [];
-  }
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
 }
-
-function saveFolders(folders: Folder[]) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(folders));
-  } catch { /* ignore */ }
+function saveLocal(folders: Folder[]) {
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(folders)); } catch { /* ignore */ }
 }
-
-function newId() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
+function newId() { return Math.random().toString(36).slice(2, 10); }
 function normalizeUrl(u: string) {
   const t = u.trim();
   if (!t) return "";
@@ -50,26 +41,72 @@ export function OnlineServiceHeaderButton() {
   const [linkUrl, setLinkUrl] = useState("");
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [cloudReady, setCloudReady] = useState(false);
 
   useEffect(() => {
-    if (open) setFolders(loadFolders());
+    if (!open) return;
+    // instant local
+    setFolders(loadLocal());
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess.session?.user?.id ?? null;
+        setUserId(uid);
+        if (!uid) { setCloudReady(false); return; }
+        const { data, error } = await supabase
+          .from("user_online_service" as never)
+          .select("data")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (error) throw error;
+        const remote = (data as { data?: Folder[] } | null)?.data;
+        if (Array.isArray(remote) && remote.length > 0) {
+          setFolders(remote);
+          saveLocal(remote);
+        } else {
+          const local = loadLocal();
+          if (local.length > 0) {
+            await supabase.from("user_online_service" as never).upsert({ user_id: uid, data: local, updated_at: new Date().toISOString() } as never);
+          }
+        }
+        setCloudReady(true);
+      } catch (e) {
+        console.error("[OnlineService] cloud load failed", e);
+        setCloudReady(false);
+      }
+    })();
   }, [open]);
+
+  // Debounced cloud sync
+  useEffect(() => {
+    if (!open || !cloudReady || !userId) return;
+    const t = window.setTimeout(async () => {
+      try {
+        await supabase.from("user_online_service" as never).upsert({
+          user_id: userId,
+          data: folders,
+          updated_at: new Date().toISOString(),
+        } as never);
+      } catch (e) {
+        console.error("[OnlineService] cloud save failed", e);
+      }
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [folders, cloudReady, userId, open]);
 
   const persist = (next: Folder[]) => {
     setFolders(next);
-    saveFolders(next);
+    saveLocal(next);
   };
 
   const addFolder = () => {
     const name = newFolderName.trim();
-    if (!name) {
-      toast.error("ফোল্ডারের নাম দিন");
-      return;
-    }
-    const next = [...folders, { id: newId(), name, bookmarks: [] }];
-    persist(next);
+    if (!name) { toast.error("ফোল্ডারের নাম দিন"); return; }
+    const nf = { id: newId(), name, bookmarks: [] };
+    persist([...folders, nf]);
     setNewFolderName("");
-    setExpanded((s) => ({ ...s, [next[next.length - 1].id]: true }));
+    setExpanded((s) => ({ ...s, [nf.id]: true }));
     toast.success("ফোল্ডার তৈরি হয়েছে");
   };
 
@@ -89,33 +126,17 @@ export function OnlineServiceHeaderButton() {
   const addBookmark = (folderId: string) => {
     const name = linkName.trim();
     const url = normalizeUrl(linkUrl);
-    if (!name || !url) {
-      toast.error("নাম ও URL দিন");
-      return;
-    }
-    const next = folders.map((f) =>
-      f.id === folderId
-        ? { ...f, bookmarks: [...f.bookmarks, { id: newId(), name, url }] }
-        : f,
-    );
-    persist(next);
-    setLinkName("");
-    setLinkUrl("");
-    setAddingTo(null);
+    if (!name || !url) { toast.error("নাম ও URL দিন"); return; }
+    persist(folders.map((f) => f.id === folderId ? { ...f, bookmarks: [...f.bookmarks, { id: newId(), name, url }] } : f));
+    setLinkName(""); setLinkUrl(""); setAddingTo(null);
     toast.success("লিংক সেভ হয়েছে");
   };
 
   const removeBookmark = (folderId: string, bmId: string) => {
-    const next = folders.map((f) =>
-      f.id === folderId ? { ...f, bookmarks: f.bookmarks.filter((b) => b.id !== bmId) } : f,
-    );
-    persist(next);
+    persist(folders.map((f) => f.id === folderId ? { ...f, bookmarks: f.bookmarks.filter((b) => b.id !== bmId) } : f));
   };
 
-  const totalCount = useMemo(
-    () => folders.reduce((s, f) => s + f.bookmarks.length, 0),
-    [folders],
-  );
+  const totalCount = useMemo(() => folders.reduce((s, f) => s + f.bookmarks.length, 0), [folders]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -129,14 +150,16 @@ export function OnlineServiceHeaderButton() {
           <SheetTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-sky-400" />
             Online Service
+            <span className="ml-auto text-[10px] flex items-center gap-1 text-muted-foreground font-normal">
+              {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> ক্লাউড সেভ</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
+            </span>
           </SheetTitle>
           <SheetDescription className="text-xs">
-            {folders.length} ফোল্ডার · {totalCount} লিংক — ব্রাউজার বুকমার্কের মত সেভ ও ওপেন করুন
+            {folders.length} ফোল্ডার · {totalCount} লিংক — সকল ডিভাইসে সিঙ্ক হয়
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
-          {/* Add folder — stacked so button is always tappable */}
           <div className="rounded-md border border-border p-3 bg-muted/20 space-y-2">
             <label className="text-xs font-medium text-muted-foreground">নতুন ফোল্ডার</label>
             <Input
@@ -150,7 +173,6 @@ export function OnlineServiceHeaderButton() {
             </Button>
           </div>
 
-          {/* Folder list */}
           {folders.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               এখনো কোনো ফোল্ডার নেই। উপরে থেকে নতুন ফোল্ডার তৈরি করুন।
@@ -186,31 +208,13 @@ export function OnlineServiceHeaderButton() {
                           <span className="flex-1 text-sm font-medium truncate">
                             {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }}
-                            className="p-1.5 hover:bg-muted rounded"
-                            aria-label="Rename"
-                            title="নাম পরিবর্তন"
-                          >
+                          <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
                             <Pencil className="h-4 w-4 text-muted-foreground" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
-                            className="p-1.5 hover:bg-muted rounded"
-                            aria-label="Add link"
-                            title="লিংক যোগ"
-                          >
+                          <button type="button" onClick={() => setAddingTo(addingTo === f.id ? null : f.id)} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
                             <Plus className="h-4 w-4 text-emerald-500" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => removeFolder(f.id)}
-                            className="p-1.5 hover:bg-muted rounded"
-                            aria-label="Delete folder"
-                            title="ফোল্ডার মুছুন"
-                          >
+                          <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </button>
                         </>
@@ -221,19 +225,8 @@ export function OnlineServiceHeaderButton() {
                       <div className="p-2 space-y-1">
                         {addingTo === f.id && (
                           <div className="p-2 border border-dashed border-border rounded-md space-y-2 mb-2 bg-muted/20">
-                            <Input
-                              placeholder="সাইটের নাম (যেমন BMET Portal)"
-                              value={linkName}
-                              onChange={(e) => setLinkName(e.target.value)}
-                              className="h-9"
-                            />
-                            <Input
-                              placeholder="https://example.com"
-                              value={linkUrl}
-                              onChange={(e) => setLinkUrl(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addBookmark(f.id); } }}
-                              className="h-9"
-                            />
+                            <Input placeholder="সাইটের নাম (যেমন BMET Portal)" value={linkName} onChange={(e) => setLinkName(e.target.value)} className="h-9" />
+                            <Input placeholder="https://example.com" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addBookmark(f.id); } }} className="h-9" />
                             <div className="flex gap-2">
                               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => { setAddingTo(null); setLinkName(""); setLinkUrl(""); }}>
                                 <X className="h-4 w-4 mr-1" /> বাতিল
@@ -249,22 +242,11 @@ export function OnlineServiceHeaderButton() {
                         ) : (
                           f.bookmarks.map((b) => (
                             <div key={b.id} className="flex items-center gap-1 group hover:bg-muted/50 rounded px-1">
-                              <a
-                                href={b.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 flex items-center gap-2 text-sm py-2 truncate"
-                                title={b.url}
-                              >
+                              <a href={b.url} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center gap-2 text-sm py-2 truncate" title={b.url}>
                                 <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                                 <span className="truncate">{b.name}</span>
                               </a>
-                              <button
-                                type="button"
-                                onClick={() => removeBookmark(f.id, b.id)}
-                                className="p-1.5 hover:bg-muted rounded"
-                                aria-label="Delete link"
-                              >
+                              <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link">
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </button>
                             </div>
