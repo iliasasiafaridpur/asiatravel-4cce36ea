@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, ChevronLeft, StickyNote, Search } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, StickyNote, Search, Cloud, CloudOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Note = {
   id: string;
@@ -14,7 +16,7 @@ type Note = {
 
 const STORAGE_KEY = "notepad_notes_v1";
 
-function loadNotes(): Note[] {
+function loadLocal(): Note[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -25,12 +27,8 @@ function loadNotes(): Note[] {
   }
 }
 
-function saveNotes(notes: Note[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  } catch {
-    /* ignore */
-  }
+function saveLocal(notes: Note[]) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); } catch { /* ignore */ }
 }
 
 const NOTE_TINTS = [
@@ -57,18 +55,67 @@ export function NotePad({ open, onOpenChange }: Props) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [cloudReady, setCloudReady] = useState(false);
 
+  // Load session + cloud data on open
   useEffect(() => {
-    if (open) {
-      setNotes(loadNotes());
-      setActiveId(null);
-      setQ("");
-    }
+    if (!open) return;
+    setActiveId(null);
+    setQ("");
+    // start with local so user sees something instantly
+    setNotes(loadLocal());
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess.session?.user?.id ?? null;
+        setUserId(uid);
+        if (!uid) { setCloudReady(false); return; }
+        const { data, error } = await supabase
+          .from("user_notepad" as never)
+          .select("data")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (error) throw error;
+        const remote = (data as { data?: Note[] } | null)?.data;
+        if (Array.isArray(remote) && remote.length > 0) {
+          setNotes(remote);
+          saveLocal(remote);
+        } else {
+          // first time: push local up if any
+          const local = loadLocal();
+          if (local.length > 0) {
+            await supabase.from("user_notepad" as never).upsert({ user_id: uid, data: local, updated_at: new Date().toISOString() } as never);
+          }
+        }
+        setCloudReady(true);
+      } catch (e) {
+        console.error("[NotePad] cloud load failed", e);
+        setCloudReady(false);
+      }
+    })();
   }, [open]);
+
+  // Debounced cloud sync
+  useEffect(() => {
+    if (!open || !cloudReady || !userId) return;
+    const t = window.setTimeout(async () => {
+      try {
+        await supabase.from("user_notepad" as never).upsert({
+          user_id: userId,
+          data: notes,
+          updated_at: new Date().toISOString(),
+        } as never);
+      } catch (e) {
+        console.error("[NotePad] cloud save failed", e);
+      }
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [notes, cloudReady, userId, open]);
 
   const persist = (next: Note[]) => {
     setNotes(next);
-    saveNotes(next);
+    saveLocal(next);
   };
 
   const active = notes.find((n) => n.id === activeId) ?? null;
@@ -81,24 +128,21 @@ export function NotePad({ open, onOpenChange }: Props) {
 
   const updateActive = (patch: Partial<Note>) => {
     if (!active) return;
-    persist(
-      notes.map((n) => (n.id === active.id ? { ...n, ...patch, updated: Date.now() } : n)),
-    );
+    persist(notes.map((n) => (n.id === active.id ? { ...n, ...patch, updated: Date.now() } : n)));
   };
 
   const deleteActive = () => {
     if (!active) return;
     persist(notes.filter((n) => n.id !== active.id));
     setActiveId(null);
+    toast.success("নোট মুছে ফেলা হয়েছে");
   };
 
   const sorted = useMemo(() => [...notes].sort((a, b) => b.updated - a.updated), [notes]);
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return sorted;
-    return sorted.filter(
-      (n) => n.title.toLowerCase().includes(term) || n.body.toLowerCase().includes(term),
-    );
+    return sorted.filter((n) => n.title.toLowerCase().includes(term) || n.body.toLowerCase().includes(term));
   }, [sorted, q]);
 
   return (
@@ -117,6 +161,9 @@ export function NotePad({ open, onOpenChange }: Props) {
             ) : (
               <>
                 <StickyNote className="h-4 w-4 text-amber-500" /> নোট প্যাড
+                <span className="ml-auto text-[10px] flex items-center gap-1 text-muted-foreground font-normal">
+                  {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> ক্লাউড সেভ</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
+                </span>
               </>
             )}
           </DialogTitle>
@@ -139,13 +186,7 @@ export function NotePad({ open, onOpenChange }: Props) {
             />
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground">সেভ হয়েছে · {fmtTime(active.updated)}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={deleteActive}
-                className="text-destructive hover:text-destructive"
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={deleteActive} className="text-destructive hover:text-destructive">
                 <Trash2 className="mr-1 h-4 w-4" /> মুছুন
               </Button>
             </div>
@@ -155,12 +196,7 @@ export function NotePad({ open, onOpenChange }: Props) {
             <div className="flex items-center gap-2 px-4 pb-3">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="নোট খুঁজুন…"
-                  className="pl-8 h-9"
-                />
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নোট খুঁজুন…" className="pl-8 h-9" />
               </div>
               <Button type="button" size="sm" onClick={createNote} className="shrink-0">
                 <Plus className="mr-1 h-4 w-4" /> নতুন
