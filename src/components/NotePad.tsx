@@ -174,7 +174,7 @@ export function NotePad({ open, onOpenChange }: Props) {
               <>
                 <StickyNote className="h-4 w-4 text-amber-500" /> নোট প্যাড
                 <span className="ml-auto text-[10px] flex items-center gap-1 text-muted-foreground font-normal">
-                  {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> ক্লাউড সেভ</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
+                  {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> সবাই দেখবে</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
                 </span>
               </>
             )}
