@@ -1291,36 +1291,42 @@ export type Database = {
       user_notepad: {
         Row: {
           data: Json
+          scope: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           data?: Json
+          scope?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           data?: Json
+          scope?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
       user_online_service: {
         Row: {
           data: Json
+          scope: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           data?: Json
+          scope?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           data?: Json
+          scope?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

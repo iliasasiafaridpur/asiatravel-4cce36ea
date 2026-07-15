@@ -46,8 +46,8 @@ export function OnlineServiceHeaderButton() {
 
   useEffect(() => {
     if (!open) return;
-    // instant local
     setFolders(loadLocal());
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       try {
         const { data: sess } = await supabase.auth.getSession();
@@ -57,43 +57,54 @@ export function OnlineServiceHeaderButton() {
         const { data, error } = await supabase
           .from("user_online_service" as never)
           .select("data")
-          .eq("user_id", uid)
+          .eq("scope", "shared")
           .maybeSingle();
         if (error) throw error;
         const remote = (data as { data?: Folder[] } | null)?.data;
-        if (Array.isArray(remote) && remote.length > 0) {
+        if (Array.isArray(remote)) {
           setFolders(remote);
           saveLocal(remote);
         } else {
           const local = loadLocal();
           if (local.length > 0) {
-            await supabase.from("user_online_service" as never).upsert({ user_id: uid, data: local, updated_at: new Date().toISOString() } as never);
+            await supabase.from("user_online_service" as never).upsert({ scope: "shared", user_id: uid, data: local, updated_at: new Date().toISOString() } as never, { onConflict: "scope" } as never);
           }
         }
         setCloudReady(true);
+        channel = supabase
+          .channel("shared_online_service")
+          .on("postgres_changes", { event: "*", schema: "public", table: "user_online_service" }, (payload) => {
+            const row = (payload.new ?? payload.old) as { data?: Folder[] } | null;
+            if (row && Array.isArray(row.data)) {
+              setFolders(row.data);
+              saveLocal(row.data);
+            }
+          })
+          .subscribe();
       } catch (e) {
         console.error("[OnlineService] cloud load failed", e);
         setCloudReady(false);
       }
     })();
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [open]);
 
-  // Debounced cloud sync
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { if (cloudReady) setDirty(true); }, [folders, cloudReady]);
   useEffect(() => {
-    if (!open || !cloudReady || !userId) return;
+    if (!open || !cloudReady || !userId || !dirty) return;
     const t = window.setTimeout(async () => {
       try {
         await supabase.from("user_online_service" as never).upsert({
-          user_id: userId,
-          data: folders,
-          updated_at: new Date().toISOString(),
-        } as never);
+          scope: "shared", user_id: userId, data: folders, updated_at: new Date().toISOString(),
+        } as never, { onConflict: "scope" } as never);
+        setDirty(false);
       } catch (e) {
         console.error("[OnlineService] cloud save failed", e);
       }
     }, 500);
     return () => window.clearTimeout(t);
-  }, [folders, cloudReady, userId, open]);
+  }, [folders, cloudReady, userId, open, dirty]);
 
   const persist = (next: Folder[]) => {
     setFolders(next);
@@ -151,11 +162,11 @@ export function OnlineServiceHeaderButton() {
             <Globe className="h-5 w-5 text-sky-400" />
             Online Service
             <span className="ml-auto text-[10px] flex items-center gap-1 text-muted-foreground font-normal">
-              {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> ক্লাউড সেভ</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
+              {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> সবাই দেখবে</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
             </span>
           </SheetTitle>
           <SheetDescription className="text-xs">
-            {folders.length} ফোল্ডার · {totalCount} লিংক — সকল ডিভাইসে সিঙ্ক হয়
+            {folders.length} ফোল্ডার · {totalCount} লিংক — সকল ব্যবহারকারীর জন্য শেয়ার করা
           </SheetDescription>
         </SheetHeader>
 

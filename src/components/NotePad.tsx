@@ -58,13 +58,13 @@ export function NotePad({ open, onOpenChange }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
   const [cloudReady, setCloudReady] = useState(false);
 
-  // Load session + cloud data on open
+  // Load shared cloud data on open + subscribe to realtime updates
   useEffect(() => {
     if (!open) return;
     setActiveId(null);
     setQ("");
-    // start with local so user sees something instantly
     setNotes(loadLocal());
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       try {
         const { data: sess } = await supabase.auth.getSession();
@@ -74,44 +74,56 @@ export function NotePad({ open, onOpenChange }: Props) {
         const { data, error } = await supabase
           .from("user_notepad" as never)
           .select("data")
-          .eq("user_id", uid)
+          .eq("scope", "shared")
           .maybeSingle();
         if (error) throw error;
         const remote = (data as { data?: Note[] } | null)?.data;
-        if (Array.isArray(remote) && remote.length > 0) {
+        if (Array.isArray(remote)) {
           setNotes(remote);
           saveLocal(remote);
         } else {
-          // first time: push local up if any
           const local = loadLocal();
           if (local.length > 0) {
-            await supabase.from("user_notepad" as never).upsert({ user_id: uid, data: local, updated_at: new Date().toISOString() } as never);
+            await supabase.from("user_notepad" as never).upsert({ scope: "shared", user_id: uid, data: local, updated_at: new Date().toISOString() } as never, { onConflict: "scope" } as never);
           }
         }
         setCloudReady(true);
+        // Realtime subscription so other users' edits appear live
+        channel = supabase
+          .channel("shared_notepad")
+          .on("postgres_changes", { event: "*", schema: "public", table: "user_notepad" }, (payload) => {
+            const row = (payload.new ?? payload.old) as { data?: Note[] } | null;
+            if (row && Array.isArray(row.data)) {
+              setNotes(row.data);
+              saveLocal(row.data);
+            }
+          })
+          .subscribe();
       } catch (e) {
         console.error("[NotePad] cloud load failed", e);
         setCloudReady(false);
       }
     })();
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [open]);
 
-  // Debounced cloud sync
+  // Debounced shared cloud sync
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { if (cloudReady) setDirty(true); }, [notes, cloudReady]);
   useEffect(() => {
-    if (!open || !cloudReady || !userId) return;
+    if (!open || !cloudReady || !userId || !dirty) return;
     const t = window.setTimeout(async () => {
       try {
         await supabase.from("user_notepad" as never).upsert({
-          user_id: userId,
-          data: notes,
-          updated_at: new Date().toISOString(),
-        } as never);
+          scope: "shared", user_id: userId, data: notes, updated_at: new Date().toISOString(),
+        } as never, { onConflict: "scope" } as never);
+        setDirty(false);
       } catch (e) {
         console.error("[NotePad] cloud save failed", e);
       }
     }, 500);
     return () => window.clearTimeout(t);
-  }, [notes, cloudReady, userId, open]);
+  }, [notes, cloudReady, userId, open, dirty]);
 
   const persist = (next: Note[]) => {
     setNotes(next);
@@ -162,7 +174,7 @@ export function NotePad({ open, onOpenChange }: Props) {
               <>
                 <StickyNote className="h-4 w-4 text-amber-500" /> নোট প্যাড
                 <span className="ml-auto text-[10px] flex items-center gap-1 text-muted-foreground font-normal">
-                  {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> ক্লাউড সেভ</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
+                  {cloudReady ? (<><Cloud className="h-3 w-3 text-emerald-500" /> সবাই দেখবে</>) : (<><CloudOff className="h-3 w-3 text-amber-500" /> শুধু এই ডিভাইসে</>)}
                 </span>
               </>
             )}
