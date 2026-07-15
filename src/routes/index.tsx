@@ -863,8 +863,6 @@ function DashboardPage() {
         </Card>
       </div>
 
-      
-      <NotePad open={notePadOpen} onOpenChange={setNotePadOpen} />
     </div>
   );
 }
