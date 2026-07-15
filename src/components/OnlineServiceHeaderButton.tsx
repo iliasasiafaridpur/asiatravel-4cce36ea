@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil } from "lucide-react";
+import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 
 type Bookmark = { id: string; name: string; url: string };
@@ -62,10 +62,14 @@ export function OnlineServiceHeaderButton() {
 
   const addFolder = () => {
     const name = newFolderName.trim();
-    if (!name) return;
+    if (!name) {
+      toast.error("ফোল্ডারের নাম দিন");
+      return;
+    }
     const next = [...folders, { id: newId(), name, bookmarks: [] }];
     persist(next);
     setNewFolderName("");
+    setExpanded((s) => ({ ...s, [next[next.length - 1].id]: true }));
     toast.success("ফোল্ডার তৈরি হয়েছে");
   };
 
@@ -120,28 +124,29 @@ export function OnlineServiceHeaderButton() {
           <Globe className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-4">
+        <SheetHeader className="pr-8">
           <SheetTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-sky-400" />
             Online Service
-            <span className="text-xs text-muted-foreground font-normal">
-              ({folders.length} ফোল্ডার · {totalCount} লিংক)
-            </span>
           </SheetTitle>
+          <SheetDescription className="text-xs">
+            {folders.length} ফোল্ডার · {totalCount} লিংক — ব্রাউজার বুকমার্কের মত সেভ ও ওপেন করুন
+          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
-          {/* Add folder */}
-          <div className="flex gap-2">
+          {/* Add folder — stacked so button is always tappable */}
+          <div className="rounded-md border border-border p-3 bg-muted/20 space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">নতুন ফোল্ডার</label>
             <Input
-              placeholder="নতুন ফোল্ডারের নাম"
+              placeholder="ফোল্ডারের নাম লিখুন"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") addFolder(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFolder(); } }}
             />
-            <Button onClick={addFolder} size="sm">
-              <FolderPlus className="h-4 w-4 mr-1" /> যোগ
+            <Button onClick={addFolder} size="sm" className="w-full" type="button">
+              <FolderPlus className="h-4 w-4 mr-1" /> ফোল্ডার তৈরি করুন
             </Button>
           </div>
 
@@ -158,80 +163,89 @@ export function OnlineServiceHeaderButton() {
                   <div key={f.id} className="border border-border rounded-md">
                     <div className="flex items-center gap-1 p-2 bg-muted/30">
                       <button
+                        type="button"
                         onClick={() => setExpanded((s) => ({ ...s, [f.id]: !isOpen }))}
-                        className="p-0.5 hover:bg-muted rounded"
+                        className="p-1 hover:bg-muted rounded"
                         aria-label="Toggle"
                       >
                         {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </button>
                       {editingFolder === f.id ? (
-                        <Input
-                          className="h-7 flex-1"
-                          value={editFolderName}
-                          onChange={(e) => setEditFolderName(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") renameFolder(f.id); }}
-                          autoFocus
-                        />
+                        <>
+                          <Input
+                            className="h-8 flex-1"
+                            value={editFolderName}
+                            onChange={(e) => setEditFolderName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); renameFolder(f.id); } }}
+                            autoFocus
+                          />
+                          <Button type="button" size="sm" variant="secondary" className="h-8 px-2" onClick={() => renameFolder(f.id)}>OK</Button>
+                        </>
                       ) : (
-                        <span className="flex-1 text-sm font-medium truncate">
-                          {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
-                        </span>
+                        <>
+                          <span className="flex-1 text-sm font-medium truncate">
+                            {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }}
+                            className="p-1.5 hover:bg-muted rounded"
+                            aria-label="Rename"
+                            title="নাম পরিবর্তন"
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
+                            className="p-1.5 hover:bg-muted rounded"
+                            aria-label="Add link"
+                            title="লিংক যোগ"
+                          >
+                            <Plus className="h-4 w-4 text-emerald-500" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFolder(f.id)}
+                            className="p-1.5 hover:bg-muted rounded"
+                            aria-label="Delete folder"
+                            title="ফোল্ডার মুছুন"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </button>
+                        </>
                       )}
-                      {editingFolder === f.id ? (
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => renameFolder(f.id)}>OK</Button>
-                      ) : (
-                        <button
-                          onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }}
-                          className="p-1 hover:bg-muted rounded"
-                          aria-label="Rename"
-                          title="নাম পরিবর্তন"
-                        >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
-                        className="p-1 hover:bg-muted rounded"
-                        aria-label="Add link"
-                        title="লিংক যোগ"
-                      >
-                        <Plus className="h-4 w-4 text-emerald-500" />
-                      </button>
-                      <button
-                        onClick={() => removeFolder(f.id)}
-                        className="p-1 hover:bg-muted rounded"
-                        aria-label="Delete folder"
-                        title="ফোল্ডার মুছুন"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </button>
                     </div>
 
                     {isOpen && (
                       <div className="p-2 space-y-1">
                         {addingTo === f.id && (
-                          <div className="p-2 border border-dashed border-border rounded-md space-y-2 mb-2">
+                          <div className="p-2 border border-dashed border-border rounded-md space-y-2 mb-2 bg-muted/20">
                             <Input
                               placeholder="সাইটের নাম (যেমন BMET Portal)"
                               value={linkName}
                               onChange={(e) => setLinkName(e.target.value)}
-                              className="h-8"
+                              className="h-9"
                             />
                             <Input
                               placeholder="https://example.com"
                               value={linkUrl}
                               onChange={(e) => setLinkUrl(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === "Enter") addBookmark(f.id); }}
-                              className="h-8"
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addBookmark(f.id); } }}
+                              className="h-9"
                             />
-                            <div className="flex gap-2 justify-end">
-                              <Button size="sm" variant="ghost" onClick={() => { setAddingTo(null); setLinkName(""); setLinkUrl(""); }}>বাতিল</Button>
-                              <Button size="sm" onClick={() => addBookmark(f.id)}>সেভ</Button>
+                            <div className="flex gap-2">
+                              <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => { setAddingTo(null); setLinkName(""); setLinkUrl(""); }}>
+                                <X className="h-4 w-4 mr-1" /> বাতিল
+                              </Button>
+                              <Button type="button" size="sm" className="flex-1" onClick={() => addBookmark(f.id)}>
+                                <Plus className="h-4 w-4 mr-1" /> সেভ
+                              </Button>
                             </div>
                           </div>
                         )}
                         {f.bookmarks.length === 0 ? (
-                          <p className="text-xs text-muted-foreground px-2 py-1">এই ফোল্ডারে কোনো লিংক নেই।</p>
+                          <p className="text-xs text-muted-foreground px-2 py-1">এই ফোল্ডারে কোনো লিংক নেই। উপরের <Plus className="h-3 w-3 inline text-emerald-500" /> চাপুন।</p>
                         ) : (
                           f.bookmarks.map((b) => (
                             <div key={b.id} className="flex items-center gap-1 group hover:bg-muted/50 rounded px-1">
@@ -239,18 +253,19 @@ export function OnlineServiceHeaderButton() {
                                 href={b.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex-1 flex items-center gap-2 text-sm py-1.5 truncate"
+                                className="flex-1 flex items-center gap-2 text-sm py-2 truncate"
                                 title={b.url}
                               >
                                 <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                                 <span className="truncate">{b.name}</span>
                               </a>
                               <button
+                                type="button"
                                 onClick={() => removeBookmark(f.id, b.id)}
-                                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded"
+                                className="p-1.5 hover:bg-muted rounded"
                                 aria-label="Delete link"
                               >
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </button>
                             </div>
                           ))
