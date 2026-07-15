@@ -21,6 +21,7 @@ import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import { HandoverHeaderButton } from "@/components/HandoverHeaderButton";
+import { MasterSearchHeaderButton } from "@/components/MasterSearchHeaderButton";
 import { installToastInterceptor } from "@/lib/toast-interceptor";
 import {
   clearStaleAssetRecoveryFlag,
@@ -271,6 +272,7 @@ function RootComponent() {
               <header className="h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
                 <SidebarTrigger />
                 <div className="flex items-center gap-1.5">
+                  <MasterSearchHeaderButton />
                   <HandoverHeaderButton />
                   <NotificationBell />
                   <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
