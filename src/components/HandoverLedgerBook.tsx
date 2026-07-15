@@ -1272,7 +1272,43 @@ function HandoverCard({
     };
   };
 
+  // Multi-method due-receive creates one payment_receipts row per method sharing
+  // the same base receipt_id (…-1, …-2). Collapse them into a single line where
+  // cash and MD/vendor amounts split into their own columns.
+  const batchKeyOf = (r: Receipt) =>
+    `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+
+  const metricsForBatch = (recs: Receipt[]) => {
+    const first = recs[0];
+    const sk = receiptServiceKey(first);
+    const info = sk ? serviceMap[sk] : undefined;
+    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const ids = new Set(recs.map((x) => x.id));
+    const past = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const lastPast = past.length
+      ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const lastFuture = future.length
+      ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const totalPaidIncl = allForSvc.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const bill = info?.sold_price ?? 0;
+    const discount = info?.discount ?? 0;
+    const due = bill > 0 ? Math.max(0, bill - totalPaidIncl - discount) : 0;
+    const batchSum = recs.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + batchSum) - discount) : 0;
+    const cashSum = recs.filter((x) => isCashMethod(x.method) && !isStatusEventReceipt(x)).reduce((s, x) => s + Number(x.amount || 0), 0);
+    const mdSum = recs.filter((x) => isMdReceivedMethod(x.method) && !isStatusEventReceipt(x)).reduce((s, x) => s + Number(x.amount || 0), 0);
+    const vendorSum = recs.filter((x) => isVendorReceivedMethod(x.method) && !isStatusEventReceipt(x)).reduce((s, x) => s + Number(x.amount || 0), 0);
+    const isAdvance = !!info?.has_delivery && isAdvancePayment(first.entry_date, info?.delivery_date);
+    return { sk, info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, due, dueAfterThis, isAdvance, past, cashSum, mdSum, vendorSum, batchSum };
+  };
+
   type SingleRow = { kind: "single"; r: Receipt; m: ReturnType<typeof metricsFor> };
+  type BatchRow = { kind: "batch"; recs: Receipt[]; m: ReturnType<typeof metricsForBatch> };
   type AgencyRow = {
     kind: "agency"; agent: string; items: number; svcCount: number;
     totalBill: number; totalDiscount: number; totalPrevious: number;
@@ -1280,7 +1316,7 @@ function HandoverCard({
     ledgerDue: number; ledgerAdvance: number;
     cash: number; md: number; vendor: number; date: string;
   };
-  type DisplayRow = SingleRow | AgencyRow;
+  type DisplayRow = SingleRow | AgencyRow | BatchRow;
 
   // মোটের উপর (total-settle) agencies: passenger-level detail belongs ONLY in the
   // agency ledger. In the handover we collapse all of an agency's receipts into a
@@ -1289,6 +1325,17 @@ function HandoverCard({
   const displayRows: DisplayRow[] = [];
   {
     const buckets = new Map<string, Receipt[]>();
+    // Pre-index non-agent receipts by batch key so multi-method receives collapse.
+    const batchIndex = new Map<string, Receipt[]>();
+    for (const r of visibleReceipts) {
+      const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
+      if (agent && totalAgents.has(agent)) continue;
+      const k = batchKeyOf(r);
+      const arr = batchIndex.get(k) ?? [];
+      arr.push(r);
+      batchIndex.set(k, arr);
+    }
+    const emittedBatches = new Set<string>();
     for (const r of visibleReceipts) {
       const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
       if (agent && totalAgents.has(agent)) {
@@ -1296,7 +1343,15 @@ function HandoverCard({
         arr.push(r);
         buckets.set(agent, arr);
       } else {
-        displayRows.push({ kind: "single", r, m: metricsFor(r) });
+        const k = batchKeyOf(r);
+        if (emittedBatches.has(k)) continue;
+        emittedBatches.add(k);
+        const recs = batchIndex.get(k) ?? [r];
+        if (recs.length === 1) {
+          displayRows.push({ kind: "single", r: recs[0], m: metricsFor(recs[0]) });
+        } else {
+          displayRows.push({ kind: "batch", recs, m: metricsForBatch(recs) });
+        }
       }
     }
     for (const [agent, recs] of buckets) {
