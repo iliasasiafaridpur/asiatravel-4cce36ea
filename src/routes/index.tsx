@@ -21,9 +21,9 @@ import { isCashMethod, vendorExpenseHitsUserBalance, handoverReducesBalance } fr
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
-  BellRing, Search, StickyNote,
+  BellRing, StickyNote,
 } from "lucide-react";
-import { MasterSearch } from "@/components/MasterSearch";
+
 import { NotePad } from "@/components/NotePad";
 
 export const Route = createFileRoute("/")({
@@ -134,7 +134,7 @@ function DashboardPage() {
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [country, setCountry] = useState<string>("all");
-  const [masterSearchOpen, setMasterSearchOpen] = useState(false);
+  
   const [notePadOpen, setNotePadOpen] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
 
@@ -873,7 +873,7 @@ function DashboardPage() {
         </Card>
       </div>
 
-      <MasterSearch open={masterSearchOpen} onOpenChange={setMasterSearchOpen} />
+      
       <NotePad open={notePadOpen} onOpenChange={setNotePadOpen} />
     </div>
   );
