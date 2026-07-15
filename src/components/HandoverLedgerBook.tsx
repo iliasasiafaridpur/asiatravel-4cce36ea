@@ -1243,8 +1243,11 @@ function HandoverCard({
     const sk = receiptServiceKey(r);
     const info = sk ? serviceMap[sk] : undefined;
     const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-    const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
-    const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    // "past" = strictly earlier receipts on this service that are NOT part of
+    // the current handover. Excluding same-handover rows keeps পূর্বের জমা
+    // truthful even when a handover has multiple entries on the same service.
+    const past = allForSvc.filter((x) => x.id !== r.id && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => x.id !== r.id && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
     const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
     const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
     const lastPast = past.length
