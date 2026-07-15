@@ -1197,8 +1197,23 @@ function HandoverCard({
     return () => document.removeEventListener("click", onDocClick);
   }, [highlightId]);
 
-  const scrollToReceipt = (id: string) => {
+  const scrollToReceipt = (id: string, fallback?: { date?: string | null; amount?: number; hid?: string | null }) => {
     window.dispatchEvent(new CustomEvent("ledger-highlight-receipt", { detail: id }));
+    // If the target receipt's card is filtered out (date range / pending-only /
+    // search) it never scrolls. Give the user a clear, actionable hint instead
+    // of a silent no-op.
+    setTimeout(() => {
+      const el = document.getElementById(`receipt-row-${id}`);
+      if (el) return;
+      const parts: string[] = [];
+      if (fallback?.date) parts.push(`তারিখ: ${formatDate(fallback.date)}`);
+      if (fallback?.amount != null) parts.push(`পরিমাণ: ${fallback.amount.toLocaleString()}/-`);
+      if (fallback?.hid) parts.push(`Handover: ${fallback.hid}`);
+      toast.info(
+        `পূর্বের জমা এই ভিউতে নেই${parts.length ? ` — ${parts.join(" · ")}` : ""}. তারিখ ফিল্টার/সার্চ বাদ দিয়ে আবার চেষ্টা করুন।`,
+        { duration: 6000 },
+      );
+    }, 250);
   };
 
   const statusBadge =
@@ -1228,8 +1243,11 @@ function HandoverCard({
     const sk = receiptServiceKey(r);
     const info = sk ? serviceMap[sk] : undefined;
     const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
-    const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
-    const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    // "past" = strictly earlier receipts on this service that are NOT part of
+    // the current handover. Excluding same-handover rows keeps পূর্বের জমা
+    // truthful even when a handover has multiple entries on the same service.
+    const past = allForSvc.filter((x) => x.id !== r.id && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => x.id !== r.id && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
     const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
     const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
     const lastPast = past.length
@@ -1633,7 +1651,7 @@ function HandoverCard({
                     {previousPaid > 0 ? (
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); if (lastPast) scrollToReceipt(lastPast.id); }}
+                        onClick={(e) => { e.stopPropagation(); if (lastPast) scrollToReceipt(lastPast.id, { date: lastPast.entry_date, amount: Number(lastPast.amount || 0), hid: null }); }}
                         className="text-right hover:underline focus:outline-none focus:ring-1 focus:ring-sky-500 rounded px-1"
                         title="পূর্বের জমা দেখাও"
                       >
