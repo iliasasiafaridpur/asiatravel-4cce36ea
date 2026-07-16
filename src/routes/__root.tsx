@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 const ORBITRON_LINK = { rel: "preconnect", href: "https://fonts.googleapis.com" };
 const ORBITRON_LINK2 = { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" };
-const ORBITRON_CSS = { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" };
+// Non-blocking font load: media="print" makes the CSS parse without blocking
+// first paint; onLoad swaps it back to "all" once downloaded. Big first-load win.
+const ORBITRON_CSS = {
+  rel: "stylesheet",
+  href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap",
+  media: "print",
+  onLoad: "this.media='all'",
+};
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -223,25 +230,36 @@ function RootComponent() {
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
     installToastInterceptor();
-    void import("@/lib/register-sw").then(({ registerOfflineSW }) => registerOfflineSW());
-    void import("@/lib/global-fetch-interceptor").then(({ installGlobalFetchInterceptor }) =>
-      installGlobalFetchInterceptor(),
-    );
-    // Power-cut recovery: detect pre-existing queued items from previous session
-    void import("@/lib/offline-queue").then(({ getQueueCount }) => {
-      const pending = getQueueCount();
-      if (pending > 0) {
-        void import("@/lib/notification-store").then(({ pushNotification }) => {
-          pushNotification(
-            "info",
-            "পূর্বের সেশনের অফলাইন এন্ট্রি পাওয়া গেছে",
-            `${pending} টি অসিঙ্ক এন্ট্রি লোকাল স্টোরেজে সংরক্ষিত আছে — ইন্টারনেট এলেই অটো-সিঙ্ক হবে।`,
-          );
-        });
+    // Defer non-critical startup to idle time so first paint isn't blocked
+    // by SW registration, fetch interceptor patching, or the alert scanner's
+    // initial DB query. Big win for cold-start desktop loads.
+    const runIdle = (cb: () => void) => {
+      const w = window as Window & { requestIdleCallback?: (cb: IdleRequestCallback) => number };
+      if (typeof w.requestIdleCallback === "function") {
+        w.requestIdleCallback(() => cb(), { timeout: 2000 });
+      } else {
+        window.setTimeout(cb, 300);
       }
+    };
+    runIdle(() => {
+      void import("@/lib/register-sw").then(({ registerOfflineSW }) => registerOfflineSW());
+      void import("@/lib/global-fetch-interceptor").then(({ installGlobalFetchInterceptor }) =>
+        installGlobalFetchInterceptor(),
+      );
+      void import("@/lib/offline-queue").then(({ getQueueCount }) => {
+        const pending = getQueueCount();
+        if (pending > 0) {
+          void import("@/lib/notification-store").then(({ pushNotification }) => {
+            pushNotification(
+              "info",
+              "পূর্বের সেশনের অফলাইন এন্ট্রি পাওয়া গেছে",
+              `${pending} টি অসিঙ্ক এন্ট্রি লোকাল স্টোরেজে সংরক্ষিত আছে — ইন্টারনেট এলেই অটো-সিঙ্ক হবে।`,
+            );
+          });
+        }
+      });
+      void import("@/lib/alert-scanner").then(({ startAlertScanner }) => startAlertScanner());
     });
-    // Background operational alerts (financial / aging)
-    void import("@/lib/alert-scanner").then(({ startAlertScanner }) => startAlertScanner());
   }, []);
 
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
