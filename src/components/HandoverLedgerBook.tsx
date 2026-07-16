@@ -1966,6 +1966,7 @@ function HandoverCard({
                       <td className="px-1.5 py-1 text-right tabular-nums align-top">
                         {mdRecv ? (
                           <>
+                            {isAdvance && <AdvanceBadge advance className="mr-1" />}
                             <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(r.amount)}</b>
                             <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {methodLabel(r.method)}</div>
                           </>
