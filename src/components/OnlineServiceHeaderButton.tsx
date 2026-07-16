@@ -243,18 +243,25 @@ export function OnlineServiceHeaderButton() {
                               {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
                             </span>
                           </button>
-                          {/* Action buttons — hidden until folder row is hovered */}
-                          <div className="flex items-center gap-0.5 opacity-0 group-hover/folder:opacity-100 focus-within:opacity-100 transition-opacity">
-                            <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <button type="button" onClick={() => { setExpanded((s) => ({ ...s, [f.id]: true })); setAddingTo(addingTo === f.id ? null : f.id); }} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
-                              <Plus className="h-3.5 w-3.5 text-emerald-500" />
-                            </button>
-                            <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                            </button>
-                          </div>
+                          {/* Actions collapsed inside a small 3-dot menu */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button type="button" className="p-1.5 hover:bg-muted rounded" title="আরও অপশন" aria-label="More options">
+                                <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-auto p-1 flex items-center gap-0.5">
+                              <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
+                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              <button type="button" onClick={() => { setExpanded((s) => ({ ...s, [f.id]: true })); setAddingTo(addingTo === f.id ? null : f.id); }} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
+                                <Plus className="h-3.5 w-3.5 text-emerald-500" />
+                              </button>
+                              <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </button>
+                            </PopoverContent>
+                          </Popover>
                         </>
                       )}
                     </div>
