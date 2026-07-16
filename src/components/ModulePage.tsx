@@ -1199,6 +1199,16 @@ export function ModulePage({ module: mod }: Props) {
       const idx = order.findIndex((s) => s.trim().toLowerCase() === currentStatus.trim().toLowerCase());
       if (idx >= 0 && idx < order.length - 1) target = order[idx + 1];
     }
+    // Pending Delivery থেকে এগোনোর সময় ডিফল্ট থাকবে "Delivered" — "Delivery But Due"
+    // দরকার হলে user নিজে সিলেক্ট করে নেবে।
+    if (target.trim().toLowerCase() === "delivery but due"
+        && currentStatus.trim().toLowerCase() === "pending delivery") {
+      const delivered = order.find((s) => {
+        const k = s.trim().toLowerCase();
+        return k === "delivered" || k === "delivery";
+      });
+      if (delivered) target = delivered;
+    }
     setStatusChange({
       row,
       newStatus: target,
