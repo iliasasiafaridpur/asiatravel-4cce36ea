@@ -2066,7 +2066,12 @@ function HandoverCard({
                       )}
                     </td>
                     <td className="px-3 py-2 align-top text-sm font-medium">{e.category || "—"}</td>
-                    <td className="px-3 py-2 align-top text-sm text-muted-foreground">{e.purpose || "—"}</td>
+                    <td className="px-3 py-2 align-top text-sm">
+                      <div className="text-muted-foreground">{e.purpose || "—"}</div>
+                      {e.remarks && (
+                        <div className="text-xs text-muted-foreground/80 italic mt-0.5 whitespace-pre-wrap">📝 {e.remarks}</div>
+                      )}
+                    </td>
                     <td className="px-3 py-2 align-top text-xs text-muted-foreground">{e.spent_by_name || "—"}</td>
                     <td className="px-3 py-2 text-right align-top tabular-nums font-bold text-rose-600 dark:text-rose-400">
                       −{fmt(e.amount)}
