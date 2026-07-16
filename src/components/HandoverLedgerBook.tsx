@@ -105,6 +105,7 @@ type Expense = {
   amount: number;
   category: string;
   purpose: string | null;
+  remarks: string | null;
   spent_by_name: string | null;
   handover_id: string | null;
   created_at: string;
