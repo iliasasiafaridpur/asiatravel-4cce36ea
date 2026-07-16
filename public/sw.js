@@ -111,13 +111,18 @@ self.addEventListener("fetch", (event) => {
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(HTML_CACHE);
-      const fresh = await fetch(req).then((resp) => {
-        if (resp && resp.ok) {
-          try { cache.put(req, resp.clone()); } catch { /* ignore */ }
-          try { cache.put(APP_SHELL, resp.clone()); } catch { /* ignore */ }
-        }
-        return resp;
-      }).catch(() => null);
+      // Give the network a bounded window (6s). If it stalls, fall back to
+      // cached shell/page instead of hanging the tab indefinitely.
+      const fresh = await Promise.race([
+        fetch(req).then((resp) => {
+          if (resp && resp.ok) {
+            try { cache.put(req, resp.clone()); } catch { /* ignore */ }
+            try { cache.put(APP_SHELL, resp.clone()); } catch { /* ignore */ }
+          }
+          return resp;
+        }).catch(() => null),
+        new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+      ]);
 
       if (fresh) return fresh;
       const cachedPage = await cache.match(req);
