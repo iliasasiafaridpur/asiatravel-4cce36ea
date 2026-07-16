@@ -1051,7 +1051,7 @@ function buildHandoverSlipBody(args: {
       const prevCell = previousPaid > 0
         ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
         : `<span class="sub">— নতুন —</span>`;
-      const mdBreakdown = mdRecs.map((x) => `<span class="b sky">${esc(fmt(x.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(x.method))}</span>`).join("");
+      const mdBreakdown = mdRecs.map((x) => `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b sky">${esc(fmt(x.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(x.method))}</span>`).join("");
       const mdCell = (mdSum > 0 || vendorSum > 0)
         ? mdBreakdown + (vendorSum > 0 ? `<span class="b orange">${esc(fmt(vendorSum))}</span><span class="sub orange">Vendor Rece</span>` : "")
         : "—";
@@ -1100,7 +1100,7 @@ function buildHandoverSlipBody(args: {
       ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
       : `<span class="sub">— নতুন —</span>`;
     const mdCell = mdRecv
-      ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(r.method))}</span>`
+      ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(r.method))}</span>`
       : vendorRecv
         ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
         : "—";
@@ -1796,6 +1796,7 @@ function HandoverCard({
                         <>
                           {row.recs.filter((x) => isMdReceivedMethod(x.method)).map((x) => (
                             <div key={`md-${x.id}`}>
+                              {isAdvance && <AdvanceBadge advance className="mr-1" />}
                               <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(Number(x.amount || 0))}</b>
                               <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {methodLabel(x.method)}</div>
                             </div>
@@ -1965,6 +1966,7 @@ function HandoverCard({
                       <td className="px-1.5 py-1 text-right tabular-nums align-top">
                         {mdRecv ? (
                           <>
+                            {isAdvance && <AdvanceBadge advance className="mr-1" />}
                             <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(r.amount)}</b>
                             <div className="text-sm text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {methodLabel(r.method)}</div>
                           </>
