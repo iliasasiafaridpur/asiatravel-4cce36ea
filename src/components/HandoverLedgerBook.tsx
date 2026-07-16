@@ -1038,7 +1038,8 @@ function buildHandoverSlipBody(args: {
       const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
       const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
         + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
-        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`;
+        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`
+        + (first.source === "manual" && first.remarks ? `<span class="sub">📝 ${esc(first.remarks)}</span>` : "");
       const vendorBit = info?.vendor
         ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
         : "";
