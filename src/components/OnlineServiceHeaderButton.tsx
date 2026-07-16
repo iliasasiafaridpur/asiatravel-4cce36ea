@@ -306,14 +306,21 @@ export function OnlineServiceHeaderButton() {
                                     <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                                     <span className="truncate">{b.name}</span>
                                   </a>
-                                  <div className="flex items-center gap-0.5 opacity-0 group-hover/bm:opacity-100 transition-opacity">
-                                    <button type="button" onClick={() => startEditBookmark(b)} className="p-1.5 hover:bg-muted rounded" aria-label="Edit link" title="লিংক পরিবর্তন">
-                                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                                    </button>
-                                    <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link" title="লিংক মুছুন">
-                                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                    </button>
-                                  </div>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button type="button" className="p-1.5 hover:bg-muted rounded" title="আরও অপশন" aria-label="More options">
+                                        <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-auto p-1 flex items-center gap-0.5">
+                                      <button type="button" onClick={() => startEditBookmark(b)} className="p-1.5 hover:bg-muted rounded" aria-label="Edit link" title="লিংক পরিবর্তন">
+                                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </button>
+                                      <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link" title="লিংক মুছুন">
+                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                      </button>
+                                    </PopoverContent>
+                                  </Popover>
                                 </>
                               )}
                             </div>
