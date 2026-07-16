@@ -1140,7 +1140,7 @@ function buildHandoverSlipBody(args: {
   const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
       <td class="nw">${esc(formatDate(e.entry_date))}</td>
       <td class="nw">${esc(e.category || "—")}</td>
-      <td>${esc(e.purpose || "—")}</td>
+      <td>${esc(e.purpose || "—")}${e.remarks ? `<span class="sub">📝 ${esc(e.remarks)}</span>` : ""}</td>
       <td class="nw">${esc(e.spent_by_name || "—")}</td>
       <td class="r nw rose b">−${esc(fmt(e.amount))}</td>
     </tr>`).join("");
