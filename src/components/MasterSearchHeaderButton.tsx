@@ -137,6 +137,12 @@ export function MasterSearchHeaderButton() {
     setOpen(false);
     setQ("");
     navigate({ to: it.path });
+    // Also fire an event so ModulePage focuses even when already on the same route.
+    window.setTimeout(() => {
+      try {
+        window.dispatchEvent(new CustomEvent("master:focus", { detail: { module: it.key, id: it.id } }));
+      } catch { /* ignore */ }
+    }, 50);
   };
 
   return (
