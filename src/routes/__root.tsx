@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 const ORBITRON_LINK = { rel: "preconnect", href: "https://fonts.googleapis.com" };
 const ORBITRON_LINK2 = { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" };
-const ORBITRON_CSS = { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" };
+// Non-blocking font load: media="print" makes the CSS parse without blocking
+// first paint; onLoad swaps it back to "all" once downloaded. Big first-load win.
+const ORBITRON_CSS = {
+  rel: "stylesheet",
+  href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap",
+  media: "print",
+  onLoad: "this.media='all'",
+};
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
