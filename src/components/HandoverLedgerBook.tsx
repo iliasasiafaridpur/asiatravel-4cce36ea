@@ -873,7 +873,41 @@ function buildHandoverSlipBody(args: {
     };
   };
 
+  // Multi-method due-receive creates one payment_receipts row per method sharing
+  // the same base receipt_id (…-1, …-2). Collapse them into a single print line.
+  const batchKeyOf = (r: Receipt) =>
+    `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+
+  const metricsForBatch = (recs: Receipt[]) => {
+    const first = recs[0];
+    const sk = receiptServiceKey(first);
+    const info = sk ? serviceMap[sk] : undefined;
+    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const ids = new Set(recs.map((x) => x.id));
+    const past = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
+    const future = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
+    const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const futurePaid = future.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const lastPast = past.length
+      ? past.reduce((a, b) => (rank(a.entry_date, a.created_at) > rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const lastFuture = future.length
+      ? future.reduce((a, b) => (rank(a.entry_date, a.created_at) < rank(b.entry_date, b.created_at) ? a : b))
+      : null;
+    const bill = info?.sold_price ?? 0;
+    const discount = info?.discount ?? 0;
+    const batchSum = recs.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const dueAfterThis = bill > 0 ? Math.max(0, bill - (previousPaid + batchSum) - discount) : 0;
+    const cashSum = recs.filter((x) => isCashMethod(x.method) && !isStatusEventReceipt(x)).reduce((s, x) => s + Number(x.amount || 0), 0);
+    const mdRecs = recs.filter((x) => isMdReceivedMethod(x.method) && !isStatusEventReceipt(x));
+    const mdSum = mdRecs.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const vendorSum = recs.filter((x) => isVendorReceivedMethod(x.method) && !isStatusEventReceipt(x)).reduce((s, x) => s + Number(x.amount || 0), 0);
+    const isAdvance = !!info?.has_delivery && isAdvancePayment(first.entry_date, info?.delivery_date);
+    return { sk, info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, dueAfterThis, isAdvance, past, cashSum, mdSum, mdRecs, vendorSum, batchSum };
+  };
+
   type SingleRow = { kind: "single"; r: Receipt; m: ReturnType<typeof metricsFor> };
+  type BatchRow = { kind: "batch"; recs: Receipt[]; m: ReturnType<typeof metricsForBatch> };
   type AgencyRow = {
     kind: "agency"; agent: string; items: number; svcCount: number;
     totalBill: number; totalDiscount: number; totalPrevious: number;
@@ -881,11 +915,21 @@ function buildHandoverSlipBody(args: {
     ledgerDue: number; ledgerAdvance: number;
     cash: number; md: number; vendor: number; date: string;
   };
-  type DisplayRow = SingleRow | AgencyRow;
+  type DisplayRow = SingleRow | AgencyRow | BatchRow;
 
   const displayRows: DisplayRow[] = [];
   {
     const buckets = new Map<string, Receipt[]>();
+    const batchIndex = new Map<string, Receipt[]>();
+    for (const r of visibleReceipts) {
+      const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
+      if (agent && totalAgents.has(agent)) continue;
+      const k = batchKeyOf(r);
+      const arr = batchIndex.get(k) ?? [];
+      arr.push(r);
+      batchIndex.set(k, arr);
+    }
+    const emittedBatches = new Set<string>();
     for (const r of visibleReceipts) {
       const agent = String(serviceMap[receiptServiceKey(r)]?.agent ?? "").trim();
       if (agent && totalAgents.has(agent)) {
@@ -893,7 +937,15 @@ function buildHandoverSlipBody(args: {
         arr.push(r);
         buckets.set(agent, arr);
       } else {
-        displayRows.push({ kind: "single", r, m: metricsFor(r) });
+        const k = batchKeyOf(r);
+        if (emittedBatches.has(k)) continue;
+        emittedBatches.add(k);
+        const recs = batchIndex.get(k) ?? [r];
+        if (recs.length === 1) {
+          displayRows.push({ kind: "single", r: recs[0], m: metricsFor(recs[0]) });
+        } else {
+          displayRows.push({ kind: "batch", recs, m: metricsForBatch(recs) });
+        }
       }
     }
     for (const [agent, recs] of buckets) {
@@ -965,6 +1017,54 @@ function buildHandoverSlipBody(args: {
         <td class="nw">${esc(formatDate(row.date))}<span class="sub">মোটের উপর</span></td>
         <td><span class="b">${esc(row.agent)}</span><span class="sub">এজেন্সি · ${row.items} টি passenger</span></td>
         <td><span>${row.svcCount} টি সার্ভিস (মোট হিসাব)</span><span class="sub">passenger তথ্য → এজেন্সি লেজার</span></td>
+        <td class="r nw">${billCell}</td>
+        <td class="r nw">${prevCell}</td>
+        <td class="r nw">${mdCell}</td>
+        <td class="r nw">${staffCell}</td>
+        <td class="r nw">${dueCell}</td>
+      </tr>`;
+    }
+
+    if (row.kind === "batch") {
+      const { recs, m } = row;
+      const first = recs[0];
+      const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, dueAfterThis,
+        isAdvance, past, cashSum, mdSum, mdRecs, vendorSum, batchSum } = m;
+      const dateCell = `${esc(formatDate(first.entry_date))}`
+        + (first.ref_id ? `<span class="sub mono">${esc((first.ref_id ?? "").replace(/-\d+$/, ""))}</span>` : "");
+      const custCell = `<span class="b">${esc(first.passenger_name || "—")}</span>`
+        + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
+      const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
+      const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
+        + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
+        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`;
+      const vendorBit = info?.vendor
+        ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
+        : "";
+      const billCell = bill > 0
+        ? `<span class="b">${esc(fmt(bill))}</span>`
+          + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} ${DISCOUNT_LABEL}</span>` : "")
+          + vendorBit
+        : `—${vendorBit}`;
+      const prevCell = previousPaid > 0
+        ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
+        : `<span class="sub">— নতুন —</span>`;
+      const mdBreakdown = mdRecs.map((x) => `<span class="b sky">${esc(fmt(x.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(x.method))}</span>`).join("");
+      const mdCell = (mdSum > 0 || vendorSum > 0)
+        ? mdBreakdown + (vendorSum > 0 ? `<span class="b orange">${esc(fmt(vendorSum))}</span><span class="sub orange">Vendor Rece</span>` : "")
+        : "—";
+      const staffCell = cashSum > 0
+        ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b emer">${esc(fmt(cashSum))}</span>`
+        : "—";
+      const dueCell = bill > 0
+        ? (dueAfterThis <= 0.005
+            ? `<span class="emer b">✓</span>`
+            : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
+        : "—";
+      return `<tr class="rt tint${idx % 2}">
+        <td class="nw">${dateCell}</td>
+        <td>${custCell}</td>
+        <td>${svcCell}</td>
         <td class="r nw">${billCell}</td>
         <td class="r nw">${prevCell}</td>
         <td class="r nw">${mdCell}</td>
