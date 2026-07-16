@@ -255,7 +255,7 @@ export function HandoverLedgerInline({
       if (ids.length > 0) {
         const { data: expData } = await supabase
           .from("cash_expenses")
-          .select("id,expense_id,entry_date,amount,category,purpose,spent_by_name,handover_id,created_at,linked_source_table")
+          .select("id,expense_id,entry_date,amount,category,purpose,remarks,spent_by_name,handover_id,created_at,linked_source_table")
           .in("handover_id", ids)
           .order("created_at", { ascending: true });
         exps = (expData ?? []) as Expense[];
