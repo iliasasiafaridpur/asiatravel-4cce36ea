@@ -1754,6 +1754,9 @@ function HandoverCard({
                       {methodsLabel && (
                         <div className="text-[11px] text-muted-foreground leading-tight">{methodsLabel}</div>
                       )}
+                      {first.source === "manual" && first.remarks && (
+                        <div className="text-xs text-muted-foreground/80 italic leading-tight mt-0.5 whitespace-pre-wrap">📝 {first.remarks}</div>
+                      )}
                     </td>
                     <td className="px-1.5 py-1 text-right align-top">
                       {bill > 0 ? (
