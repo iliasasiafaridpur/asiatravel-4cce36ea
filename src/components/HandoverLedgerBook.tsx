@@ -1100,7 +1100,7 @@ function buildHandoverSlipBody(args: {
       ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
       : `<span class="sub">— নতুন —</span>`;
     const mdCell = mdRecv
-      ? `<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(r.method))}</span>`
+      ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b sky">${esc(fmt(r.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(r.method))}</span>`
       : vendorRecv
         ? `<span class="b orange">${esc(fmt(r.amount))}</span><span class="sub orange">Vendor Rece</span>`
         : "—";
