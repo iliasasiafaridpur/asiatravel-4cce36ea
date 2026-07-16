@@ -302,7 +302,26 @@ export function OnlineServiceHeaderButton() {
                                 </div>
                               ) : (
                                 <>
-                                  <a href={b.url} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center gap-2 text-sm py-2 truncate" title={b.url}>
+                                  <a
+                                    href={b.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-1 flex items-center gap-2 text-sm py-2 truncate"
+                                    title={b.url}
+                                    onClick={(e) => {
+                                      // Sheet-এর focus-trap/body-lock থেকে বের করে
+                                      // নতুন ট্যাব খুলি — যাতে app hang না হয়।
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setOpen(false);
+                                      setTimeout(() => {
+                                        try {
+                                          const w = window.open(b.url, "_blank", "noopener,noreferrer");
+                                          if (w) w.opener = null;
+                                        } catch { /* popup blocked — ignore */ }
+                                      }, 60);
+                                    }}
+                                  >
                                     <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                                     <span className="truncate">{b.name}</span>
                                   </a>
