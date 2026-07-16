@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X, Cloud, CloudOff } from "lucide-react";
+import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X, Cloud, CloudOff, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
@@ -41,6 +41,9 @@ export function OnlineServiceHeaderButton() {
   const [linkUrl, setLinkUrl] = useState("");
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
+  const [editingBookmark, setEditingBookmark] = useState<string | null>(null);
+  const [editBmName, setEditBmName] = useState("");
+  const [editBmUrl, setEditBmUrl] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [cloudReady, setCloudReady] = useState(false);
 
@@ -117,7 +120,6 @@ export function OnlineServiceHeaderButton() {
     const nf = { id: newId(), name, bookmarks: [] };
     persist([...folders, nf]);
     setNewFolderName("");
-    setExpanded((s) => ({ ...s, [nf.id]: true }));
     toast.success("ফোল্ডার তৈরি হয়েছে");
   };
 
@@ -141,6 +143,24 @@ export function OnlineServiceHeaderButton() {
     persist(folders.map((f) => f.id === folderId ? { ...f, bookmarks: [...f.bookmarks, { id: newId(), name, url }] } : f));
     setLinkName(""); setLinkUrl(""); setAddingTo(null);
     toast.success("লিংক সেভ হয়েছে");
+  };
+
+  const startEditBookmark = (b: Bookmark) => {
+    setEditingBookmark(b.id);
+    setEditBmName(b.name);
+    setEditBmUrl(b.url);
+  };
+
+  const saveEditBookmark = (folderId: string, bmId: string) => {
+    const name = editBmName.trim();
+    const url = normalizeUrl(editBmUrl);
+    if (!name || !url) { toast.error("নাম ও URL দিন"); return; }
+    persist(folders.map((f) => f.id === folderId
+      ? { ...f, bookmarks: f.bookmarks.map((b) => b.id === bmId ? { ...b, name, url } : b) }
+      : f));
+    setEditingBookmark(null);
+    setEditBmName(""); setEditBmUrl("");
+    toast.success("লিংক আপডেট হয়েছে");
   };
 
   const removeBookmark = (folderId: string, bmId: string) => {
@@ -191,18 +211,10 @@ export function OnlineServiceHeaderButton() {
           ) : (
             <div className="space-y-2">
               {folders.map((f) => {
-                const isOpen = expanded[f.id] ?? true;
+                const isOpen = expanded[f.id] ?? false;
                 return (
-                  <div key={f.id} className="border border-border rounded-md">
-                    <div className="flex items-center gap-1 p-2 bg-muted/30">
-                      <button
-                        type="button"
-                        onClick={() => setExpanded((s) => ({ ...s, [f.id]: !isOpen }))}
-                        className="p-1 hover:bg-muted rounded"
-                        aria-label="Toggle"
-                      >
-                        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      </button>
+                  <div key={f.id} className="border border-border rounded-md group/folder">
+                    <div className="flex items-center gap-1 p-1 bg-muted/30">
                       {editingFolder === f.id ? (
                         <>
                           <Input
@@ -213,21 +225,35 @@ export function OnlineServiceHeaderButton() {
                             autoFocus
                           />
                           <Button type="button" size="sm" variant="secondary" className="h-8 px-2" onClick={() => renameFolder(f.id)}>OK</Button>
+                          <Button type="button" size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setEditingFolder(null); setEditFolderName(""); }}>
+                            <X className="h-4 w-4" />
+                          </Button>
                         </>
                       ) : (
                         <>
-                          <span className="flex-1 text-sm font-medium truncate">
-                            {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
-                          </span>
-                          <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
-                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          <button
+                            type="button"
+                            onClick={() => setExpanded((s) => ({ ...s, [f.id]: !isOpen }))}
+                            className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-muted text-left"
+                            title="ক্লিক করুন খুলতে/বন্ধ করতে"
+                          >
+                            {isOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                            <span className="text-sm font-medium truncate">
+                              {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
+                            </span>
                           </button>
-                          <button type="button" onClick={() => setAddingTo(addingTo === f.id ? null : f.id)} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
-                            <Plus className="h-4 w-4 text-emerald-500" />
-                          </button>
-                          <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </button>
+                          {/* Action buttons — hidden until folder row is hovered */}
+                          <div className="flex items-center gap-0.5 opacity-0 group-hover/folder:opacity-100 focus-within:opacity-100 transition-opacity">
+                            <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
+                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button type="button" onClick={() => { setExpanded((s) => ({ ...s, [f.id]: true })); setAddingTo(addingTo === f.id ? null : f.id); }} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
+                              <Plus className="h-3.5 w-3.5 text-emerald-500" />
+                            </button>
+                            <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </button>
+                          </div>
                         </>
                       )}
                     </div>
@@ -249,17 +275,39 @@ export function OnlineServiceHeaderButton() {
                           </div>
                         )}
                         {f.bookmarks.length === 0 ? (
-                          <p className="text-xs text-muted-foreground px-2 py-1">এই ফোল্ডারে কোনো লিংক নেই। উপরের <Plus className="h-3 w-3 inline text-emerald-500" /> চাপুন।</p>
+                          <p className="text-xs text-muted-foreground px-2 py-1">এই ফোল্ডারে কোনো লিংক নেই।</p>
                         ) : (
                           f.bookmarks.map((b) => (
-                            <div key={b.id} className="flex items-center gap-1 group hover:bg-muted/50 rounded px-1">
-                              <a href={b.url} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center gap-2 text-sm py-2 truncate" title={b.url}>
-                                <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                                <span className="truncate">{b.name}</span>
-                              </a>
-                              <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </button>
+                            <div key={b.id} className="flex items-center gap-1 group/bm hover:bg-muted/50 rounded px-1">
+                              {editingBookmark === b.id ? (
+                                <div className="flex-1 space-y-1 py-1.5">
+                                  <Input value={editBmName} onChange={(e) => setEditBmName(e.target.value)} className="h-8 text-xs" placeholder="নাম" autoFocus />
+                                  <Input value={editBmUrl} onChange={(e) => setEditBmUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEditBookmark(f.id, b.id); } }} className="h-8 text-xs" placeholder="https://..." />
+                                  <div className="flex gap-1">
+                                    <Button type="button" size="sm" variant="secondary" className="h-7 px-2 flex-1" onClick={() => saveEditBookmark(f.id, b.id)}>
+                                      <Check className="h-3.5 w-3.5 mr-1" /> সেভ
+                                    </Button>
+                                    <Button type="button" size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingBookmark(null); }}>
+                                      <X className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <a href={b.url} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center gap-2 text-sm py-2 truncate" title={b.url}>
+                                    <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+                                    <span className="truncate">{b.name}</span>
+                                  </a>
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover/bm:opacity-100 transition-opacity">
+                                    <button type="button" onClick={() => startEditBookmark(b)} className="p-1.5 hover:bg-muted rounded" aria-label="Edit link" title="লিংক পরিবর্তন">
+                                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </button>
+                                    <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link" title="লিংক মুছুন">
+                                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))
                         )}
