@@ -1023,6 +1023,53 @@ function buildHandoverSlipBody(args: {
         <td class="r nw">${staffCell}</td>
         <td class="r nw">${dueCell}</td>
       </tr>`;
+
+    if (row.kind === "batch") {
+      const { recs, m } = row;
+      const first = recs[0];
+      const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, dueAfterThis,
+        isAdvance, past, cashSum, mdSum, mdRecs, vendorSum, batchSum } = m;
+      const dateCell = `${esc(formatDate(first.entry_date))}`
+        + (first.ref_id ? `<span class="sub mono">${esc((first.ref_id ?? "").replace(/-\d+$/, ""))}</span>` : "");
+      const custCell = `<span class="b">${esc(first.passenger_name || "—")}</span>`
+        + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
+      const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
+      const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
+        + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
+        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`;
+      const vendorBit = info?.vendor
+        ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
+        : "";
+      const billCell = bill > 0
+        ? `<span class="b">${esc(fmt(bill))}</span>`
+          + (discount > 0 ? `<span class="sub emer">${esc(fmt(discount))} ${DISCOUNT_LABEL}</span>` : "")
+          + vendorBit
+        : `—${vendorBit}`;
+      const prevCell = previousPaid > 0
+        ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
+        : `<span class="sub">— নতুন —</span>`;
+      const mdBreakdown = mdRecs.map((x) => `<span class="b sky">${esc(fmt(x.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(x.method))}</span>`).join("");
+      const mdCell = (mdSum > 0 || vendorSum > 0)
+        ? mdBreakdown + (vendorSum > 0 ? `<span class="b orange">${esc(fmt(vendorSum))}</span><span class="sub orange">Vendor Rece</span>` : "")
+        : "—";
+      const staffCell = cashSum > 0
+        ? `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b emer">${esc(fmt(cashSum))}</span>`
+        : "—";
+      const dueCell = bill > 0
+        ? (dueAfterThis <= 0.005
+            ? `<span class="emer b">✓</span>`
+            : `<span class="b rose">${esc(fmt(dueAfterThis))}</span>${futurePaid > 0 && lastFuture ? `<span class="sub emer">জমা: ${esc(fmt(futurePaid))} ${esc(formatDate(lastFuture.entry_date))}</span>` : ""}`)
+        : "—";
+      return `<tr class="rt tint${idx % 2}">
+        <td class="nw">${dateCell}</td>
+        <td>${custCell}</td>
+        <td>${svcCell}</td>
+        <td class="r nw">${billCell}</td>
+        <td class="r nw">${prevCell}</td>
+        <td class="r nw">${mdCell}</td>
+        <td class="r nw">${staffCell}</td>
+        <td class="r nw">${dueCell}</td>
+      </tr>`;
     }
 
     const { r, m } = row;
