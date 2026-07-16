@@ -1775,18 +1775,9 @@ export function ModulePage({ module: mod }: Props) {
   }, [selectRow]);
 
   // Master Search (dashboard) → open this module already focused on one row.
-  useEffect(() => {
-    if (rows.length === 0) return;
-    let raw: string | null = null;
-    try { raw = sessionStorage.getItem("master_focus"); } catch { /* ignore */ }
-    if (!raw) return;
-    let parsed: { module?: string; id?: string } | null = null;
-    try { parsed = JSON.parse(raw); } catch { parsed = null; }
-    if (!parsed || parsed.module !== mod.key || !parsed.id) return;
-    const focusId = String(parsed.id);
+  const focusRowById = useCallback((focusId: string) => {
     const target = rows.find((r) => String(r[mod.idColumn] ?? "") === focusId);
-    try { sessionStorage.removeItem("master_focus"); } catch { /* ignore */ }
-    if (!target) return;
+    if (!target) return false;
     setSearch(focusId);
     selectRow(String(target.id));
     const doScroll = () => {
@@ -1795,7 +1786,32 @@ export function ModulePage({ module: mod }: Props) {
     };
     window.setTimeout(doScroll, 200);
     window.setTimeout(doScroll, 500);
-  }, [rows, mod.key, mod.idColumn, selectRow]);
+    return true;
+  }, [rows, mod.idColumn, selectRow]);
+
+  useEffect(() => {
+    if (rows.length === 0) return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem("master_focus"); } catch { /* ignore */ }
+    if (!raw) return;
+    let parsed: { module?: string; id?: string } | null = null;
+    try { parsed = JSON.parse(raw); } catch { parsed = null; }
+    if (!parsed || parsed.module !== mod.key || !parsed.id) return;
+    try { sessionStorage.removeItem("master_focus"); } catch { /* ignore */ }
+    focusRowById(String(parsed.id));
+  }, [rows, mod.key, focusRowById]);
+
+  // Same-route click from Master Search header dropdown
+  useEffect(() => {
+    const onFocus = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { module?: string; id?: string } | undefined;
+      if (!detail || detail.module !== mod.key || !detail.id) return;
+      try { sessionStorage.removeItem("master_focus"); } catch { /* ignore */ }
+      focusRowById(String(detail.id));
+    };
+    window.addEventListener("master:focus", onFocus as EventListener);
+    return () => window.removeEventListener("master:focus", onFocus as EventListener);
+  }, [mod.key, focusRowById]);
 
 
 
