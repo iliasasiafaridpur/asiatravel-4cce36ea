@@ -105,6 +105,7 @@ type Expense = {
   amount: number;
   category: string;
   purpose: string | null;
+  remarks: string | null;
   spent_by_name: string | null;
   handover_id: string | null;
   created_at: string;
@@ -254,7 +255,7 @@ export function HandoverLedgerInline({
       if (ids.length > 0) {
         const { data: expData } = await supabase
           .from("cash_expenses")
-          .select("id,expense_id,entry_date,amount,category,purpose,spent_by_name,handover_id,created_at,linked_source_table")
+          .select("id,expense_id,entry_date,amount,category,purpose,remarks,spent_by_name,handover_id,created_at,linked_source_table")
           .in("handover_id", ids)
           .order("created_at", { ascending: true });
         exps = (expData ?? []) as Expense[];
@@ -1037,7 +1038,8 @@ function buildHandoverSlipBody(args: {
       const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
       const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
         + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
-        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`;
+        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`
+        + (first.source === "manual" && first.remarks ? `<span class="sub">📝 ${esc(first.remarks)}</span>` : "");
       const vendorBit = info?.vendor
         ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
         : "";
@@ -1084,7 +1086,8 @@ function buildHandoverSlipBody(args: {
     const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
       + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
       + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
-      + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "");
+      + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "")
+      + (r.source === "manual" && r.remarks ? `<span class="sub">📝 ${esc(r.remarks)}</span>` : "");
     const vendorBit = info?.vendor
       ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
       : "";
@@ -1137,7 +1140,7 @@ function buildHandoverSlipBody(args: {
   const expenseRows = expenses.map((e, idx) => `<tr class="rt tint${idx % 2}">
       <td class="nw">${esc(formatDate(e.entry_date))}</td>
       <td class="nw">${esc(e.category || "—")}</td>
-      <td>${esc(e.purpose || "—")}</td>
+      <td>${esc(e.purpose || "—")}${e.remarks ? `<span class="sub">📝 ${esc(e.remarks)}</span>` : ""}</td>
       <td class="nw">${esc(e.spent_by_name || "—")}</td>
       <td class="r nw rose b">−${esc(fmt(e.amount))}</td>
     </tr>`).join("");
@@ -1753,6 +1756,9 @@ function HandoverCard({
                       {methodsLabel && (
                         <div className="text-[11px] text-muted-foreground leading-tight">{methodsLabel}</div>
                       )}
+                      {first.source === "manual" && first.remarks && (
+                        <div className="text-xs text-muted-foreground/80 italic leading-tight mt-0.5 whitespace-pre-wrap">📝 {first.remarks}</div>
+                      )}
                     </td>
                     <td className="px-1.5 py-1 text-right align-top">
                       {bill > 0 ? (
@@ -1886,6 +1892,9 @@ function HandoverCard({
                       <div className="text-sm text-muted-foreground leading-tight">
                         {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
                       </div>
+                    )}
+                    {r.source === "manual" && r.remarks && (
+                      <div className="text-xs text-muted-foreground/80 italic leading-tight mt-0.5 whitespace-pre-wrap">📝 {r.remarks}</div>
                     )}
                   </td>
                   {/* মোট বিল */}
@@ -2065,7 +2074,12 @@ function HandoverCard({
                       )}
                     </td>
                     <td className="px-3 py-2 align-top text-sm font-medium">{e.category || "—"}</td>
-                    <td className="px-3 py-2 align-top text-sm text-muted-foreground">{e.purpose || "—"}</td>
+                    <td className="px-3 py-2 align-top text-sm">
+                      <div className="text-muted-foreground">{e.purpose || "—"}</div>
+                      {e.remarks && (
+                        <div className="text-xs text-muted-foreground/80 italic mt-0.5 whitespace-pre-wrap">📝 {e.remarks}</div>
+                      )}
+                    </td>
                     <td className="px-3 py-2 align-top text-xs text-muted-foreground">{e.spent_by_name || "—"}</td>
                     <td className="px-3 py-2 text-right align-top tabular-nums font-bold text-rose-600 dark:text-rose-400">
                       −{fmt(e.amount)}
