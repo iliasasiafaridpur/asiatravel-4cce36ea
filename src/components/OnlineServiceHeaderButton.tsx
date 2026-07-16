@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X, Cloud, CloudOff, Check } from "lucide-react";
+import { Globe, Plus, Trash2, FolderPlus, ExternalLink, ChevronRight, ChevronDown, Pencil, X, Cloud, CloudOff, Check, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -242,18 +243,25 @@ export function OnlineServiceHeaderButton() {
                               {f.name} <span className="text-xs text-muted-foreground">({f.bookmarks.length})</span>
                             </span>
                           </button>
-                          {/* Action buttons — hidden until folder row is hovered */}
-                          <div className="flex items-center gap-0.5 opacity-0 group-hover/folder:opacity-100 focus-within:opacity-100 transition-opacity">
-                            <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <button type="button" onClick={() => { setExpanded((s) => ({ ...s, [f.id]: true })); setAddingTo(addingTo === f.id ? null : f.id); }} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
-                              <Plus className="h-3.5 w-3.5 text-emerald-500" />
-                            </button>
-                            <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                            </button>
-                          </div>
+                          {/* Actions collapsed inside a small 3-dot menu */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button type="button" className="p-1.5 hover:bg-muted rounded" title="আরও অপশন" aria-label="More options">
+                                <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-auto p-1 flex items-center gap-0.5">
+                              <button type="button" onClick={() => { setEditingFolder(f.id); setEditFolderName(f.name); }} className="p-1.5 hover:bg-muted rounded" title="নাম পরিবর্তন">
+                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              <button type="button" onClick={() => { setExpanded((s) => ({ ...s, [f.id]: true })); setAddingTo(addingTo === f.id ? null : f.id); }} className="p-1.5 hover:bg-muted rounded" title="লিংক যোগ">
+                                <Plus className="h-3.5 w-3.5 text-emerald-500" />
+                              </button>
+                              <button type="button" onClick={() => removeFolder(f.id)} className="p-1.5 hover:bg-muted rounded" title="ফোল্ডার মুছুন">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </button>
+                            </PopoverContent>
+                          </Popover>
                         </>
                       )}
                     </div>
@@ -298,14 +306,21 @@ export function OnlineServiceHeaderButton() {
                                     <ExternalLink className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                                     <span className="truncate">{b.name}</span>
                                   </a>
-                                  <div className="flex items-center gap-0.5 opacity-0 group-hover/bm:opacity-100 transition-opacity">
-                                    <button type="button" onClick={() => startEditBookmark(b)} className="p-1.5 hover:bg-muted rounded" aria-label="Edit link" title="লিংক পরিবর্তন">
-                                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                                    </button>
-                                    <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link" title="লিংক মুছুন">
-                                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                    </button>
-                                  </div>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button type="button" className="p-1.5 hover:bg-muted rounded" title="আরও অপশন" aria-label="More options">
+                                        <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-auto p-1 flex items-center gap-0.5">
+                                      <button type="button" onClick={() => startEditBookmark(b)} className="p-1.5 hover:bg-muted rounded" aria-label="Edit link" title="লিংক পরিবর্তন">
+                                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </button>
+                                      <button type="button" onClick={() => removeBookmark(f.id, b.id)} className="p-1.5 hover:bg-muted rounded" aria-label="Delete link" title="লিংক মুছুন">
+                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                      </button>
+                                    </PopoverContent>
+                                  </Popover>
                                 </>
                               )}
                             </div>
