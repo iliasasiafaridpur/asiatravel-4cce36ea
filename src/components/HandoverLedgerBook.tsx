@@ -1891,6 +1891,9 @@ function HandoverCard({
                         {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
                       </div>
                     )}
+                    {r.source === "manual" && r.remarks && (
+                      <div className="text-xs text-muted-foreground/80 italic leading-tight mt-0.5 whitespace-pre-wrap">📝 {r.remarks}</div>
+                    )}
                   </td>
                   {/* মোট বিল */}
                   <td className="px-1.5 py-1 text-right align-top">
