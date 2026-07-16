@@ -1086,7 +1086,8 @@ function buildHandoverSlipBody(args: {
     const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
       + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
       + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
-      + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "");
+      + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "")
+      + (r.source === "manual" && r.remarks ? `<span class="sub">📝 ${esc(r.remarks)}</span>` : "");
     const vendorBit = info?.vendor
       ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
       : "";
