@@ -1023,6 +1023,7 @@ function buildHandoverSlipBody(args: {
         <td class="r nw">${staffCell}</td>
         <td class="r nw">${dueCell}</td>
       </tr>`;
+    }
 
     if (row.kind === "batch") {
       const { recs, m } = row;
