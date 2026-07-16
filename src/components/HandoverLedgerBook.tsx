@@ -1796,6 +1796,7 @@ function HandoverCard({
                         <>
                           {row.recs.filter((x) => isMdReceivedMethod(x.method)).map((x) => (
                             <div key={`md-${x.id}`}>
+                              {isAdvance && <AdvanceBadge advance className="mr-1" />}
                               <b className="text-sm text-sky-600 dark:text-sky-400">{fmt(Number(x.amount || 0))}</b>
                               <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">MD · {methodLabel(x.method)}</div>
                             </div>
