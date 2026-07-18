@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import {
   Lock, AlertTriangle, TrendingUp, TrendingDown, Wallet, HandCoins, BookOpen, Mail,
 } from "lucide-react";
-import { formatDateTime, formatDate } from "@/lib/modules";
+import { formatDateTime, formatDate, isAdvancePayment } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
@@ -474,11 +474,16 @@ function MyHandoverPage() {
       if (!isStatusEvent(r)) return true;
       // status event = ডেলিভারি নোট। একই service-এ টাকা receive হলে সেটি দেখাবে।
       if (moneyServiceKeys.has(serviceKey(r))) return false;
-      // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
-      if (svcRealDue(r.svc) <= 0.005) return false;
+      // সম্পূর্ণ পরিশোধ হলেও delivery-এর আগে payment নেওয়া থাকলে সেটি Advance।
+      // সেই Advance কাজের delivery event Cash Handover-এ অবশ্যই রাখতে হবে।
+      const key = serviceKey(r);
+      const hadAdvance = Boolean(r.svc?.delivery_date) && (recByService[key] ?? []).some(
+        (payment) => !isStatusEvent(payment) && isAdvancePayment(payment.entry_date, r.svc?.delivery_date),
+      );
+      if (svcRealDue(r.svc) <= 0.005 && !hadAdvance) return false;
       return true;
     }),
-    [receipts, moneyServiceKeys]
+    [receipts, moneyServiceKeys, recByService]
   );
 
   // মোটের উপর হিসাবের agency (যেমন Jahangir QA): প্রতিটি passenger আলাদা করে
