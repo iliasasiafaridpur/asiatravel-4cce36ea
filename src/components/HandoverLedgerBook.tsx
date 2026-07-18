@@ -1236,10 +1236,13 @@ function HandoverCard({
     if (!isStatusEventReceipt(r)) return true;
     const key = receiptServiceKey(r);
     if (moneyServiceKeys.has(key)) return false;
-    // পূর্বেই সম্পূর্ণ পরিশোধ (বাকি নেই) হলে ডেলিভারি নোট cash handover-এ দেখাবে না।
-    // বাকি থাকলে ডেলিভারি তথ্য দেখাবে।
-    if (serviceRealDue(serviceMap[key]) <= 0.005) return false;
-    const agent = String(serviceMap[key]?.agent ?? "").trim();
+    // পূর্বেই সম্পূর্ণ পরিশোধ হলেও, অগ্রিম (advance) পেমেন্ট থাকলে আজকের ডেলিভারি
+    // ইভেন্ট cash handover-এ দেখাতে হবে (কাজ সম্পন্ন হয়েছে বোঝানোর জন্য)।
+    const info = serviceMap[key];
+    const svcReceipts = (receiptsByService[key] ?? []).filter((x) => !isStatusEventReceipt(x));
+    const hadAdvance = !!info?.delivery_date && svcReceipts.some((x) => isAdvancePayment(x.entry_date, info?.delivery_date));
+    if (serviceRealDue(info) <= 0.005 && !hadAdvance) return false;
+    const agent = String(info?.agent ?? "").trim();
     return !(agent && totalAgents.has(agent));
   });
   const isPending = status === "pending";
