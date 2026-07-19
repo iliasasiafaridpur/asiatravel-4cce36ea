@@ -1053,7 +1053,7 @@ function buildHandoverSlipBody(args: {
           + vendorBit
         : `—${vendorBit}`;
       const prevCell = previousPaid > 0
-        ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span>` : ""}`
+        ? `<span class="b sky">${esc(fmt(previousPaid))}</span>${lastPast ? `<span class="sub sky">${esc(formatDate(lastPast.entry_date))}${past.length > 1 ? ` +${past.length - 1}` : ""}</span><span class="sub sky">${esc(isVendorReceivedMethod(lastPast.method) ? "Vendor Rece" : isCashMethod(lastPast.method) ? "Cash" : `MD · ${methodLabel(lastPast.method)}`)}</span>` : ""}`
         : `<span class="sub">— নতুন —</span>`;
       const mdBreakdown = mdRecs.map((x) => `${isAdvance ? `<span class="adv">অগ্রিম</span> ` : ""}<span class="b sky">${esc(fmt(x.amount))}</span><span class="sub sky">MD · ${esc(methodLabel(x.method))}</span>`).join("");
       const mdCell = (mdSum > 0 || vendorSum > 0)
