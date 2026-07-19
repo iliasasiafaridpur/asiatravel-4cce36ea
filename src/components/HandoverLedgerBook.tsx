@@ -1792,7 +1792,10 @@ function HandoverCard({
                         >
                           <div className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400 leading-tight">{fmt(previousPaid)}</div>
                           {lastPast && (
-                            <div className="text-sm text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
+                            <>
+                              <div className="text-sm text-sky-600 leading-tight">{formatDate(lastPast.entry_date)}{past.length > 1 ? ` +${past.length - 1}` : ""}</div>
+                              <div className="text-[11px] text-sky-600/80 dark:text-sky-400/80 leading-tight">{isVendorReceivedMethod(lastPast.method) ? "Vendor Rece" : isCashMethod(lastPast.method) ? "Cash" : `MD · ${methodLabel(lastPast.method)}`}</div>
+                            </>
                           )}
                         </button>
                       ) : <span className="text-sm text-muted-foreground">— নতুন —</span>}
