@@ -1073,6 +1073,10 @@ export function PartyLedgerPage({
       date: string;
       service: string;
       description: string;
+      /** Passenger name alone — shown first and bold on prints. */
+      passenger?: string;
+      /** Trip/route/airline/country — shown after service in prints. */
+      routeInfo?: string;
       previous: number;
       deposit: number;
       credit: number;
