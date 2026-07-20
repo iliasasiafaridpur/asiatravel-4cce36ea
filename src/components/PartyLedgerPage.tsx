@@ -1406,6 +1406,8 @@ export function PartyLedgerPage({
         date: p.date,
         service: p.service,
         description: p.description,
+        passenger: p.passenger,
+        routeInfo: p.routeInfo,
         previous: prev,
         deposit: p.deposit,
         credit: p.credit,
