@@ -1287,12 +1287,26 @@ export function PartyLedgerPage({
       // আইডি: সোর্স মডিউলের আসল আইডি (TKT-…, bmet_id, saudi_id, kuwait_id)
       // থাকলে সেটি, না থাকলে লেজারের নিজের আইডি।
       const cId = cInfo?.displayId ? String(cInfo.displayId) : String(r.ledger_id ?? "");
+      // Route/airline/country info like the vendor ledger (used in prints).
+      const cRoute = String(r.country_route ?? "").trim();
+      const cRouteParts: string[] = [];
+      if (cSrc === "tickets") {
+        if (cRoute) cRouteParts.push(cRoute);
+        if (cInfo?.airline) cRouteParts.push(String(cInfo.airline));
+      } else if (cSrc === "bmet_cards") {
+        if (cInfo?.country || cRoute) cRouteParts.push(String(cInfo?.country ?? cRoute));
+      } else if (cRoute) {
+        cRouteParts.push(cRoute);
+      }
+      const cPax = String(r.passenger_name ?? "").trim();
       prepped.push({
         id: ledgerRowId,
         ledgerId: cId,
         date: cDate,
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
-        description: String(r.passenger_name ?? "").trim(),
+        description: cPax,
+        passenger: advRow ? undefined : cPax || undefined,
+        routeInfo: advRow ? undefined : cRouteParts.join(" · ") || undefined,
         // পাসবই লজিক: advance/জমা রো "ডিপোজিট" হিসেবে চলমান বাকি (Balance)
         // সরাসরি কমায়; আর প্রতিটি বিল তার পুরো নিট পরিমাণ (বিল − ডিসকাউন্ট)
         // "Credit" হিসেবে বাকি বাড়ায়। এভাবে জমা করা advance পরের বিলে
