@@ -1172,14 +1172,16 @@ export function PartyLedgerPage({
         const parts: string[] = [];
         const pax = String(r.passenger_name ?? "").trim();
         if (pax) parts.push(pax);
+        const routeParts: string[] = [];
         if (src === "tickets") {
-          if (route) parts.push(route);
-          if (info?.airline) parts.push(String(info.airline));
+          if (route) routeParts.push(route);
+          if (info?.airline) routeParts.push(String(info.airline));
         } else if (src === "bmet_cards") {
-          if (info?.country || route) parts.push(String(info?.country ?? route));
+          if (info?.country || route) routeParts.push(String(info?.country ?? route));
         } else if (route) {
-          parts.push(route);
+          routeParts.push(route);
         }
+        parts.push(...routeParts);
         const desc = parts.join(" · ") || String(r.remarks ?? "").trim();
 
         prepped.push({
@@ -1188,6 +1190,8 @@ export function PartyLedgerPage({
           date,
           service,
           description: desc,
+          passenger: pax || undefined,
+          routeInfo: routeParts.join(" · ") || undefined,
           deposit: displayPaid,
           credit: bill,
           advance: 0,
