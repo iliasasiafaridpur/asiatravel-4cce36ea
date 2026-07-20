@@ -194,7 +194,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ORBITRON_LINK,
         ORBITRON_LINK2,
         ORBITRON_CSS,
-        { rel: "apple-touch-icon", href: "/icon-512.png" },
+        { rel: "apple-touch-icon", href: "/icon-512-v2.png" },
+        { rel: "manifest", href: "/manifest.webmanifest" },
         // Browser-tab favicon: simplified airplane mark — readable at tiny sizes
         // (the full emblem's text/globe is illegible as a favicon).
         { rel: "icon", href: "/favicon.png", type: "image/png" },
