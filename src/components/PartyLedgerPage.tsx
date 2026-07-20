@@ -1785,17 +1785,23 @@ export function PartyLedgerPage({
       const displayList = [...list].reverse();
       const rowsHtml = displayList.length
         ? displayList
-            .map(
-              (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
+            .map((s) => {
+              // বিবরণ: passenger নাম প্রথমে ও বোল্ড, তারপর route/এয়ারলাইনস/দেশ।
+              const paxHtml = s.passenger ? `<strong>${esc(s.passenger)}</strong>` : "";
+              const restHtml = s.routeInfo ? esc(s.routeInfo) : esc(s.description);
+              const showRest = restHtml && restHtml !== esc(s.passenger ?? "");
+              const descHtml =
+                [paxHtml, showRest ? restHtml : ""].filter(Boolean).join(" · ") || esc(s.description);
+              return `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
             <td class="nw">${esc(formatDate(s.date))}</td>
             <td class="nw">${esc(s.ledgerId)}</td>
             <td>${esc(s.service)}</td>
-            <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
+            <td>${descHtml}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
             <td class="r">${s.credit ? num(s.credit) : "—"}</td>
             <td class="r">${num(s.balance)}</td>
-          </tr>`,
-            )
+          </tr>`;
+            })
             .join("")
         : `<tr><td colspan="${colSpan}" class="empty">কোনো হিসাব নেই</td></tr>`;
       const openingRow =
