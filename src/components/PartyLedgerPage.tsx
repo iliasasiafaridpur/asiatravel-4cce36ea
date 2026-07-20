@@ -1073,6 +1073,10 @@ export function PartyLedgerPage({
       date: string;
       service: string;
       description: string;
+      /** Passenger name alone — shown first and bold on prints. */
+      passenger?: string;
+      /** Trip/route/airline/country — shown after service in prints. */
+      routeInfo?: string;
       previous: number;
       deposit: number;
       credit: number;
@@ -1168,14 +1172,16 @@ export function PartyLedgerPage({
         const parts: string[] = [];
         const pax = String(r.passenger_name ?? "").trim();
         if (pax) parts.push(pax);
+        const routeParts: string[] = [];
         if (src === "tickets") {
-          if (route) parts.push(route);
-          if (info?.airline) parts.push(String(info.airline));
+          if (route) routeParts.push(route);
+          if (info?.airline) routeParts.push(String(info.airline));
         } else if (src === "bmet_cards") {
-          if (info?.country || route) parts.push(String(info?.country ?? route));
+          if (info?.country || route) routeParts.push(String(info?.country ?? route));
         } else if (route) {
-          parts.push(route);
+          routeParts.push(route);
         }
+        parts.push(...routeParts);
         const desc = parts.join(" · ") || String(r.remarks ?? "").trim();
 
         prepped.push({
@@ -1184,6 +1190,8 @@ export function PartyLedgerPage({
           date,
           service,
           description: desc,
+          passenger: pax || undefined,
+          routeInfo: routeParts.join(" · ") || undefined,
           deposit: displayPaid,
           credit: bill,
           advance: 0,
@@ -1211,6 +1219,8 @@ export function PartyLedgerPage({
           date: p.date,
           service: p.service,
           description: p.description,
+          passenger: p.passenger,
+          routeInfo: p.routeInfo,
           previous: prev,
           deposit: p.deposit,
           credit: p.credit,
@@ -1277,12 +1287,26 @@ export function PartyLedgerPage({
       // আইডি: সোর্স মডিউলের আসল আইডি (TKT-…, bmet_id, saudi_id, kuwait_id)
       // থাকলে সেটি, না থাকলে লেজারের নিজের আইডি।
       const cId = cInfo?.displayId ? String(cInfo.displayId) : String(r.ledger_id ?? "");
+      // Route/airline/country info like the vendor ledger (used in prints).
+      const cRoute = String(r.country_route ?? "").trim();
+      const cRouteParts: string[] = [];
+      if (cSrc === "tickets") {
+        if (cRoute) cRouteParts.push(cRoute);
+        if (cInfo?.airline) cRouteParts.push(String(cInfo.airline));
+      } else if (cSrc === "bmet_cards") {
+        if (cInfo?.country || cRoute) cRouteParts.push(String(cInfo?.country ?? cRoute));
+      } else if (cRoute) {
+        cRouteParts.push(cRoute);
+      }
+      const cPax = String(r.passenger_name ?? "").trim();
       prepped.push({
         id: ledgerRowId,
         ledgerId: cId,
         date: cDate,
         service: advRow ? "Payment" : String(r.service_type ?? "—"),
-        description: String(r.passenger_name ?? "").trim(),
+        description: cPax,
+        passenger: advRow ? undefined : cPax || undefined,
+        routeInfo: advRow ? undefined : cRouteParts.join(" · ") || undefined,
         // পাসবই লজিক: advance/জমা রো "ডিপোজিট" হিসেবে চলমান বাকি (Balance)
         // সরাসরি কমায়; আর প্রতিটি বিল তার পুরো নিট পরিমাণ (বিল − ডিসকাউন্ট)
         // "Credit" হিসেবে বাকি বাড়ায়। এভাবে জমা করা advance পরের বিলে
@@ -1382,6 +1406,8 @@ export function PartyLedgerPage({
         date: p.date,
         service: p.service,
         description: p.description,
+        passenger: p.passenger,
+        routeInfo: p.routeInfo,
         previous: prev,
         deposit: p.deposit,
         credit: p.credit,
@@ -1712,10 +1738,16 @@ export function PartyLedgerPage({
             .map((b) => {
               const st = b.cancelled ? "বাতিল কাজ" : b.status === "partial" ? "আংশিক" : "বাকি";
               const cls = b.cancelled ? ' class="cancel"' : "";
+              // বিবরণ: passenger নাম প্রথমে ও বোল্ড, তারপর সার্ভিস · রুট/এয়ারলাইনস/দেশ।
+              const paxHtml = b.passenger ? `<strong>${esc(b.passenger)}</strong>` : "";
+              const restHtml = esc([b.service, b.route].filter(Boolean).join(" · "));
+              const descHtml =
+                [paxHtml, restHtml].filter(Boolean).join(" · ") ||
+                esc([b.service, b.description].filter(Boolean).join(" · "));
               return `<tr${cls}>
                 <td class="nw">${esc(formatDate(b.date))}</td>
                 <td class="nw">${esc(b.ledgerId)}</td>
-                <td>${esc([b.service, b.description].filter(Boolean).join(" · "))}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
+                <td>${descHtml}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
                 <td class="r">${num(b.bill)}</td>
                 <td class="r">${b.paid ? num(b.paid) : "—"}</td>
                 <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
@@ -1753,17 +1785,23 @@ export function PartyLedgerPage({
       const displayList = [...list].reverse();
       const rowsHtml = displayList.length
         ? displayList
-            .map(
-              (s) => `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
+            .map((s) => {
+              // বিবরণ: passenger নাম প্রথমে ও বোল্ড, তারপর route/এয়ারলাইনস/দেশ।
+              const paxHtml = s.passenger ? `<strong>${esc(s.passenger)}</strong>` : "";
+              const restHtml = s.routeInfo ? esc(s.routeInfo) : esc(s.description);
+              const showRest = restHtml && restHtml !== esc(s.passenger ?? "");
+              const descHtml =
+                [paxHtml, showRest ? restHtml : ""].filter(Boolean).join(" · ") || esc(s.description);
+              return `<tr class="${s.isPayment ? "pay" : ""}${s.cancelled ? " cancel" : ""}">
             <td class="nw">${esc(formatDate(s.date))}</td>
             <td class="nw">${esc(s.ledgerId)}</td>
             <td>${esc(s.service)}</td>
-            <td>${esc(s.description)}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
+            <td>${descHtml}${s.incomplete ? " ⏳" : ""}${s.cancelled ? " 🚫 বাতিল কাজ" : ""}</td>
             <td class="r">${s.deposit ? num(s.deposit) : "—"}</td>
             <td class="r">${s.credit ? num(s.credit) : "—"}</td>
             <td class="r">${num(s.balance)}</td>
-          </tr>`,
-            )
+          </tr>`;
+            })
             .join("")
         : `<tr><td colspan="${colSpan}" class="empty">কোনো হিসাব নেই</td></tr>`;
       const openingRow =
