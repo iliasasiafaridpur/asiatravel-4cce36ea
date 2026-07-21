@@ -1246,9 +1246,18 @@ ${partySectionsHtml()}
         // closing stays correct.
         const isHidden = hiddenSet.has(it.date);
         const prev = rows[i - 1];
+        // Skip non-anchor siblings of a multi-method batch for display only.
+        let isSibling = false;
+        if (it.kind === "received") {
+          const rr = it.row as Recv;
+          if (!isStatusEventReceipt(rr)) {
+            const b = combinedRecv(rr);
+            if (b.isBatch && !b.isAnchor) isSibling = true;
+          }
+        }
         // Serial number restarts at 1 for every distinct date.
         if (!prev || prev.date !== it.date) daySeq = 0;
-        daySeq += 1;
+        if (!isSibling) daySeq += 1;
         // প্রতিটি তারিখের সব সারি একটি আলাদা <tbody class="dategroup"> এর ভিতরে —
         // যাতে এক তারিখের হিসাব দুই পেইজে ভাগ না হয়।
         if (!prev || prev.date !== it.date) bodyHtml += `<tbody class="dategroup">`;
@@ -1260,7 +1269,7 @@ ${partySectionsHtml()}
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
-        bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden, daySeq);
+        if (!isSibling) bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden, daySeq);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
           bodyHtml +=
