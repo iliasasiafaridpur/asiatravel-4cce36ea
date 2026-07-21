@@ -1201,9 +1201,23 @@ ${partySectionsHtml()}
       }
       let bal = opening;
       for (const it of reordered) {
-        if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? amtOf(it) : 0;
-        else if (it.kind === "handover") bal -= handoverReducesBalance((it.row as Hand).status) ? amtOf(it) : 0;
-        else bal -= expenseHitsBalance(it.row as Exp) ? amtOf(it) : 0;
+        if (it.kind === "received") {
+          const rr = it.row as Recv;
+          if (!isStatusEventReceipt(rr)) {
+            const b = combinedRecv(rr);
+            if (b.isBatch && !b.isAnchor) {
+              // Non-anchor sibling: skipped from display; cash counted at anchor.
+              it.running = bal;
+              continue;
+            }
+            if (b.isBatch && b.isAnchor) bal += b.cashAmt;
+            else if (isCashMethod(rr.method)) bal += amtOf(it);
+          }
+        } else if (it.kind === "handover") {
+          bal -= handoverReducesBalance((it.row as Hand).status) ? amtOf(it) : 0;
+        } else {
+          bal -= expenseHitsBalance(it.row as Exp) ? amtOf(it) : 0;
+        }
         it.running = bal;
       }
       rows.splice(0, rows.length, ...reordered);
