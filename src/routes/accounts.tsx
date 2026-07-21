@@ -2042,12 +2042,19 @@ ${partySectionsHtml()}
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const statusEvt = isIn && isStatusEventReceipt(r);
-                  const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
-                  const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
+                  // Multi-method Due Receive → skip sibling rows, aggregate at the anchor.
+                  const batch = isIn && !statusEvt ? combinedRecv(r) : null;
+                  if (batch && !batch.isAnchor) return null;
+                  const rawAmt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const amt = batch ? batch.totalAmt : rawAmt;
+                  const isMulti = !!batch && batch.isBatch;
+                  const cashAmt = batch?.cashAmt ?? 0;
+                  const mdAmt = batch?.mdAmt ?? 0;
+                  const vendorAmt = batch?.vendorAmt ?? 0;
+                  const mdRecv = isIn && !isMulti && isMdReceivedMethod(r.method) && !statusEvt;
+                  const vendorRecv = isIn && !isMulti && isVendorReceivedMethod(r.method) && !statusEvt;
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-                  // নামের শেষে agency নামের প্রথম অংশ বন্ধনীতে (self বাদে) যোগ হবে। যেমন: md salam (kholil)
                   const agencyFirst = (() => {
                     const a = String(svc?.agent ?? "").trim();
                     if (!a || a.toLowerCase() === "self") return "";
@@ -2070,15 +2077,15 @@ ${partySectionsHtml()}
                   const grossBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalBill = grossBill !== null ? grossBill : null;
                   const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
-                  // পূর্ববর্তী জমা/Discount: NOTE column only — calculation happens below explicitly.
                   const advLines: { text: string }[] = [];
                   let sumPrev = 0;
                   let lastAdvDate = "";
                   if (isIn && r.service_row_id) {
                     const curDate = r.entry_date;
+                    const excludeIds = batch ? batch.partIds : new Set([r.id]);
                     const prior = received.filter(p =>
                       p.service_row_id === r.service_row_id &&
-                      p.id !== r.id &&
+                      !excludeIds.has(p.id) &&
                       (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
                     );
                     for (const p of prior) {
@@ -2089,11 +2096,34 @@ ${partySectionsHtml()}
                     if (sumPrev > 0.005) advLines.push({ text: `(৳${sumPrev.toLocaleString()}-Adv-${formatDate(lastAdvDate)})` });
                   }
                   if (discAmt > 0.005) advLines.push({ text: `${fmt(discAmt)} Discount` });
-                  // বাকি = মোট বিল − নগদ জমা − Discount
                   const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
-                  const serviceText = `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}`;
+                  const methodStr = isMulti ? batch!.methods.join(" + ") : (r.method || "");
+                  const serviceText = `${service}${isIn && !statusEvt && methodStr ? ` · ${methodStr}` : ""}`;
                   const regionText = `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}`;
+                  // Amount cell — for multi-method batches, show a per-method breakdown.
+                  const amtContent = isIn
+                    ? (statusEvt ? "Delivery" :
+                       isMulti ? (
+                         <>
+                           <div>+ {fmt(amt)}</div>
+                           {cashAmt > 0 && <div style={{ fontSize: "0.85em" }}>নগদ {fmt(cashAmt)}</div>}
+                           {mdAmt > 0 && <div style={{ fontSize: "0.85em" }}>MD {fmt(mdAmt)}</div>}
+                           {vendorAmt > 0 && <div style={{ fontSize: "0.85em" }}>Vendor {fmt(vendorAmt)}</div>}
+                         </>
+                       ) :
+                       vendorRecv ? `(Vendor) ${fmt(amt)}` :
+                       mdRecv ? `(MD) ${fmt(amt)}` :
+                       `+ ${fmt(amt)}`)
+                    : "";
+                  const amtPlain = isIn
+                    ? (statusEvt ? "Delivery" :
+                       isMulti ? `+ ${fmt(amt)} [${[cashAmt > 0 ? `নগদ ${fmt(cashAmt)}` : "", mdAmt > 0 ? `MD ${fmt(mdAmt)}` : "", vendorAmt > 0 ? `Vendor ${fmt(vendorAmt)}` : ""].filter(Boolean).join(" · ")}]` :
+                       vendorRecv ? `(Vendor) ${fmt(amt)}` :
+                       mdRecv ? `(MD) ${fmt(amt)}` :
+                       `+ ${fmt(amt)}`)
+                    : "";
+                  const amtCls = isMulti ? "in" : vendorRecv ? "vendor" : mdRecv ? "hand" : "in";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
@@ -2104,10 +2134,10 @@ ${partySectionsHtml()}
                           { className: "wrap", content: serviceText, plain: serviceText },
                           { className: "wrap", content: regionText, plain: regionText },
                           { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "" },
-                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+                          { className: `num ${amtCls}`, content: <>{amtContent}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${amtPlain}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
                           { className: "num due", content: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "", plain: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "" },
                           { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" ") },
-                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "" },
+                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(rawAmt)}` : "", plain: !isIn ? `− ${fmt(rawAmt)}` : "" },
                           { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
                         ]}
                       />
