@@ -781,18 +781,18 @@ const SLIP_CSS = `
   .h .meta b { font-weight:600; }
   h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
   table { width:100%; max-width:100%; border-collapse:collapse; font-size:9.5px; table-layout:auto; }
-  th, td { border:1px solid #bbb; padding:2px 4px; text-align:left; vertical-align:top; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; }
-   th { background:#eee; font-weight:600; text-align:center; }
+  th, td { border:1px solid #6b7280; padding:2px 4px; text-align:left; vertical-align:top; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; color:#000; }
+   th { background:#d4d4d8; font-weight:700; text-align:center; color:#000; }
    td.r { text-align:right; }
   td.nw, th.nw { white-space:nowrap; overflow-wrap:normal; word-break:normal; }
   .b { font-weight:700; }
-  .sub { display:block; color:#555; font-size:8.5px; line-height:1.25; font-weight:400; }
+  .sub { display:block; color:#1f2937; font-size:8.5px; line-height:1.25; font-weight:500; }
   .mono { font-family: ui-monospace, monospace; }
-  .sky { color:#0369a1; }
-  .rose { color:#be123c; }
-  .emer { color:#047857; }
-  .orange { color:#c2410c; }
-  .violet { color:#6d28d9; }
+  .sky { color:#014a7f; font-weight:600; }
+  .rose { color:#8f0a2e; font-weight:600; }
+  .emer { color:#025c40; font-weight:600; }
+  .orange { color:#8a2b06; font-weight:600; }
+  .violet { color:#4c1d95; font-weight:600; }
   .tint1 { background:#f7f7f7; }
   .sumrow td { background:#ececec; font-weight:700; }
   .adv { background:#fde68a; color:#92400e; font-size:8px; font-weight:700; padding:0 3px; border-radius:3px; }
