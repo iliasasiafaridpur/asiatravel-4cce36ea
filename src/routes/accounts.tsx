@@ -1821,23 +1821,29 @@ ${partySectionsHtml()}
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
-                  const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const statusEvt = isIn && isStatusEventReceipt(r);
-                  const isMdRecv = isIn && !statusEvt && isMdReceivedMethod(r.method);
-                  const isVendorRecv = isIn && !statusEvt && isVendorReceivedMethod(r.method);
+                  // Multi-method Due Receive → collapse siblings into a single visible row.
+                  const batch = isIn && !statusEvt ? combinedRecv(r) : null;
+                  if (batch && !batch.isAnchor) return null;
+                  const rawAmt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const amt = batch ? batch.totalAmt : rawAmt;
+                  const isPendingHand = isHand && (h.status ?? "approved") === "pending";
+                  const cashAmt = batch?.cashAmt ?? 0;
+                  const mdAmt = batch?.mdAmt ?? 0;
+                  const vendorAmt = batch?.vendorAmt ?? 0;
+                  const isMulti = !!batch && batch.isBatch;
+                  const isMdRecv = isIn && !statusEvt && !isMulti && isMdReceivedMethod(r.method);
+                  const isVendorRecv = isIn && !statusEvt && !isMulti && isVendorReceivedMethod(r.method);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const amountTone = isVendorRecv ? "text-orange-500 dark:text-orange-400" : isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
-                  // Col 1: উৎস/নাম (source/name)
                   const name = isIn
                     ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
                     : isHand
                     ? (`${h.from_name ?? "প্রেরক"} → ${h.to_name || "প্রাপক"}`)
                     : (e.category || "খরচ");
 
-                  // Col 2: উদ্দেশ্য (purpose) — primary line
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const servicePrimary = isIn
                     ? (r.source === "manual"
@@ -1864,13 +1870,9 @@ ${partySectionsHtml()}
                   const linkedStatus = isIn && !statusEvt && r.service_table && r.service_row_id
                     ? statusByService[`${r.service_table}:${r.service_row_id}`]
                     : "";
-                  const primaryBits: string[] = [];
-                  if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
-                  if (isIn && !statusEvt && r.source && r.source !== "manual") {
-                    const sl = friendlySource(r.source);
-                    if (sl) primaryBits.push(`📒 ${sl}`);
-                  }
-                  if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
+                  const methodDisplay = isIn && !statusEvt
+                    ? (batch && batch.methods.length ? batch.methods.join(" + ") : (r.method || ""))
+                    : "";
                   const discountTotal = isIn && svc && typeof svc.discount === "number" ? svc.discount : 0;
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total - discountTotal : null;
@@ -1885,12 +1887,14 @@ ${partySectionsHtml()}
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
+                          {isMulti && <span className="px-1 py-px rounded border text-[10px] font-medium text-primary border-primary/30 bg-primary/10">{batch!.parts.length} মেথড</span>}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-0.5">
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
                         {isIn && r.ref_id && <p className="text-xs text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
+
 
                       {/* Col 2 (NEW): Name + Passport */}
                       <div className="min-w-0">
