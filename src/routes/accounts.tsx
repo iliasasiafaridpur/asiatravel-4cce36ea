@@ -1126,9 +1126,9 @@ ${partySectionsHtml()}
       ? (statusEvt ? "Delivery" :
          isMulti
            ? `+ ${fmt(amt)}` +
-             (cashAmt > 0 ? `<div style="font-size:0.85em">নগদ ${fmt(cashAmt)}</div>` : "") +
-             (mdAmt > 0 ? `<div style="font-size:0.85em">MD ${fmt(mdAmt)}</div>` : "") +
-             (vendorAmt > 0 ? `<div style="font-size:0.85em">Vendor ${fmt(vendorAmt)}</div>` : "")
+              (cashAmt > 0 ? `<div class="in" style="font-size:0.85em">নগদ ${fmt(cashAmt)}</div>` : "") +
+              (mdAmt > 0 ? `<div class="hand" style="font-size:0.85em">MD ${fmt(mdAmt)}</div>` : "") +
+              (vendorAmt > 0 ? `<div class="vendor" style="font-size:0.85em">Vendor ${fmt(vendorAmt)}</div>` : "")
            : vendorRecv ? `(Vendor) ${fmt(amt)}`
            : mdRecv ? `(MD) ${fmt(amt)}`
            : `+ ${fmt(amt)}`)
