@@ -76,6 +76,13 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 const friendlySource = (source?: string | null) => SOURCE_LABELS[String(source ?? "").trim()] ?? "";
 
+// Multi-method Due Receive creates one payment_receipts row per method sharing
+// the same base receipt_id (…-1, …-2). Grouping key: same booking + same base
+// receipt id + same date → treat as ONE batch in the timeline / print.
+const receiptBatchKey = (r: { service_table: string | null; service_row_id: string | null; receipt_id: string; entry_date: string }) =>
+  `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+const uniq = (arr: string[]) => Array.from(new Set(arr.filter(Boolean)));
+
 // Agency/vendor ledger mirror rows store verbose service_type strings like
 // "Service Receipt: Nazmul-G-gong" / "Agent Receipt: Jahangir QA". Strip the
 // bookkeeping prefix so the timeline shows the same clean shape as booking rows.
@@ -571,6 +578,63 @@ function AccountsPage() {
   }, [received]);
 
   const accountingReceived = useMemo(() => received.filter((r) => !isStatusEventReceipt(r)), [received]);
+
+  // Multi-method Due Receive collapses to ONE displayed row so /accounts shows
+  // one line for e.g. TKT-2607-054 even though it was received in Cash + bKash.
+  type BatchInfo = {
+    parts: Recv[]; anchorId: string; cashAmt: number; mdAmt: number; vendorAmt: number;
+    totalAmt: number; methods: string[]; partIds: Set<string>;
+  };
+  const receiptBatches = useMemo(() => {
+    const m = new Map<string, BatchInfo>();
+    const rk = (r: Recv) => `${r.entry_date ?? ""}|${(r as Recv & { created_at?: string }).created_at ?? r.entry_date ?? ""}|${r.id}`;
+    const anchorRank = new Map<string, string>();
+    for (const r of accountingReceived) {
+      const k = receiptBatchKey(r);
+      let b = m.get(k);
+      if (!b) {
+        b = { parts: [], anchorId: r.id, cashAmt: 0, mdAmt: 0, vendorAmt: 0, totalAmt: 0, methods: [], partIds: new Set() };
+        m.set(k, b);
+      }
+      b.parts.push(r);
+      b.partIds.add(r.id);
+      const amt = Number(r.amount || 0);
+      b.totalAmt += amt;
+      if (isVendorReceivedMethod(r.method)) b.vendorAmt += amt;
+      else if (isMdReceivedMethod(r.method)) b.mdAmt += amt;
+      else b.cashAmt += amt;
+      if (r.method) b.methods.push(r.method);
+      const cur = anchorRank.get(k);
+      const rank = rk(r);
+      if (!cur || rank > cur) { anchorRank.set(k, rank); b.anchorId = r.id; }
+    }
+    // De-dupe methods list per batch
+    for (const b of m.values()) b.methods = uniq(b.methods);
+    return m;
+  }, [accountingReceived]);
+
+  // Returns per-row payment breakdown. For single-method receipts this mirrors
+  // the raw row; for a multi-method batch it aggregates every sibling and marks
+  // exactly ONE row as the anchor (the one that actually renders).
+  const combinedRecv = useCallback((r: Recv) => {
+    const b = receiptBatches.get(receiptBatchKey(r));
+    if (b && b.parts.length > 1) {
+      return {
+        isBatch: true, isAnchor: b.anchorId === r.id, parts: b.parts, partIds: b.partIds,
+        cashAmt: b.cashAmt, mdAmt: b.mdAmt, vendorAmt: b.vendorAmt, totalAmt: b.totalAmt, methods: b.methods,
+      };
+    }
+    const amt = Number(r.amount || 0);
+    return {
+      isBatch: false, isAnchor: true, parts: [r], partIds: new Set([r.id]),
+      cashAmt: isCashMethod(r.method) ? amt : 0,
+      mdAmt: isMdReceivedMethod(r.method) ? amt : 0,
+      vendorAmt: isVendorReceivedMethod(r.method) ? amt : 0,
+      totalAmt: amt,
+      methods: r.method ? [r.method] : [],
+    };
+  }, [receiptBatches]);
+
   const fRecv = useMemo(() => useDateFilter ? accountingReceived.filter(r => inDateRange(r.entry_date)) : accountingReceived.slice(0, latestN), [accountingReceived, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
@@ -1001,12 +1065,19 @@ ${partySectionsHtml()}
     const isIn = it.kind === "received";
     const isHand = it.kind === "handover";
     const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-    const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
     const statusEvt = isIn && isStatusEventReceipt(r);
-    const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
-    const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
+    const batch = isIn && !statusEvt ? combinedRecv(r) : null;
+    // Non-anchor sibling of a multi-method batch → don't render a row.
+    if (batch && !batch.isAnchor) return "";
+    const rawAmt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+    const amt = batch ? batch.totalAmt : rawAmt;
+    const isMulti = !!batch && batch.isBatch;
+    const cashAmt = batch?.cashAmt ?? 0;
+    const mdAmt = batch?.mdAmt ?? 0;
+    const vendorAmt = batch?.vendorAmt ?? 0;
+    const mdRecv = isIn && !isMulti && isMdReceivedMethod(r.method) && !statusEvt;
+    const vendorRecv = isIn && !isMulti && isVendorReceivedMethod(r.method) && !statusEvt;
     const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-    // নামের শেষে agency নামের প্রথম অংশ বন্ধনীতে (self বাদে)। যেমন: md salam (kholil)
     const agencyFirst = (() => {
       const a = String(svc?.agent ?? "").trim();
       if (!a || a.toLowerCase() === "self") return "";
@@ -1034,9 +1105,10 @@ ${partySectionsHtml()}
     let lastAdvDate = "";
     if (isIn && r.service_row_id) {
       const curDate = r.entry_date;
+      const excludeIds = batch ? batch.partIds : new Set([r.id]);
       const prior = received.filter(p =>
         p.service_row_id === r.service_row_id &&
-        p.id !== r.id &&
+        !excludeIds.has(p.id) &&
         (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
       );
       for (const p of prior) {
@@ -1049,16 +1121,28 @@ ${partySectionsHtml()}
     if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
-    const incomeText = isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : "";
+    const methodStr = isMulti ? batch!.methods.join(" + ") : (r.method || "");
+    const incomeText = isIn
+      ? (statusEvt ? "Delivery" :
+         isMulti
+           ? `+ ${fmt(amt)}` +
+             (cashAmt > 0 ? `<div style="font-size:0.85em">নগদ ${fmt(cashAmt)}</div>` : "") +
+             (mdAmt > 0 ? `<div style="font-size:0.85em">MD ${fmt(mdAmt)}</div>` : "") +
+             (vendorAmt > 0 ? `<div style="font-size:0.85em">Vendor ${fmt(vendorAmt)}</div>` : "")
+           : vendorRecv ? `(Vendor) ${fmt(amt)}`
+           : mdRecv ? `(MD) ${fmt(amt)}`
+           : `+ ${fmt(amt)}`)
+      : "";
+    const amtCls = isMulti ? "in" : vendorRecv ? "vendor" : mdRecv ? "hand" : "in";
     const textCellsHtml = renderTimelinePrintDataCellsHtml([
       { className: "wrap", html: name ?? "" },
-      { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
+      { className: "wrap", html: `${service}${isIn && !statusEvt && methodStr ? ` · ${methodStr}` : ""}` },
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
       { className: "num", html: totalBill !== null ? fmt(totalBill) : "" },
-      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+      { className: `num ${amtCls}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
       { className: "num due", html: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "" },
       { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join("") },
-      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "" },
+      { className: `num ${cls}`, html: !isIn ? `− ${fmt(rawAmt)}` : "" },
       { className: "num", html: fmt(running), allowSpan: false },
     ]);
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
@@ -1162,9 +1246,18 @@ ${partySectionsHtml()}
         // closing stays correct.
         const isHidden = hiddenSet.has(it.date);
         const prev = rows[i - 1];
+        // Skip non-anchor siblings of a multi-method batch for display only.
+        let isSibling = false;
+        if (it.kind === "received") {
+          const rr = it.row as Recv;
+          if (!isStatusEventReceipt(rr)) {
+            const b = combinedRecv(rr);
+            if (b.isBatch && !b.isAnchor) isSibling = true;
+          }
+        }
         // Serial number restarts at 1 for every distinct date.
         if (!prev || prev.date !== it.date) daySeq = 0;
-        daySeq += 1;
+        if (!isSibling) daySeq += 1;
         // প্রতিটি তারিখের সব সারি একটি আলাদা <tbody class="dategroup"> এর ভিতরে —
         // যাতে এক তারিখের হিসাব দুই পেইজে ভাগ না হয়।
         if (!prev || prev.date !== it.date) bodyHtml += `<tbody class="dategroup">`;
@@ -1176,7 +1269,7 @@ ${partySectionsHtml()}
         } else if (expenseHitsBalance(it.row as Exp)) {
           dayOut += amt;
         }
-        bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden, daySeq);
+        if (!isSibling) bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden, daySeq);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
           bodyHtml +=
@@ -1757,23 +1850,29 @@ ${partySectionsHtml()}
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
-                  const isPendingHand = isHand && (h.status ?? "approved") === "pending";
                   const statusEvt = isIn && isStatusEventReceipt(r);
-                  const isMdRecv = isIn && !statusEvt && isMdReceivedMethod(r.method);
-                  const isVendorRecv = isIn && !statusEvt && isVendorReceivedMethod(r.method);
+                  // Multi-method Due Receive → collapse siblings into a single visible row.
+                  const batch = isIn && !statusEvt ? combinedRecv(r) : null;
+                  if (batch && !batch.isAnchor) return null;
+                  const rawAmt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const amt = batch ? batch.totalAmt : rawAmt;
+                  const isPendingHand = isHand && (h.status ?? "approved") === "pending";
+                  const cashAmt = batch?.cashAmt ?? 0;
+                  const mdAmt = batch?.mdAmt ?? 0;
+                  const vendorAmt = batch?.vendorAmt ?? 0;
+                  const isMulti = !!batch && batch.isBatch;
+                  const isMdRecv = isIn && !statusEvt && !isMulti && isMdReceivedMethod(r.method);
+                  const isVendorRecv = isIn && !statusEvt && !isMulti && isVendorReceivedMethod(r.method);
                   const tone = statusEvt ? "text-violet-600" : isIn ? "text-emerald-600" : isHand ? "text-sky-600" : "text-amber-600";
                   const amountTone = isVendorRecv ? "text-orange-500 dark:text-orange-400" : isMdRecv ? "text-indigo-500 dark:text-indigo-400" : tone;
                   const bgTone = statusEvt ? "bg-violet-500/10 border-violet-500/20" : isIn ? "bg-emerald-500/10 border-emerald-500/20" : isHand ? "bg-sky-500/10 border-sky-500/20" : "bg-amber-500/10 border-amber-500/20";
                   const kindLabel = statusEvt ? "Delivery" : isIn ? "আয়" : isHand ? (isPendingHand ? "Pending Handover" : "জমা") : "ব্যয়";
-                  // Col 1: উৎস/নাম (source/name)
                   const name = isIn
                     ? (r.passenger_name || (r.source === "manual" ? "ম্যানুয়াল আয়" : "—"))
                     : isHand
                     ? (`${h.from_name ?? "প্রেরক"} → ${h.to_name || "প্রাপক"}`)
                     : (e.category || "খরচ");
 
-                  // Col 2: উদ্দেশ্য (purpose) — primary line
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
                   const servicePrimary = isIn
                     ? (r.source === "manual"
@@ -1800,13 +1899,9 @@ ${partySectionsHtml()}
                   const linkedStatus = isIn && !statusEvt && r.service_table && r.service_row_id
                     ? statusByService[`${r.service_table}:${r.service_row_id}`]
                     : "";
-                  const primaryBits: string[] = [];
-                  if (isIn && !statusEvt && r.method) primaryBits.push(`💳 ${r.method}`);
-                  if (isIn && !statusEvt && r.source && r.source !== "manual") {
-                    const sl = friendlySource(r.source);
-                    if (sl) primaryBits.push(`📒 ${sl}`);
-                  }
-                  if (isHand && h.method) primaryBits.push(`💳 ${h.method}`);
+                  const methodDisplay = isIn && !statusEvt
+                    ? (batch && batch.methods.length ? batch.methods.join(" + ") : (r.method || ""))
+                    : "";
                   const discountTotal = isIn && svc && typeof svc.discount === "number" ? svc.discount : 0;
                   const dueLeft = isIn && svc && typeof svc.sold === "number" && typeof svc.received_total === "number"
                     ? svc.sold - svc.received_total - discountTotal : null;
@@ -1821,12 +1916,14 @@ ${partySectionsHtml()}
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                           <span className={`px-1.5 py-px rounded-full border ${bgTone} ${tone} font-medium`}>{kindLabel}</span>
+                          {isMulti && <span className="px-1 py-px rounded border text-[10px] font-medium text-primary border-primary/30 bg-primary/10">{batch!.parts.length} মেথড</span>}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-0.5">
                           <CalendarDays className="h-2.5 w-2.5" />{formatDate(it.date)}
                         </p>
                         {isIn && r.ref_id && <p className="text-xs text-muted-foreground mt-0.5">Ref: <span className="font-mono">{r.ref_id}</span></p>}
                       </div>
+
 
                       {/* Col 2 (NEW): Name + Passport */}
                       <div className="min-w-0">
@@ -1910,11 +2007,24 @@ ${partySectionsHtml()}
                           {statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
-                        {isMdRecv && (
-                          <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
-                        )}
-                        {isVendorRecv && (
-                          <p className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap leading-tight">Vendor Rece</p>
+                        {isMulti ? (
+                          <div className="mt-0.5 space-y-px text-[10px] leading-tight whitespace-nowrap">
+                            {cashAmt > 0 && <p className="text-emerald-600 dark:text-emerald-400">নগদ · {fmt(cashAmt)}</p>}
+                            {mdAmt > 0 && <p className="text-indigo-500 dark:text-indigo-400">MD · {fmt(mdAmt)} <span className="text-muted-foreground">({batch!.parts.filter(p => isMdReceivedMethod(p.method)).map(p => p.method).join(", ")})</span></p>}
+                            {vendorAmt > 0 && <p className="text-orange-500 dark:text-orange-400">Vendor · {fmt(vendorAmt)}</p>}
+                          </div>
+                        ) : (
+                          <>
+                            {isMdRecv && (
+                              <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
+                            )}
+                            {isVendorRecv && (
+                              <p className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap leading-tight">Vendor Rece</p>
+                            )}
+                            {isIn && !statusEvt && methodDisplay && !isMdRecv && !isVendorRecv && (
+                              <p className="text-[10px] text-muted-foreground whitespace-nowrap leading-tight">💳 {methodDisplay}</p>
+                            )}
+                          </>
                         )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
@@ -1961,12 +2071,19 @@ ${partySectionsHtml()}
                   const isIn = it.kind === "received";
                   const isHand = it.kind === "handover";
                   const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-                  const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
                   const statusEvt = isIn && isStatusEventReceipt(r);
-                  const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
-                  const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
+                  // Multi-method Due Receive → skip sibling rows, aggregate at the anchor.
+                  const batch = isIn && !statusEvt ? combinedRecv(r) : null;
+                  if (batch && !batch.isAnchor) return null;
+                  const rawAmt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+                  const amt = batch ? batch.totalAmt : rawAmt;
+                  const isMulti = !!batch && batch.isBatch;
+                  const cashAmt = batch?.cashAmt ?? 0;
+                  const mdAmt = batch?.mdAmt ?? 0;
+                  const vendorAmt = batch?.vendorAmt ?? 0;
+                  const mdRecv = isIn && !isMulti && isMdReceivedMethod(r.method) && !statusEvt;
+                  const vendorRecv = isIn && !isMulti && isVendorReceivedMethod(r.method) && !statusEvt;
                   const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-                  // নামের শেষে agency নামের প্রথম অংশ বন্ধনীতে (self বাদে) যোগ হবে। যেমন: md salam (kholil)
                   const agencyFirst = (() => {
                     const a = String(svc?.agent ?? "").trim();
                     if (!a || a.toLowerCase() === "self") return "";
@@ -1989,15 +2106,15 @@ ${partySectionsHtml()}
                   const grossBill = isIn && svc && typeof svc.sold === "number" ? svc.sold : null;
                   const totalBill = grossBill !== null ? grossBill : null;
                   const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
-                  // পূর্ববর্তী জমা/Discount: NOTE column only — calculation happens below explicitly.
                   const advLines: { text: string }[] = [];
                   let sumPrev = 0;
                   let lastAdvDate = "";
                   if (isIn && r.service_row_id) {
                     const curDate = r.entry_date;
+                    const excludeIds = batch ? batch.partIds : new Set([r.id]);
                     const prior = received.filter(p =>
                       p.service_row_id === r.service_row_id &&
-                      p.id !== r.id &&
+                      !excludeIds.has(p.id) &&
                       (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
                     );
                     for (const p of prior) {
@@ -2008,11 +2125,34 @@ ${partySectionsHtml()}
                     if (sumPrev > 0.005) advLines.push({ text: `(৳${sumPrev.toLocaleString()}-Adv-${formatDate(lastAdvDate)})` });
                   }
                   if (discAmt > 0.005) advLines.push({ text: `${fmt(discAmt)} Discount` });
-                  // বাকি = মোট বিল − নগদ জমা − Discount
                   const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
                   const cls = isHand ? "hand" : "out";
-                  const serviceText = `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}`;
+                  const methodStr = isMulti ? batch!.methods.join(" + ") : (r.method || "");
+                  const serviceText = `${service}${isIn && !statusEvt && methodStr ? ` · ${methodStr}` : ""}`;
                   const regionText = `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}`;
+                  // Amount cell — for multi-method batches, show a per-method breakdown.
+                  const amtContent = isIn
+                    ? (statusEvt ? "Delivery" :
+                       isMulti ? (
+                         <>
+                           <div>+ {fmt(amt)}</div>
+                           {cashAmt > 0 && <div style={{ fontSize: "0.85em" }}>নগদ {fmt(cashAmt)}</div>}
+                           {mdAmt > 0 && <div style={{ fontSize: "0.85em" }}>MD {fmt(mdAmt)}</div>}
+                           {vendorAmt > 0 && <div style={{ fontSize: "0.85em" }}>Vendor {fmt(vendorAmt)}</div>}
+                         </>
+                       ) :
+                       vendorRecv ? `(Vendor) ${fmt(amt)}` :
+                       mdRecv ? `(MD) ${fmt(amt)}` :
+                       `+ ${fmt(amt)}`)
+                    : "";
+                  const amtPlain = isIn
+                    ? (statusEvt ? "Delivery" :
+                       isMulti ? `+ ${fmt(amt)} [${[cashAmt > 0 ? `নগদ ${fmt(cashAmt)}` : "", mdAmt > 0 ? `MD ${fmt(mdAmt)}` : "", vendorAmt > 0 ? `Vendor ${fmt(vendorAmt)}` : ""].filter(Boolean).join(" · ")}]` :
+                       vendorRecv ? `(Vendor) ${fmt(amt)}` :
+                       mdRecv ? `(MD) ${fmt(amt)}` :
+                       `+ ${fmt(amt)}`)
+                    : "";
+                  const amtCls = isMulti ? "in" : vendorRecv ? "vendor" : mdRecv ? "hand" : "in";
                   return (
                     <tr key={`p-${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${i % 4}`}>
                       <td>{i + 1}</td>
@@ -2023,10 +2163,10 @@ ${partySectionsHtml()}
                           { className: "wrap", content: serviceText, plain: serviceText },
                           { className: "wrap", content: regionText, plain: regionText },
                           { className: "num", content: totalBill !== null ? fmt(totalBill) : "", plain: totalBill !== null ? fmt(totalBill) : "" },
-                          { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, content: <>{isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : ""}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+                          { className: `num ${amtCls}`, content: <>{amtContent}{!statusEvt && isAdvance ? " (Adv)" : ""}</>, plain: `${amtPlain}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
                           { className: "num due", content: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "", plain: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "" },
                           { className: "prev", content: advLines.map((l, idx) => <div key={idx}>{l.text}</div>), plain: advLines.map((l) => l.text).join(" ") },
-                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(amt)}` : "", plain: !isIn ? `− ${fmt(amt)}` : "" },
+                          { className: `num ${cls}`, content: !isIn ? `− ${fmt(rawAmt)}` : "", plain: !isIn ? `− ${fmt(rawAmt)}` : "" },
                           { className: "num", content: fmt(running), plain: fmt(running), allowSpan: false },
                         ]}
                       />
