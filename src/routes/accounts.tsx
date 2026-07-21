@@ -1065,12 +1065,19 @@ ${partySectionsHtml()}
     const isIn = it.kind === "received";
     const isHand = it.kind === "handover";
     const r = it.row as Recv; const h = it.row as Hand; const e = it.row as Exp;
-    const amt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
     const statusEvt = isIn && isStatusEventReceipt(r);
-    const mdRecv = isIn && isMdReceivedMethod(r.method) && !statusEvt;
-    const vendorRecv = isIn && isVendorReceivedMethod(r.method) && !statusEvt;
+    const batch = isIn && !statusEvt ? combinedRecv(r) : null;
+    // Non-anchor sibling of a multi-method batch → don't render a row.
+    if (batch && !batch.isAnchor) return "";
+    const rawAmt = Number(isIn ? r.amount : isHand ? h.amount : e.amount);
+    const amt = batch ? batch.totalAmt : rawAmt;
+    const isMulti = !!batch && batch.isBatch;
+    const cashAmt = batch?.cashAmt ?? 0;
+    const mdAmt = batch?.mdAmt ?? 0;
+    const vendorAmt = batch?.vendorAmt ?? 0;
+    const mdRecv = isIn && !isMulti && isMdReceivedMethod(r.method) && !statusEvt;
+    const vendorRecv = isIn && !isMulti && isVendorReceivedMethod(r.method) && !statusEvt;
     const svc = isIn && r.service_row_id ? svcMap[r.service_row_id] : undefined;
-    // নামের শেষে agency নামের প্রথম অংশ বন্ধনীতে (self বাদে)। যেমন: md salam (kholil)
     const agencyFirst = (() => {
       const a = String(svc?.agent ?? "").trim();
       if (!a || a.toLowerCase() === "self") return "";
@@ -1098,9 +1105,10 @@ ${partySectionsHtml()}
     let lastAdvDate = "";
     if (isIn && r.service_row_id) {
       const curDate = r.entry_date;
+      const excludeIds = batch ? batch.partIds : new Set([r.id]);
       const prior = received.filter(p =>
         p.service_row_id === r.service_row_id &&
-        p.id !== r.id &&
+        !excludeIds.has(p.id) &&
         (p.entry_date < curDate || (p.entry_date === curDate && p.id < r.id))
       );
       for (const p of prior) {
@@ -1113,16 +1121,28 @@ ${partySectionsHtml()}
     if (discAmt > 0.005) advLines.push(`${fmt(discAmt)} Discount`);
     const due = totalBill !== null && isIn ? Math.max(0, totalBill - amt - sumPrev - discAmt) : null;
     const cls = isHand ? "hand" : "out";
-    const incomeText = isIn ? (statusEvt ? "Delivery" : vendorRecv ? `(Vendor) ${fmt(amt)}` : mdRecv ? `(MD) ${fmt(amt)}` : `+ ${fmt(amt)}`) : "";
+    const methodStr = isMulti ? batch!.methods.join(" + ") : (r.method || "");
+    const incomeText = isIn
+      ? (statusEvt ? "Delivery" :
+         isMulti
+           ? `+ ${fmt(amt)}` +
+             (cashAmt > 0 ? `<div style="font-size:0.85em">নগদ ${fmt(cashAmt)}</div>` : "") +
+             (mdAmt > 0 ? `<div style="font-size:0.85em">MD ${fmt(mdAmt)}</div>` : "") +
+             (vendorAmt > 0 ? `<div style="font-size:0.85em">Vendor ${fmt(vendorAmt)}</div>` : "")
+           : vendorRecv ? `(Vendor) ${fmt(amt)}`
+           : mdRecv ? `(MD) ${fmt(amt)}`
+           : `+ ${fmt(amt)}`)
+      : "";
+    const amtCls = isMulti ? "in" : vendorRecv ? "vendor" : mdRecv ? "hand" : "in";
     const textCellsHtml = renderTimelinePrintDataCellsHtml([
       { className: "wrap", html: name ?? "" },
-      { className: "wrap", html: `${service}${isIn && !statusEvt && r.method ? ` · ${r.method}` : ""}` },
+      { className: "wrap", html: `${service}${isIn && !statusEvt && methodStr ? ` · ${methodStr}` : ""}` },
       { className: "wrap", html: `${region}${mdRecv ? " · MD রিসিভ" : ""}${vendorRecv ? " · Vendor Rece" : ""}` },
       { className: "num", html: totalBill !== null ? fmt(totalBill) : "" },
-      { className: `num ${vendorRecv ? "vendor" : mdRecv ? "hand" : "in"}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
+      { className: `num ${amtCls}`, html: `${incomeText}${!statusEvt && isAdvance ? " (Adv)" : ""}` },
       { className: "num due", html: due !== null && due > 0.005 ? `Due-${due.toLocaleString()}` : "" },
       { className: "prev", html: advLines.map(t => `<div>${t}</div>`).join("") },
-      { className: `num ${cls}`, html: !isIn ? `− ${fmt(amt)}` : "" },
+      { className: `num ${cls}`, html: !isIn ? `− ${fmt(rawAmt)}` : "" },
       { className: "num", html: fmt(running), allowSpan: false },
     ]);
     return `<tr class="row-tint-${i % 4}${blank ? " blank" : ""}">` +
