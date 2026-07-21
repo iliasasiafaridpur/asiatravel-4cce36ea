@@ -782,6 +782,7 @@ const SLIP_CSS = `
   h2 { font-size:11px; margin:8px 0 3px; font-weight:700; }
   table { width:100%; max-width:100%; border-collapse:collapse; font-size:9.5px; table-layout:auto; }
   th, td { border:1px solid #6b7280; padding:2px 4px; text-align:left; vertical-align:top; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; color:#000; }
+   td { font-weight:700; }
    th { background:#d4d4d8; font-weight:700; text-align:center; color:#000; }
    td.r { text-align:right; }
   td.nw, th.nw { white-space:nowrap; overflow-wrap:normal; word-break:normal; }
