@@ -1354,16 +1354,6 @@ ${partySectionsHtml()}
     </tr>
   </thead>
   ${bodyHtml}
-  <tfoot>
-    <tr>
-      <td colspan="6">Total</td>
-      <td class="num in">+ ${fmt(totals.inAmt)}</td>
-      <td></td>
-      <td></td>
-      <td class="num out">− ${fmt(totals.outAmt)}</td>
-      <td class="num">${fmt(finalClosing)}</td>
-    </tr>
-  </tfoot>
 </table>
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
 ${partySectionsHtml()}
