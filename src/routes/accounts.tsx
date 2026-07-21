@@ -757,12 +757,24 @@ function AccountsPage() {
     const ordered = segmentByHandover(timeline as (TLItem & { running: number; created?: string })[]);
     let bal = 0;
     return ordered.map((it) => {
-      if (it.kind === "received") bal += isCashMethod((it.row as Recv).method) ? Number((it.row as Recv).amount) : 0;
-      else if (it.kind === "handover") bal -= handoverReducesBalance((it.row as Hand).status) ? Number((it.row as Hand).amount) : 0;
-      else bal -= expenseHitsBalance(it.row as Exp) ? Number((it.row as Exp).amount) : 0;
+      if (it.kind === "received") {
+        const rr = it.row as Recv;
+        if (!isStatusEventReceipt(rr)) {
+          const b = combinedRecv(rr);
+          if (b.isBatch && !b.isAnchor) {
+            return { it, running: bal };
+          }
+          if (b.isBatch && b.isAnchor) bal += b.cashAmt;
+          else if (isCashMethod(rr.method)) bal += Number(rr.amount);
+        }
+      } else if (it.kind === "handover") {
+        bal -= handoverReducesBalance((it.row as Hand).status) ? Number((it.row as Hand).amount) : 0;
+      } else {
+        bal -= expenseHitsBalance(it.row as Exp) ? Number((it.row as Exp).amount) : 0;
+      }
       return { it, running: bal };
     });
-  }, [timeline]);
+  }, [timeline, combinedRecv]);
 
 
   // Save expense
