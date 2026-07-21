@@ -578,6 +578,63 @@ function AccountsPage() {
   }, [received]);
 
   const accountingReceived = useMemo(() => received.filter((r) => !isStatusEventReceipt(r)), [received]);
+
+  // Multi-method Due Receive collapses to ONE displayed row so /accounts shows
+  // one line for e.g. TKT-2607-054 even though it was received in Cash + bKash.
+  type BatchInfo = {
+    parts: Recv[]; anchorId: string; cashAmt: number; mdAmt: number; vendorAmt: number;
+    totalAmt: number; methods: string[]; partIds: Set<string>;
+  };
+  const receiptBatches = useMemo(() => {
+    const m = new Map<string, BatchInfo>();
+    const rk = (r: Recv) => `${r.entry_date ?? ""}|${(r as Recv & { created_at?: string }).created_at ?? r.entry_date ?? ""}|${r.id}`;
+    const anchorRank = new Map<string, string>();
+    for (const r of accountingReceived) {
+      const k = receiptBatchKey(r);
+      let b = m.get(k);
+      if (!b) {
+        b = { parts: [], anchorId: r.id, cashAmt: 0, mdAmt: 0, vendorAmt: 0, totalAmt: 0, methods: [], partIds: new Set() };
+        m.set(k, b);
+      }
+      b.parts.push(r);
+      b.partIds.add(r.id);
+      const amt = Number(r.amount || 0);
+      b.totalAmt += amt;
+      if (isVendorReceivedMethod(r.method)) b.vendorAmt += amt;
+      else if (isMdReceivedMethod(r.method)) b.mdAmt += amt;
+      else b.cashAmt += amt;
+      if (r.method) b.methods.push(r.method);
+      const cur = anchorRank.get(k);
+      const rank = rk(r);
+      if (!cur || rank > cur) { anchorRank.set(k, rank); b.anchorId = r.id; }
+    }
+    // De-dupe methods list per batch
+    for (const b of m.values()) b.methods = uniq(b.methods);
+    return m;
+  }, [accountingReceived]);
+
+  // Returns per-row payment breakdown. For single-method receipts this mirrors
+  // the raw row; for a multi-method batch it aggregates every sibling and marks
+  // exactly ONE row as the anchor (the one that actually renders).
+  const combinedRecv = useCallback((r: Recv) => {
+    const b = receiptBatches.get(receiptBatchKey(r));
+    if (b && b.parts.length > 1) {
+      return {
+        isBatch: true, isAnchor: b.anchorId === r.id, parts: b.parts, partIds: b.partIds,
+        cashAmt: b.cashAmt, mdAmt: b.mdAmt, vendorAmt: b.vendorAmt, totalAmt: b.totalAmt, methods: b.methods,
+      };
+    }
+    const amt = Number(r.amount || 0);
+    return {
+      isBatch: false, isAnchor: true, parts: [r], partIds: new Set([r.id]),
+      cashAmt: isCashMethod(r.method) ? amt : 0,
+      mdAmt: isMdReceivedMethod(r.method) ? amt : 0,
+      vendorAmt: isVendorReceivedMethod(r.method) ? amt : 0,
+      totalAmt: amt,
+      methods: r.method ? [r.method] : [],
+    };
+  }, [receiptBatches]);
+
   const fRecv = useMemo(() => useDateFilter ? accountingReceived.filter(r => inDateRange(r.entry_date)) : accountingReceived.slice(0, latestN), [accountingReceived, latestN, useDateFilter, inDateRange]);
   const fHand = useMemo(() => useDateFilter ? handovers.filter(h => inDateRange(h.entry_date)) : handovers.slice(0, latestN), [handovers, latestN, useDateFilter, inDateRange]);
   const fExp  = useMemo(() => useDateFilter ? expenses.filter(e => inDateRange(e.entry_date)) : expenses.slice(0, latestN), [expenses, latestN, useDateFilter, inDateRange]);
