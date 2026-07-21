@@ -1978,11 +1978,24 @@ ${partySectionsHtml()}
                           {statusEvt ? cleanStatusText(r.remarks) : <>{isAdvance ? <><AdvanceBadge advance /> </> : null}{isIn ? "+" : "−"} {fmt(amt)}</>}
                         </p>
                         {isPendingHand && <p className="text-[10px] text-amber-600 whitespace-nowrap">Balance থেকে বাদ হয়নি</p>}
-                        {isMdRecv && (
-                          <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
-                        )}
-                        {isVendorRecv && (
-                          <p className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap leading-tight">Vendor Rece</p>
+                        {isMulti ? (
+                          <div className="mt-0.5 space-y-px text-[10px] leading-tight whitespace-nowrap">
+                            {cashAmt > 0 && <p className="text-emerald-600 dark:text-emerald-400">নগদ · {fmt(cashAmt)}</p>}
+                            {mdAmt > 0 && <p className="text-indigo-500 dark:text-indigo-400">MD · {fmt(mdAmt)} <span className="text-muted-foreground">({batch!.parts.filter(p => isMdReceivedMethod(p.method)).map(p => p.method).join(", ")})</span></p>}
+                            {vendorAmt > 0 && <p className="text-orange-500 dark:text-orange-400">Vendor · {fmt(vendorAmt)}</p>}
+                          </div>
+                        ) : (
+                          <>
+                            {isMdRecv && (
+                              <p className="text-[10px] text-indigo-500 dark:text-indigo-400 whitespace-nowrap leading-tight">MD রিসিভ · {r.method}</p>
+                            )}
+                            {isVendorRecv && (
+                              <p className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap leading-tight">Vendor Rece</p>
+                            )}
+                            {isIn && !statusEvt && methodDisplay && !isMdRecv && !isVendorRecv && (
+                              <p className="text-[10px] text-muted-foreground whitespace-nowrap leading-tight">💳 {methodDisplay}</p>
+                            )}
+                          </>
                         )}
                         <p className="text-[10px] text-primary tabular-nums whitespace-nowrap mt-1 font-medium">
                           ব্যালেন্স
