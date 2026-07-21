@@ -1234,19 +1234,14 @@ ${partySectionsHtml()}
     } else {
       const hiddenSet = new Set(hiddenDays);
       let dayIn = 0;
+      let dayMd = 0;
       let dayOut = 0;
       let daySeq = 0;
+      let dayCount = 0;
       for (let i = 0; i < rows.length; i++) {
         const it = rows[i];
-        // Marked dates: keep the SAME space but render it INVISIBLE (white).
-        // The rows are still laid out (identical height), only hidden — so the
-        // operator can re-feed the same physical paper and print the new day's
-        // data in exactly the spot the old print already occupies. Running
-        // balance is precomputed across every row, so the next visible date's
-        // closing stays correct.
         const isHidden = hiddenSet.has(it.date);
         const prev = rows[i - 1];
-        // Skip non-anchor siblings of a multi-method batch for display only.
         let isSibling = false;
         if (it.kind === "received") {
           const rr = it.row as Recv;
@@ -1255,34 +1250,52 @@ ${partySectionsHtml()}
             if (b.isBatch && !b.isAnchor) isSibling = true;
           }
         }
-        // Serial number restarts at 1 for every distinct date.
         if (!prev || prev.date !== it.date) daySeq = 0;
         if (!isSibling) daySeq += 1;
-        // প্রতিটি তারিখের সব সারি একটি আলাদা <tbody class="dategroup"> এর ভিতরে —
-        // যাতে এক তারিখের হিসাব দুই পেইজে ভাগ না হয়।
         if (!prev || prev.date !== it.date) bodyHtml += `<tbody class="dategroup">`;
         const amt = Number((it.row as { amount: number }).amount || 0);
         if (it.kind === "received") {
-          if (isCashMethod((it.row as Recv).method)) dayIn += amt;
+          const rr = it.row as Recv;
+          if (!isStatusEventReceipt(rr)) {
+            const b = combinedRecv(rr);
+            if (!b.isBatch || b.isAnchor) {
+              dayCount += 1;
+              if (b.isBatch) {
+                dayIn += b.cashAmt;
+                dayMd += b.mdAmt;
+              } else if (isCashMethod(rr.method)) {
+                dayIn += amt;
+              } else if (isMdReceivedMethod(rr.method)) {
+                dayMd += amt;
+              }
+            }
+          }
         } else if (it.kind === "handover") {
+          if (!isSibling) dayCount += 1;
           if (handoverReducesBalance((it.row as Hand).status)) dayOut += amt;
-        } else if (expenseHitsBalance(it.row as Exp)) {
-          dayOut += amt;
+        } else {
+          if (!isSibling) dayCount += 1;
+          if (expenseHitsBalance(it.row as Exp)) dayOut += amt;
         }
         if (!isSibling) bodyHtml += buildDetailRowHtml(it, it.running, i, isHidden, daySeq);
         const next = rows[i + 1];
         if (!next || next.date !== it.date) {
+          const cashLeft = dayIn - dayOut;
           bodyHtml +=
             `<tr class="dayclose${isHidden ? " blank" : ""}">` +
-            `<td colspan="6">📅 ${formatDate(it.date)} — দিনের ক্লোজিং</td>` +
-            `<td class="num in">+ ${fmt(dayIn)}</td>` +
-            `<td></td><td></td>` +
-            `<td class="num out">− ${fmt(dayOut)}</td>` +
-            `<td class="num">${fmt(it.running)}</td>` +
+            `<td colspan="11">📅 ${formatDate(it.date)} — দিনের ক্লোজিং = ` +
+            `মোট লেনদেন (${dayCount})   ` +
+            `<span class="in">নগদ ${fmt(dayIn)}</span> − ` +
+            `<span class="hand">MD ${fmt(dayMd)}</span> − ` +
+            `<span class="out">মোট খরচ ${fmt(dayOut)}</span> = ` +
+            `<span>CASH ${fmt(cashLeft)}</span>` +
+            `</td>` +
             `</tr>` +
             `</tbody>`;
           dayIn = 0;
+          dayMd = 0;
           dayOut = 0;
+          dayCount = 0;
         }
       }
     }
@@ -1341,16 +1354,6 @@ ${partySectionsHtml()}
     </tr>
   </thead>
   ${bodyHtml}
-  <tfoot>
-    <tr>
-      <td colspan="6">Total</td>
-      <td class="num in">+ ${fmt(totals.inAmt)}</td>
-      <td></td>
-      <td></td>
-      <td class="num out">− ${fmt(totals.outAmt)}</td>
-      <td class="num">${fmt(finalClosing)}</td>
-    </tr>
-  </tfoot>
 </table>
 <div class="finalbox">সর্বশেষ ক্লোজিং ব্যালেন্স: ${fmt(finalClosing)}</div>
 ${partySectionsHtml()}
