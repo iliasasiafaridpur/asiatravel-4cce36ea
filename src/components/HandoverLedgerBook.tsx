@@ -852,7 +852,9 @@ function buildHandoverSlipBody(args: {
   const metricsFor = (r: Receipt) => {
     const sk = receiptServiceKey(r);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    // Exclude zero-amount status_event rows — they pollute lastPast/lastFuture
+    // with meaningless "Status" method labels and delivery-date timestamps.
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
     const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
     const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
@@ -888,7 +890,7 @@ function buildHandoverSlipBody(args: {
     const first = recs[0];
     const sk = receiptServiceKey(first);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     const ids = new Set(recs.map((x) => x.id));
     const past = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
     const future = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
@@ -1353,7 +1355,7 @@ function HandoverCard({
   const metricsFor = (r: Receipt) => {
     const sk = receiptServiceKey(r);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     // "past" = strictly earlier receipts on this service that are NOT part of
     // the current handover. Excluding same-handover rows keeps পূর্বের জমা
     // truthful even when a handover has multiple entries on the same service.
@@ -1393,7 +1395,7 @@ function HandoverCard({
     const first = recs[0];
     const sk = receiptServiceKey(first);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     const ids = new Set(recs.map((x) => x.id));
     const past = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
     const future = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
