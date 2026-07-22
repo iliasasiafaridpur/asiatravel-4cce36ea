@@ -1395,7 +1395,7 @@ function HandoverCard({
     const first = recs[0];
     const sk = receiptServiceKey(first);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     const ids = new Set(recs.map((x) => x.id));
     const past = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) < cutoffRank);
     const future = allForSvc.filter((x) => !ids.has(x.id) && x.handover_id !== handover.id && rank(x.entry_date, x.created_at) > cutoffRank);
