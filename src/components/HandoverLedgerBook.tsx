@@ -852,7 +852,9 @@ function buildHandoverSlipBody(args: {
   const metricsFor = (r: Receipt) => {
     const sk = receiptServiceKey(r);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    // Exclude zero-amount status_event rows — they pollute lastPast/lastFuture
+    // with meaningless "Status" method labels and delivery-date timestamps.
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     const past = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) < cutoffRank);
     const future = allForSvc.filter((x) => x.id !== r.id && rank(x.entry_date, x.created_at) > cutoffRank);
     const previousPaid = past.reduce((s, x) => s + Number(x.amount || 0), 0);
