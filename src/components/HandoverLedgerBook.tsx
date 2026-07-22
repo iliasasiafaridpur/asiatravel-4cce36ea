@@ -1355,7 +1355,7 @@ function HandoverCard({
   const metricsFor = (r: Receipt) => {
     const sk = receiptServiceKey(r);
     const info = sk ? serviceMap[sk] : undefined;
-    const allForSvc = sk ? (receiptsByService[sk] ?? []) : [];
+    const allForSvc = sk ? (receiptsByService[sk] ?? []).filter((x) => !isStatusEventReceipt(x)) : [];
     // "past" = strictly earlier receipts on this service that are NOT part of
     // the current handover. Excluding same-handover rows keeps পূর্বের জমা
     // truthful even when a handover has multiple entries on the same service.
