@@ -290,21 +290,21 @@ function RootComponent() {
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
-                <SidebarTrigger />
-                <div className="flex items-center gap-1.5">
+              <header className="h-12 md:h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
+                <SidebarTrigger className="h-10 w-10 md:h-9 md:w-9" />
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <MasterSearchHeaderButton />
                   <OnlineServiceHeaderButton />
                   <NotePadHeaderButton />
-                  <MasterSearchHeaderButton />
                   <HandoverHeaderButton />
                   <NotificationBell />
-                  <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 md:h-9 md:w-9" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
                     {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
                   <LogoutButton />
                 </div>
               </header>
-              <main className="flex-1 p-3 sm:p-5 max-w-full overflow-x-hidden">
+              <main className="flex-1 p-2 sm:p-5 max-w-full overflow-x-hidden">
                 <Outlet />
               </main>
             </div>

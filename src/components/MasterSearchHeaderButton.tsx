@@ -145,33 +145,35 @@ export function MasterSearchHeaderButton() {
     }, 50);
   };
 
-  return (
-    <div ref={wrapRef} className="relative">
-      <div className="relative w-[180px] sm:w-[240px]">
-        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const searchBody = (
+    <>
+      <div className="relative w-full">
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           placeholder="সব খুঁজুন…"
-          className="h-8 pl-7 pr-7 text-xs"
+          autoFocus
+          className="h-10 pl-8 pr-8 text-sm"
         />
         {loading ? (
-          <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
         ) : q ? (
           <button
             type="button"
             onClick={() => { setQ(""); setItems([]); }}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
             aria-label="Clear"
           >
-            <X className="h-3 w-3 text-muted-foreground" />
+            <X className="h-4 w-4 text-muted-foreground" />
           </button>
         ) : null}
       </div>
-
-      {open && debounced && (
-        <div className="absolute right-0 mt-1 w-[min(92vw,380px)] max-h-[70vh] overflow-y-auto rounded-md border border-border bg-popover shadow-xl z-50">
+      {debounced && (
+        <div className="mt-2 max-h-[70vh] overflow-y-auto rounded-md border border-border bg-popover">
           {loading && items.length === 0 ? (
             <p className="p-4 text-center text-xs text-muted-foreground">লোড হচ্ছে…</p>
           ) : shown.length === 0 ? (
@@ -182,17 +184,17 @@ export function MasterSearchHeaderButton() {
                 <li key={`${it.key}-${it.id}-${i}`}>
                   <button
                     type="button"
-                    onClick={() => pick(it)}
-                    className="flex w-full items-start gap-2 px-3 py-1.5 text-left transition-colors hover:bg-primary/10"
+                    onClick={() => { pick(it); setMobileOpen(false); }}
+                    className="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-primary/10"
                   >
                     <span className={`shrink-0 text-[10px] font-semibold mt-0.5 ${it.color}`}>{it.label}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-semibold leading-tight">{it.title}</span>
+                      <span className="block truncate text-sm font-semibold leading-tight">{it.title}</span>
                       {it.sub && (
-                        <span className="block truncate text-[10px] text-muted-foreground leading-tight">{it.sub}</span>
+                        <span className="block truncate text-[11px] text-muted-foreground leading-tight">{it.sub}</span>
                       )}
                     </span>
-                    <span className="shrink-0 font-mono text-[9px] text-muted-foreground mt-0.5">{it.id}</span>
+                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground mt-0.5">{it.id}</span>
                   </button>
                 </li>
               ))}
@@ -200,6 +202,92 @@ export function MasterSearchHeaderButton() {
           )}
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile: icon button opens full-screen search sheet */}
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+        aria-label="সব খুঁজুন"
+      >
+        <Search className="h-5 w-5" />
+      </button>
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-background/95 backdrop-blur flex flex-col p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1">{searchBody}</div>
+            <button
+              type="button"
+              onClick={() => { setMobileOpen(false); setQ(""); setItems([]); }}
+              className="inline-flex items-center justify-center h-10 w-10 rounded-md hover:bg-accent shrink-0"
+              aria-label="বন্ধ করুন"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop: inline input + dropdown */}
+      <div ref={wrapRef} className="relative hidden md:block">
+        <div className="relative w-[180px] sm:w-[240px]">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            placeholder="সব খুঁজুন…"
+            className="h-8 pl-7 pr-7 text-xs"
+          />
+          {loading ? (
+            <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          ) : q ? (
+            <button
+              type="button"
+              onClick={() => { setQ(""); setItems([]); }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted"
+              aria-label="Clear"
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </button>
+          ) : null}
+        </div>
+
+        {open && debounced && (
+          <div className="absolute right-0 mt-1 w-[min(92vw,380px)] max-h-[70vh] overflow-y-auto rounded-md border border-border bg-popover shadow-xl z-50">
+            {loading && items.length === 0 ? (
+              <p className="p-4 text-center text-xs text-muted-foreground">লোড হচ্ছে…</p>
+            ) : shown.length === 0 ? (
+              <p className="p-4 text-center text-xs text-muted-foreground">কিছু পাওয়া যায়নি</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {shown.map((it, i) => (
+                  <li key={`${it.key}-${it.id}-${i}`}>
+                    <button
+                      type="button"
+                      onClick={() => pick(it)}
+                      className="flex w-full items-start gap-2 px-3 py-1.5 text-left transition-colors hover:bg-primary/10"
+                    >
+                      <span className={`shrink-0 text-[10px] font-semibold mt-0.5 ${it.color}`}>{it.label}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-semibold leading-tight">{it.title}</span>
+                        {it.sub && (
+                          <span className="block truncate text-[10px] text-muted-foreground leading-tight">{it.sub}</span>
+                        )}
+                      </span>
+                      <span className="shrink-0 font-mono text-[9px] text-muted-foreground mt-0.5">{it.id}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
