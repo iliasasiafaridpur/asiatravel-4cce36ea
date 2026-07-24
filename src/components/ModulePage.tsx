@@ -2170,8 +2170,8 @@ export function ModulePage({ module: mod }: Props) {
             <div className="mb-2">
               <h3 className="text-sm font-semibold">{mod.groupBy!.label} অনুযায়ী Due সারাংশ ({groupSummary.length})</h3>
             </div>
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
+            <div className="overflow-x-auto rounded-md border responsive-cards-wrap">
+              <Table className="responsive-cards">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="whitespace-nowrap">{mod.groupBy!.label}</TableHead>
