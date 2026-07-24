@@ -331,3 +331,50 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
   .border, .border-border\/60 { border-color: #999 !important; }
   [class*="row-tint-"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ============================================================
+   MOBILE: stacked-card layout for data tables
+   Apply .responsive-cards to a <Table> and .responsive-cards-wrap
+   to its overflow wrapper. Below md (<768px) each row renders as a
+   full-width card with no horizontal scroll. Unchanged on desktop.
+   ============================================================ */
+@media (max-width: 767px) {
+  .responsive-cards-wrap {
+    overflow-x: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  .responsive-cards { display: block !important; width: 100% !important; }
+  .responsive-cards > thead { display: none !important; }
+  .responsive-cards > tbody { display: block !important; width: 100% !important; }
+  .responsive-cards > tbody > tr {
+    display: block !important;
+    width: 100% !important;
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    background: hsl(var(--card));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .responsive-cards > tbody > tr > td {
+    display: block !important;
+    width: 100% !important;
+    padding: 4px 0 !important;
+    border: none !important;
+    white-space: normal !important;
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+  /* Right-aligned action / amount cells stay right-aligned inside the card */
+  .responsive-cards > tbody > tr > td.text-right,
+  .responsive-cards > tbody > tr > td[class*="text-right"] {
+    text-align: right !important;
+  }
+}
+
+/* Larger tap targets on mobile for icon buttons in the app header */
+@media (max-width: 767px) {
+  header .h-8, header .h-9 { min-height: 40px; }
+  header button[aria-label], header .icon-btn { min-width: 40px; min-height: 40px; }
+}
