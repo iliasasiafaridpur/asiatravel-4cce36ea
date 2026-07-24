@@ -293,22 +293,9 @@ function RootComponent() {
               <header className="h-12 md:h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
                 <SidebarTrigger className="h-10 w-10 md:h-9 md:w-9" />
                 <div className="flex items-center gap-1 md:gap-1.5">
-                  {/* Desktop: full inline search. Mobile: hidden — replaced by icon-triggered sheet below */}
-                  <div className="hidden md:block">
-                    <MasterSearchHeaderButton />
-                  </div>
-                  {/* Mobile-only: compact search + secondary tools stay accessible */}
-                  <div className="md:hidden">
-                    <MasterSearchHeaderButton />
-                  </div>
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <OnlineServiceHeaderButton />
-                    <NotePadHeaderButton />
-                  </div>
-                  <div className="flex sm:hidden items-center gap-1">
-                    <OnlineServiceHeaderButton />
-                    <NotePadHeaderButton />
-                  </div>
+                  <MasterSearchHeaderButton />
+                  <OnlineServiceHeaderButton />
+                  <NotePadHeaderButton />
                   <HandoverHeaderButton />
                   <NotificationBell />
                   <Button variant="ghost" size="icon" className="h-10 w-10 md:h-9 md:w-9" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
