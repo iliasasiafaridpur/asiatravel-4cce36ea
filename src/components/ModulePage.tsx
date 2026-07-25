@@ -2299,7 +2299,7 @@ export function ModulePage({ module: mod }: Props) {
                               const v = c.comp.compute(r);
                               const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key] && !agencyIsTotalSettle(r.agency_sold);
                               return (
-                                <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
+                                <TableCell key={c.comp.name} data-label={c.comp.label} className="text-right tabular-nums whitespace-nowrap">
                                   {isServiceDue ? (
                                     <button
                                       type="button"
