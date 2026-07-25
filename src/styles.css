@@ -343,34 +343,89 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
     overflow-x: visible !important;
     border: none !important;
     border-radius: 0 !important;
+    background: transparent !important;
   }
   .responsive-cards { display: block !important; width: 100% !important; }
   .responsive-cards > thead { display: none !important; }
   .responsive-cards > tbody { display: block !important; width: 100% !important; }
   .responsive-cards > tbody > tr {
     display: block !important;
+    position: relative;
     width: 100% !important;
     border: 1px solid hsl(var(--border));
-    border-radius: 12px;
+    border-radius: 14px;
     margin-bottom: 10px;
-    padding: 10px 12px;
+    padding: 10px 12px 46px 12px; /* room for absolute-positioned action bar */
     background: hsl(var(--card));
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
   }
   .responsive-cards > tbody > tr > td {
     display: block !important;
     width: 100% !important;
-    padding: 4px 0 !important;
+    padding: 3px 0 !important;
     border: none !important;
     white-space: normal !important;
     text-align: left !important;
     min-width: 0 !important;
+    font-size: 13px;
+    line-height: 1.35;
   }
-  /* Right-aligned action / amount cells stay right-aligned inside the card */
+  /* First cell (primary info: id / name) — larger, prominent */
+  .responsive-cards > tbody > tr > td:first-child {
+    font-size: 15px;
+    font-weight: 600;
+    padding-bottom: 6px !important;
+    border-bottom: 1px dashed hsl(var(--border));
+    margin-bottom: 4px;
+  }
+  /* Right-aligned amount cells */
   .responsive-cards > tbody > tr > td.text-right,
   .responsive-cards > tbody > tr > td[class*="text-right"] {
     text-align: right !important;
+    font-weight: 600;
   }
+  /* Last cell = Actions — float bottom-right of card */
+  .responsive-cards > tbody > tr > td:last-child {
+    position: absolute !important;
+    right: 8px;
+    bottom: 6px;
+    width: auto !important;
+    padding: 0 !important;
+  }
+  .responsive-cards > tbody > tr > td:last-child button {
+    height: 36px !important;
+    width: 36px !important;
+  }
+  .responsive-cards > tbody > tr > td:last-child svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* Floating "+ নতুন এন্ট্রি" button for mobile module pages */
+@media (max-width: 767px) {
+  .module-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 50;
+    height: 56px;
+    min-width: 56px;
+    padding: 0 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2);
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(var(--primary) / 0.6);
+  }
+  .module-fab:active { transform: translateY(1px); }
+}
+@media (min-width: 768px) {
+  .module-fab { display: none !important; }
 }
 
 /* Larger tap targets on mobile for icon buttons in the app header */
