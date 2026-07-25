@@ -1940,7 +1940,7 @@ ${partySectionsHtml()}
                   const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[0.7fr_1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`finance-row row-tint-${idx % 4} grid grid-cols-[0.7fr_1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
                       {/* Col 1: Type + date */}
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
