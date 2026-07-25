@@ -2550,8 +2550,9 @@ export function PartyLedgerPage({
                 </Badge>
               )}
             </div>
-            <div className="overflow-x-auto rounded-md border">
+            <div className="mobile-cards-table overflow-x-auto rounded-md border">
               <Table>
+
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
