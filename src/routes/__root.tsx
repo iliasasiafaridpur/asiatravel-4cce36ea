@@ -26,6 +26,7 @@ import { Moon, Sun } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { NotificationBell } from "@/components/NotificationBell";
 import { HandoverHeaderButton } from "@/components/HandoverHeaderButton";
 import { MasterSearchHeaderButton } from "@/components/MasterSearchHeaderButton";
@@ -290,7 +291,7 @@ function RootComponent() {
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-14 md:h-12 mt-2 md:mt-0 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
+              <header className="h-14 md:h-12 flex items-center justify-between border-b border-border px-2 fixed md:sticky top-0 left-0 right-0 md:left-auto md:right-auto z-40 bg-background/95 md:bg-background/85 backdrop-blur">
                 <SidebarTrigger className="h-12 w-12 md:h-9 md:w-9 [&_svg]:!h-6 [&_svg]:!w-6 md:[&_svg]:!h-4 md:[&_svg]:!w-4" />
                 <div className="flex items-center gap-1 md:gap-1.5">
                   <MasterSearchHeaderButton />
@@ -304,7 +305,7 @@ function RootComponent() {
                   <LogoutButton />
                 </div>
               </header>
-              <main className="flex-1 p-2 sm:p-5 max-w-full overflow-x-hidden">
+              <main className="flex-1 p-2 sm:p-5 max-w-full overflow-x-hidden pt-16 md:pt-2">
                 <Outlet />
               </main>
             </div>
@@ -312,6 +313,7 @@ function RootComponent() {
         </SidebarProvider>
       </AuthGate>
       <ScrollToTopButton />
+      <PullToRefresh />
       <OfflineSyncManager />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
