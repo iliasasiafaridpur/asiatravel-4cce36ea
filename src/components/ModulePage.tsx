@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X, Plane } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X, Plane, Rows3 } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { TicketRefundDialog } from "@/components/TicketRefundDialog";
@@ -304,6 +304,14 @@ export function ModulePage({ module: mod }: Props) {
   );
   // এজেন্সিভিত্তিক হিসাব ধরন লোড — শুধু সার্ভিস মডিউলে (যেখানে agency_sold আছে)।
   useEffect(() => {
+    try {
+      const d = localStorage.getItem("ui.density");
+      if (d === "compact") document.documentElement.dataset.density = "compact";
+    } catch { /* noop */ }
+  }, []);
+
+  useEffect(() => {
+
     if (!mod.fields.some((f) => f.name === "agency_sold")) return;
     let alive = true;
     void supabase
@@ -1833,6 +1841,22 @@ export function ModulePage({ module: mod }: Props) {
           <Button variant="outline" onClick={() => setSmartOpen(true)} className="gap-1.5">
             <Search className="h-4 w-4" /> Smart Search
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="density-toggle"
+            title="ঘনত্ব টগল"
+            aria-label="Density toggle"
+            onClick={() => {
+              const el = document.documentElement;
+              const cur = el.dataset.density === "compact" ? "" : "compact";
+              if (cur) el.dataset.density = cur; else delete el.dataset.density;
+              try { localStorage.setItem("ui.density", cur); } catch {/*noop*/}
+            }}
+          >
+            <Rows3 className="h-4 w-4" />
+          </Button>
+
         <Dialog open={openForm} onOpenChange={setOpenForm}>
           <DialogTrigger asChild>
             <Button onClick={startCreate} className="gap-1.5">
@@ -2269,11 +2293,12 @@ export function ModulePage({ module: mod }: Props) {
                       }}
                     >
                       {stackedCols ? (
-                        stackedCols.map((c) => (
-                          <TableCell key={c.key} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>
+                        stackedCols.map((c, ci) => (
+                          <TableCell key={c.key} data-label={ci === 0 ? undefined : c.header} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>
                             {c.render(r)}
                           </TableCell>
                         ))
+
                       ) : (
                         <>
                           <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
@@ -2282,7 +2307,7 @@ export function ModulePage({ module: mod }: Props) {
                               const v = c.comp.compute(r);
                               const isServiceDue = c.comp.name === "due" && v > 0 && DUE_SERVICE_KEY[mod.key] && !agencyIsTotalSettle(r.agency_sold);
                               return (
-                                <TableCell key={c.comp.name} className="text-right tabular-nums whitespace-nowrap">
+                                <TableCell key={c.comp.name} data-label={c.comp.label} className="text-right tabular-nums whitespace-nowrap">
                                   {isServiceDue ? (
                                     <button
                                       type="button"
@@ -2303,7 +2328,7 @@ export function ModulePage({ module: mod }: Props) {
                             }
                             const f = c.field;
                             return (
-                              <TableCell key={f.name} className="whitespace-nowrap">
+                              <TableCell key={f.name} data-label={f.label} className="whitespace-nowrap">
                                 {f.name === "status" && mod.statuses ? (
                                   canCancel && r.cancelled ? (
                                     <Badge variant="outline" className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40" title={String(r.cancel_reason ?? "") || "কাজ বাতিল"}>❌ বাতিল</Badge>

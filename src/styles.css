@@ -333,10 +333,11 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* ============================================================
-   MOBILE: stacked-card layout for data tables
+   MOBILE: dense stacked-card layout for data tables
    Apply .responsive-cards to a <Table> and .responsive-cards-wrap
    to its overflow wrapper. Below md (<768px) each row renders as a
-   full-width card with no horizontal scroll. Unchanged on desktop.
+   compact card with label:value pairs. Actions float at top-right.
+   Cells opt-in with data-label="..." for the inline label prefix.
    ============================================================ */
 @media (max-width: 767px) {
   .responsive-cards-wrap {
@@ -349,57 +350,102 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
   .responsive-cards > thead { display: none !important; }
   .responsive-cards > tbody { display: block !important; width: 100% !important; }
   .responsive-cards > tbody > tr {
-    display: block !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
     width: 100% !important;
     border: 1px solid hsl(var(--border));
-    border-radius: 14px;
-    margin-bottom: 10px;
-    padding: 10px 12px 46px 12px; /* room for absolute-positioned action bar */
+    border-radius: 12px;
+    margin-bottom: 8px;
+    padding: 8px 44px 8px 10px; /* room for action bar at top-right */
     background: hsl(var(--card));
     box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    gap: 1px;
+  }
+  /* Tap-to-expand chevron hint */
+  .responsive-cards > tbody > tr::after {
+    content: "›";
+    position: absolute;
+    left: 6px;
+    bottom: 4px;
+    font-size: 14px;
+    line-height: 1;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.5;
+    pointer-events: none;
   }
   .responsive-cards > tbody > tr > td {
-    display: block !important;
+    display: flex !important;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
     width: 100% !important;
-    padding: 3px 0 !important;
+    padding: 2px 0 !important;
     border: none !important;
     white-space: normal !important;
     text-align: left !important;
     min-width: 0 !important;
-    font-size: 13px;
-    line-height: 1.35;
+    font-size: 12.5px;
+    line-height: 1.3;
   }
-  /* First cell (primary info: id / name) — larger, prominent */
+  /* Inline label from data-label attribute */
+  .responsive-cards > tbody > tr > td[data-label]::before {
+    content: attr(data-label) ":";
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  /* Primary cell (first) — prominent, no label prefix, full width */
   .responsive-cards > tbody > tr > td:first-child {
-    font-size: 15px;
-    font-weight: 600;
-    padding-bottom: 6px !important;
-    border-bottom: 1px dashed hsl(var(--border));
-    margin-bottom: 4px;
+    display: block !important;
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 5px !important;
+    border-bottom: 1px dashed hsl(var(--border)) !important;
+    margin-bottom: 3px;
   }
-  /* Right-aligned amount cells */
+  .responsive-cards > tbody > tr > td:first-child::before { content: none; }
+
+  /* Right-aligned amount cells — value on right, tabular nums */
   .responsive-cards > tbody > tr > td.text-right,
   .responsive-cards > tbody > tr > td[class*="text-right"] {
-    text-align: right !important;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
-  /* Last cell = Actions — float bottom-right of card */
+  .responsive-cards > tbody > tr > td.text-right > span,
+  .responsive-cards > tbody > tr > td.text-right > button { text-align: right; }
+
+  /* Last cell = Actions — floating top-right corner */
   .responsive-cards > tbody > tr > td:last-child {
     position: absolute !important;
-    right: 8px;
-    bottom: 6px;
+    top: 4px;
+    right: 4px;
     width: auto !important;
     padding: 0 !important;
+    display: block !important;
   }
+  .responsive-cards > tbody > tr > td:last-child::before { content: none; }
   .responsive-cards > tbody > tr > td:last-child button {
-    height: 36px !important;
-    width: 36px !important;
+    height: 32px !important;
+    width: 32px !important;
   }
   .responsive-cards > tbody > tr > td:last-child svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 15px !important;
+    height: 15px !important;
   }
+
+  /* Density: compact — smaller everything, tighter rows */
+  html[data-density="compact"] .responsive-cards > tbody > tr {
+    padding: 6px 40px 6px 8px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+  }
+  html[data-density="compact"] .responsive-cards > tbody > tr > td { font-size: 11.5px; padding: 1px 0 !important; }
+  html[data-density="compact"] .responsive-cards > tbody > tr > td:first-child { font-size: 13px; padding-bottom: 3px !important; margin-bottom: 2px; }
+  html[data-density="compact"] .responsive-cards > tbody > tr > td[data-label]::before { font-size: 10px; }
 }
 
 /* Floating "+ নতুন এন্ট্রি" button for mobile module pages */
@@ -433,3 +479,10 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
   header .h-8, header .h-9 { min-height: 40px; }
   header button[aria-label], header .icon-btn { min-width: 40px; min-height: 40px; }
 }
+
+/* Density toggle button — mobile only */
+.density-toggle { display: none; }
+@media (max-width: 767px) {
+  .density-toggle { display: inline-flex; }
+}
+
