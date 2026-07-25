@@ -2601,15 +2601,16 @@ export function PartyLedgerPage({
                           })
                         }
                       >
-                        <TableCell className="font-mono text-xs tabular-nums font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        <TableCell data-label="ID" className="font-mono text-xs tabular-nums font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
                           {partySerialCode(isCustomer ? "agent" : "vendor", b.serial ?? (idx + 1))}
                         </TableCell>
-                        <TableCell className="font-medium">{b.name}</TableCell>
-                        <TableCell className="text-right tabular-nums">৳ {b.bill.toLocaleString()}</TableCell>
-                        <TableCell className="text-right tabular-nums text-emerald-600">৳ {b.paid.toLocaleString()}</TableCell>
-                        <TableCell className={`text-right tabular-nums font-semibold ${b.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {b.due.toLocaleString()}</TableCell>
-                        <TableCell className={`text-right tabular-nums font-semibold ${b.advance > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {b.advance.toLocaleString()}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell data-label={isCustomer ? "Agent" : "Vendor"} className="font-medium">{b.name}</TableCell>
+                        <TableCell data-label={isCustomer ? "মোট বিল" : "মোট প্রদেয়"} className="text-right tabular-nums">৳ {b.bill.toLocaleString()}</TableCell>
+                        <TableCell data-label={isCustomer ? "গ্রহণ" : "পরিশোধ"} className="text-right tabular-nums text-emerald-600">৳ {b.paid.toLocaleString()}</TableCell>
+                        <TableCell data-label="বাকি" className={`text-right tabular-nums font-semibold ${b.due > 0 ? "text-rose-600" : "text-muted-foreground"}`}>৳ {b.due.toLocaleString()}</TableCell>
+                        <TableCell data-label="অগ্রিম" className={`text-right tabular-nums font-semibold ${b.advance > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>৳ {b.advance.toLocaleString()}</TableCell>
+                        <TableCell data-label="হিসাব ধরন" className="text-center">
+
                           <SettleModeBadge mode={b.settle_mode || null} />
                         </TableCell>
                         {canApprove && (
