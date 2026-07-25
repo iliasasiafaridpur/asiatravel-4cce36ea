@@ -22,7 +22,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Rows3 } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -232,6 +232,11 @@ function RootComponent() {
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
     installToastInterceptor();
+    try {
+      const d = localStorage.getItem("ui.density");
+      if (d === "compact") document.documentElement.dataset.density = "compact";
+    } catch { /* noop */ }
+
     // Defer non-critical startup to idle time so first paint isn't blocked
     // by SW registration, fetch interceptor patching, or the alert scanner's
     // initial DB query. Big win for cold-start desktop loads.
@@ -299,9 +304,18 @@ function RootComponent() {
                   <NotePadHeaderButton />
                   <HandoverHeaderButton />
                   <NotificationBell />
+                  <Button variant="ghost" size="icon" className="density-toggle h-10 w-10 md:h-9 md:w-9" onClick={() => {
+                    const el = document.documentElement;
+                    const cur = el.dataset.density === "compact" ? "" : "compact";
+                    if (cur) el.dataset.density = cur; else delete el.dataset.density;
+                    try { localStorage.setItem("ui.density", cur); } catch { /* noop */ }
+                  }} aria-label="Toggle density" title="ঘন / সাধারণ ভিউ">
+                    <Rows3 className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-10 w-10 md:h-9 md:w-9" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
                     {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
+
                   <LogoutButton />
                 </div>
               </header>

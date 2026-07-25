@@ -1431,12 +1431,13 @@ ${partySectionsHtml()}
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="mobile-sticky-summary grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <StatCard label="হাতে আছে" value={balance} icon={Wallet} tone="primary" />
         <StatCard label="নগদ আয় (ব্যালেন্সে)" value={periodIncome} icon={TrendingUp} tone="success" />
         <StatCard label="MD-কে জমা/পাঠানো" value={periodHand} icon={Send} tone="info" />
         <StatCard label="মোট খরচ" value={periodExp} icon={TrendingDown} tone="warning" />
       </div>
+
 
       {/* Action Bar */}
       <Card className="overflow-hidden">
@@ -1940,7 +1941,7 @@ ${partySectionsHtml()}
                   const isAdvance = isIn && !!svc?.has_delivery && isAdvancePayment(r.entry_date, svc?.delivery_date);
 
                   return (
-                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`row-tint-${idx % 4} grid grid-cols-[0.7fr_1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
+                    <div key={`${it.kind}-${(it.row as { id: string }).id}`} className={`finance-row row-tint-${idx % 4} grid grid-cols-[0.7fr_1fr_1.1fr_0.85fr_0.9fr_auto] gap-2 sm:gap-3 p-2.5 sm:p-3 transition-colors items-start`}>
                       {/* Col 1: Type + date */}
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">

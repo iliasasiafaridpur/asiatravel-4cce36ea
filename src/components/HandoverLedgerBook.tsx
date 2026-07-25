@@ -1615,8 +1615,9 @@ function HandoverCard({
 
 
 
-      <div className="overflow-x-auto">
+      <div className="mobile-cards-table overflow-x-auto">
         <table className="w-full table-fixed text-sm min-w-[720px]">
+
           <colgroup>
             <col className="w-[11%]" />
             <col className="w-[22%]" />
