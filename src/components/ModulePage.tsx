@@ -2469,6 +2469,17 @@ export function ModulePage({ module: mod }: Props) {
       {mod.key === "other" && (
         <AirlinesPadDialog open={airlinesPadOpen} onClose={() => setAirlinesPadOpen(false)} />
       )}
+
+      {/* Mobile floating action button — new entry */}
+      <button
+        type="button"
+        className="module-fab"
+        onClick={startCreate}
+        aria-label="নতুন এন্ট্রি"
+      >
+        <Plus className="h-5 w-5" />
+        <span>নতুন</span>
+      </button>
     </div>
   );
 }
