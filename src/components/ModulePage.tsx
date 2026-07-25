@@ -1833,6 +1833,22 @@ export function ModulePage({ module: mod }: Props) {
           <Button variant="outline" onClick={() => setSmartOpen(true)} className="gap-1.5">
             <Search className="h-4 w-4" /> Smart Search
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="density-toggle"
+            title="ঘনত্ব টগল"
+            aria-label="Density toggle"
+            onClick={() => {
+              const el = document.documentElement;
+              const cur = el.dataset.density === "compact" ? "" : "compact";
+              if (cur) el.dataset.density = cur; else delete el.dataset.density;
+              try { localStorage.setItem("ui.density", cur); } catch {/*noop*/}
+            }}
+          >
+            <Rows3 className="h-4 w-4" />
+          </Button>
+
         <Dialog open={openForm} onOpenChange={setOpenForm}>
           <DialogTrigger asChild>
             <Button onClick={startCreate} className="gap-1.5">
