@@ -2320,7 +2320,7 @@ export function ModulePage({ module: mod }: Props) {
                             }
                             const f = c.field;
                             return (
-                              <TableCell key={f.name} className="whitespace-nowrap">
+                              <TableCell key={f.name} data-label={f.label} className="whitespace-nowrap">
                                 {f.name === "status" && mod.statuses ? (
                                   canCancel && r.cancelled ? (
                                     <Badge variant="outline" className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40" title={String(r.cancel_reason ?? "") || "কাজ বাতিল"}>❌ বাতিল</Badge>
