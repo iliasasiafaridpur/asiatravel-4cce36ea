@@ -2285,11 +2285,12 @@ export function ModulePage({ module: mod }: Props) {
                       }}
                     >
                       {stackedCols ? (
-                        stackedCols.map((c) => (
-                          <TableCell key={c.key} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>
+                        stackedCols.map((c, ci) => (
+                          <TableCell key={c.key} data-label={ci === 0 ? undefined : c.header} className={`py-3 ${c.align === "right" ? "text-right" : ""}`}>
                             {c.render(r)}
                           </TableCell>
                         ))
+
                       ) : (
                         <>
                           <TableCell className="font-mono text-xs whitespace-nowrap">{String(r[mod.idColumn] ?? "")}</TableCell>
