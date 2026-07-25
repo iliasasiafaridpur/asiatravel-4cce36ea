@@ -90,6 +90,8 @@ export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
   const { isMd, isAdmin } = useRole();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
 
   // Simple rule: only MD sees the MD Panel. Staff/Admin see আমার ক্যাশ হিসাব.
   const baseNav = isMd
