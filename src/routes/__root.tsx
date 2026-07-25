@@ -313,6 +313,7 @@ function RootComponent() {
         </SidebarProvider>
       </AuthGate>
       <ScrollToTopButton />
+      <PullToRefresh />
       <OfflineSyncManager />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
