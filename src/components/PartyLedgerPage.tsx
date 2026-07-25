@@ -3081,8 +3081,9 @@ export function PartyLedgerPage({
 
 
 
-            <div className="overflow-x-auto rounded-md border">
+            <div className="mobile-cards-table overflow-x-auto rounded-md border">
               <Table className="w-full min-w-[760px]">
+
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[32px]"></TableHead>
