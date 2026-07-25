@@ -26,6 +26,7 @@ import { Moon, Sun } from "lucide-react";
 import { AuthGate, LogoutButton } from "@/components/AuthGate";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { NotificationBell } from "@/components/NotificationBell";
 import { HandoverHeaderButton } from "@/components/HandoverHeaderButton";
 import { MasterSearchHeaderButton } from "@/components/MasterSearchHeaderButton";
