@@ -290,8 +290,8 @@ function RootComponent() {
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-12 md:h-12 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
-                <SidebarTrigger className="h-10 w-10 md:h-9 md:w-9" />
+              <header className="h-14 md:h-12 mt-2 md:mt-0 flex items-center justify-between border-b border-border px-2 sticky top-0 z-30 bg-background/85 backdrop-blur">
+                <SidebarTrigger className="h-12 w-12 md:h-9 md:w-9 [&_svg]:!h-6 [&_svg]:!w-6 md:[&_svg]:!h-4 md:[&_svg]:!w-4" />
                 <div className="flex items-center gap-1 md:gap-1.5">
                   <MasterSearchHeaderButton />
                   <OnlineServiceHeaderButton />

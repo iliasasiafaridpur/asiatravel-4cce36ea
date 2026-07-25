@@ -31,6 +31,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 type NavItem = {
@@ -89,6 +90,8 @@ export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (to: string) => (to === "/" ? path === "/" : path === to || path.startsWith(to + "/"));
   const { isMd, isAdmin } = useRole();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
 
   // Simple rule: only MD sees the MD Panel. Staff/Admin see আমার ক্যাশ হিসাব.
   const baseNav = isMd
@@ -155,7 +158,7 @@ export function AppSidebar() {
                       tooltip={item.title}
                       className="h-9 group-data-[collapsible=icon]:!size-11 group-data-[collapsible=icon]:!p-1.5 data-[active=true]:bg-primary/20 data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:ring-1 data-[active=true]:ring-primary/40 data-[active=true]:shadow-[0_0_12px_-2px_var(--primary)] data-[active=true]:border-l-4 data-[active=true]:border-primary"
                     >
-                      <Link to={item.to} className="flex items-center gap-2">
+                      <Link to={item.to} onClick={closeOnMobile} className="flex items-center gap-2">
                         <span
                           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ring-1 ring-inset ring-white/5 shadow-sm transition-transform group-hover/menu-item:scale-105 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8`}
                         >
