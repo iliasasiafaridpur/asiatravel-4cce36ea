@@ -304,6 +304,14 @@ export function ModulePage({ module: mod }: Props) {
   );
   // এজেন্সিভিত্তিক হিসাব ধরন লোড — শুধু সার্ভিস মডিউলে (যেখানে agency_sold আছে)।
   useEffect(() => {
+    try {
+      const d = localStorage.getItem("ui.density");
+      if (d === "compact") document.documentElement.dataset.density = "compact";
+    } catch { /* noop */ }
+  }, []);
+
+  useEffect(() => {
+
     if (!mod.fields.some((f) => f.name === "agency_sold")) return;
     let alive = true;
     void supabase
