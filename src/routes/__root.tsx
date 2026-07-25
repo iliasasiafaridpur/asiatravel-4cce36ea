@@ -232,6 +232,11 @@ function RootComponent() {
   useEffect(() => {
     clearStaleAssetRecoveryFlag();
     installToastInterceptor();
+    try {
+      const d = localStorage.getItem("ui.density");
+      if (d === "compact") document.documentElement.dataset.density = "compact";
+    } catch { /* noop */ }
+
     // Defer non-critical startup to idle time so first paint isn't blocked
     // by SW registration, fetch interceptor patching, or the alert scanner's
     // initial DB query. Big win for cold-start desktop loads.
