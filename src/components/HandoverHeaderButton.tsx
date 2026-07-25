@@ -125,14 +125,14 @@ export function HandoverHeaderButton() {
       <Button
         asChild
         size="sm"
-        className={`h-10 px-3 gap-1.5 font-semibold ${hasPending ? "bg-amber-500 hover:bg-amber-500/90 text-amber-950" : "bg-sky-500/15 hover:bg-sky-500/25 text-sky-400"}`}
+        className={`h-9 md:h-10 px-2 md:px-3 gap-1 md:gap-1.5 text-xs md:text-sm font-semibold ${hasPending ? "bg-amber-500 hover:bg-amber-500/90 text-amber-950" : "bg-sky-500/15 hover:bg-sky-500/25 text-sky-400"}`}
       >
         <Link to="/my-handover">
-          <HandCoins className="h-4 w-4" />
+          <HandCoins className="h-3.5 w-3.5 md:h-4 md:w-4" />
           <span className="hidden sm:inline">MD কে ক্যাশ দিন</span>
           <span className="sm:hidden">ক্যাশ</span>
           {Badge}
-          {hasPending && <Bell className="h-3.5 w-3.5 ml-0.5 animate-pulse" />}
+          {hasPending && <Bell className="h-3 w-3 md:h-3.5 md:w-3.5 ml-0.5 animate-pulse" />}
         </Link>
       </Button>
     );
