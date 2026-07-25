@@ -299,9 +299,18 @@ function RootComponent() {
                   <NotePadHeaderButton />
                   <HandoverHeaderButton />
                   <NotificationBell />
+                  <Button variant="ghost" size="icon" className="density-toggle h-10 w-10 md:h-9 md:w-9" onClick={() => {
+                    const el = document.documentElement;
+                    const cur = el.dataset.density === "compact" ? "" : "compact";
+                    if (cur) el.dataset.density = cur; else delete el.dataset.density;
+                    try { localStorage.setItem("ui.density", cur); } catch { /* noop */ }
+                  }} aria-label="Toggle density" title="ঘন / সাধারণ ভিউ">
+                    <Rows3 className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-10 w-10 md:h-9 md:w-9" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
                     {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
+
                   <LogoutButton />
                 </div>
               </header>
