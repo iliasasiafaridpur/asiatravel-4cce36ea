@@ -3127,27 +3127,28 @@ export function PartyLedgerPage({
                                 )
                               ) : null}
                             </TableCell>
-                            <TableCell className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
-                            <TableCell className="truncate font-mono text-xs" title={b.ledgerId}>
+                            <TableCell data-label="বিল তারিখ" className="whitespace-nowrap text-xs">{formatDate(b.date)}</TableCell>
+                            <TableCell data-label="ID" className="truncate font-mono text-xs" title={b.ledgerId}>
                               {b.ledgerId}
                             </TableCell>
-                            <TableCell className="truncate" title={`${b.service} · ${b.description}`}>
+                            <TableCell data-label="বিবরণ" className="truncate" title={`${b.service} · ${b.description}`}>
                               <span className="text-muted-foreground">{b.service}</span>
                               {b.description ? ` · ${b.description}` : ""}
                               {b.cancelled ? " · 🚫 বাতিল কাজ" : ""}
                             </TableCell>
-                            <TableCell className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
-                            <TableCell className="text-right tabular-nums text-emerald-600">
+                            <TableCell data-label="বিল" className="text-right tabular-nums">{b.bill.toLocaleString()}</TableCell>
+                            <TableCell data-label={isCustomer ? "গ্রহণ" : "পরিশোধ"} className="text-right tabular-nums text-emerald-600">
                               {b.paid ? b.paid.toLocaleString() : "—"}
                             </TableCell>
-                            <TableCell className="whitespace-nowrap text-xs">
+                            <TableCell data-label={isCustomer ? "গ্রহণ তারিখ" : "পরিশোধ তারিখ"} className="whitespace-nowrap text-xs">
                               {b.payDate ? (
                                 formatDate(b.payDate)
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell data-label="স্ট্যাটাস" className="text-right">
+
                               {b.status === "paid" ? (
                                 <div className="leading-tight">
                                   <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 text-[10px]">
