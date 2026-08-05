@@ -884,7 +884,9 @@ function buildHandoverSlipBody(args: {
   // Multi-method due-receive creates one payment_receipts row per method sharing
   // the same base receipt_id (…-1, …-2). Collapse them into a single print line.
   const batchKeyOf = (r: Receipt) =>
-    `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+    r.service_row_id && r.receipt_id
+      ? `${r.service_table ?? ""}|${r.service_row_id}|${r.receipt_id.replace(/-\d+$/, "")}|${r.entry_date ?? ""}`
+      : `single|${r.id}`;
 
   const metricsForBatch = (recs: Receipt[]) => {
     const first = recs[0];
@@ -1389,7 +1391,9 @@ function HandoverCard({
   // the same base receipt_id (…-1, …-2). Collapse them into a single line where
   // cash and MD/vendor amounts split into their own columns.
   const batchKeyOf = (r: Receipt) =>
-    `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+    r.service_row_id && r.receipt_id
+      ? `${r.service_table ?? ""}|${r.service_row_id}|${r.receipt_id.replace(/-\d+$/, "")}|${r.entry_date ?? ""}`
+      : `single|${r.id}`;
 
   const metricsForBatch = (recs: Receipt[]) => {
     const first = recs[0];
