@@ -79,8 +79,12 @@ const friendlySource = (source?: string | null) => SOURCE_LABELS[String(source ?
 // Multi-method Due Receive creates one payment_receipts row per method sharing
 // the same base receipt_id (…-1, …-2). Grouping key: same booking + same base
 // receipt id + same date → treat as ONE batch in the timeline / print.
-const receiptBatchKey = (r: { service_table: string | null; service_row_id: string | null; receipt_id: string; entry_date: string }) =>
-  `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+const receiptBatchKey = (r: { id?: string; service_table: string | null; service_row_id: string | null; receipt_id: string; entry_date: string }) => {
+  // Manual / non-booking receipts have no service row: never batch them together
+  // (their receipt ids share a base prefix, which used to merge unrelated entries).
+  if (!r.service_table || !r.service_row_id) return `solo|${r.id ?? r.receipt_id}`;
+  return `${r.service_table}|${r.service_row_id}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+};
 const uniq = (arr: string[]) => Array.from(new Set(arr.filter(Boolean)));
 
 // Agency/vendor ledger mirror rows store verbose service_type strings like
