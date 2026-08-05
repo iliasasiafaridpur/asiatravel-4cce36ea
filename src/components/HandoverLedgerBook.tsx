@@ -1391,7 +1391,9 @@ function HandoverCard({
   // the same base receipt_id (…-1, …-2). Collapse them into a single line where
   // cash and MD/vendor amounts split into their own columns.
   const batchKeyOf = (r: Receipt) =>
-    `${r.service_table ?? ""}|${r.service_row_id ?? ""}|${(r.receipt_id ?? "").replace(/-\d+$/, "")}|${r.entry_date ?? ""}`;
+    r.service_row_id && r.receipt_id
+      ? `${r.service_table ?? ""}|${r.service_row_id}|${r.receipt_id.replace(/-\d+$/, "")}|${r.entry_date ?? ""}`
+      : `single|${r.id}`;
 
   const metricsForBatch = (recs: Receipt[]) => {
     const first = recs[0];
