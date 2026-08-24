@@ -1852,10 +1852,7 @@ export function PartyLedgerPage({
         .cancel td{color:#94a3b8;text-decoration:line-through;background:#f8fafc}
         .cancel td .inst{text-decoration:none}
         .inst{font-size:10px;color:#64748b;margin-top:2px}
-        .multi{display:flex;flex-direction:column;gap:1px}
-        .multi .sub-line{font-size:10px;line-height:1.35;color:#334155;border-bottom:1px dotted #cbd5e1;padding:0 0 1px}
-        .multi .sub-line:last-of-type{border-bottom:none}
-        .multi .sub-total{font-size:11px;font-weight:700;color:#0f172a;border-top:1px solid #94a3b8;margin-top:1px;padding-top:1px}
+        .multi{font-size:9.5px;line-height:1.2;color:#334155;white-space:nowrap}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
