@@ -1649,27 +1649,15 @@ export function PartyLedgerPage({
         : "সব হিসাব পরিশোধিত";
     const curAmt = curDue ? totals.due : curAdv ? totals.advance : 0;
 
-    // বিবরণ কলামে কিস্তির আলাদা লাইন দেখাই না (রো বড় হয়ে যায়)।
-    const instLine = (_b: (typeof bills)[number]) => "";
-
-    // একাধিক কিস্তির জমা ও তারিখ একই রো-এর ভিতরে ছোট লেখায় পাশাপাশি দেখাই,
-    // যাতে রো-এর উচ্চতা অন্য রো-এর সমান থাকে।
-    const sortedPays = (b: (typeof bills)[number]) =>
-      (b.payments ?? [])
-        .filter((p) => Number(p.amt) > 0)
-        .slice()
-        .sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")));
-    const payAmtCell = (b: (typeof bills)[number]) => {
-      const items = sortedPays(b);
-      if (items.length <= 1) return b.paid ? num(b.paid) : "—";
-      return `<span class="multi">${items.map((p) => num(p.amt)).join(" + ")}</span>`;
+    // প্রতিটি বিলের কিস্তি (তারিখ · পরিমাণ · মাধ্যম) ছোট করে দেখানোর হেল্পার।
+    const instLine = (b: (typeof bills)[number]) => {
+      const items = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
+      if (!items.length) return "";
+      const parts = items
+        .map((p) => `${p.date ? esc(formatDate(p.date)) : "—"} · ৳${num(p.amt)}${p.method ? ` · ${esc(p.method)}` : ""}`)
+        .join(" | ");
+      return `<div class="inst">কিস্তি: ${parts}</div>`;
     };
-    const payDateCell = (b: (typeof bills)[number]) => {
-      const items = sortedPays(b);
-      if (items.length <= 1) return b.payDate ? esc(formatDate(b.payDate)) : "—";
-      return `<span class="multi">${items.map((p) => (p.date ? esc(formatDate(p.date)) : "—")).join(", ")}</span>`;
-    };
-
 
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
@@ -1726,8 +1714,8 @@ export function PartyLedgerPage({
                 <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${descHtml}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
-                <td class="r">${payAmtCell(b)}</td>
-                <td>${payDateCell(b)}</td>
+                <td class="r">${b.paid ? num(b.paid) : "—"}</td>
+                <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
                 <td class="r ${b.due > 0 ? "due" : ""}">${num(b.due)}</td>
                 <td>${st}</td>
               </tr>`;
@@ -1761,8 +1749,8 @@ export function PartyLedgerPage({
                 <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${descHtml}${b.cancelled ? " 🚫" : ""}${instLine(b)}</td>
                 <td class="r">${num(b.bill)}</td>
-                <td class="r">${payAmtCell(b)}</td>
-                <td>${payDateCell(b)}</td>
+                <td class="r">${b.paid ? num(b.paid) : "—"}</td>
+                <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
                 <td class="r due">${num(b.due)}</td>
                 <td>${st}</td>
               </tr>`;
@@ -1852,7 +1840,6 @@ export function PartyLedgerPage({
         .cancel td{color:#94a3b8;text-decoration:line-through;background:#f8fafc}
         .cancel td .inst{text-decoration:none}
         .inst{font-size:10px;color:#64748b;margin-top:2px}
-        .multi{font-size:9.5px;line-height:1.2;color:#334155;white-space:nowrap}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
@@ -3156,19 +3143,7 @@ export function PartyLedgerPage({
                               {b.paid ? b.paid.toLocaleString() : "—"}
                             </TableCell>
                             <TableCell data-label={isCustomer ? "গ্রহণ তারিখ" : "পরিশোধ তারিখ"} className="whitespace-nowrap text-xs">
-                              {b.payments.filter((p) => p.amt > 0).length > 1 ? (
-                                <div className="leading-tight">
-                                  {b.payments
-                                    .filter((p) => p.amt > 0)
-                                    .slice()
-                                    .sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")))
-                                    .map((p, i) => (
-                                      <div key={i} className="tabular-nums">
-                                        {p.date ? formatDate(p.date) : "—"} · {p.amt.toLocaleString()}
-                                      </div>
-                                    ))}
-                                </div>
-                              ) : b.payDate ? (
+                              {b.payDate ? (
                                 formatDate(b.payDate)
                               ) : (
                                 <span className="text-muted-foreground">—</span>
