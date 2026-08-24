@@ -3169,7 +3169,19 @@ export function PartyLedgerPage({
                               {b.paid ? b.paid.toLocaleString() : "—"}
                             </TableCell>
                             <TableCell data-label={isCustomer ? "গ্রহণ তারিখ" : "পরিশোধ তারিখ"} className="whitespace-nowrap text-xs">
-                              {b.payDate ? (
+                              {b.payments.filter((p) => p.amt > 0).length > 1 ? (
+                                <div className="leading-tight">
+                                  {b.payments
+                                    .filter((p) => p.amt > 0)
+                                    .slice()
+                                    .sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")))
+                                    .map((p, i) => (
+                                      <div key={i} className="tabular-nums">
+                                        {p.date ? formatDate(p.date) : "—"} · {p.amt.toLocaleString()}
+                                      </div>
+                                    ))}
+                                </div>
+                              ) : b.payDate ? (
                                 formatDate(b.payDate)
                               ) : (
                                 <span className="text-muted-foreground">—</span>
