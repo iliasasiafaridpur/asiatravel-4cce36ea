@@ -1649,18 +1649,11 @@ export function PartyLedgerPage({
         : "সব হিসাব পরিশোধিত";
     const curAmt = curDue ? totals.due : curAdv ? totals.advance : 0;
 
-    // প্রতিটি বিলের কিস্তি (তারিখ · পরিমাণ · মাধ্যম) ছোট করে দেখানোর হেল্পার।
-    const instLine = (b: (typeof bills)[number]) => {
-      const items = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
-      if (!items.length) return "";
-      const parts = items
-        .map((p) => `${p.date ? esc(formatDate(p.date)) : "—"} · ৳${num(p.amt)}${p.method ? ` · ${esc(p.method)}` : ""}`)
-        .join(" | ");
-      return `<div class="inst">কিস্তি: ${parts}</div>`;
-    };
+    // বিবরণ কলামে কিস্তির আলাদা লাইন দেখাই না (রো বড় হয়ে যায়)।
+    const instLine = (_b: (typeof bills)[number]) => "";
 
-    // একাধিক কিস্তিতে জমা হলে "জমা/গ্রহণ" ও "গ্রহণ তারিখ" সেলের ভিতরেই ছোট
-    // ছোট রো করে প্রতিটি কিস্তির পরিমাণ ও তারিখ দেখাই (নিচে মোট বোল্ডে)।
+    // একাধিক কিস্তির জমা ও তারিখ একই রো-এর ভিতরে ছোট লেখায় পাশাপাশি দেখাই,
+    // যাতে রো-এর উচ্চতা অন্য রো-এর সমান থাকে।
     const sortedPays = (b: (typeof bills)[number]) =>
       (b.payments ?? [])
         .filter((p) => Number(p.amt) > 0)
@@ -1669,17 +1662,14 @@ export function PartyLedgerPage({
     const payAmtCell = (b: (typeof bills)[number]) => {
       const items = sortedPays(b);
       if (items.length <= 1) return b.paid ? num(b.paid) : "—";
-      const lines = items.map((p) => `<div class="sub-line">${num(p.amt)}</div>`).join("");
-      return `<div class="multi">${lines}<div class="sub-total">${num(b.paid)}</div></div>`;
+      return `<span class="multi">${items.map((p) => num(p.amt)).join(" + ")}</span>`;
     };
     const payDateCell = (b: (typeof bills)[number]) => {
       const items = sortedPays(b);
       if (items.length <= 1) return b.payDate ? esc(formatDate(b.payDate)) : "—";
-      const lines = items
-        .map((p) => `<div class="sub-line">${p.date ? esc(formatDate(p.date)) : "—"}</div>`)
-        .join("");
-      return `<div class="multi">${lines}<div class="sub-total">${items.length} কিস্তি</div></div>`;
+      return `<span class="multi">${items.map((p) => (p.date ? esc(formatDate(p.date)) : "—")).join(", ")}</span>`;
     };
+
 
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
@@ -1862,10 +1852,7 @@ export function PartyLedgerPage({
         .cancel td{color:#94a3b8;text-decoration:line-through;background:#f8fafc}
         .cancel td .inst{text-decoration:none}
         .inst{font-size:10px;color:#64748b;margin-top:2px}
-        .multi{display:flex;flex-direction:column;gap:1px}
-        .multi .sub-line{font-size:10px;line-height:1.35;color:#334155;border-bottom:1px dotted #cbd5e1;padding:0 0 1px}
-        .multi .sub-line:last-of-type{border-bottom:none}
-        .multi .sub-total{font-size:11px;font-weight:700;color:#0f172a;border-top:1px solid #94a3b8;margin-top:1px;padding-top:1px}
+        .multi{font-size:9.5px;line-height:1.2;color:#334155;white-space:nowrap}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
