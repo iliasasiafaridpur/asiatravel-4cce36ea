@@ -1659,6 +1659,28 @@ export function PartyLedgerPage({
       return `<div class="inst">কিস্তি: ${parts}</div>`;
     };
 
+    // একাধিক কিস্তিতে জমা হলে "জমা/গ্রহণ" ও "গ্রহণ তারিখ" সেলের ভিতরেই ছোট
+    // ছোট রো করে প্রতিটি কিস্তির পরিমাণ ও তারিখ দেখাই (নিচে মোট বোল্ডে)।
+    const sortedPays = (b: (typeof bills)[number]) =>
+      (b.payments ?? [])
+        .filter((p) => Number(p.amt) > 0)
+        .slice()
+        .sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")));
+    const payAmtCell = (b: (typeof bills)[number]) => {
+      const items = sortedPays(b);
+      if (items.length <= 1) return b.paid ? num(b.paid) : "—";
+      const lines = items.map((p) => `<div class="sub-line">${num(p.amt)}</div>`).join("");
+      return `<div class="multi">${lines}<div class="sub-total">${num(b.paid)}</div></div>`;
+    };
+    const payDateCell = (b: (typeof bills)[number]) => {
+      const items = sortedPays(b);
+      if (items.length <= 1) return b.payDate ? esc(formatDate(b.payDate)) : "—";
+      const lines = items
+        .map((p) => `<div class="sub-line">${p.date ? esc(formatDate(p.date)) : "—"}</div>`)
+        .join("");
+      return `<div class="multi">${lines}<div class="sub-total">${items.length} কিস্তি</div></div>`;
+    };
+
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
     // সর্ট নাম (স্ক্রিন/রুট নাম) — ফুল নামের নিচে সেকেন্ডারি লাইনে দেখানো হয়।
