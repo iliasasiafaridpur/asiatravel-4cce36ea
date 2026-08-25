@@ -1840,6 +1840,11 @@ export function PartyLedgerPage({
         .cancel td{color:#94a3b8;text-decoration:line-through;background:#f8fafc}
         .cancel td .inst{text-decoration:none}
         .inst{font-size:10px;color:#64748b;margin-top:2px}
+        /* একাধিক কিস্তিতে গ্রহণ হলে জমা/তারিখ সেল মাঝে রেখা দিয়ে ভাগ হবে */
+        td.sp{padding:0}
+        td.sp>div{padding:6px 8px;border-bottom:1px solid #cbd5e1}
+        td.sp>div:last-child{border-bottom:none}
+        td.sp.r>div{text-align:right}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
