@@ -1659,6 +1659,19 @@ export function PartyLedgerPage({
       return `<div class="inst">কিস্তি: ${parts}</div>`;
     };
 
+    // একাধিক বার পেমেন্ট গ্রহণ হলে "জমা/গ্রহণ" ও "গ্রহণ তারিখ" সেল দুটি
+    // মাঝে রেখা দিয়ে ভাগ করে প্রতিটি কিস্তি আলাদা ঘরে দেখাবে (ছবির মতো)।
+    const splitPayCells = (b: (typeof bills)[number]) => {
+      const items = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
+      if (items.length > 1) {
+        const sorted = [...items].sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")));
+        const amts = sorted.map((p) => `<div>${num(p.amt)}</div>`).join("");
+        const dates = sorted.map((p) => `<div>${p.date ? esc(formatDate(p.date)) : "—"}</div>`).join("");
+        return `<td class="r sp">${amts}</td><td class="sp nw">${dates}</td>`;
+      }
+      return `<td class="r">${b.paid ? num(b.paid) : "—"}</td><td class="nw">${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>`;
+    };
+
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
     // সর্ট নাম (স্ক্রিন/রুট নাম) — ফুল নামের নিচে সেকেন্ডারি লাইনে দেখানো হয়।
@@ -1714,8 +1727,7 @@ export function PartyLedgerPage({
                 <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${descHtml}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
-                <td class="r">${b.paid ? num(b.paid) : "—"}</td>
-                <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
+                ${splitPayCells(b)}
                 <td class="r ${b.due > 0 ? "due" : ""}">${num(b.due)}</td>
                 <td>${st}</td>
               </tr>`;
@@ -1840,6 +1852,11 @@ export function PartyLedgerPage({
         .cancel td{color:#94a3b8;text-decoration:line-through;background:#f8fafc}
         .cancel td .inst{text-decoration:none}
         .inst{font-size:10px;color:#64748b;margin-top:2px}
+        /* একাধিক কিস্তিতে গ্রহণ হলে জমা/তারিখ সেল মাঝে রেখা দিয়ে ভাগ হবে */
+        td.sp{padding:0}
+        td.sp>div{padding:6px 8px;border-bottom:1px solid #cbd5e1}
+        td.sp>div:last-child{border-bottom:none}
+        td.sp.r>div{text-align:right}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
