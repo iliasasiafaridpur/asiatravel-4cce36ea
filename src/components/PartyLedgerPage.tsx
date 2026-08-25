@@ -1714,8 +1714,7 @@ export function PartyLedgerPage({
                 <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${descHtml}${b.cancelled ? " 🚫" : ""}</td>
                 <td class="r">${num(b.bill)}</td>
-                <td class="r">${b.paid ? num(b.paid) : "—"}</td>
-                <td>${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>
+                ${splitPayCells(b)}
                 <td class="r ${b.due > 0 ? "due" : ""}">${num(b.due)}</td>
                 <td>${st}</td>
               </tr>`;
