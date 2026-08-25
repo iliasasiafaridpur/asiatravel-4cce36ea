@@ -381,12 +381,9 @@ export function ModulePage({ module: mod }: Props) {
     if (showSpinner) setLoading(true);
     let resultList: Row[] = [];
     try {
-      const baseQuery = supabase.from(mod.table as never).select(columns);
       // Contact tables (agents/vendors) have no entry_date column — ordering by
       // it would throw a 400. Only transactional tables get the entry_date sort.
-      const orderedQuery = hasDateFilter
-        ? baseQuery.order("entry_date", { ascending: false }).order("created_at", { ascending: false })
-        : baseQuery.order("created_at", { ascending: false });
+
       const PAGE = 1000;
       const MAX_ROWS = 50000;
       const fetchAllPages = async (): Promise<Row[]> => {
