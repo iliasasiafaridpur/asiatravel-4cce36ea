@@ -402,7 +402,7 @@ export function ModulePage({ module: mod }: Props) {
       };
       const result = await Promise.race([
         fetchAllPages().then((rowsAll) => ({ data: rowsAll, error: null })),
-        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 6500)),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 45000)),
       ]);
       const { data, error } = result as { data: unknown; error: { message: string } | null };
       if (error) throw error;
