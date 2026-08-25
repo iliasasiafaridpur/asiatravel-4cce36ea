@@ -600,21 +600,22 @@ export function ModulePage({ module: mod }: Props) {
     return xs;
   }, [rows, search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeDate, statusChangeStatus, supportsStatusChangeFilter, statusDateColMap, computeValue, mod.statuses, mod.key, canCancel, showCancelled]);
 
-  // কোনো ফিল্টার/সার্চ সক্রিয় থাকলে মাস-ভিত্তিক সীমাবদ্ধতা বাদ — সব ফলাফল দেখাই।
-  const filterActive = useMemo(() => {
+  // অন্য ফিল্টার/সার্চ সক্রিয় থাকলে মাস-ভিত্তিক সীমাবদ্ধতা বাদ — সব ফলাফল দেখাই।
+  // তবে "শুধু Due" ফিল্টার চালু থাকলেও Air Ticket / BMET পেজে পূর্ববর্তী/পরবর্তী মাস
+  // নেভিগেশন থাকবে, যাতে বকেয়া এন্ট্রিগুলো মাস ধরে দেখা যায়।
+  const nonDueFilterActive = useMemo(() => {
     return (
       search.trim() !== "" ||
       statusFilter !== "all" ||
       Object.values(fieldFilters).some((v) => v && v !== "all") ||
-      dueOnly ||
       startDate !== "" ||
       endDate !== "" ||
       (!!statusChangeStatus && !!statusChangeDate) ||
       (canCancel && showCancelled)
     );
-  }, [search, statusFilter, fieldFilters, dueOnly, startDate, endDate, statusChangeStatus, statusChangeDate, canCancel, showCancelled]);
+  }, [search, statusFilter, fieldFilters, startDate, endDate, statusChangeStatus, statusChangeDate, canCancel, showCancelled]);
 
-  const monthPagingOn = !!mod.paginateByMonth && !filterActive;
+  const monthPagingOn = !!mod.paginateByMonth && !nonDueFilterActive;
 
   // মাস-ভিত্তিক পেজিং: filtered রো থেকে distinct মাস (YYYY-MM) বের করে সর্বশেষ আগে সাজাই।
   const monthKeys = useMemo(() => {
