@@ -1659,6 +1659,19 @@ export function PartyLedgerPage({
       return `<div class="inst">কিস্তি: ${parts}</div>`;
     };
 
+    // একাধিক বার পেমেন্ট গ্রহণ হলে "জমা/গ্রহণ" ও "গ্রহণ তারিখ" সেল দুটি
+    // মাঝে রেখা দিয়ে ভাগ করে প্রতিটি কিস্তি আলাদা ঘরে দেখাবে (ছবির মতো)।
+    const splitPayCells = (b: (typeof bills)[number]) => {
+      const items = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
+      if (items.length > 1) {
+        const sorted = [...items].sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")));
+        const amts = sorted.map((p) => `<div>${num(p.amt)}</div>`).join("");
+        const dates = sorted.map((p) => `<div>${p.date ? esc(formatDate(p.date)) : "—"}</div>`).join("");
+        return `<td class="r sp">${amts}</td><td class="sp nw">${dates}</td>`;
+      }
+      return `<td class="r">${b.paid ? num(b.paid) : "—"}</td><td class="nw">${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>`;
+    };
+
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
     const fullNm = (contact?.full_name ?? "").trim() || displayName;
     // সর্ট নাম (স্ক্রিন/রুট নাম) — ফুল নামের নিচে সেকেন্ডারি লাইনে দেখানো হয়।
