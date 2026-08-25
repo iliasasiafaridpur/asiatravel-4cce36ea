@@ -387,8 +387,24 @@ export function ModulePage({ module: mod }: Props) {
       const orderedQuery = hasDateFilter
         ? baseQuery.order("entry_date", { ascending: false }).order("created_at", { ascending: false })
         : baseQuery.order("created_at", { ascending: false });
+      const PAGE = 1000;
+      const MAX_ROWS = 50000;
+      const fetchAllPages = async (): Promise<Row[]> => {
+        const acc: Row[] = [];
+        for (let from = 0; from < MAX_ROWS; from += PAGE) {
+          const q = hasDateFilter
+            ? supabase.from(mod.table as never).select(columns).order("entry_date", { ascending: false }).order("created_at", { ascending: false })
+            : supabase.from(mod.table as never).select(columns).order("created_at", { ascending: false });
+          const { data: chunkData, error: chunkErr } = await q.range(from, from + PAGE - 1);
+          if (chunkErr) throw chunkErr;
+          const chunk = ((chunkData as unknown) as Row[]) ?? [];
+          acc.push(...chunk);
+          if (chunk.length < PAGE) break;
+        }
+        return acc;
+      };
       const result = await Promise.race([
-        orderedQuery.limit(250),
+        fetchAllPages().then((rowsAll) => ({ data: rowsAll, error: null })),
         new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("অনেক সময় লাগছে, আবার চেষ্টা করুন")), 6500)),
       ]);
       const { data, error } = result as { data: unknown; error: { message: string } | null };
