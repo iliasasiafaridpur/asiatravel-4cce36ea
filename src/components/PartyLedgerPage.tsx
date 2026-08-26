@@ -1661,15 +1661,27 @@ export function PartyLedgerPage({
 
     // একাধিক বার পেমেন্ট গ্রহণ হলে "জমা/গ্রহণ" ও "গ্রহণ তারিখ" সেল দুটি
     // মাঝে রেখা দিয়ে ভাগ করে প্রতিটি কিস্তি আলাদা ঘরে দেখাবে (ছবির মতো)।
+    // ডিসকাউন্ট আলাদা — বিল সেলের নিচে ছোট লাল লেখায় দেখানো হয়।
+    const discAmt = (b: (typeof bills)[number]) => {
+      const disc = (b.payments ?? []).find((p) => p.method === "ডিসকাউন্ট");
+      return disc ? Number(disc.amt) : 0;
+    };
+    const billCell = (b: (typeof bills)[number]) => {
+      const d = discAmt(b);
+      return `<td class="r bill">${num(b.bill)}${d > 0 ? `<div class="disc">Dis-${num(d)}/</div>` : ""}</td>`;
+    };
     const splitPayCells = (b: (typeof bills)[number]) => {
-      const items = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
+      const allItems = (b.payments ?? []).filter((p) => Number(p.amt) > 0);
+      const d = discAmt(b);
+      const items = allItems.filter((p) => p.method !== "ডিসকাউন্ট");
+      const paidShown = Math.max(0, b.paid - d);
       if (items.length > 1) {
         const sorted = [...items].sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")));
         const amts = sorted.map((p) => `<div>${num(p.amt)}</div>`).join("");
         const dates = sorted.map((p) => `<div>${p.date ? esc(formatDate(p.date)) : "—"}</div>`).join("");
         return `<td class="r sp">${amts}</td><td class="sp nw">${dates}</td>`;
       }
-      return `<td class="r">${b.paid ? num(b.paid) : "—"}</td><td class="nw">${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>`;
+      return `<td class="r">${paidShown > 0 ? num(paidShown) : "—"}</td><td class="nw">${b.payDate ? esc(formatDate(b.payDate)) : "—"}</td>`;
     };
 
     // প্রিন্ট হেডার: পরিচিতি বোর্ডের full name + আইডি, সাথে ঠিকানা ও ফোন।
@@ -1726,7 +1738,7 @@ export function PartyLedgerPage({
                 <td class="nw">${esc(formatDate(b.date))}</td>
                 <td class="nw">${esc(b.ledgerId)}</td>
                 <td>${descHtml}${b.cancelled ? " 🚫" : ""}</td>
-                <td class="r">${num(b.bill)}</td>
+                <td class="r bill">${num(b.bill)}${discAmt(b) > 0 ? `<div class="disc">Dis-${num(discAmt(b))}/</div>` : ""}</td>
                 ${splitPayCells(b)}
                 <td class="r ${b.due > 0 ? "due" : ""}">${num(b.due)}</td>
                 <td>${st}</td>
@@ -1857,6 +1869,9 @@ export function PartyLedgerPage({
         td.sp>div{padding:6px 8px;border-bottom:1px solid #cbd5e1}
         td.sp>div:last-child{border-bottom:none}
         td.sp.r>div{text-align:right}
+        /* বিল সেলের নিচে ছোট লাল ডিসকাউন্ট লেখা (Dis-200/) */
+        td.bill{vertical-align:middle}
+        td.bill .disc{color:#dc2626;font-size:9px;line-height:1;margin-top:2px;font-weight:600}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
