@@ -1869,6 +1869,9 @@ export function PartyLedgerPage({
         td.sp>div{padding:6px 8px;border-bottom:1px solid #cbd5e1}
         td.sp>div:last-child{border-bottom:none}
         td.sp.r>div{text-align:right}
+        /* বিল সেলের নিচে ছোট লাল ডিসকাউন্ট লেখা (Dis-200/) */
+        td.bill{vertical-align:middle}
+        td.bill .disc{color:#dc2626;font-size:9px;line-height:1;margin-top:2px;font-weight:600}
         .foot{margin-top:14px;padding-top:10px;border-top:2px solid #0f172a;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
         @media print{button{display:none}}
       </style></head><body>
