@@ -284,11 +284,12 @@ function DashboardPage() {
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [recv, exp, hand] = await Promise.all([
-        supabase.from("payment_receipts")
+        fetchAllRows(() => supabase.from("payment_receipts")
           .select("amount,entry_date,approval_status,source,method,handover_id")
-          .eq("received_by", user!.id),
-        supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user!.id),
-        supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id),
+          .eq("received_by", user!.id)
+          .order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user!.id).order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id).order("created_at", { ascending: true })),
       ]);
       const today = new Date().toISOString().slice(0, 10);
       const receipts = (recv.data ?? []) as Array<{ amount: number; entry_date: string; approval_status: string; source: string | null; method: string | null; handover_id: string | null }>;
