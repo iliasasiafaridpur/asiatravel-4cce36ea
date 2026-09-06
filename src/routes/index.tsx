@@ -18,6 +18,7 @@ import { DigitalClock } from "@/components/DigitalClock";
 
 const DashboardCharts = lazy(() => import("@/components/DashboardCharts"));
 import { isCashMethod, vendorExpenseHitsUserBalance, handoverReducesBalance } from "@/lib/payment-methods";
+import { fetchAllRows } from "@/lib/fetch-all";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
@@ -260,16 +261,19 @@ function DashboardPage() {
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      let q = supabase.from("payment_receipts")
-        .select("amount,method,source,received_by,received_by_name,entry_date")
-        .order("entry_date", { ascending: false });
-      if (receiptsBounds.gte) q = q.gte("entry_date", receiptsBounds.gte);
-      if (receiptsBounds.lt) q = q.lt("entry_date", receiptsBounds.lt);
-      const { data } = await q.limit(3000);
-      return (data ?? []) as Array<{
+      const build = () => {
+        let q = supabase.from("payment_receipts")
+          .select("amount,method,source,received_by,received_by_name,entry_date")
+          .order("entry_date", { ascending: false });
+        if (receiptsBounds.gte) q = q.gte("entry_date", receiptsBounds.gte);
+        if (receiptsBounds.lt) q = q.lt("entry_date", receiptsBounds.lt);
+        return q;
+      };
+      const { data } = await fetchAllRows<{
         amount: number; method: string | null; source: string | null;
         received_by: string | null; received_by_name: string | null; entry_date: string;
-      }>;
+      }>(build);
+      return data;
     },
   });
 
@@ -284,11 +288,12 @@ function DashboardPage() {
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [recv, exp, hand] = await Promise.all([
-        supabase.from("payment_receipts")
+        fetchAllRows(() => supabase.from("payment_receipts")
           .select("amount,entry_date,approval_status,source,method,handover_id")
-          .eq("received_by", user!.id),
-        supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user!.id),
-        supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id),
+          .eq("received_by", user!.id)
+          .order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user!.id).order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_handovers").select("amount,status").eq("from_user", user!.id).order("created_at", { ascending: true })),
       ]);
       const today = new Date().toISOString().slice(0, 10);
       const receipts = (recv.data ?? []) as Array<{ amount: number; entry_date: string; approval_status: string; source: string | null; method: string | null; handover_id: string | null }>;
@@ -337,9 +342,9 @@ function DashboardPage() {
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [receipts, handovers, expenses] = await Promise.all([
-        supabase.from("payment_receipts").select("amount,approval_status,source,method"),
-        supabase.from("cash_handovers").select("amount,status"),
-        supabase.from("cash_expenses").select("amount,category,linked_source_table"),
+        fetchAllRows(() => supabase.from("payment_receipts").select("amount,approval_status,source,method").order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_handovers").select("amount,status").order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_expenses").select("amount,category,linked_source_table").order("created_at", { ascending: true })),
       ]);
       const err = receipts.error || handovers.error || expenses.error;
       if (err) throw err;

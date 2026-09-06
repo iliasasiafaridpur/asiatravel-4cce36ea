@@ -2,6 +2,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import logoAsset from "@/assets/logo.png.asset.json";
@@ -400,9 +401,6 @@ function AccountsPage() {
       expQuery = expQuery.lte("entry_date", loadUpto);
     }
     const historyLimit = Math.max(parsedLimit, 5000);
-    recvQuery = recvQuery.limit(historyLimit);
-    handQuery = handQuery.limit(historyLimit);
-    expQuery = expQuery.limit(historyLimit);
 
     // Offline: hydrate from the cached snapshots written by "অফলাইনে সেভ".
     if (isOffline()) {
@@ -423,10 +421,15 @@ function AccountsPage() {
       return;
     }
 
+    // PostgREST caps a single response at 1000 rows, so page through everything
+    // (otherwise old/new rows silently vanish and balances come out wrong).
+    const recvFinal = seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`);
+    const handFinal = seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`);
+    const expFinal  = seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`);
     const [r, h, e] = await Promise.all([
-      seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`),
-      seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`),
-      seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`),
+      fetchAllRows<Recv>(() => recvFinal, { max: historyLimit }),
+      fetchAllRows<Hand>(() => handFinal, { max: historyLimit }),
+      fetchAllRows<Exp>(() => expFinal, { max: historyLimit }),
     ]);
 
 
@@ -435,9 +438,9 @@ function AccountsPage() {
     if (err) {
       if (!quiet) toast.error("সিঙ্ক সমস্যা: " + err.message);
     }
-    setReceived(r.error ? [] : (((r.data as unknown) as Recv[]) ?? []));
-    setHandovers(h.error ? [] : (((h.data as unknown) as Hand[]) ?? []));
-    setExpenses(e.error ? [] : (((e.data as unknown) as Exp[]) ?? []));
+    setReceived(r.error ? [] : r.data);
+    setHandovers(h.error ? [] : h.data);
+    setExpenses(e.error ? [] : e.data);
 
     setSyncing(false);
     setLoading(false);
