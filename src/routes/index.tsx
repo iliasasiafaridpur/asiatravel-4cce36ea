@@ -261,19 +261,19 @@ function DashboardPage() {
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      let q = supabase.from("payment_receipts")
-        .select("amount,method,source,received_by,received_by_name,entry_date")
-        .order("entry_date", { ascending: false });
-      if (receiptsBounds.gte) q = q.gte("entry_date", receiptsBounds.gte);
-      if (receiptsBounds.lt) q = q.lt("entry_date", receiptsBounds.lt);
+      const build = () => {
+        let q = supabase.from("payment_receipts")
+          .select("amount,method,source,received_by,received_by_name,entry_date")
+          .order("entry_date", { ascending: false });
+        if (receiptsBounds.gte) q = q.gte("entry_date", receiptsBounds.gte);
+        if (receiptsBounds.lt) q = q.lt("entry_date", receiptsBounds.lt);
+        return q;
+      };
       const { data } = await fetchAllRows<{
         amount: number; method: string | null; source: string | null;
         received_by: string | null; received_by_name: string | null; entry_date: string;
-      }>(() => q);
-      return (data ?? []) as Array<{
-        amount: number; method: string | null; source: string | null;
-        received_by: string | null; received_by_name: string | null; entry_date: string;
-      }>;
+      }>(build);
+      return data;
     },
   });
 
