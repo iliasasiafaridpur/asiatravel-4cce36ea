@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/md-panel")({
   head: () => ({ meta: [{ title: "MD Cash Control Panel" }] }),
@@ -149,13 +150,12 @@ function MdPanelPage() {
 
   const reload = useCallback(async () => {
     const [{ data: recData }, { data: hvData }] = await Promise.all([
-      supabase
+      fetchAllRows<Receipt>(() => supabase
         .from("payment_receipts")
         .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,received_by,received_by_name,handover_id,source,remarks,created_at")
         .not("source", "eq", "discount")
         .not("method", "ilike", "discount")
-        .order("created_at", { ascending: false })
-        .limit(1000),
+        .order("created_at", { ascending: false })),
       supabase
         .from("cash_handovers")
         .select("id,handover_id,entry_date,closing_date,from_user,from_name,submitted_amount,confirmed_amount,amount,status,remarks,approved_at,approved_by,created_at")

@@ -18,6 +18,7 @@ import { DigitalClock } from "@/components/DigitalClock";
 
 const DashboardCharts = lazy(() => import("@/components/DashboardCharts"));
 import { isCashMethod, vendorExpenseHitsUserBalance, handoverReducesBalance } from "@/lib/payment-methods";
+import { fetchAllRows } from "@/lib/fetch-all";
 import {
   CalendarIcon, Plane, IdCard, Globe2, Users, Truck, ClipboardList,
   TrendingUp, TrendingDown, Wallet, FileText, ArrowRightLeft, BadgeDollarSign, Zap,
@@ -265,7 +266,10 @@ function DashboardPage() {
         .order("entry_date", { ascending: false });
       if (receiptsBounds.gte) q = q.gte("entry_date", receiptsBounds.gte);
       if (receiptsBounds.lt) q = q.lt("entry_date", receiptsBounds.lt);
-      const { data } = await q.limit(3000);
+      const { data } = await fetchAllRows<{
+        amount: number; method: string | null; source: string | null;
+        received_by: string | null; received_by_name: string | null; entry_date: string;
+      }>(() => q);
       return (data ?? []) as Array<{
         amount: number; method: string | null; source: string | null;
         received_by: string | null; received_by_name: string | null; entry_date: string;
@@ -338,9 +342,9 @@ function DashboardPage() {
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const [receipts, handovers, expenses] = await Promise.all([
-        supabase.from("payment_receipts").select("amount,approval_status,source,method"),
-        supabase.from("cash_handovers").select("amount,status"),
-        supabase.from("cash_expenses").select("amount,category,linked_source_table"),
+        fetchAllRows(() => supabase.from("payment_receipts").select("amount,approval_status,source,method").order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_handovers").select("amount,status").order("created_at", { ascending: true })),
+        fetchAllRows(() => supabase.from("cash_expenses").select("amount,category,linked_source_table").order("created_at", { ascending: true })),
       ]);
       const err = receipts.error || handovers.error || expenses.error;
       if (err) throw err;
