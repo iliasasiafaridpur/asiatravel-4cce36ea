@@ -423,10 +423,13 @@ function AccountsPage() {
 
     // PostgREST caps a single response at 1000 rows, so page through everything
     // (otherwise old/new rows silently vanish and balances come out wrong).
+    const recvFinal = seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`);
+    const handFinal = seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`);
+    const expFinal  = seeAll ? expQuery  : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`);
     const [r, h, e] = await Promise.all([
-      fetchAllRows<Recv>(() => (seeAll ? recvQuery : recvQuery.or(`received_by.eq.${user.id},created_by.eq.${user.id}`)), { max: historyLimit }),
-      fetchAllRows<Hand>(() => (seeAll ? handQuery : handQuery.or(`from_user.eq.${user.id},created_by.eq.${user.id}`)), { max: historyLimit }),
-      fetchAllRows<Exp>(() => (seeAll ? expQuery : expQuery.or(`spent_by.eq.${user.id},created_by.eq.${user.id}`)), { max: historyLimit }),
+      fetchAllRows<Recv>(() => recvFinal, { max: historyLimit }),
+      fetchAllRows<Hand>(() => handFinal, { max: historyLimit }),
+      fetchAllRows<Exp>(() => expFinal, { max: historyLimit }),
     ]);
 
 
