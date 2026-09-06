@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate, formatDateTime, isAdvancePayment } from "@/lib/modules";
 import { AdvanceBadge } from "@/components/AdvanceBadge";
@@ -234,14 +235,14 @@ export function HandoverLedgerInline({
       const ids = hvs.map((h) => h.id);
       let recs: Receipt[] = [];
       if (ids.length > 0) {
-        const { data: recData } = await supabase
+        const { data: recData } = await fetchAllRows<Receipt>(() => supabase
           .from("payment_receipts")
           .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,source,remarks,created_at")
           .in("handover_id", ids)
           .not("source", "eq", "discount")
           .order("entry_date", { ascending: true })
-          .order("created_at", { ascending: true });
-        recs = (recData ?? []) as Receipt[];
+          .order("created_at", { ascending: true }));
+        recs = recData;
       }
 
       const byH: Record<string, Receipt[]> = {};
@@ -253,12 +254,12 @@ export function HandoverLedgerInline({
       // Load expenses linked to these handovers
       let exps: Expense[] = [];
       if (ids.length > 0) {
-        const { data: expData } = await supabase
+        const { data: expData } = await fetchAllRows<Expense>(() => supabase
           .from("cash_expenses")
           .select("id,expense_id,entry_date,amount,category,purpose,remarks,spent_by_name,handover_id,created_at,linked_source_table")
           .in("handover_id", ids)
-          .order("created_at", { ascending: true });
-        exps = (expData ?? []) as Expense[];
+          .order("created_at", { ascending: true }));
+        exps = expData;
       }
       const expByH: Record<string, Expense[]> = {};
       for (const e of exps) {
@@ -286,14 +287,15 @@ export function HandoverLedgerInline({
         for (const t of tables) {
           const rowIds = Array.from(byTable[t] ?? []);
           if (rowIds.length === 0) continue;
-          const { data: more } = await supabase
+          const { data: more } = await fetchAllRows<Receipt>(() => supabase
             .from("payment_receipts")
             .select("id,receipt_id,entry_date,passenger_name,amount,method,service_type,service_table,service_row_id,ref_id,approval_status,handover_id,received_by,received_by_name,created_at")
             .eq("service_table", t)
             .in("service_row_id", rowIds)
             .not("source", "eq", "discount")
-            .not("approval_status", "eq", "cancelled");
-          for (const r of ((more ?? []) as Receipt[])) {
+            .not("approval_status", "eq", "cancelled")
+            .order("created_at", { ascending: true }));
+          for (const r of more) {
             if (!r.service_table || !r.service_row_id) continue;
             (byService[`${r.service_table}:${r.service_row_id}`] ??= []).push(r);
           }
