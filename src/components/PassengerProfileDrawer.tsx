@@ -110,13 +110,24 @@ export function PassengerProfileDrawer({
     // (matched by passport when available, otherwise by name) so a "Self"
     // passenger who has e.g. an Air Ticket AND a BMET card shows both here.
     (async () => {
+      const normPass = (v: unknown) => String(v ?? "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+      const normName = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+      const normMob = (v: unknown) => {
+        const d = String(v ?? "").replace(/\D/g, "");
+        return d.length >= 10 ? d.slice(-10) : "";
+      };
       const passport = String(row.passport ?? "").trim();
       const name = String(row.passenger_name ?? "").trim();
-      if (!passport && !name) {
+      const mobile = String(row.mobile ?? "").trim();
+      const pKey = normPass(passport);
+      const nKey = normName(name);
+      const mKey = normMob(mobile);
+      if (!pKey && !nKey && !mKey) {
         if (!cancelled) setRelated([]);
         return;
       }
       const found: RelatedService[] = [];
+      const seen = new Set<string>();
       // Only real service modules — never ledger mirrors (vendor_ledger,
       // agency_ledger) or party tables (agents, vendors), otherwise mirror
       // rows of the same service show up as duplicate fake "services".
@@ -124,12 +135,37 @@ export function PassengerProfileDrawer({
       const serviceModules = MODULES.filter((m) => serviceKeys.has(m.key));
       await Promise.all(
         serviceModules.map(async (m) => {
-          let q = supabase.from(m.table as never).select("*").limit(50);
-          q = passport ? q.eq("passport", passport) : q.eq("passenger_name", name);
-          const { data } = await q;
-          for (const r of ((data as Row[] | null) ?? [])) {
-            // Show ALL services for this passenger — including the one we're
-            // currently viewing — so the profile lists the full footprint.
+          // Fetch candidates by EACH identifier separately (case/spacing tolerant),
+          // then confirm identity client-side. A single strict `.eq(passport)`
+          // missed rows where the passport was typed with different case/spacing
+          // or was left blank on one of the passenger's other services.
+          const queries: PromiseLike<{ data: unknown }>[] = [];
+          const base = () => supabase.from(m.table as never).select("*").limit(100);
+          if (passport) queries.push(base().ilike("passport", passport));
+          if (name) queries.push(base().ilike("passenger_name", name));
+          if (mKey) queries.push(base().ilike("mobile", `%${mKey}%`));
+          const results = await Promise.all(queries);
+          const rows: Row[] = [];
+          for (const res of results) rows.push(...(((res?.data as Row[] | null) ?? [])));
+
+          for (const r of rows) {
+            const key = `${m.table}:${r.id}`;
+            if (seen.has(key)) continue;
+            const rp = normPass(r.passport);
+            const rn = normName(r.passenger_name);
+            const rm = normMob(r.mobile);
+            const samePassport = !!pKey && !!rp && rp === pKey;
+            const sameMobile = !!mKey && !!rm && rm === mKey;
+            const sameName = !!nKey && rn === nKey;
+            // Passport is the strongest key. Otherwise accept a name match only
+            // when at least one side has no passport (so two different people
+            // with the same name but different passports never merge).
+            const isSame =
+              samePassport ||
+              (sameName && (!pKey || !rp)) ||
+              (sameMobile && sameName);
+            if (!isSame) continue;
+            seen.add(key);
             const sold = Number(r.sold_price ?? 0);
             const recv = Number(r.received ?? r.received_amount ?? 0);
             const disc = Number(r.discount_amount ?? 0);
@@ -138,7 +174,7 @@ export function PassengerProfileDrawer({
             ].filter((x) => x !== null && x !== undefined && String(x).trim() !== "");
             const derivedStatus = m.deriveStatus?.(r) ?? String(r.status ?? "");
             found.push({
-              key: `${m.table}:${r.id}`,
+              key,
               moduleKey: m.key,
               moduleLabel: m.short,
               refId: String(
@@ -156,9 +192,37 @@ export function PassengerProfileDrawer({
           }
         }),
       );
+      // Always include the service the drawer was opened on, even if its own
+      // table row was filtered out above.
+      if (!found.some((f) => f.key === `${serviceTable}:${row.id}`)) {
+        const m = MODULES.find((mm) => mm.table === serviceTable);
+        const sold = Number(row.sold_price ?? 0);
+        const recv = Number(row.received ?? row.received_amount ?? 0);
+        const disc = Number(row.discount_amount ?? 0);
+        found.push({
+          key: `${serviceTable}:${row.id}`,
+          moduleKey: m?.key ?? String(moduleKey ?? ""),
+          moduleLabel: m?.short ?? "",
+          refId: String(
+            row.ticket_id ?? row.bmet_id ?? row.saudi_id ?? row.kuwait_id ?? row.other_id ?? row.passenger_id ?? row.id,
+          ),
+          status: m?.deriveStatus?.(row) ?? String(row.status ?? ""),
+          detail: [row.country_name, row.trip_road, row.visa_type, row.service_name, row.airline]
+            .filter((x) => x !== null && x !== undefined && String(x).trim() !== "")
+            .map(String)
+            .join(" · "),
+          entryDate: (row.entry_date as string) ?? null,
+          sold,
+          received: recv,
+          discount: disc,
+          due: Math.max(0, sold - recv - disc),
+          row,
+        });
+      }
       found.sort((a, b) => String(b.entryDate ?? "").localeCompare(String(a.entryDate ?? "")));
       if (!cancelled) setRelated(found);
     })();
+
 
     // Load extra services attached to this service row (passenger bill + vendor cost),
     // and how much of each the customer has already paid (tracked on the extra_services row).
