@@ -141,9 +141,13 @@ export function PassengerProfileDrawer({
           // or was left blank on one of the passenger's other services.
           const queries: PromiseLike<{ data: unknown }>[] = [];
           const base = () => supabase.from(m.table as never).select("*").limit(100);
-          if (passport) queries.push(base().ilike("passport", passport));
-          if (name) queries.push(base().ilike("passenger_name", name));
-          if (mKey) queries.push(base().ilike("mobile", `%${mKey}%`));
+          // Values in the database often carry trailing spaces / different
+          // spacing, so match with wildcards instead of an exact ilike.
+          const like = (s: string) => `%${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+          if (passport) queries.push(base().ilike("passport", like(passport)));
+          if (name) queries.push(base().ilike("passenger_name", like(name)));
+          if (mKey) queries.push(base().ilike("mobile", like(mKey.slice(-6))));
+
           const results = await Promise.all(queries);
           const rows: Row[] = [];
           for (const res of results) rows.push(...(((res?.data as Row[] | null) ?? [])));
