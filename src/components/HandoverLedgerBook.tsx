@@ -691,6 +691,17 @@ export function HandoverLedgerInline({
                 >
                   Sign
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={showWm ? "default" : "outline"}
+                  className="h-7 px-2 text-[11px]"
+                  onClick={() => setShowWm((v) => !v)}
+                  title="প্রিন্ট পেইজে হালকা ওয়াটারমার্ক"
+                >
+                  Watermark
+                </Button>
+
                 <Button type="button" size="sm" className="gap-1.5" onClick={printSelected}>
                   <Printer className="h-3.5 w-3.5" /> প্রিন্ট করুন
                 </Button>
