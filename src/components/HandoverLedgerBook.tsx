@@ -563,9 +563,18 @@ export function HandoverLedgerInline({
     const sigFooter = showSig
       ? `<div class="pagesig"><div>প্রেরক<br/>${fromName}</div><div>গ্রহীতা<br/>${toName}</div></div>`
       : "";
+    // "Watermark" toggle: one faint diagonal company mark fixed on every page.
+    const wmCss = showWm ? `
+      .pagewm { position: fixed; top: 45%; left: 0; right: 0; text-align:center;
+        font-size: 54px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase;
+        color: #000; opacity: 0.07; transform: rotate(-28deg); z-index: 0; pointer-events: none; }
+      .slip { position: relative; z-index: 1; }
+    ` : "";
+    const wmLayer = showWm ? `<div class="pagewm">ASIA TOURS AND TRAVEL</div>` : "";
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
-      <style>${SLIP_CSS}${sigCss}</style></head><body>${sections}${sigFooter}</body></html>`;
+      <style>${SLIP_CSS}${sigCss}${wmCss}</style></head><body>${wmLayer}${sections}${sigFooter}</body></html>`;
+
     printDocHtml(html, docTitle);
     setPrintOpen(false);
   };
