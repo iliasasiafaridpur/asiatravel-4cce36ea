@@ -7,9 +7,20 @@ import { Separator } from "@/components/ui/separator";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle, Wallet } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+
+/** Module key → Due Receive service key (same mapping as the module pages). */
+const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
+  tickets: "tickets",
+  bmet: "bmet",
+  "saudi-visa": "saudi-visa",
+  "kuwait-visa": "kuwait-visa",
+  other: "other",
+};
+
 
 /** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
 function waNumber(raw: string): string {
@@ -89,9 +100,13 @@ export function PassengerProfileDrawer({
   const [related, setRelated] = useState<RelatedService[]>([]);
   // Which service's tracking timeline is shown — defaults to the current row.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  
+  // Due Receive launched from inside this profile (service card / outstanding due).
+  const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
+  // Bumped after a payment is taken so the profile reloads its numbers.
+  const [refreshTick, setRefreshTick] = useState(0);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
+
 
   // Reset the selected timeline service whenever the drawer opens on a new row.
   useEffect(() => {
@@ -301,7 +316,8 @@ export function PassengerProfileDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, row?.id, serviceTable]);
+  }, [open, row?.id, serviceTable, refreshTick]);
+
 
   if (!row) return null;
 
@@ -496,9 +512,33 @@ export function PassengerProfileDrawer({
                           <div className="mt-1.5 flex items-center justify-between gap-2 tabular-nums">
                             <span>Bill: <span className="font-semibold">{fmtMoney(s.sold)}</span></span>
                             <span className="text-emerald-600">Received: {fmtMoney(s.received)}</span>
-                            <span className={s.due > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}>
-                              Due: {fmtMoney(s.due)}
-                            </span>
+                            {s.due > 0 && DUE_SERVICE_KEY[s.moduleKey] ? (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                title="এখান থেকেই পেমেন্ট গ্রহণ করুন"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDuePreselect({ serviceKey: DUE_SERVICE_KEY[s.moduleKey], rowId: String(s.row.id) });
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDuePreselect({ serviceKey: DUE_SERVICE_KEY[s.moduleKey], rowId: String(s.row.id) });
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 rounded-md border border-rose-500/40 bg-rose-500/10 px-1.5 py-0.5 text-rose-600 font-semibold hover:bg-rose-500/20 cursor-pointer"
+                              >
+                                <Wallet className="h-3 w-3" />
+                                Due: {fmtMoney(s.due)}
+                              </span>
+                            ) : (
+                              <span className={s.due > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}>
+                                Due: {fmtMoney(s.due)}
+                              </span>
+                            )}
+
                           </div>
                           {s.entryDate ? (
                             <div className="mt-1 text-[10px] text-muted-foreground">{formatDate(s.entryDate)}</div>
@@ -662,11 +702,27 @@ export function PassengerProfileDrawer({
                       {fmtMoney(ledgerDue)}
                     </span>
                   </div>
+                  {(() => {
+                    const mk = moduleKey ?? MODULES.find((m) => m.table === serviceTable)?.key ?? "";
+                    const svcKey = DUE_SERVICE_KEY[mk];
+                    if (!svcKey || ledgerDue <= 0) return null;
+                    return (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full mt-2 gap-1.5"
+                        onClick={() => setDuePreselect({ serviceKey: svcKey, rowId: String(row.id) })}
+                      >
+                        <Wallet className="h-3.5 w-3.5" /> Due Receive
+                      </Button>
+                    );
+                  })()}
                   {extraDue > 0 ? (
                     <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400 text-right">
                       এর মধ্যে ✨ Extra service বকেয়া: {fmtMoney(extraDue)}
                     </div>
                   ) : null}
+
                 </div>
 
 
@@ -823,6 +879,15 @@ export function PassengerProfileDrawer({
           </ScrollArea>
         </SheetContent>
       </Sheet>
+
+      {/* Due Receive launched from inside the passenger profile */}
+      <DueReceiveDialog
+        open={!!duePreselect}
+        onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
+        preselect={duePreselect}
+        onDone={() => setRefreshTick((t) => t + 1)}
+      />
+
     </>
   );
 }

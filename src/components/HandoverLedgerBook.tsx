@@ -192,6 +192,9 @@ export function HandoverLedgerInline({
   const [printOpen, setPrintOpen] = useState(false);
   const [blankIds, setBlankIds] = useState<Set<string>>(() => new Set());
   const [showSig, setShowSig] = useState(false);
+  // Optional diagonal watermark on the printed pages (off = exactly as before).
+  const [showWm, setShowWm] = useState(false);
+
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
@@ -499,8 +502,10 @@ export function HandoverLedgerInline({
     if (selectedIds.size === 0) return;
     setBlankIds(new Set());
     setShowSig(false);
+    setShowWm(false);
     setPrintOpen(true);
   };
+
   const toggleBlank = (id: string) => {
     setBlankIds((prev) => {
       const next = new Set(prev);
@@ -558,9 +563,18 @@ export function HandoverLedgerInline({
     const sigFooter = showSig
       ? `<div class="pagesig"><div>প্রেরক<br/>${fromName}</div><div>গ্রহীতা<br/>${toName}</div></div>`
       : "";
+    // "Watermark" toggle: one faint diagonal company mark fixed on every page.
+    const wmCss = showWm ? `
+      .pagewm { position: fixed; top: 45%; left: 0; right: 0; text-align:center;
+        font-size: 54px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase;
+        color: #000; opacity: 0.07; transform: rotate(-28deg); z-index: 0; pointer-events: none; }
+      .slip { position: relative; z-index: 1; }
+    ` : "";
+    const wmLayer = showWm ? `<div class="pagewm">ASIA TOURS AND TRAVEL</div>` : "";
     const docTitle = buildFileTitle("Cash_Handovers", `${chosen.length}_slips`, formatDate(new Date().toISOString().slice(0, 10)));
     const html = `<!doctype html><html><head><title>${docTitle}</title>
-      <style>${SLIP_CSS}${sigCss}</style></head><body>${sections}${sigFooter}</body></html>`;
+      <style>${SLIP_CSS}${sigCss}${wmCss}</style></head><body>${wmLayer}${sections}${sigFooter}</body></html>`;
+
     printDocHtml(html, docTitle);
     setPrintOpen(false);
   };
@@ -677,6 +691,17 @@ export function HandoverLedgerInline({
                 >
                   Sign
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={showWm ? "default" : "outline"}
+                  className="h-7 px-2 text-[11px]"
+                  onClick={() => setShowWm((v) => !v)}
+                  title="প্রিন্ট পেইজে হালকা ওয়াটারমার্ক"
+                >
+                  Watermark
+                </Button>
+
                 <Button type="button" size="sm" className="gap-1.5" onClick={printSelected}>
                   <Printer className="h-3.5 w-3.5" /> প্রিন্ট করুন
                 </Button>
