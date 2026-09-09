@@ -512,9 +512,33 @@ export function PassengerProfileDrawer({
                           <div className="mt-1.5 flex items-center justify-between gap-2 tabular-nums">
                             <span>Bill: <span className="font-semibold">{fmtMoney(s.sold)}</span></span>
                             <span className="text-emerald-600">Received: {fmtMoney(s.received)}</span>
-                            <span className={s.due > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}>
-                              Due: {fmtMoney(s.due)}
-                            </span>
+                            {s.due > 0 && DUE_SERVICE_KEY[s.moduleKey] ? (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                title="এখান থেকেই পেমেন্ট গ্রহণ করুন"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDuePreselect({ serviceKey: DUE_SERVICE_KEY[s.moduleKey], rowId: String(s.row.id) });
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDuePreselect({ serviceKey: DUE_SERVICE_KEY[s.moduleKey], rowId: String(s.row.id) });
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 rounded-md border border-rose-500/40 bg-rose-500/10 px-1.5 py-0.5 text-rose-600 font-semibold hover:bg-rose-500/20 cursor-pointer"
+                              >
+                                <Wallet className="h-3 w-3" />
+                                Due: {fmtMoney(s.due)}
+                              </span>
+                            ) : (
+                              <span className={s.due > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}>
+                                Due: {fmtMoney(s.due)}
+                              </span>
+                            )}
+
                           </div>
                           {s.entryDate ? (
                             <div className="mt-1 text-[10px] text-muted-foreground">{formatDate(s.entryDate)}</div>
