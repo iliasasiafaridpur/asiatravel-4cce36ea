@@ -879,6 +879,15 @@ export function PassengerProfileDrawer({
           </ScrollArea>
         </SheetContent>
       </Sheet>
+
+      {/* Due Receive launched from inside the passenger profile */}
+      <DueReceiveDialog
+        open={!!duePreselect}
+        onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
+        preselect={duePreselect}
+        onDone={() => setRefreshTick((t) => t + 1)}
+      />
+
     </>
   );
 }
