@@ -316,7 +316,8 @@ export function PassengerProfileDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, row?.id, serviceTable]);
+  }, [open, row?.id, serviceTable, refreshTick]);
+
 
   if (!row) return null;
 
