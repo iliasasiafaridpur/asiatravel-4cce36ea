@@ -100,9 +100,13 @@ export function PassengerProfileDrawer({
   const [related, setRelated] = useState<RelatedService[]>([]);
   // Which service's tracking timeline is shown — defaults to the current row.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  
+  // Due Receive launched from inside this profile (service card / outstanding due).
+  const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
+  // Bumped after a payment is taken so the profile reloads its numbers.
+  const [refreshTick, setRefreshTick] = useState(0);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
+
 
   // Reset the selected timeline service whenever the drawer opens on a new row.
   useEffect(() => {
