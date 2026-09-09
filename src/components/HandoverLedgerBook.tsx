@@ -192,6 +192,9 @@ export function HandoverLedgerInline({
   const [printOpen, setPrintOpen] = useState(false);
   const [blankIds, setBlankIds] = useState<Set<string>>(() => new Set());
   const [showSig, setShowSig] = useState(false);
+  // Optional diagonal watermark on the printed pages (off = exactly as before).
+  const [showWm, setShowWm] = useState(false);
+
 
   useEffect(() => {
     if (!enabled || !user?.id) return;
@@ -499,8 +502,10 @@ export function HandoverLedgerInline({
     if (selectedIds.size === 0) return;
     setBlankIds(new Set());
     setShowSig(false);
+    setShowWm(false);
     setPrintOpen(true);
   };
+
   const toggleBlank = (id: string) => {
     setBlankIds((prev) => {
       const next = new Set(prev);
