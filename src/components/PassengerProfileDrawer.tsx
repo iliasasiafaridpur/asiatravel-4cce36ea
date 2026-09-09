@@ -7,9 +7,20 @@ import { Separator } from "@/components/ui/separator";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle, Wallet } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
+import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+
+/** Module key → Due Receive service key (same mapping as the module pages). */
+const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
+  tickets: "tickets",
+  bmet: "bmet",
+  "saudi-visa": "saudi-visa",
+  "kuwait-visa": "kuwait-visa",
+  other: "other",
+};
+
 
 /** Normalize a phone number to a wa.me-compatible international format (default BD +880). */
 function waNumber(raw: string): string {
