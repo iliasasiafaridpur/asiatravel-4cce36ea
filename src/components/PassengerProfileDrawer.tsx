@@ -702,11 +702,27 @@ export function PassengerProfileDrawer({
                       {fmtMoney(ledgerDue)}
                     </span>
                   </div>
+                  {(() => {
+                    const mk = moduleKey ?? MODULES.find((m) => m.table === serviceTable)?.key ?? "";
+                    const svcKey = DUE_SERVICE_KEY[mk];
+                    if (!svcKey || ledgerDue <= 0) return null;
+                    return (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full mt-2 gap-1.5"
+                        onClick={() => setDuePreselect({ serviceKey: svcKey, rowId: String(row.id) })}
+                      >
+                        <Wallet className="h-3.5 w-3.5" /> Due Receive
+                      </Button>
+                    );
+                  })()}
                   {extraDue > 0 ? (
                     <div className="text-[11px] text-fuchsia-600 dark:text-fuchsia-400 text-right">
                       এর মধ্যে ✨ Extra service বকেয়া: {fmtMoney(extraDue)}
                     </div>
                   ) : null}
+
                 </div>
 
 
