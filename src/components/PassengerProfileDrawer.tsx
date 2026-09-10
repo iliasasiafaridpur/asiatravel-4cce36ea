@@ -694,27 +694,44 @@ export function PassengerProfileDrawer({
                       className="text-amber-600"
                     />
                   ) : null}
-                  <div className="border-t pt-2 flex items-baseline justify-between">
-                    <span className="text-sm font-semibold">Outstanding Due</span>
-                    <span
-                      className={`text-lg font-bold tabular-nums ${ledgerDue > 0 ? "text-rose-600" : "text-emerald-600"}`}
-                    >
-                      {fmtMoney(ledgerDue)}
-                    </span>
-                  </div>
                   {(() => {
                     const mk = moduleKey ?? MODULES.find((m) => m.table === serviceTable)?.key ?? "";
                     const svcKey = DUE_SERVICE_KEY[mk];
-                    if (!svcKey || ledgerDue <= 0) return null;
+                    // The due amount itself is the payment-receive button — no separate button.
+                    const canReceive = !!svcKey && ledgerDue > 0;
                     return (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="w-full mt-2 gap-1.5"
-                        onClick={() => setDuePreselect({ serviceKey: svcKey, rowId: String(row.id) })}
-                      >
-                        <Wallet className="h-3.5 w-3.5" /> Due Receive
-                      </Button>
+                      <div className="border-t pt-2 flex items-baseline justify-between">
+                        <span className="text-sm font-semibold">Outstanding Due</span>
+                        <span
+                          role={canReceive ? "button" : undefined}
+                          tabIndex={canReceive ? 0 : undefined}
+                          title={canReceive ? "পেমেন্ট গ্রহণ করতে ক্লিক করুন" : undefined}
+                          className={`text-lg font-bold tabular-nums ${
+                            ledgerDue > 0 ? "text-rose-600" : "text-emerald-600"
+                          } ${
+                            canReceive
+                              ? "cursor-pointer rounded-md px-2 -mx-2 underline decoration-rose-600/50 underline-offset-4 hover:bg-rose-500/10 active:scale-[0.98] transition"
+                              : ""
+                          }`}
+                          onClick={
+                            canReceive
+                              ? () => setDuePreselect({ serviceKey: svcKey!, rowId: String(row.id) })
+                              : undefined
+                          }
+                          onKeyDown={
+                            canReceive
+                              ? (e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setDuePreselect({ serviceKey: svcKey!, rowId: String(row.id) });
+                                  }
+                                }
+                              : undefined
+                          }
+                        >
+                          {fmtMoney(ledgerDue)}
+                        </span>
+                      </div>
                     );
                   })()}
                   {extraDue > 0 ? (
