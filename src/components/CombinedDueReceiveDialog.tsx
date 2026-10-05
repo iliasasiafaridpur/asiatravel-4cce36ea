@@ -48,6 +48,8 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
   const [lines, setLines] = useState<PayLine[]>([]);
   const [parent, setParent] = useState<Record<string, unknown> | null>(null);
   const [method, setMethod] = useState("Cash");
+  const [multiMode, setMultiMode] = useState(false);
+  const [methodAmounts, setMethodAmounts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState("");
   const [withDelivery, setWithDelivery] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -87,6 +89,8 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
       setParent(p);
       setLines(next);
       setMethod("Cash");
+      setMultiMode(false);
+      setMethodAmounts({});
       setRemarks("");
       setWithDelivery(false);
       setLoading(false);
@@ -96,6 +100,8 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
 
   const totalDue = useMemo(() => lines.reduce((sum, line) => sum + line.due, 0), [lines]);
   const entered = useMemo(() => lines.reduce((sum, line) => sum + (Number(line.amount) || 0) + (Number(line.newDiscount) || 0), 0), [lines]);
+  const enteredPayment = useMemo(() => lines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0), [lines]);
+  const methodTotal = multiMode ? DUE_RECEIVE_METHODS.reduce((sum, item) => sum + (Number(methodAmounts[item]) || 0), 0) : enteredPayment;
   const updateLine = (id: string, field: "amount" | "newDiscount", value: string) => setLines((prev) => prev.map((line) => line.id === id ? { ...line, [field]: value } : line));
 
   const submit = async () => {
@@ -107,12 +113,14 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
       return { line, amount, discount };
     }).filter((item) => item.amount > 0 || item.discount > 0);
     if (!applies.length) return toast.error("প্রতিটি বিলের জন্য সঠিক টাকা অথবা discount লিখুন");
+    if (multiMode && Math.abs(methodTotal - enteredPayment) > 0.005) return toast.error("Payment-এর মোট এবং Method breakdown-এর মোট সমান হতে হবে");
     setSaving(true);
     try {
       const today = todayIso();
       const baseReceiptId = await generateNextId({ key: "_rcpt", label: "", short: "", table: "payment_receipts", idColumn: "receipt_id", idPrefix: "RCPT", monthlyId: true, fields: [] });
       const combinedToken = `combined:${cfg.table}:${String(parent.id)}:${baseReceiptId}`;
       let receiptIndex = 0;
+      const remainingByMethod = new Map(DUE_RECEIVE_METHODS.map((item) => [item, multiMode ? Number(methodAmounts[item]) || 0 : (item === method ? enteredPayment : 0)]));
       for (const { line, amount, discount } of applies) {
         if (line.kind === "main") {
           const patch: Record<string, unknown> = {
@@ -136,8 +144,13 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
           });
         }
         if (amount > 0) {
-          receiptIndex += 1;
-          await resilientInsert("payment_receipts", {
+          let lineRemaining = amount;
+          for (const paymentMethod of DUE_RECEIVE_METHODS) {
+            const available = remainingByMethod.get(paymentMethod) ?? 0;
+            const part = Math.min(lineRemaining, available);
+            if (part <= 0) continue;
+            receiptIndex += 1;
+            await resilientInsert("payment_receipts", {
             receipt_id: `${baseReceiptId}-${receiptIndex}`,
             entry_date: today,
             service_type: line.kind === "main" ? cfg.type : `✨ ${line.label.replace(/^Extra Service — /, "")}`,
@@ -145,15 +158,19 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
             service_row_id: line.id,
             ref_id: String(parent[cfg.idCol] ?? ""),
             passenger_name: String(parent.passenger_name ?? ""),
-            amount,
-            method,
+            amount: part,
+            method: paymentMethod,
             source: line.kind === "main" ? "due" : "extra_due",
             remarks: [combinedToken, remarks, discount > 0 ? `Discount ৳${discount.toLocaleString()}` : ""].filter(Boolean).join(" · "),
             received_by: user.id,
             received_by_name: displayName(profile, user),
-          });
-          if (isVendorReceivedMethod(method)) {
-            await settleVendorBillByBooking(line.kind === "main" ? cfg.table : "extra_services", line.id, amount, user.id, today);
+            });
+            if (isVendorReceivedMethod(paymentMethod)) {
+              await settleVendorBillByBooking(line.kind === "main" ? cfg.table : "extra_services", line.id, part, user.id, today);
+            }
+            remainingByMethod.set(paymentMethod, available - part);
+            lineRemaining -= part;
+            if (lineRemaining <= 0.005) break;
           }
         }
       }
@@ -183,7 +200,13 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
               ))}
             </div>
             <div className="flex justify-between text-sm font-semibold"><span>মোট Due: ৳{totalDue.toLocaleString()}</span><span className="text-emerald-600">এখন সমন্বয়: ৳{entered.toLocaleString()}</span></div>
-            <div><Label>Method</Label><Select value={method} onValueChange={setMethod}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{DUE_RECEIVE_METHODS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></div>
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={multiMode} onCheckedChange={(value) => setMultiMode(value === true)} /> একাধিক Payment Method</label>
+            {multiMode ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {DUE_RECEIVE_METHODS.map((item) => <div key={item}><Label className="text-[11px]">{item}</Label><Input type="number" min={0} value={methodAmounts[item] ?? ""} onChange={(e) => setMethodAmounts((prev) => ({ ...prev, [item]: e.target.value }))} className="h-9 mt-1" placeholder="0" /></div>)}
+                <div className="col-span-2 sm:col-span-4 text-xs text-right text-muted-foreground">Method total: ৳{methodTotal.toLocaleString()} / Payment: ৳{enteredPayment.toLocaleString()}</div>
+              </div>
+            ) : <div><Label>Method</Label><Select value={method} onValueChange={setMethod}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{DUE_RECEIVE_METHODS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></div>}
             <label className="flex items-center gap-2 text-sm"><Checkbox checked={withDelivery} onCheckedChange={(value) => setWithDelivery(value === true)} /> মূল সার্ভিস Delivery-সহ গ্রহণ</label>
             <div><Label>Remarks</Label><Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1" /></div>
             <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>বাতিল</Button><Button onClick={submit} disabled={saving || entered <= 0}>{saving ? "সেভ হচ্ছে…" : "পেমেন্ট গ্রহণ করুন"}</Button></DialogFooter>

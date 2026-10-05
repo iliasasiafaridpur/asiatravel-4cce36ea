@@ -1469,7 +1469,11 @@ export function ModulePage({ module: mod }: Props) {
         return (
           <button
             type="button"
-            onClick={() => { selectRow(r.id); setCombinedDuePreselect({ serviceKey: svc, rowId: r.id }); }}
+            onClick={() => {
+              selectRow(r.id);
+              if ((extraDetails[r.id] ?? []).length > 0) setCombinedDuePreselect({ serviceKey: svc, rowId: r.id });
+              else setDuePreselect({ serviceKey: svc, rowId: r.id });
+            }}
             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
             title="Due Receive"
           >
