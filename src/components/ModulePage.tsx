@@ -1509,6 +1509,7 @@ export function ModulePage({ module: mod }: Props) {
     // due, plus a clearly-labelled extra-service due (received via customer ledger).
     const amountCell = (r: Row, recvField: string, opts?: { advance?: boolean }) => {
       const { sold, recv, discount, cost, due, profit, extraSold, extraDue, totalSold, totalRecv } = money(r, recvField);
+      const extraItems = extraDetails[r.id] ?? [];
       const hasExtra = extraSold > 0;
       const combinedDue = due + extraDue;
       const showProfit = (recv > 0 && cost > 0) || extraSold > 0;
@@ -1527,7 +1528,7 @@ export function ModulePage({ module: mod }: Props) {
           <div className="text-xs">{dueBtn(r, combinedDue)}</div>
           {hasExtra ? (
             <div className="text-[10px] text-fuchsia-600 dark:text-fuchsia-400 whitespace-normal max-w-[190px] ml-auto">
-              + {ex.map((item) => `Extra Service — ${item.service_name}`).join(" + ")}
+              + {extraItems.map((item) => `Extra Service — ${item.service_name}`).join(" + ")}
             </div>
           ) : null}
           {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}

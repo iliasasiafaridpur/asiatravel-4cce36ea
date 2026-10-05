@@ -13,7 +13,7 @@ import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { CombinedDueReceiveDialog, type CombinedDuePreselect } from "@/components/CombinedDueReceiveDialog";
 
 /** Module key → Due Receive service key (same mapping as the module pages). */
-const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
+const DUE_SERVICE_KEY: Record<string, CombinedDuePreselect["serviceKey"]> = {
   tickets: "tickets",
   bmet: "bmet",
   "saudi-visa": "saudi-visa",
