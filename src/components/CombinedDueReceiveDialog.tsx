@@ -59,8 +59,10 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
     const cfg = CONFIG[preselect.serviceKey];
     void (async () => {
       setLoading(true);
+      const mainColumns = ["id", cfg.idCol, "passenger_name", "passport", "mobile", "agency_sold", "sold_price", cfg.recvCol, "discount_amount", "status"];
+      if (cfg.hasDelivery) mainColumns.push("delivery_date");
       const [mainRes, extraRes] = await Promise.all([
-        supabase.from(cfg.table as never).select(`id,${cfg.idCol},passenger_name,passport,mobile,agency_sold,sold_price,${cfg.recvCol},discount_amount,delivery_date,status`).eq("id", preselect.rowId).maybeSingle(),
+        supabase.from(cfg.table as never).select(mainColumns.join(",")).eq("id", preselect.rowId).maybeSingle(),
         supabase.from("extra_services" as never).select("id,service_name,service_price,received_amount,discount_amount").eq("source_table", cfg.table).eq("source_id", preselect.rowId).order("created_at", { ascending: true }),
       ]);
       if (cancelled) return;
@@ -136,7 +138,7 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
         if (amount > 0) {
           receiptIndex += 1;
           await resilientInsert("payment_receipts", {
-            receipt_id: `${baseReceiptId}-C${receiptIndex}`,
+            receipt_id: `${baseReceiptId}-${receiptIndex}`,
             entry_date: today,
             service_type: line.kind === "main" ? cfg.type : `✨ ${line.label.replace(/^Extra Service — /, "")}`,
             service_table: line.kind === "main" ? cfg.table : "extra_services",
