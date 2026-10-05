@@ -10,7 +10,7 @@ import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey 
 import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle, Wallet } from "lucide-react";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
-import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
+import { CombinedDueReceiveDialog, type CombinedDuePreselect } from "@/components/CombinedDueReceiveDialog";
 
 /** Module key → Due Receive service key (same mapping as the module pages). */
 const DUE_SERVICE_KEY: Record<string, DueReceivePreselect["serviceKey"]> = {
@@ -57,6 +57,10 @@ type RelatedService = {
   received: number;
   discount: number;
   due: number;
+  extraNames: string[];
+  extraSold: number;
+  extraReceived: number;
+  extraDiscount: number;
   row: Row;
 };
 
@@ -101,7 +105,7 @@ export function PassengerProfileDrawer({
   // Which service's tracking timeline is shown — defaults to the current row.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   // Due Receive launched from inside this profile (service card / outstanding due).
-  const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
+  const [duePreselect, setDuePreselect] = useState<CombinedDuePreselect | null>(null);
   // Bumped after a payment is taken so the profile reloads its numbers.
   const [refreshTick, setRefreshTick] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -206,6 +210,7 @@ export function PassengerProfileDrawer({
               received: recv,
               discount: disc,
               due: Math.max(0, sold - recv - disc),
+              extraNames: [], extraSold: 0, extraReceived: 0, extraDiscount: 0,
               row: r,
             });
           }
@@ -235,8 +240,34 @@ export function PassengerProfileDrawer({
           received: recv,
           discount: disc,
           due: Math.max(0, sold - recv - disc),
+          extraNames: [], extraSold: 0, extraReceived: 0, extraDiscount: 0,
           row,
         });
+      }
+      const idsByTable = new Map<string, string[]>();
+      for (const service of found) {
+        const table = MODULES.find((m) => m.key === service.moduleKey)?.table;
+        if (!table) continue;
+        idsByTable.set(table, [...(idsByTable.get(table) ?? []), String(service.row.id)]);
+      }
+      await Promise.all(Array.from(idsByTable.entries()).map(async ([table, ids]) => {
+        const { data } = await supabase.from("extra_services" as never)
+          .select("source_id,service_name,service_price,received_amount,discount_amount")
+          .eq("source_table", table).in("source_id", ids);
+        for (const raw of ((data as unknown as Record<string, unknown>[] | null) ?? [])) {
+          const service = found.find((item) => item.key === `${table}:${String(raw.source_id)}`);
+          if (!service) continue;
+          service.extraNames.push(String(raw.service_name || "Extra Service"));
+          service.extraSold += Number(raw.service_price ?? 0);
+          service.extraReceived += Number(raw.received_amount ?? 0);
+          service.extraDiscount += Number(raw.discount_amount ?? 0);
+        }
+      }));
+      for (const service of found) {
+        service.sold += service.extraSold;
+        service.received += service.extraReceived;
+        service.discount += service.extraDiscount;
+        service.due = Math.max(0, service.sold - service.received - service.discount);
       }
       found.sort((a, b) => String(b.entryDate ?? "").localeCompare(String(a.entryDate ?? "")));
       if (!cancelled) setRelated(found);
@@ -350,8 +381,8 @@ export function PassengerProfileDrawer({
 
   // Financial Ledger aggregates EVERY service this passenger has (+ extra services).
   const hasAllServices = related.length > 0;
-  const ledgerBill = (hasAllServices ? related.reduce((s, r) => s + r.sold, 0) : sold) + extraSold;
-  const ledgerReceived = (hasAllServices ? related.reduce((s, r) => s + r.received, 0) : serviceReceived) + extraReceived;
+  const ledgerBill = hasAllServices ? related.reduce((s, r) => s + r.sold, 0) : totalBill;
+  const ledgerReceived = hasAllServices ? related.reduce((s, r) => s + r.received, 0) : totalReceived;
   const ledgerDiscount = hasAllServices ? related.reduce((s, r) => s + r.discount, 0) : totalDiscount;
   const ledgerDue = Math.max(0, ledgerBill - ledgerReceived - ledgerDiscount);
   const country =
@@ -509,6 +540,11 @@ export function PassengerProfileDrawer({
                           {s.detail ? (
                             <div className="mt-1 text-muted-foreground truncate">{s.detail}</div>
                           ) : null}
+                          {s.extraNames.length > 0 ? (
+                            <div className="mt-1 text-fuchsia-600 dark:text-fuchsia-400 break-words">
+                              + {s.extraNames.map((name) => `Extra Service — ${name}`).join(" + ")}
+                            </div>
+                          ) : null}
                           <div className="mt-1.5 flex items-center justify-between gap-2 tabular-nums">
                             <span>Bill: <span className="font-semibold">{fmtMoney(s.sold)}</span></span>
                             <span className="text-emerald-600">Received: {fmtMoney(s.received)}</span>
@@ -657,16 +693,11 @@ export function PassengerProfileDrawer({
                           <span className="text-muted-foreground truncate mr-2">
                             {s.moduleLabel}
                             <span className="font-mono ml-1 opacity-70">{s.refId}</span>
+                            {s.extraNames.length > 0 ? <span className="block text-fuchsia-600 dark:text-fuchsia-400">+ {s.extraNames.map((name) => `Extra Service — ${name}`).join(" + ")}</span> : null}
                           </span>
                           <span className="tabular-nums font-medium shrink-0">{fmtMoney(s.sold)}</span>
                         </div>
                       ))}
-                      {extraSold > 0 ? (
-                        <div className="flex items-baseline justify-between text-xs">
-                          <span className="text-fuchsia-600 dark:text-fuchsia-400">✨ Extra Service</span>
-                          <span className="tabular-nums font-medium text-fuchsia-600 dark:text-fuchsia-400">{fmtMoney(extraSold)}</span>
-                        </div>
-                      ) : null}
                       <div className="border-t pt-2">
                         <Line label="Total Bill (সকল সার্ভিস)" value={fmtMoney(ledgerBill)} bold />
                       </div>
@@ -898,7 +929,7 @@ export function PassengerProfileDrawer({
       </Sheet>
 
       {/* Due Receive launched from inside the passenger profile */}
-      <DueReceiveDialog
+      <CombinedDueReceiveDialog
         open={!!duePreselect}
         onOpenChange={(v) => { if (!v) setDuePreselect(null); }}
         preselect={duePreselect}
