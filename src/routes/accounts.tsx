@@ -60,9 +60,12 @@ const INTERNAL_REMARK_RE = /balance[\s-]*neutral|MD received via|MD deposit|vend
 const cleanReceiptRemark = (text?: string | null) => {
   const raw = String(text ?? "").trim();
   if (!raw) return "";
-  if (INTERNAL_REMARK_RE.test(raw)) return "";
-  return raw;
+  const cleaned = raw.replace(/(?:^|\s*·\s*)combined:[^·\s]+/g, "").trim();
+  if (!cleaned || INTERNAL_REMARK_RE.test(cleaned)) return "";
+  return cleaned;
 };
+const combinedReceiptToken = (remarks?: string | null) =>
+  String(remarks ?? "").match(/combined:[^·\s]+/)?.[0] ?? "";
 
 // Uniform source labels so a receipt looks identical on the /accounts timeline
 // no matter where it was received from (booking popup, agency/vendor ledger,
@@ -81,6 +84,8 @@ const friendlySource = (source?: string | null) => SOURCE_LABELS[String(source ?
 // the same base receipt_id (…-1, …-2). Grouping key: same booking + same base
 // receipt id + same date → treat as ONE batch in the timeline / print.
 const receiptBatchKey = (r: { id?: string; service_table: string | null; service_row_id: string | null; receipt_id: string; entry_date: string }) => {
+  const combined = combinedReceiptToken((r as { remarks?: string | null }).remarks);
+  if (combined) return `${combined}|${r.entry_date ?? ""}`;
   // Manual / non-booking receipts have no service row: never batch them together
   // (their receipt ids share a base prefix, which used to merge unrelated entries).
   if (!r.service_table || !r.service_row_id) return `solo|${r.id ?? r.receipt_id}`;
@@ -486,7 +491,7 @@ function AccountsPage() {
      flight_date?: string | null; vendor?: string | null; cost?: number;
       sold?: number; received_total?: number; discount?: number; agent?: string | null;
       delivery_date?: string | null; has_delivery?: boolean;
-      srcTable?: string | null; srcId?: string | null;
+       srcTable?: string | null; srcId?: string | null; extra_names?: string[];
    };
   const [svcMap, setSvcMap] = useState<Record<string, SvcDetail>>({});
 
@@ -524,8 +529,8 @@ function AccountsPage() {
         map: (r) => ({ passport: r.passport as string, country: r.country_route as string, service_name: humanizeServiceType(r.service_type as string), agent: r.agent_name as string, sold: Number(r.total_bill ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false, srcTable: r.source_table as string, srcId: r.source_id as string }),
       },
       extra_services: {
-        cols: "id,passport,service_name,vendor_name,vendor_cost,agency_sold,service_price,received_amount,discount_amount",
-        map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, vendor: r.vendor_name as string, agent: r.agency_sold as string, cost: Number(r.vendor_cost ?? 0), sold: Number(r.service_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false }),
+        cols: "id,source_table,source_id,passport,service_name,vendor_name,vendor_cost,agency_sold,service_price,received_amount,discount_amount",
+        map: (r) => ({ passport: r.passport as string, service_name: r.service_name as string, vendor: r.vendor_name as string, agent: r.agency_sold as string, cost: Number(r.vendor_cost ?? 0), sold: Number(r.service_price ?? 0), received_total: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0), has_delivery: false, srcTable: r.source_table as string, srcId: r.source_id as string }),
       },
     };
     let cancelled = false;
@@ -554,6 +559,37 @@ function AccountsPage() {
           out[String(row.id)] = cfg.map(row);
         }
       }));
+      const parentRefs: Record<string, Set<string>> = {};
+      for (const r of received) {
+        if (r.service_table && r.service_table !== "extra_services" && r.service_table !== "agency_ledger" && r.service_row_id) {
+          (parentRefs[r.service_table] ??= new Set()).add(r.service_row_id);
+        }
+      }
+      for (const detail of Object.values(out)) {
+        if (detail.srcTable && detail.srcId && tableConfigs[detail.srcTable]) {
+          (parentRefs[detail.srcTable] ??= new Set()).add(detail.srcId);
+        }
+      }
+      const extrasByParent: Record<string, Record<string, unknown>[]> = {};
+      await Promise.all(Object.entries(parentRefs).map(async ([table, ids]) => {
+        if (offline || ids.size === 0) return;
+        const { data } = await supabase.from("extra_services" as never)
+          .select("id,source_table,source_id,service_name,service_price,received_amount,discount_amount,vendor_cost")
+          .eq("source_table", table).in("source_id", Array.from(ids));
+        for (const extra of ((data as unknown as Record<string, unknown>[] | null) ?? [])) {
+          (extrasByParent[`${table}:${String(extra.source_id)}`] ??= []).push(extra);
+        }
+      }));
+      for (const [key, extras] of Object.entries(extrasByParent)) {
+        const parentId = key.slice(key.indexOf(":") + 1);
+        const parent = out[parentId];
+        if (!parent) continue;
+        parent.extra_names = extras.map((extra) => String(extra.service_name || "Extra Service"));
+        parent.sold = Number(parent.sold ?? 0) + extras.reduce((sum, extra) => sum + Number(extra.service_price ?? 0), 0);
+        parent.received_total = Number(parent.received_total ?? 0) + extras.reduce((sum, extra) => sum + Number(extra.received_amount ?? 0), 0);
+        parent.discount = Number(parent.discount ?? 0) + extras.reduce((sum, extra) => sum + Number(extra.discount_amount ?? 0), 0);
+        for (const extra of extras) out[String(extra.id)] = parent;
+      }
       // 2nd hop: agency-ledger rows reference an underlying booking; fetch its
       // vendor + cost so column 5 (vendor / vendor cost) is filled for ledger receipts.
       const srcByTable: Record<string, Set<string>> = {};
@@ -1104,7 +1140,7 @@ ${partySectionsHtml()}
     })();
     const baseName = isIn ? r.passenger_name : isHand ? `ক্যাশ হ্যান্ডওভার: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
     const name = isIn && agencyFirst ? `${baseName} (${agencyFirst})` : baseName;
-    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
+    const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? `${svc?.service_name || cleanServiceType(r.service_type)}${svc?.extra_names?.length ? ` + ${svc.extra_names.map((name) => `Extra Service — ${name}`).join(" + ")}` : ""}` : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
     let region = "";
     if (isIn && svc) {
       if (r.service_table === "tickets") {
@@ -1974,6 +2010,7 @@ ${partySectionsHtml()}
                       {/* Col 2: Service + secondary (no due here) */}
                       <div className="min-w-0">
                         <p className="font-medium text-sm leading-tight break-words">{servicePrimary}</p>
+                        {svc?.extra_names?.length ? <p className="text-xs text-fuchsia-600 dark:text-fuchsia-400 mt-0.5 break-words">+ {svc.extra_names.map((name) => `Extra Service — ${name}`).join(" + ")}</p> : null}
                         {svcLines.map((line, i) => (
                           <p key={i} className="text-xs text-muted-foreground mt-0.5 leading-snug break-words">
                             {line}
@@ -2128,7 +2165,7 @@ ${partySectionsHtml()}
                   })();
                   const baseName = isIn ? r.passenger_name : isHand ? `ক্যাশ হ্যান্ডওভার: ${h.from_name ?? "প্রেরক"} → ${h.to_name}` : (e.purpose || e.category);
                   const name = isIn && agencyFirst ? `${baseName} (${agencyFirst})` : baseName;
-                  const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? (svc?.service_name || cleanServiceType(r.service_type)) : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
+                   const service = statusEvt ? `📦 ${cleanStatusText(r.remarks)}` : isIn ? `${svc?.service_name || cleanServiceType(r.service_type)}${svc?.extra_names?.length ? ` + ${svc.extra_names.map((name) => `Extra Service — ${name}`).join(" + ")}` : ""}` : isHand ? "ক্যাশ হ্যান্ডওভার" : "খরচ";
                   let region = "";
                   if (isIn && svc) {
                     if (r.service_table === "tickets") {

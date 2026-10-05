@@ -35,7 +35,7 @@ import { useScrollRestore } from "@/hooks/useScrollRestore";
 import { PassportScanner, type PassportFields } from "@/components/PassportScanner";
 import { speakModuleEntry, speakReceived, speakDelivery } from "@/lib/voice";
 import { DueReceiveDialog, type DueReceivePreselect } from "@/components/DueReceiveDialog";
-import { ExtraDueReceiveDialog, type ExtraDuePreselect } from "@/components/ExtraDueReceiveDialog";
+import { CombinedDueReceiveDialog, type CombinedDuePreselect } from "@/components/CombinedDueReceiveDialog";
 import { BmetQuickManage } from "@/components/BmetQuickManage";
 import { BmetMonthlyPrint } from "@/components/BmetMonthlyPrint";
 import { PassengerProfileDrawer } from "@/components/PassengerProfileDrawer";
@@ -261,7 +261,7 @@ export function ModulePage({ module: mod }: Props) {
     action: () => void | Promise<void>;
   } | null>(null);
   const [duePreselect, setDuePreselect] = useState<DueReceivePreselect | null>(null);
-  const [extraDuePreselect, setExtraDuePreselect] = useState<ExtraDuePreselect | null>(null);
+  const [combinedDuePreselect, setCombinedDuePreselect] = useState<CombinedDuePreselect | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChangeRequest | null>(null);
   const [profileRow, setProfileRow] = useState<Row | null>(null);
   const [detailRow, setDetailRow] = useState<Row | null>(null);
@@ -790,6 +790,7 @@ export function ModulePage({ module: mod }: Props) {
         // silently reverted and (b) the row's owner changes. Only the editable
         // descriptive/price fields are updated here.
         const { received_amount: _omitReceived, created_by: _omitCreator, ...updatable } = row;
+        delete (updatable as Record<string, unknown>).discount_amount;
         await supabase.from("extra_services" as never).update(updatable as never).eq("id", ex.id);
       } else {
         await supabase.from("extra_services" as never).insert(row as never);
@@ -1468,7 +1469,11 @@ export function ModulePage({ module: mod }: Props) {
         return (
           <button
             type="button"
-            onClick={() => { selectRow(r.id); setDuePreselect({ serviceKey: svc, rowId: r.id }); }}
+            onClick={() => {
+              selectRow(r.id);
+              if ((extraDetails[r.id] ?? []).length > 0) setCombinedDuePreselect({ serviceKey: svc, rowId: r.id });
+              else setDuePreselect({ serviceKey: svc, rowId: r.id });
+            }}
             className="inline-flex items-center gap-1 text-rose-500 hover:underline font-semibold rounded-md px-1 outline outline-1 outline-transparent hover:outline-primary hover:bg-primary/10 hover:shadow-md transition-colors"
             title="Due Receive"
           >
@@ -1508,6 +1513,7 @@ export function ModulePage({ module: mod }: Props) {
     // due, plus a clearly-labelled extra-service due (received via customer ledger).
     const amountCell = (r: Row, recvField: string, opts?: { advance?: boolean }) => {
       const { sold, recv, discount, cost, due, profit, extraSold, extraDue, totalSold, totalRecv } = money(r, recvField);
+      const extraItems = extraDetails[r.id] ?? [];
       const hasExtra = extraSold > 0;
       const combinedDue = due + extraDue;
       const showProfit = (recv > 0 && cost > 0) || extraSold > 0;
@@ -1523,26 +1529,11 @@ export function ModulePage({ module: mod }: Props) {
           ) : null}
           <div className="text-xs text-emerald-600">{showAdvance ? <><AdvanceBadge advance /> </> : null}{recvBadge(r, totalRecv)}Recv: {fmt(totalRecv)}</div>
           {discount > 0 ? <div className="text-xs text-amber-600">Discount: {fmt(discount)}</div> : null}
-          <div className="text-xs">{dueBtn(r, due)}</div>
-          {extraDue > 0 ? (
-            <button
-              type="button"
-              data-row-noopen
-              onClick={(e) => {
-                e.stopPropagation();
-                selectRow(r.id);
-                setExtraDuePreselect({
-                  sourceTable: mod.table,
-                  sourceId: r.id,
-                  refId: String(r[mod.idColumn] ?? ""),
-                  passenger: String(r.passenger_name ?? ""),
-                });
-              }}
-              className="inline-flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400 font-semibold text-xs rounded-md px-1 outline outline-1 outline-transparent hover:outline-fuchsia-500 hover:bg-fuchsia-500/10 hover:shadow-md transition-colors"
-              title="Extra service-এর বকেয়া receive করুন"
-            >
-              ✨ Extra Due: {fmt(extraDue)} <Wallet className="h-3 w-3" />
-            </button>
+          <div className="text-xs">{dueBtn(r, combinedDue)}</div>
+          {hasExtra ? (
+            <div className="text-[10px] text-fuchsia-600 dark:text-fuchsia-400 whitespace-normal max-w-[190px] ml-auto">
+              + {extraItems.map((item) => `Extra Service — ${item.service_name}`).join(" + ")}
+            </div>
           ) : null}
           {showProfit ? <div className={`text-xs ${profitClass}`}>Profit: {fmt(profit)}</div> : null}
         </div>
@@ -1749,7 +1740,7 @@ export function ModulePage({ module: mod }: Props) {
   // After any action overlay (edit / due / status / view) closes, restore the
   // list scroll position and gently bring the worked row back into view.
   const anyOverlay =
-    openForm || !!duePreselect || !!extraDuePreselect || !!statusChange ||
+    openForm || !!duePreselect || !!combinedDuePreselect || !!statusChange ||
     !!profileRow || !!detailRow || !!cancelRow || !!refundRow || !!pwConfirm;
   const prevOverlayRef = useRef(anyOverlay);
   useEffect(() => {
@@ -2466,10 +2457,10 @@ export function ModulePage({ module: mod }: Props) {
         onDone={() => load(false)}
       />
 
-      <ExtraDueReceiveDialog
-        open={!!extraDuePreselect}
-        onOpenChange={(v) => { if (!v) setExtraDuePreselect(null); }}
-        preselect={extraDuePreselect}
+      <CombinedDueReceiveDialog
+        open={!!combinedDuePreselect}
+        onOpenChange={(v) => { if (!v) setCombinedDuePreselect(null); }}
+        preselect={combinedDuePreselect}
         onDone={() => { void loadExtraCounts(); void load(false); }}
       />
 

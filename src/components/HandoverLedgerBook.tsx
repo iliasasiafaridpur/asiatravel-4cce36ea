@@ -131,7 +131,11 @@ type ServiceInfo = {
   flight_date: string | null;
   delivery_date: string | null;
   has_delivery: boolean;
+  extra_names: string[];
 };
+
+const combinedReceiptToken = (remarks?: string | null) =>
+  String(remarks ?? "").match(/combined:[^·\s]+/)?.[0] ?? "";
 
 const SERVICE_TABLES = [
   { table: "saudi_visas", country: () => "Saudi Arabia", serviceNameField: null, vendorField: "vendor_bought", agentField: "agency_sold", airlineField: null, soldField: "sold_price", receivedField: "received_amount", discountField: "discount_amount", costField: "cost_price", flightDateField: null, deliveryField: "delivery_date" },
@@ -307,6 +311,19 @@ export function HandoverLedgerInline({
       }
 
       const svcMap: Record<string, ServiceInfo> = {};
+      const directExtraIds = Array.from(byTable.extra_services ?? []);
+      const directExtras: Record<string, Record<string, unknown>> = {};
+      if (directExtraIds.length > 0) {
+        const { data } = await supabase.from("extra_services" as never)
+          .select("id,source_table,source_id,service_name,service_price,received_amount,discount_amount,vendor_cost,vendor_name,agency_sold,passport")
+          .in("id", directExtraIds);
+        for (const raw of ((data as unknown as Record<string, unknown>[] | null) ?? [])) {
+          directExtras[String(raw.id)] = raw;
+          const sourceTable = String(raw.source_table ?? "");
+          const sourceId = String(raw.source_id ?? "");
+          if (sourceTable && sourceId) (byTable[sourceTable] ??= new Set()).add(sourceId);
+        }
+      }
       // agency_ledger rows have no vendor of their own — the real vendor lives
       // in the underlying source job (source_table/source_id). Collect refs so
       // we can resolve the true "V:" vendor name after the main pass.
@@ -361,6 +378,7 @@ export function HandoverLedgerInline({
               flight_date: cfg.flightDateField ? ((row[cfg.flightDateField] as string | null) ?? null) : null,
               delivery_date: cfg.deliveryField ? ((row[cfg.deliveryField] as string | null) ?? null) : null,
               has_delivery: Boolean(cfg.deliveryField),
+              extra_names: [],
             };
             // Queue the source-job vendor lookup for agency_ledger rows.
             if (cfg.table === "agency_ledger") {
@@ -373,6 +391,42 @@ export function HandoverLedgerInline({
           }
         })
       );
+
+      const parentRefs = Object.keys(svcMap).filter((key) => !key.startsWith("agency_ledger:"));
+      const extrasByParent: Record<string, Record<string, unknown>[]> = {};
+      await Promise.all(SERVICE_TABLES.filter((cfg) => cfg.table !== "agency_ledger").map(async (cfg) => {
+        const ids = parentRefs.filter((key) => key.startsWith(`${cfg.table}:`)).map((key) => key.slice(cfg.table.length + 1));
+        if (!ids.length) return;
+        const { data } = await supabase.from("extra_services" as never)
+          .select("id,source_table,source_id,service_name,service_price,received_amount,discount_amount,vendor_cost,vendor_name,agency_sold,passport")
+          .eq("source_table", cfg.table).in("source_id", ids);
+        for (const raw of ((data as unknown as Record<string, unknown>[] | null) ?? [])) {
+          const key = `${cfg.table}:${String(raw.source_id)}`;
+          (extrasByParent[key] ??= []).push(raw);
+          directExtras[String(raw.id)] = raw;
+        }
+      }));
+      for (const [key, extras] of Object.entries(extrasByParent)) {
+        const info = svcMap[key];
+        if (!info) continue;
+        info.extra_names = extras.map((extra) => String(extra.service_name || "Extra Service"));
+        info.sold_price += extras.reduce((sum, extra) => sum + Number(extra.service_price ?? 0), 0);
+        info.received += extras.reduce((sum, extra) => sum + Number(extra.received_amount ?? 0), 0);
+        info.discount += extras.reduce((sum, extra) => sum + Number(extra.discount_amount ?? 0), 0);
+        info.vendor_price += extras.reduce((sum, extra) => sum + Number(extra.vendor_cost ?? 0), 0);
+      }
+      for (const [id, extra] of Object.entries(directExtras)) {
+        const parentKey = `${String(extra.source_table ?? "")}:${String(extra.source_id ?? "")}`;
+        const parent = svcMap[parentKey];
+        if (parent) {
+          svcMap[`extra_services:${id}`] = parent;
+          const extraReceipts = byService[`extra_services:${id}`] ?? [];
+          if (extraReceipts.length) {
+            const merged = [...(byService[parentKey] ?? []), ...extraReceipts];
+            byService[parentKey] = Array.from(new Map(merged.map((receipt) => [receipt.id, receipt])).values());
+          }
+        }
+      }
 
       // Resolve the true vendor name (and cost) for agency_ledger rows from
       // their source job, so the "V:" line shows the actual vendor of the work.
@@ -570,7 +624,7 @@ export function HandoverLedgerInline({
     const wmCss = showWm ? `
       .pagewm { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
         z-index: 0; pointer-events: none; }
-      .pagewm img { width: 420px; max-width: 72%; opacity: 0.08; transform: rotate(-28deg);
+      .pagewm img { width: 420px; max-width: 72%; opacity: 0.15; transform: rotate(-28deg);
         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .slip { position: relative; z-index: 1; }
     ` : "";
@@ -914,10 +968,13 @@ function buildHandoverSlipBody(args: {
 
   // Multi-method due-receive creates one payment_receipts row per method sharing
   // the same base receipt_id (…-1, …-2). Collapse them into a single print line.
-  const batchKeyOf = (r: Receipt) =>
-    r.service_row_id && r.receipt_id
+  const batchKeyOf = (r: Receipt) => {
+    const combined = combinedReceiptToken(r.remarks);
+    if (combined) return `${combined}|${r.entry_date ?? ""}`;
+    return r.service_row_id && r.receipt_id
       ? `${r.service_table ?? ""}|${r.service_row_id}|${r.receipt_id.replace(/-\d+$/, "")}|${r.entry_date ?? ""}`
       : `single|${r.id}`;
+  };
 
   const metricsForBatch = (recs: Receipt[]) => {
     const first = recs[0];
@@ -1077,6 +1134,7 @@ function buildHandoverSlipBody(args: {
         + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
       const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
       const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
+        + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
         + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
         + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`
         + (first.source === "manual" && first.remarks ? `<span class="sub">📝 ${esc(first.remarks)}</span>` : "");
@@ -1124,6 +1182,7 @@ function buildHandoverSlipBody(args: {
     const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
       + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
     const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
+      + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
       + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
       + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
       + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "")
@@ -1421,10 +1480,13 @@ function HandoverCard({
   // Multi-method due-receive creates one payment_receipts row per method sharing
   // the same base receipt_id (…-1, …-2). Collapse them into a single line where
   // cash and MD/vendor amounts split into their own columns.
-  const batchKeyOf = (r: Receipt) =>
-    r.service_row_id && r.receipt_id
+  const batchKeyOf = (r: Receipt) => {
+    const combined = combinedReceiptToken(r.remarks);
+    if (combined) return `${combined}|${r.entry_date ?? ""}`;
+    return r.service_row_id && r.receipt_id
       ? `${r.service_table ?? ""}|${r.service_row_id}|${r.receipt_id.replace(/-\d+$/, "")}|${r.entry_date ?? ""}`
       : `single|${r.id}`;
+  };
 
   const metricsForBatch = (recs: Receipt[]) => {
     const first = recs[0];
@@ -1793,6 +1855,7 @@ function HandoverCard({
                     </td>
                     <td className="px-1.5 py-1 align-top">
                       <div className="text-sm font-medium leading-tight">{primaryServiceLabel(first, info)}</div>
+                      {info?.extra_names?.length ? <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 leading-tight">+ {info.extra_names.map((name) => `Extra Service — ${name}`).join(" + ")}</div> : null}
                       {info?.service_name && first.service_table !== "agency_ledger" && (
                         <div className="text-sm text-muted-foreground leading-tight">{info.service_name}</div>
                       )}
@@ -1932,6 +1995,7 @@ function HandoverCard({
                   {/* সার্ভিস */}
                   <td className="px-1.5 py-1 align-top">
                     <div className="text-sm font-medium leading-tight">{primaryServiceLabel(r, info)}</div>
+                    {info?.extra_names?.length ? <div className="text-xs text-fuchsia-600 dark:text-fuchsia-400 leading-tight">+ {info.extra_names.map((name) => `Extra Service — ${name}`).join(" + ")}</div> : null}
                     {info?.service_name && r.service_table !== "agency_ledger" && (
                       <div className="text-sm text-muted-foreground leading-tight">{info.service_name}</div>
                     )}
