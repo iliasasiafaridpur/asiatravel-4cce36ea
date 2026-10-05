@@ -139,7 +139,7 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
             received_amount: line.received + amount,
             discount_amount: line.discount + discount,
             received_by: user.id,
-            payment_method: method,
+            payment_method: multiMode ? "Multi" : method,
             ...(amount > 0 ? { payment_date: today } : {}),
           });
         }

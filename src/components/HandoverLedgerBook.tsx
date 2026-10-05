@@ -418,7 +418,14 @@ export function HandoverLedgerInline({
       for (const [id, extra] of Object.entries(directExtras)) {
         const parentKey = `${String(extra.source_table ?? "")}:${String(extra.source_id ?? "")}`;
         const parent = svcMap[parentKey];
-        if (parent) svcMap[`extra_services:${id}`] = parent;
+        if (parent) {
+          svcMap[`extra_services:${id}`] = parent;
+          const extraReceipts = byService[`extra_services:${id}`] ?? [];
+          if (extraReceipts.length) {
+            const merged = [...(byService[parentKey] ?? []), ...extraReceipts];
+            byService[parentKey] = Array.from(new Map(merged.map((receipt) => [receipt.id, receipt])).values());
+          }
+        }
       }
 
       // Resolve the true vendor name (and cost) for agency_ledger rows from
