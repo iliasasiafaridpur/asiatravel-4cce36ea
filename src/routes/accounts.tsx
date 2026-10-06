@@ -572,11 +572,18 @@ function AccountsPage() {
       }
       const extrasByParent: Record<string, Record<string, unknown>[]> = {};
       await Promise.all(Object.entries(parentRefs).map(async ([table, ids]) => {
-        if (offline || ids.size === 0) return;
-        const { data } = await supabase.from("extra_services" as never)
-          .select("id,source_table,source_id,service_name,service_price,received_amount,discount_amount,vendor_cost")
-          .eq("source_table", table).in("source_id", Array.from(ids));
-        for (const extra of ((data as unknown as Record<string, unknown>[] | null) ?? [])) {
+        const cfg = tableConfigs[table];
+        if (offline || ids.size === 0 || !cfg) return;
+        const [parentsRes, extrasRes] = await Promise.all([
+          supabase.from(table as never).select(cfg.cols).in("id", Array.from(ids)),
+          supabase.from("extra_services" as never)
+            .select("id,source_table,source_id,service_name,service_price,received_amount,discount_amount,vendor_cost")
+            .eq("source_table", table).in("source_id", Array.from(ids)),
+        ]);
+        for (const parent of ((parentsRes.data as unknown as Record<string, unknown>[] | null) ?? [])) {
+          out[String(parent.id)] = cfg.map(parent);
+        }
+        for (const extra of ((extrasRes.data as unknown as Record<string, unknown>[] | null) ?? [])) {
           (extrasByParent[`${table}:${String(extra.source_id)}`] ??= []).push(extra);
         }
       }));

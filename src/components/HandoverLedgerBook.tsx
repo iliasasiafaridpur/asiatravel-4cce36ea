@@ -423,7 +423,9 @@ export function HandoverLedgerInline({
           const extraReceipts = byService[`extra_services:${id}`] ?? [];
           if (extraReceipts.length) {
             const merged = [...(byService[parentKey] ?? []), ...extraReceipts];
-            byService[parentKey] = Array.from(new Map(merged.map((receipt) => [receipt.id, receipt])).values());
+            const unique = Array.from(new Map(merged.map((receipt) => [receipt.id, receipt])).values());
+            byService[parentKey] = unique;
+            byService[`extra_services:${id}`] = unique;
           }
         }
       }

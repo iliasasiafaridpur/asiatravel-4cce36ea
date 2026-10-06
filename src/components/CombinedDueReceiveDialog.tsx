@@ -98,20 +98,21 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
     return () => { cancelled = true; };
   }, [open, preselect?.serviceKey, preselect?.rowId]);
 
+  const allocations = useMemo(() => lines.map((line) => {
+    const discount = Math.max(0, Math.min(line.due, Number(line.newDiscount) || 0));
+    const amount = Math.max(0, Math.min(line.due - discount, Number(line.amount) || 0));
+    return { line, amount, discount };
+  }), [lines]);
   const totalDue = useMemo(() => lines.reduce((sum, line) => sum + line.due, 0), [lines]);
-  const entered = useMemo(() => lines.reduce((sum, line) => sum + (Number(line.amount) || 0) + (Number(line.newDiscount) || 0), 0), [lines]);
-  const enteredPayment = useMemo(() => lines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0), [lines]);
+  const entered = useMemo(() => allocations.reduce((sum, item) => sum + item.amount + item.discount, 0), [allocations]);
+  const enteredPayment = useMemo(() => allocations.reduce((sum, item) => sum + item.amount, 0), [allocations]);
   const methodTotal = multiMode ? DUE_RECEIVE_METHODS.reduce((sum, item) => sum + (Number(methodAmounts[item]) || 0), 0) : enteredPayment;
   const updateLine = (id: string, field: "amount" | "newDiscount", value: string) => setLines((prev) => prev.map((line) => line.id === id ? { ...line, [field]: value } : line));
 
   const submit = async () => {
     if (!preselect || !parent || !user?.id) return;
     const cfg = CONFIG[preselect.serviceKey];
-    const applies = lines.map((line) => {
-      const discount = Math.max(0, Math.min(line.due, Number(line.newDiscount) || 0));
-      const amount = Math.max(0, Math.min(line.due - discount, Number(line.amount) || 0));
-      return { line, amount, discount };
-    }).filter((item) => item.amount > 0 || item.discount > 0);
+    const applies = allocations.filter((item) => item.amount > 0 || item.discount > 0);
     if (!applies.length) return toast.error("প্রতিটি বিলের জন্য সঠিক টাকা অথবা discount লিখুন");
     if (multiMode && Math.abs(methodTotal - enteredPayment) > 0.005) return toast.error("Payment-এর মোট এবং Method breakdown-এর মোট সমান হতে হবে");
     setSaving(true);
