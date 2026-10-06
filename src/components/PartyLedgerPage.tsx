@@ -839,10 +839,12 @@ export function PartyLedgerPage({
         const bid = String(it?.id ?? "");
         const requested = Math.max(0, Number(it?.amt ?? 0));
         if (!bid || requested <= 0) continue;
-        const hasCap = remainingByBill.has(bid);
-        const take = hasCap ? Math.min(requested, Math.max(0, remainingByBill.get(bid) ?? 0)) : requested;
+        // Allocation to a bill that no longer exists (deleted booking) must not
+        // count — its paid amount is gone from the authoritative balance too.
+        if (!remainingByBill.has(bid)) continue;
+        const take = Math.min(requested, Math.max(0, remainingByBill.get(bid) ?? 0));
         if (take <= 0) continue;
-        if (hasCap) remainingByBill.set(bid, Math.max(0, (remainingByBill.get(bid) ?? 0) - take));
+        remainingByBill.set(bid, Math.max(0, (remainingByBill.get(bid) ?? 0) - take));
         logCash += take;
         coveredByBill.set(bid, (coveredByBill.get(bid) ?? 0) + take);
         const arr = paymentsByBill.get(bid) ?? [];
