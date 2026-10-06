@@ -9,90 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AccountingRouteImport } from './routes/accounting'
-import { Route as AccountsRouteImport } from './routes/accounts'
-import { Route as ActionBoardRouteImport } from './routes/action-board'
-import { Route as BmetRouteImport } from './routes/bmet'
-import { Route as HelpRouteImport } from './routes/help'
-import { Route as InvoiceRouteImport } from './routes/invoice'
-import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
-import { Route as MdPanelRouteImport } from './routes/md-panel'
-import { Route as MyHandoverRouteImport } from './routes/my-handover'
-import { Route as OtherRouteImport } from './routes/other'
-import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as UsersRouteImport } from './routes/users'
-import { Route as AgencyLedgerIndexRouteImport } from './routes/agency-ledger.index'
-import { Route as AgencyLedgerNameRouteImport } from './routes/agency-ledger.$name'
+import { Route as TicketsRouteImport } from './routes/tickets'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
+import { Route as OtherRouteImport } from './routes/other'
+import { Route as MyHandoverRouteImport } from './routes/my-handover'
+import { Route as MdPanelRouteImport } from './routes/md-panel'
+import { Route as KuwaitVisaRouteImport } from './routes/kuwait-visa'
+import { Route as InvoiceRouteImport } from './routes/invoice'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as BmetRouteImport } from './routes/bmet'
+import { Route as ActionBoardRouteImport } from './routes/action-board'
+import { Route as AccountsRouteImport } from './routes/accounts'
+import { Route as AccountingRouteImport } from './routes/accounting'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as VendorLedgerIndexRouteImport } from './routes/vendor-ledger.index'
+import { Route as AgencyLedgerIndexRouteImport } from './routes/agency-ledger.index'
 import { Route as VendorLedgerNameRouteImport } from './routes/vendor-ledger.$name'
+import { Route as AgencyLedgerNameRouteImport } from './routes/agency-ledger.$name'
 import { Route as ApiPublicHandoverAcceptRouteImport } from './routes/api/public/handover-accept'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountingRoute = AccountingRouteImport.update({
-  id: '/accounting',
-  path: '/accounting',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountsRoute = AccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ActionBoardRoute = ActionBoardRouteImport.update({
-  id: '/action-board',
-  path: '/action-board',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BmetRoute = BmetRouteImport.update({
-  id: '/bmet',
-  path: '/bmet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpRoute = HelpRouteImport.update({
-  id: '/help',
-  path: '/help',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvoiceRoute = InvoiceRouteImport.update({
-  id: '/invoice',
-  path: '/invoice',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KuwaitVisaRoute = KuwaitVisaRouteImport.update({
-  id: '/kuwait-visa',
-  path: '/kuwait-visa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MdPanelRoute = MdPanelRouteImport.update({
-  id: '/md-panel',
-  path: '/md-panel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyHandoverRoute = MyHandoverRouteImport.update({
-  id: '/my-handover',
-  path: '/my-handover',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OtherRoute = OtherRouteImport.update({
-  id: '/other',
-  path: '/other',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SaudiVisaRoute = SaudiVisaRouteImport.update({
-  id: '/saudi-visa',
-  path: '/saudi-visa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TicketsRoute = TicketsRouteImport.update({
@@ -100,19 +40,69 @@ const TicketsRoute = TicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UsersRoute = UsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgencyLedgerIndexRoute = AgencyLedgerIndexRouteImport.update({
-  id: '/agency-ledger/',
-  path: '/agency-ledger/',
+const SaudiVisaRoute = SaudiVisaRouteImport.update({
+  id: '/saudi-visa',
+  path: '/saudi-visa',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgencyLedgerNameRoute = AgencyLedgerNameRouteImport.update({
-  id: '/agency-ledger/$name',
-  path: '/agency-ledger/$name',
+const OtherRoute = OtherRouteImport.update({
+  id: '/other',
+  path: '/other',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyHandoverRoute = MyHandoverRouteImport.update({
+  id: '/my-handover',
+  path: '/my-handover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MdPanelRoute = MdPanelRouteImport.update({
+  id: '/md-panel',
+  path: '/md-panel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KuwaitVisaRoute = KuwaitVisaRouteImport.update({
+  id: '/kuwait-visa',
+  path: '/kuwait-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoiceRoute = InvoiceRouteImport.update({
+  id: '/invoice',
+  path: '/invoice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BmetRoute = BmetRouteImport.update({
+  id: '/bmet',
+  path: '/bmet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActionBoardRoute = ActionBoardRouteImport.update({
+  id: '/action-board',
+  path: '/action-board',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountingRoute = AccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VendorLedgerIndexRoute = VendorLedgerIndexRouteImport.update({
@@ -120,9 +110,19 @@ const VendorLedgerIndexRoute = VendorLedgerIndexRouteImport.update({
   path: '/vendor-ledger/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgencyLedgerIndexRoute = AgencyLedgerIndexRouteImport.update({
+  id: '/agency-ledger/',
+  path: '/agency-ledger/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendorLedgerNameRoute = VendorLedgerNameRouteImport.update({
   id: '/vendor-ledger/$name',
   path: '/vendor-ledger/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyLedgerNameRoute = AgencyLedgerNameRouteImport.update({
+  id: '/agency-ledger/$name',
+  path: '/agency-ledger/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHandoverAcceptRoute = ApiPublicHandoverAcceptRouteImport.update({
@@ -292,95 +292,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/accounting': {
-      id: '/accounting'
-      path: '/accounting'
-      fullPath: '/accounting'
-      preLoaderRoute: typeof AccountingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/accounts': {
-      id: '/accounts'
-      path: '/accounts'
-      fullPath: '/accounts'
-      preLoaderRoute: typeof AccountsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/action-board': {
-      id: '/action-board'
-      path: '/action-board'
-      fullPath: '/action-board'
-      preLoaderRoute: typeof ActionBoardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bmet': {
-      id: '/bmet'
-      path: '/bmet'
-      fullPath: '/bmet'
-      preLoaderRoute: typeof BmetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help': {
-      id: '/help'
-      path: '/help'
-      fullPath: '/help'
-      preLoaderRoute: typeof HelpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invoice': {
-      id: '/invoice'
-      path: '/invoice'
-      fullPath: '/invoice'
-      preLoaderRoute: typeof InvoiceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kuwait-visa': {
-      id: '/kuwait-visa'
-      path: '/kuwait-visa'
-      fullPath: '/kuwait-visa'
-      preLoaderRoute: typeof KuwaitVisaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/md-panel': {
-      id: '/md-panel'
-      path: '/md-panel'
-      fullPath: '/md-panel'
-      preLoaderRoute: typeof MdPanelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-handover': {
-      id: '/my-handover'
-      path: '/my-handover'
-      fullPath: '/my-handover'
-      preLoaderRoute: typeof MyHandoverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/other': {
-      id: '/other'
-      path: '/other'
-      fullPath: '/other'
-      preLoaderRoute: typeof OtherRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/saudi-visa': {
-      id: '/saudi-visa'
-      path: '/saudi-visa'
-      fullPath: '/saudi-visa'
-      preLoaderRoute: typeof SaudiVisaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tickets': {
@@ -390,25 +306,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/users': {
-      id: '/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof UsersRouteImport
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agency-ledger/': {
-      id: '/agency-ledger/'
-      path: '/agency-ledger'
-      fullPath: '/agency-ledger/'
-      preLoaderRoute: typeof AgencyLedgerIndexRouteImport
+    '/saudi-visa': {
+      id: '/saudi-visa'
+      path: '/saudi-visa'
+      fullPath: '/saudi-visa'
+      preLoaderRoute: typeof SaudiVisaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agency-ledger/$name': {
-      id: '/agency-ledger/$name'
-      path: '/agency-ledger/$name'
-      fullPath: '/agency-ledger/$name'
-      preLoaderRoute: typeof AgencyLedgerNameRouteImport
+    '/other': {
+      id: '/other'
+      path: '/other'
+      fullPath: '/other'
+      preLoaderRoute: typeof OtherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-handover': {
+      id: '/my-handover'
+      path: '/my-handover'
+      fullPath: '/my-handover'
+      preLoaderRoute: typeof MyHandoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/md-panel': {
+      id: '/md-panel'
+      path: '/md-panel'
+      fullPath: '/md-panel'
+      preLoaderRoute: typeof MdPanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kuwait-visa': {
+      id: '/kuwait-visa'
+      path: '/kuwait-visa'
+      fullPath: '/kuwait-visa'
+      preLoaderRoute: typeof KuwaitVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoice': {
+      id: '/invoice'
+      path: '/invoice'
+      fullPath: '/invoice'
+      preLoaderRoute: typeof InvoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bmet': {
+      id: '/bmet'
+      path: '/bmet'
+      fullPath: '/bmet'
+      preLoaderRoute: typeof BmetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/action-board': {
+      id: '/action-board'
+      path: '/action-board'
+      fullPath: '/action-board'
+      preLoaderRoute: typeof ActionBoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounting': {
+      id: '/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AccountingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vendor-ledger/': {
@@ -418,11 +404,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorLedgerIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agency-ledger/': {
+      id: '/agency-ledger/'
+      path: '/agency-ledger'
+      fullPath: '/agency-ledger/'
+      preLoaderRoute: typeof AgencyLedgerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vendor-ledger/$name': {
       id: '/vendor-ledger/$name'
       path: '/vendor-ledger/$name'
       fullPath: '/vendor-ledger/$name'
       preLoaderRoute: typeof VendorLedgerNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency-ledger/$name': {
+      id: '/agency-ledger/$name'
+      path: '/agency-ledger/$name'
+      fullPath: '/agency-ledger/$name'
+      preLoaderRoute: typeof AgencyLedgerNameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/handover-accept': {
