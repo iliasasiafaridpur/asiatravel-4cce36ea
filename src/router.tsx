@@ -23,7 +23,7 @@ function clearBrokenClientCaches() {
   }
 }
 
-function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function DefaultErrorComponent({ error, reset }: import("@tanstack/react-router").ErrorComponentProps) {
   console.error(error);
 
   useEffect(() => {
