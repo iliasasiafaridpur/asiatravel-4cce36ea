@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -17,8 +18,9 @@ import {
 import { formatDateTime, formatDate, isAdvancePayment } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL, handoverReducesBalance } from "@/lib/payment-methods";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
@@ -224,6 +226,38 @@ const withoutTotalAgencyStatusRows = (rows: Receipt[], totalAgents: Set<string>)
     return !(agent && totalAgents.has(agent));
   });
 
+// Balance Note-এর ভেন্ডর/এজেন্সি লিস্ট — প্রতিটি সারিতে চেকবক্স + বর্তমান ব্যালেন্স।
+function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
+  title: string;
+  rows: { name: string; balance: number }[];
+  checkedSet: Set<string>;
+  onToggle: (name: string, on: boolean) => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="rounded-md border overflow-hidden">
+      <div className="px-2 py-1 text-[11px] font-semibold border-b bg-muted/40">{title}</div>
+      <div className="max-h-40 overflow-y-auto">
+        {loading ? (
+          <div className="px-2 py-2 text-[11px] text-muted-foreground">লোড হচ্ছে…</div>
+        ) : rows.length === 0 ? (
+          <div className="px-2 py-2 text-[11px] text-muted-foreground">কোনো বকেয়া ব্যালেন্স নেই</div>
+        ) : (
+          rows.map((r) => (
+            <label key={r.name} className="flex items-center justify-between gap-2 px-2 py-1 text-xs border-b last:border-b-0 cursor-pointer hover:bg-muted/40">
+              <span className="flex items-center gap-1.5 min-w-0">
+                <Checkbox className="h-3.5 w-3.5 shrink-0" checked={checkedSet.has(r.name)} onCheckedChange={(v) => onToggle(r.name, v === true)} />
+                <span className="truncate">{r.name}</span>
+              </span>
+              <span className="tabular-nums font-semibold shrink-0">{fmt(r.balance)}</span>
+            </label>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MyHandoverPage() {
   const { user, profile } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
@@ -239,6 +273,22 @@ function MyHandoverPage() {
   const [recByService, setRecByService] = useState<Record<string, Receipt[]>>({});
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmailFn = useServerFn(sendGmail);
+  // ---- Balance Note (Submit to MD-এর Remarks-এ) ----
+  const [balanceNoteOn, setBalanceNoteOn] = useState(false);
+  const [openingBalOn, setOpeningBalOn] = useState(false);
+  const [vendorBals, setVendorBals] = useState<{ name: string; balance: number }[]>([]);
+  const [agentBals, setAgentBals] = useState<{ name: string; balance: number }[]>([]);
+  const [balsLoading, setBalsLoading] = useState(false);
+  const [checkedVendors, setCheckedVendors] = useState<Set<string>>(new Set());
+  const [checkedAgents, setCheckedAgents] = useState<Set<string>>(new Set());
+  const [openingRows, setOpeningRows] = useState<{
+    recv: { amount: number; entry_date: string; method: string | null; source: string | null }[];
+    exp: { amount: number; entry_date: string; category: string | null; linked_source_table: string | null }[];
+    hand: { amount: number; entry_date: string; status: string | null }[];
+  } | null>(null);
+  const [openingLoading, setOpeningLoading] = useState(false);
+  const balsTried = useRef(false);
+  const openingTried = useRef(false);
 
   // When navigated from "MD-কে পাঠানো" list, highlight the target handover card.
   useEffect(() => {
@@ -469,6 +519,101 @@ function MyHandoverPage() {
   const moneyServiceKeys = useMemo(() => new Set(
     receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
   ), [receipts]);
+
+  // ---- Balance Note: vendor/agency ব্যালেন্স লিস্ট + ওপেনিং ব্যালেন্স ----
+  useEffect(() => {
+    if (!balanceNoteOn || balsTried.current || isOffline()) return;
+    balsTried.current = true;
+    setBalsLoading(true);
+    (async () => {
+      try {
+        const [v, a] = await Promise.all([
+          supabase.rpc("get_vendor_balances" as never),
+          supabase.rpc("get_agent_balances" as never),
+        ]);
+        if (v.error || a.error) {
+          toast.error("Balance Note লোড করা যায়নি");
+          return;
+        }
+        const map = (rows: unknown, nameKey: string) =>
+          (((rows ?? []) as Array<Record<string, unknown>>))
+            .map((r) => ({ name: String(r[nameKey] ?? "").trim(), balance: Number(r.balance_due ?? 0) }))
+            .filter((r) => r.name && r.balance !== 0)
+            .sort((x, y) => x.name.localeCompare(y.name));
+        setVendorBals(map(v.data, "vendor_name"));
+        setAgentBals(map(a.data, "agent_name"));
+      } catch {
+        toast.error("Balance Note লোড করা যায়নি");
+      } finally {
+        setBalsLoading(false);
+      }
+    })();
+  }, [balanceNoteOn]);
+
+  // Opening balance: ক্লোজিং তারিখের শুরুতে স্টাফের ক্যাশ ব্যালেন্স।
+  useEffect(() => {
+    if (!openingBalOn || openingTried.current || openingRows || openingLoading || !user?.id) return;
+    openingTried.current = true;
+    setOpeningLoading(true);
+    (async () => {
+      try {
+        const [recv, exp, hand] = await Promise.all([
+          fetchAllRows(() => supabase.from("payment_receipts").select("amount,entry_date,method,source").eq("received_by", user.id).order("entry_date")),
+          fetchAllRows(() => supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user.id).order("entry_date")),
+          fetchAllRows(() => supabase.from("cash_handovers").select("amount,entry_date,status").eq("from_user", user.id).order("entry_date")),
+        ]);
+        if (recv.error || exp.error || hand.error) {
+          toast.error("Opening balance লোড করা যায়নি");
+          return;
+        }
+        setOpeningRows({
+          recv: ((recv.data ?? []) as unknown) as { amount: number; entry_date: string; method: string | null; source: string | null }[],
+          exp: ((exp.data ?? []) as unknown) as { amount: number; entry_date: string; category: string | null; linked_source_table: string | null }[],
+          hand: ((hand.data ?? []) as unknown) as { amount: number; entry_date: string; status: string | null }[],
+        });
+      } catch {
+        toast.error("Opening balance লোড করা যায়নি");
+      } finally {
+        setOpeningLoading(false);
+      }
+    })();
+  }, [openingBalOn, openingRows, openingLoading, user?.id]);
+
+  // ব্যালেন্স হিসাব Dashboard-এর "হাতে আছে"-র মতো: নগদ রিসিপ্ট − খরচ − হ্যান্ডওভার;
+  // ওপেনিং = বর্তমান ব্যালেন্স − ক্লোজিং তারিখ থেকে পরের সব নগদ লেনদেন।
+  const openingBal = useMemo(() => {
+    if (!openingRows) return null;
+    const d = closingDate;
+    const cashRecv = (r: { amount: number; method?: string | null; source?: string | null }) =>
+      Number(r.amount || 0) > 0 && isCashMethod(r.method) &&
+      String(r.source ?? "") !== "discount" && String(r.method ?? "").toLowerCase() !== "discount";
+    const recvAll = openingRows.recv.filter(cashRecv).reduce((s, r) => s + Number(r.amount || 0), 0);
+    const recvAfter = openingRows.recv.filter((r) => cashRecv(r) && (r.entry_date ?? "") >= d).reduce((s, r) => s + Number(r.amount || 0), 0);
+    const expAll = openingRows.exp.filter(expenseHitsBalance).reduce((s, r) => s + Number(r.amount || 0), 0);
+    const expAfter = openingRows.exp.filter((r) => expenseHitsBalance(r) && (r.entry_date ?? "") >= d).reduce((s, r) => s + Number(r.amount || 0), 0);
+    const handAll = openingRows.hand.filter((r) => handoverReducesBalance(r.status)).reduce((s, r) => s + Number(r.amount || 0), 0);
+    const handAfter = openingRows.hand.filter((r) => handoverReducesBalance(r.status) && (r.entry_date ?? "") >= d).reduce((s, r) => s + Number(r.amount || 0), 0);
+    return Math.round((recvAll - expAll - handAll) - recvAfter + expAfter + handAfter);
+  }, [openingRows, closingDate]);
+
+  const balanceNote = useMemo(() => {
+    if (!balanceNoteOn) return "";
+    const lines: string[] = [];
+    if (openingBalOn && openingBal !== null) lines.push(`ওপেনিং ব্যালেন্স (${formatDate(closingDate)}): ${fmt(openingBal)}`);
+    for (const v of vendorBals) if (checkedVendors.has(v.name)) lines.push(`Vendor — ${v.name}: ${fmt(v.balance)}`);
+    for (const a of agentBals) if (checkedAgents.has(a.name)) lines.push(`Agency — ${a.name}: ${fmt(a.balance)}`);
+    return lines.join("\n");
+  }, [balanceNoteOn, openingBalOn, openingBal, closingDate, vendorBals, agentBals, checkedVendors, checkedAgents]);
+
+  // Textarea-এ Balance Note + নিজের লেখা একসাথে দেখায়; এডিট করলে নোট ছাড়া অংশটি ম্যানুয়াল হিসেবে থাকে।
+  const finalRemarks = useMemo(() => [balanceNote, remarks].filter((s) => s.trim()).join("\n"), [balanceNote, remarks]);
+  const stripNote = (val: string) => {
+    if (!balanceNote) return val;
+    if (val.startsWith(balanceNote)) return val.slice(balanceNote.length).replace(/^\n/, "");
+    const i = val.indexOf(balanceNote);
+    if (i === -1) return val;
+    return (val.slice(0, i) + val.slice(i + balanceNote.length)).replace(/^\n+|\n+$/g, "");
+  };
   const visibleReceipts = useMemo(
     () => receipts.filter((r) => {
       if (!isStatusEvent(r)) return true;
@@ -707,7 +852,7 @@ function MyHandoverPage() {
       ${acceptUrl ? `<a href="${acceptUrl}" target="_blank" rel="noopener" style="margin-left:auto;display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;box-shadow:0 2px 6px rgba(15,23,42,.3)">🔐 সফটওয়্যারে গিয়ে অনুমোদন করুন</a>` : ""}
     </div>
     <div class="totalrow"><span>Variance</span><b class="${variance >= 0 ? "in" : "out"}">${variance >= 0 ? "+" : ""}${money(variance)}</b></div>
-    ${remarks ? `<div class="note">📝 মন্তব্য: ${remarks}</div>` : ""}
+    ${finalRemarks ? `<div class="note">📝 মন্তব্য: ${finalRemarks.replace(/\n/g, "<br>")}</div>` : ""}
     ${acceptUrl ? `<div class="note" style="font-size:10.5px;color:#777">🔐 নিরাপত্তার জন্য অনুমোদন শুধুমাত্র MD/Owner আইডি থেকে সম্ভব। বাটনে ক্লিক করে মোবাইল ও পাসওয়ার্ড দিয়ে লগইন করার পর সফটওয়্যারে গিয়ে অনুমোদন করুন।</div>` : ""}
   </div>
 
@@ -762,7 +907,7 @@ function MyHandoverPage() {
     const { data: newId, error } = await supabase.rpc("submit_handover" as never, {
       _submitted_amount: amt,
       _closing_date: closingDate,
-      _remarks: remarks || null,
+      _remarks: finalRemarks || null,
     } as never);
     if (error) {
       setSaving(false);
@@ -783,6 +928,9 @@ function MyHandoverPage() {
     setSaving(false);
     setCash("");
     setRemarks("");
+    setCheckedVendors(new Set());
+    setCheckedAgents(new Set());
+    setOpeningBalOn(false);
     setReloadTick((t) => t + 1);
   };
 
@@ -987,13 +1135,50 @@ function MyHandoverPage() {
           )}
 
           <div>
-            <Label className="text-xs">Remarks (optional)</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs">Remarks (optional)</Label>
+              <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer select-none">
+                <Checkbox checked={balanceNoteOn} onCheckedChange={(v) => setBalanceNoteOn(v === true)} className="h-3.5 w-3.5" />
+                Balance Note
+              </label>
+            </div>
             <Textarea
-              rows={2}
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
+              rows={3}
+              value={finalRemarks}
+              onChange={(e) => setRemarks(stripNote(e.target.value))}
               placeholder="MD এর জন্য নোট…"
             />
+            {balanceNoteOn && (
+              <div className="mt-2 rounded-md border p-2 space-y-2">
+                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer select-none">
+                  <Checkbox checked={openingBalOn} onCheckedChange={(v) => setOpeningBalOn(v === true)} className="h-3.5 w-3.5" />
+                  Opening Balance
+                  <span className="font-normal text-muted-foreground truncate">
+                    {openingLoading
+                      ? "লোড হচ্ছে…"
+                      : openingBal !== null
+                      ? `— ক্লোজিং তারিখের শুরুতে: ${fmt(openingBal)}`
+                      : `— ক্লোজিং তারিখ (${formatDate(closingDate)}) শুরুর ব্যালেন্স`}
+                  </span>
+                </label>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <BalanceList
+                    title="Vendor Balance"
+                    rows={vendorBals}
+                    checkedSet={checkedVendors}
+                    onToggle={(name, on) => setCheckedVendors((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
+                    loading={balsLoading}
+                  />
+                  <BalanceList
+                    title="Agency Balance"
+                    rows={agentBals}
+                    checkedSet={checkedAgents}
+                    onToggle={(name, on) => setCheckedAgents((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
+                    loading={balsLoading}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
