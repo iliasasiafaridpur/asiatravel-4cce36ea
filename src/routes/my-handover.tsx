@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/ui/date-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
@@ -17,8 +18,9 @@ import {
 import { formatDateTime, formatDate, isAdvancePayment } from "@/lib/modules";
 import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
-import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
+import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL, handoverReducesBalance } from "@/lib/payment-methods";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
@@ -224,6 +226,38 @@ const withoutTotalAgencyStatusRows = (rows: Receipt[], totalAgents: Set<string>)
     return !(agent && totalAgents.has(agent));
   });
 
+// Balance Note-এর ভেন্ডর/এজেন্সি লিস্ট — প্রতিটি সারিতে চেকবক্স + বর্তমান ব্যালেন্স।
+function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
+  title: string;
+  rows: { name: string; balance: number }[];
+  checkedSet: Set<string>;
+  onToggle: (name: string, on: boolean) => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="rounded-md border overflow-hidden">
+      <div className="px-2 py-1 text-[11px] font-semibold border-b bg-muted/40">{title}</div>
+      <div className="max-h-40 overflow-y-auto">
+        {loading ? (
+          <div className="px-2 py-2 text-[11px] text-muted-foreground">লোড হচ্ছে…</div>
+        ) : rows.length === 0 ? (
+          <div className="px-2 py-2 text-[11px] text-muted-foreground">কোনো বকেয়া ব্যালেন্স নেই</div>
+        ) : (
+          rows.map((r) => (
+            <label key={r.name} className="flex items-center justify-between gap-2 px-2 py-1 text-xs border-b last:border-b-0 cursor-pointer hover:bg-muted/40">
+              <span className="flex items-center gap-1.5 min-w-0">
+                <Checkbox className="h-3.5 w-3.5 shrink-0" checked={checkedSet.has(r.name)} onCheckedChange={(v) => onToggle(r.name, v === true)} />
+                <span className="truncate">{r.name}</span>
+              </span>
+              <span className="tabular-nums font-semibold shrink-0">{fmt(r.balance)}</span>
+            </label>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MyHandoverPage() {
   const { user, profile } = useCurrentUser();
   const [closingDate, setClosingDate] = useState(today());
@@ -239,6 +273,22 @@ function MyHandoverPage() {
   const [recByService, setRecByService] = useState<Record<string, Receipt[]>>({});
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmailFn = useServerFn(sendGmail);
+  // ---- Balance Note (Submit to MD-এর Remarks-এ) ----
+  const [balanceNoteOn, setBalanceNoteOn] = useState(false);
+  const [openingBalOn, setOpeningBalOn] = useState(false);
+  const [vendorBals, setVendorBals] = useState<{ name: string; balance: number }[]>([]);
+  const [agentBals, setAgentBals] = useState<{ name: string; balance: number }[]>([]);
+  const [balsLoading, setBalsLoading] = useState(false);
+  const [checkedVendors, setCheckedVendors] = useState<Set<string>>(new Set());
+  const [checkedAgents, setCheckedAgents] = useState<Set<string>>(new Set());
+  const [openingRows, setOpeningRows] = useState<{
+    recv: { amount: number; entry_date: string; method: string | null; source: string | null }[];
+    exp: { amount: number; entry_date: string; category: string | null; linked_source_table: string | null }[];
+    hand: { amount: number; entry_date: string; status: string | null }[];
+  } | null>(null);
+  const [openingLoading, setOpeningLoading] = useState(false);
+  const balsTried = useRef(false);
+  const openingTried = useRef(false);
 
   // When navigated from "MD-কে পাঠানো" list, highlight the target handover card.
   useEffect(() => {
