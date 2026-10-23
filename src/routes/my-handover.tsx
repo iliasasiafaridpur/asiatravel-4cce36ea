@@ -226,10 +226,10 @@ const withoutTotalAgencyStatusRows = (rows: Receipt[], totalAgents: Set<string>)
     return !(agent && totalAgents.has(agent));
   });
 
-// Balance Note-এর ভেন্ডর/এজেন্সি লিস্ট — প্রতিটি সারিতে চেকবক্স + বর্তমান ব্যালেন্স।
+// Balance Note-এর ভেন্ডর/এজেন্সি লিস্ট — প্রতিটি সারিতে চেকবক্স + Due/Adv ব্যালেন্স।
 function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
   title: string;
-  rows: { name: string; balance: number }[];
+  rows: { name: string; due: number; advance: number }[];
   checkedSet: Set<string>;
   onToggle: (name: string, on: boolean) => void;
   loading: boolean;
@@ -241,7 +241,7 @@ function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
         {loading ? (
           <div className="px-2 py-2 text-[11px] text-muted-foreground">লোড হচ্ছে…</div>
         ) : rows.length === 0 ? (
-          <div className="px-2 py-2 text-[11px] text-muted-foreground">কোনো বকেয়া ব্যালেন্স নেই</div>
+          <div className="px-2 py-2 text-[11px] text-muted-foreground">কোনো তথ্য নেই</div>
         ) : (
           rows.map((r) => (
             <label key={r.name} className="flex items-center justify-between gap-2 px-2 py-1 text-xs border-b last:border-b-0 cursor-pointer hover:bg-muted/40">
@@ -249,7 +249,10 @@ function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
                 <Checkbox className="h-3.5 w-3.5 shrink-0" checked={checkedSet.has(r.name)} onCheckedChange={(v) => onToggle(r.name, v === true)} />
                 <span className="truncate">{r.name}</span>
               </span>
-              <span className="tabular-nums font-semibold shrink-0">{fmt(r.balance)}</span>
+              <span className="tabular-nums shrink-0 text-[11px] whitespace-nowrap">
+                <span className="text-muted-foreground">Due </span>{fmt(r.due)}
+                <span className="text-muted-foreground"> · Adv </span>{fmt(r.advance)}
+              </span>
             </label>
           ))
         )}
@@ -276,16 +279,17 @@ function MyHandoverPage() {
   // ---- Balance Note (Submit to MD-এর Remarks-এ) ----
   const [balanceNoteOn, setBalanceNoteOn] = useState(false);
   const [openingBalOn, setOpeningBalOn] = useState(false);
-  const [vendorBals, setVendorBals] = useState<{ name: string; balance: number }[]>([]);
-  const [agentBals, setAgentBals] = useState<{ name: string; balance: number }[]>([]);
+  const [vendorBals, setVendorBals] = useState<{ name: string; due: number; advance: number }[]>([]);
+  const [agentBals, setAgentBals] = useState<{ name: string; due: number; advance: number }[]>([]);
   const [balsLoading, setBalsLoading] = useState(false);
   const [checkedVendors, setCheckedVendors] = useState<Set<string>>(new Set());
   const [checkedAgents, setCheckedAgents] = useState<Set<string>>(new Set());
-  const [openingRows, setOpeningRows] = useState<{
-    recv: { amount: number; entry_date: string; method: string | null; source: string | null }[];
-    exp: { amount: number; entry_date: string; category: string | null; linked_source_table: string | null }[];
-    hand: { amount: number; entry_date: string; status: string | null }[];
+  // Opening balance: সর্বশেষ Submit to MD-এর পরে প্রতিটি vendor/agency-র ব্যালেন্স (DB RPC থেকে)।
+  const [openingMaps, setOpeningMaps] = useState<{
+    vendor: Record<string, { due: number; advance: number }>;
+    agency: Record<string, { due: number; advance: number }>;
   } | null>(null);
+  const [openingDate, setOpeningDate] = useState<string | null>(null); // null = লোড হয়নি, "" = কোনো Submit-ই হয়নি
   const [openingLoading, setOpeningLoading] = useState(false);
   const balsTried = useRef(false);
   const openingTried = useRef(false);
@@ -520,7 +524,7 @@ function MyHandoverPage() {
     receipts.filter((r) => !isStatusEvent(r) && Number(r.amount || 0) > 0).map(serviceKey).filter(Boolean)
   ), [receipts]);
 
-  // ---- Balance Note: vendor/agency ব্যালেন্স লিস্ট + ওপেনিং ব্যালেন্স ----
+  // ---- Balance Note: vendor/agency current balance লিস্ট + ওপেনিং ব্যালেন্স ----
   useEffect(() => {
     if (!balanceNoteOn || balsTried.current || isOffline()) return;
     balsTried.current = true;
@@ -537,8 +541,8 @@ function MyHandoverPage() {
         }
         const map = (rows: unknown, nameKey: string) =>
           (((rows ?? []) as Array<Record<string, unknown>>))
-            .map((r) => ({ name: String(r[nameKey] ?? "").trim(), balance: Number(r.balance_due ?? 0) }))
-            .filter((r) => r.name && r.balance !== 0)
+            .map((r) => ({ name: String(r[nameKey] ?? "").trim(), due: Number(r.balance_due ?? 0), advance: Number(r.advance_balance ?? 0) }))
+            .filter((r) => r.name)
             .sort((x, y) => x.name.localeCompare(y.name));
         setVendorBals(map(v.data, "vendor_name"));
         setAgentBals(map(a.data, "agent_name"));
@@ -550,60 +554,81 @@ function MyHandoverPage() {
     })();
   }, [balanceNoteOn]);
 
-  // Opening balance: ক্লোজিং তারিখের শুরুতে স্টাফের ক্যাশ ব্যালেন্স।
+  // Opening balance: সর্বশেষ Submit to MD-এর পরে প্রতিটি vendor/agency-র ব্যালেন্স (DB RPC)।
   useEffect(() => {
-    if (!openingBalOn || openingTried.current || openingRows || openingLoading || !user?.id) return;
+    if (!openingBalOn || openingTried.current || openingMaps || openingLoading) return;
     openingTried.current = true;
     setOpeningLoading(true);
     (async () => {
       try {
-        const [recv, exp, hand] = await Promise.all([
-          fetchAllRows(() => supabase.from("payment_receipts").select("amount,entry_date,method,source").eq("received_by", user.id).order("entry_date")),
-          fetchAllRows(() => supabase.from("cash_expenses").select("amount,entry_date,category,linked_source_table").eq("spent_by", user.id).order("entry_date")),
-          fetchAllRows(() => supabase.from("cash_handovers").select("amount,entry_date,status").eq("from_user", user.id).order("entry_date")),
-        ]);
-        if (recv.error || exp.error || hand.error) {
-          toast.error("Opening balance লোড করা যায়নি");
+        const { data: lastHand, error: handErr } = await supabase
+          .from("cash_handovers")
+          .select("closing_date, entry_date")
+          .in("status", ["submitted", "approved"])
+          .order("closing_date", { ascending: false })
+          .limit(1);
+        if (handErr) throw new Error(handErr.message);
+        const row = (lastHand?.[0] ?? null) as { closing_date?: string | null; entry_date?: string | null } | null;
+        const asof = String(row?.closing_date || row?.entry_date || "");
+        if (!asof) {
+          // কোনো Submit to MD-ই হয়নি → ওপেনিং = বর্তমান ব্যালেন্স (পার্থক্য 0)
+          setOpeningDate("");
           return;
         }
-        setOpeningRows({
-          recv: ((recv.data ?? []) as unknown) as { amount: number; entry_date: string; method: string | null; source: string | null }[],
-          exp: ((exp.data ?? []) as unknown) as { amount: number; entry_date: string; category: string | null; linked_source_table: string | null }[],
-          hand: ((hand.data ?? []) as unknown) as { amount: number; entry_date: string; status: string | null }[],
-        });
+        const { data: asofRows, error: asofErr } = await supabase.rpc("get_party_balances_asof" as never, { p_asof: asof } as never);
+        if (asofErr) throw new Error(asofErr.message);
+        const vendor: Record<string, { due: number; advance: number }> = {};
+        const agency: Record<string, { due: number; advance: number }> = {};
+        for (const r of ((asofRows ?? []) as Array<Record<string, unknown>>)) {
+          const name = String(r.party_name ?? "").trim();
+          if (!name) continue;
+          const entry = { due: Number(r.balance_due ?? 0), advance: Number(r.advance_balance ?? 0) };
+          if (String(r.party_kind ?? "") === "agency") agency[name] = entry;
+          else vendor[name] = entry;
+        }
+        setOpeningMaps({ vendor, agency });
+        setOpeningDate(asof);
       } catch {
         toast.error("Opening balance লোড করা যায়নি");
       } finally {
         setOpeningLoading(false);
       }
     })();
-  }, [openingBalOn, openingRows, openingLoading, user?.id]);
+  }, [openingBalOn, openingMaps, openingLoading]);
 
-  // ব্যালেন্স হিসাব Dashboard-এর "হাতে আছে"-র মতো: নগদ রিসিপ্ট − খরচ − হ্যান্ডওভার;
-  // ওপেনিং = বর্তমান ব্যালেন্স − ক্লোজিং তারিখ থেকে পরের সব নগদ লেনদেন।
-  const openingBal = useMemo(() => {
-    if (!openingRows) return null;
-    const d = closingDate;
-    const cashRecv = (r: { amount: number; method?: string | null; source?: string | null }) =>
-      Number(r.amount || 0) > 0 && isCashMethod(r.method) &&
-      String(r.source ?? "") !== "discount" && String(r.method ?? "").toLowerCase() !== "discount";
-    const recvAll = openingRows.recv.filter(cashRecv).reduce((s, r) => s + Number(r.amount || 0), 0);
-    const recvAfter = openingRows.recv.filter((r) => cashRecv(r) && (r.entry_date ?? "") >= d).reduce((s, r) => s + Number(r.amount || 0), 0);
-    const expAll = openingRows.exp.filter(expenseHitsBalance).reduce((s, r) => s + Number(r.amount || 0), 0);
-    const expAfter = openingRows.exp.filter((r) => expenseHitsBalance(r) && (r.entry_date ?? "") >= d).reduce((s, r) => s + Number(r.amount || 0), 0);
-    const handAll = openingRows.hand.filter((r) => handoverReducesBalance(r.status)).reduce((s, r) => s + Number(r.amount || 0), 0);
-    const handAfter = openingRows.hand.filter((r) => handoverReducesBalance(r.status) && (r.entry_date ?? "") >= d).reduce((s, r) => s + Number(r.amount || 0), 0);
-    return Math.round((recvAll - expAll - handAll) - recvAfter + expAfter + handAfter);
-  }, [openingRows, closingDate]);
-
+  // Remarks লাইন: "নাম: opening balance-Due X/- Adv Y/- Current balance-Due X/- Adv Y/- (পার্থক্য/-)"
   const balanceNote = useMemo(() => {
     if (!balanceNoteOn) return "";
+    const parts = (b: { due: number; advance: number }) => {
+      const arr: string[] = [];
+      if (Math.round(b.due) !== 0) arr.push(`Due ${Math.round(b.due)}/-`);
+      if (Math.round(b.advance) !== 0) arr.push(`Adv ${Math.round(b.advance)}/-`);
+      return arr.length ? arr.join(" ") : "0/-";
+    };
+    // আমাদের পক্ষে নেট: vendor-এর ক্ষেত্রে অ্যাডভান্স (ভেন্ডর আমাদের কাছে ঋণী), agency-র ক্ষেত্রে বকেয়া।
+    const net = (kind: "vendor" | "agency", b: { due: number; advance: number }) =>
+      kind === "vendor" ? b.advance - b.due : b.due - b.advance;
+    const line = (kind: "vendor" | "agency", name: string, cur: { due: number; advance: number }) => {
+      const open = openingDate === "" ? cur : openingMaps?.[kind]?.[name] ?? null;
+      if (openingBalOn && open) {
+        const diff = Math.round(net(kind, open) - net(kind, cur));
+        return `${name}: opening balance-${parts(open)} Current balance-${parts(cur)} (${diff}/-)`;
+      }
+      return `${name}: current balance-${parts(cur)}`;
+    };
     const lines: string[] = [];
-    if (openingBalOn && openingBal !== null) lines.push(`ওপেনিং ব্যালেন্স (${formatDate(closingDate)}): ${fmt(openingBal)}`);
-    for (const v of vendorBals) if (checkedVendors.has(v.name)) lines.push(`Vendor — ${v.name}: ${fmt(v.balance)}`);
-    for (const a of agentBals) if (checkedAgents.has(a.name)) lines.push(`Agency — ${a.name}: ${fmt(a.balance)}`);
+    const vendorRows = vendorBals.filter((v) => checkedVendors.has(v.name));
+    const agentRows = agentBals.filter((a) => checkedAgents.has(a.name));
+    if (vendorRows.length) {
+      lines.push("Vendor :");
+      for (const v of vendorRows) lines.push(line("vendor", v.name, v));
+    }
+    if (agentRows.length) {
+      lines.push("Agency :");
+      for (const a of agentRows) lines.push(line("agency", a.name, a));
+    }
     return lines.join("\n");
-  }, [balanceNoteOn, openingBalOn, openingBal, closingDate, vendorBals, agentBals, checkedVendors, checkedAgents]);
+  }, [balanceNoteOn, openingBalOn, openingDate, openingMaps, vendorBals, agentBals, checkedVendors, checkedAgents]);
 
   // Textarea-এ Balance Note + নিজের লেখা একসাথে দেখায়; এডিট করলে নোট ছাড়া অংশটি ম্যানুয়াল হিসেবে থাকে।
   const finalRemarks = useMemo(() => [balanceNote, remarks].filter((s) => s.trim()).join("\n"), [balanceNote, remarks]);

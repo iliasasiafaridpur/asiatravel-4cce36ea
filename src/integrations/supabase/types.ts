@@ -1544,6 +1544,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_party_balances_asof: {
+        Args: { p_asof: string }
+        Returns: {
+          advance_balance: number
+          balance_due: number
+          party_kind: string
+          party_name: string
+        }[]
+      }
       get_user_account: {
         Args: { _user_id: string }
         Returns: {
