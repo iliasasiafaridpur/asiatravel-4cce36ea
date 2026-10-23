@@ -8,6 +8,13 @@
       "when": 1792744348378,
       "tag": "0000_get_party_balances_asof",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792744421370,
+      "tag": "0001_fix_balances_asof_advance_in",
+      "breakpoints": true
     }
   ]
 }
