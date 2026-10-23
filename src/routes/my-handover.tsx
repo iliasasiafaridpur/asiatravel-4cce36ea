@@ -279,16 +279,17 @@ function MyHandoverPage() {
   // ---- Balance Note (Submit to MD-এর Remarks-এ) ----
   const [balanceNoteOn, setBalanceNoteOn] = useState(false);
   const [openingBalOn, setOpeningBalOn] = useState(false);
-  const [vendorBals, setVendorBals] = useState<{ name: string; balance: number }[]>([]);
-  const [agentBals, setAgentBals] = useState<{ name: string; balance: number }[]>([]);
+  const [vendorBals, setVendorBals] = useState<{ name: string; due: number; advance: number }[]>([]);
+  const [agentBals, setAgentBals] = useState<{ name: string; due: number; advance: number }[]>([]);
   const [balsLoading, setBalsLoading] = useState(false);
   const [checkedVendors, setCheckedVendors] = useState<Set<string>>(new Set());
   const [checkedAgents, setCheckedAgents] = useState<Set<string>>(new Set());
-  const [openingRows, setOpeningRows] = useState<{
-    recv: { amount: number; entry_date: string; method: string | null; source: string | null }[];
-    exp: { amount: number; entry_date: string; category: string | null; linked_source_table: string | null }[];
-    hand: { amount: number; entry_date: string; status: string | null }[];
+  // Opening balance: সর্বশেষ Submit to MD-এর পরে প্রতিটি vendor/agency-র ব্যালেন্স (DB RPC থেকে)।
+  const [openingMaps, setOpeningMaps] = useState<{
+    vendor: Record<string, { due: number; advance: number }>;
+    agency: Record<string, { due: number; advance: number }>;
   } | null>(null);
+  const [openingDate, setOpeningDate] = useState<string | null>(null); // null = লোড হয়নি, "" = কোনো Submit-ই হয়নি
   const [openingLoading, setOpeningLoading] = useState(false);
   const balsTried = useRef(false);
   const openingTried = useRef(false);
