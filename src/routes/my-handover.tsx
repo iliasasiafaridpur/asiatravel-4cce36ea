@@ -20,7 +20,6 @@ import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL, handoverReducesBalance } from "@/lib/payment-methods";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
-import { fetchAllRows } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
@@ -1181,21 +1180,23 @@ function MyHandoverPage() {
                   <span className="font-normal text-muted-foreground truncate">
                     {openingLoading
                       ? "লোড হচ্ছে…"
-                      : openingBal !== null
-                      ? `— ক্লোজিং তারিখের শুরুতে: ${fmt(openingBal)}`
-                      : `— ক্লোজিং তারিখ (${formatDate(closingDate)}) শুরুর ব্যালেন্স`}
+                      : openingDate
+                      ? `— সর্বশেষ Submit to MD (${formatDate(openingDate)})-এর পরের ব্যালেন্স`
+                      : openingDate === ""
+                      ? "— আগে কোনো Submit to MD হয়নি"
+                      : "— সর্বশেষ Submit to MD-এর পরের ব্যালেন্স"}
                   </span>
                 </label>
                 <div className="grid sm:grid-cols-2 gap-2">
                   <BalanceList
-                    title="Vendor Balance"
+                    title="Vendor Current Balance"
                     rows={vendorBals}
                     checkedSet={checkedVendors}
                     onToggle={(name, on) => setCheckedVendors((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
                     loading={balsLoading}
                   />
                   <BalanceList
-                    title="Agency Balance"
+                    title="Agency Current Balance"
                     rows={agentBals}
                     checkedSet={checkedAgents}
                     onToggle={(name, on) => setCheckedAgents((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
