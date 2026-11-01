@@ -1181,21 +1181,23 @@ function MyHandoverPage() {
                   <span className="font-normal text-muted-foreground truncate">
                     {openingLoading
                       ? "লোড হচ্ছে…"
-                      : openingBal !== null
-                      ? `— ক্লোজিং তারিখের শুরুতে: ${fmt(openingBal)}`
-                      : `— ক্লোজিং তারিখ (${formatDate(closingDate)}) শুরুর ব্যালেন্স`}
+                      : openingDate
+                      ? `— সর্বশেষ Submit to MD (${formatDate(openingDate)})-এর পরের ব্যালেন্স`
+                      : openingDate === ""
+                      ? "— আগে কোনো Submit to MD হয়নি"
+                      : "— সর্বশেষ Submit to MD-এর পরের ব্যালেন্স"}
                   </span>
                 </label>
                 <div className="grid sm:grid-cols-2 gap-2">
                   <BalanceList
-                    title="Vendor Balance"
+                    title="Vendor Current Balance"
                     rows={vendorBals}
                     checkedSet={checkedVendors}
                     onToggle={(name, on) => setCheckedVendors((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
                     loading={balsLoading}
                   />
                   <BalanceList
-                    title="Agency Balance"
+                    title="Agency Current Balance"
                     rows={agentBals}
                     checkedSet={checkedAgents}
                     onToggle={(name, on) => setCheckedAgents((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
