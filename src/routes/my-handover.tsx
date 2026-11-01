@@ -20,7 +20,6 @@ import { HandoverLedgerInline } from "@/components/HandoverLedgerBook";
 import { PageWatermark } from "@/components/PageWatermark";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL, handoverReducesBalance } from "@/lib/payment-methods";
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
-import { fetchAllRows } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/my-handover")({
   head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
