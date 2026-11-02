@@ -1234,6 +1234,8 @@ function MyHandoverPage() {
                     checkedSet={checkedVendors}
                     onToggle={(name, on) => setCheckedVendors((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
                     loading={balsLoading}
+                    kind="vendor"
+                    openingMap={openingBalOn && openingDate ? openingMaps?.vendor : null}
                   />
                   <BalanceList
                     title="Agency Current Balance"
@@ -1241,6 +1243,8 @@ function MyHandoverPage() {
                     checkedSet={checkedAgents}
                     onToggle={(name, on) => setCheckedAgents((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
                     loading={balsLoading}
+                    kind="agency"
+                    openingMap={openingBalOn && openingDate ? openingMaps?.agency : null}
                   />
                 </div>
               </div>
