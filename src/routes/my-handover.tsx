@@ -587,7 +587,8 @@ function MyHandoverPage() {
     })();
   }, [balanceNoteOn]);
 
-  // Opening balance: সর্বশেষ Submit to MD-এর পরে প্রতিটি vendor/agency-র ব্যালেন্স (DB RPC)।
+  // Opening balance: সর্বশেষ Submit to MD-এর সময়ের "Current balance" (ওই হ্যান্ডওভারের Balance Note remarks থেকে;
+  // remarks-এ না থাকা পার্টির জন্য DB RPC-এর as-of হিসাব ফলব্যাক)।
   useEffect(() => {
     if (!openingBalOn || openingTried.current || openingMaps || openingLoading) return;
     openingTried.current = true;
@@ -596,12 +597,12 @@ function MyHandoverPage() {
       try {
         const { data: lastHand, error: handErr } = await supabase
           .from("cash_handovers")
-          .select("closing_date, entry_date")
+          .select("closing_date, entry_date, remarks")
           .in("status", ["submitted", "approved"])
           .order("closing_date", { ascending: false })
           .limit(1);
         if (handErr) throw new Error(handErr.message);
-        const row = (lastHand?.[0] ?? null) as { closing_date?: string | null; entry_date?: string | null } | null;
+        const row = (lastHand?.[0] ?? null) as { closing_date?: string | null; entry_date?: string | null; remarks?: string | null } | null;
         const asof = String(row?.closing_date || row?.entry_date || "");
         if (!asof) {
           // কোনো Submit to MD-ই হয়নি → ওপেনিং = বর্তমান ব্যালেন্স (পার্থক্য 0)
@@ -619,7 +620,12 @@ function MyHandoverPage() {
           if (String(r.party_kind ?? "") === "agency") agency[name] = entry;
           else vendor[name] = entry;
         }
-        setOpeningMaps({ vendor, agency });
+        // সর্বশেষ Submit-এর Balance Note-এ লেখা "Current balance"-ই আসল ওপেনিং — ওভাররাইড করে।
+        const parsed = parseBalanceNoteRemarks(String(row?.remarks ?? ""));
+        setOpeningMaps({
+          vendor: { ...vendor, ...parsed.vendor },
+          agency: { ...agency, ...parsed.agency },
+        });
         setOpeningDate(asof);
       } catch {
         toast.error("Opening balance লোড করা যায়নি");
