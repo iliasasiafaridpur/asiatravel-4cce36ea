@@ -1221,10 +1221,10 @@ function MyHandoverPage() {
                     {openingLoading
                       ? "লোড হচ্ছে…"
                       : openingDate
-                      ? `— সর্বশেষ Submit to MD (${formatDate(openingDate)})-এর পরের ব্যালেন্স`
+                      ? `— সর্বশেষ Submit to MD (${formatDate(openingDate)})-এর সময়ের current balance`
                       : openingDate === ""
                       ? "— আগে কোনো Submit to MD হয়নি"
-                      : "— সর্বশেষ Submit to MD-এর পরের ব্যালেন্স"}
+                      : "— সর্বশেষ Submit to MD-এর সময়ের current balance"}
                   </span>
                 </label>
                 <div className="grid sm:grid-cols-2 gap-2">
