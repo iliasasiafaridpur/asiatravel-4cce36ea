@@ -280,6 +280,11 @@ function BalanceList({ title, rows, checkedSet, onToggle, loading, kind, opening
               <span className="tabular-nums shrink-0 text-[11px] whitespace-nowrap">
                 <span className="text-muted-foreground">Due </span>{fmt(r.due)}
                 <span className="text-muted-foreground"> · Adv </span>{fmt(r.advance)}
+                {openingMap && openingMap[r.name] && (
+                  <span className="font-medium text-rose-600">
+                    {" "}({fmt(netOf(kind, openingMap[r.name]) - netOf(kind, r))}/-)
+                  </span>
+                )}
               </span>
             </label>
           ))
