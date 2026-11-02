@@ -225,13 +225,42 @@ const withoutTotalAgencyStatusRows = (rows: Receipt[], totalAgents: Set<string>)
     return !(agent && totalAgents.has(agent));
   });
 
+// আমাদের পক্ষে নেট: vendor-এর ক্ষেত্রে অ্যাডভান্স (ভেন্ডর আমাদের কাছে ঋণী), agency-র ক্ষেত্রে বকেয়া।
+const netOf = (kind: "vendor" | "agency", b: { due: number; advance: number }) =>
+  kind === "vendor" ? b.advance - b.due : b.due - b.advance;
+
+// সর্বশেষ Submit to MD-এর Balance Note remarks থেকে প্রতিটি পার্টির তখনকার "Current balance" পড়ে।
+const parseBalanceNoteRemarks = (text: string) => {
+  const vendor: Record<string, { due: number; advance: number }> = {};
+  const agency: Record<string, { due: number; advance: number }> = {};
+  let kind: "vendor" | "agency" | null = null;
+  for (const raw of (text || "").split("\n")) {
+    const line = raw.trim();
+    if (/^vendor\s*:/i.test(line)) { kind = "vendor"; continue; }
+    if (/^agency\s*:/i.test(line)) { kind = "agency"; continue; }
+    const m = /^(.+?):\s*(?:opening balance|current balance)-(.*)$/.exec(line);
+    if (!m || !kind) continue;
+    const seg = m[2];
+    const dueM = /Due\s*(-?[\d,]+)\/-/.exec(seg);
+    const advM = /Adv\s*(-?[\d,]+)\/-/.exec(seg);
+    if (!dueM && !advM) continue;
+    (kind === "vendor" ? vendor : agency)[m[1].trim()] = {
+      due: dueM ? Number(dueM[1].replace(/,/g, "")) : 0,
+      advance: advM ? Number(advM[1].replace(/,/g, "")) : 0,
+    };
+  }
+  return { vendor, agency };
+};
+
 // Balance Note-এর ভেন্ডর/এজেন্সি লিস্ট — প্রতিটি সারিতে চেকবক্স + Due/Adv ব্যালেন্স।
-function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
+function BalanceList({ title, rows, checkedSet, onToggle, loading, kind, openingMap }: {
   title: string;
   rows: { name: string; due: number; advance: number }[];
   checkedSet: Set<string>;
   onToggle: (name: string, on: boolean) => void;
   loading: boolean;
+  kind: "vendor" | "agency";
+  openingMap?: Record<string, { due: number; advance: number }> | null;
 }) {
   return (
     <div className="rounded-md border overflow-hidden">
