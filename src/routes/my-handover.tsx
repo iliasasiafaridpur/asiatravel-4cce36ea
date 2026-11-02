@@ -225,13 +225,42 @@ const withoutTotalAgencyStatusRows = (rows: Receipt[], totalAgents: Set<string>)
     return !(agent && totalAgents.has(agent));
   });
 
+// আমাদের পক্ষে নেট: vendor-এর ক্ষেত্রে অ্যাডভান্স (ভেন্ডর আমাদের কাছে ঋণী), agency-র ক্ষেত্রে বকেয়া।
+const netOf = (kind: "vendor" | "agency", b: { due: number; advance: number }) =>
+  kind === "vendor" ? b.advance - b.due : b.due - b.advance;
+
+// সর্বশেষ Submit to MD-এর Balance Note remarks থেকে প্রতিটি পার্টির তখনকার "Current balance" পড়ে।
+const parseBalanceNoteRemarks = (text: string) => {
+  const vendor: Record<string, { due: number; advance: number }> = {};
+  const agency: Record<string, { due: number; advance: number }> = {};
+  let kind: "vendor" | "agency" | null = null;
+  for (const raw of (text || "").split("\n")) {
+    const line = raw.trim();
+    if (/^vendor\s*:/i.test(line)) { kind = "vendor"; continue; }
+    if (/^agency\s*:/i.test(line)) { kind = "agency"; continue; }
+    const m = /^(.+?):\s*(?:opening balance|current balance)-(.*)$/.exec(line);
+    if (!m || !kind) continue;
+    const seg = m[2];
+    const dueM = /Due\s*(-?[\d,]+)\/-/.exec(seg);
+    const advM = /Adv\s*(-?[\d,]+)\/-/.exec(seg);
+    if (!dueM && !advM) continue;
+    (kind === "vendor" ? vendor : agency)[m[1].trim()] = {
+      due: dueM ? Number(dueM[1].replace(/,/g, "")) : 0,
+      advance: advM ? Number(advM[1].replace(/,/g, "")) : 0,
+    };
+  }
+  return { vendor, agency };
+};
+
 // Balance Note-এর ভেন্ডর/এজেন্সি লিস্ট — প্রতিটি সারিতে চেকবক্স + Due/Adv ব্যালেন্স।
-function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
+function BalanceList({ title, rows, checkedSet, onToggle, loading, kind, openingMap }: {
   title: string;
   rows: { name: string; due: number; advance: number }[];
   checkedSet: Set<string>;
   onToggle: (name: string, on: boolean) => void;
   loading: boolean;
+  kind: "vendor" | "agency";
+  openingMap?: Record<string, { due: number; advance: number }> | null;
 }) {
   return (
     <div className="rounded-md border overflow-hidden">
@@ -251,6 +280,11 @@ function BalanceList({ title, rows, checkedSet, onToggle, loading }: {
               <span className="tabular-nums shrink-0 text-[11px] whitespace-nowrap">
                 <span className="text-muted-foreground">Due </span>{fmt(r.due)}
                 <span className="text-muted-foreground"> · Adv </span>{fmt(r.advance)}
+                {openingMap && openingMap[r.name] && (
+                  <span className="font-medium text-rose-600">
+                    {" "}({fmt(netOf(kind, openingMap[r.name]) - netOf(kind, r))}/-)
+                  </span>
+                )}
               </span>
             </label>
           ))
@@ -553,7 +587,8 @@ function MyHandoverPage() {
     })();
   }, [balanceNoteOn]);
 
-  // Opening balance: সর্বশেষ Submit to MD-এর পরে প্রতিটি vendor/agency-র ব্যালেন্স (DB RPC)।
+  // Opening balance: সর্বশেষ Submit to MD-এর সময়ের "Current balance" (ওই হ্যান্ডওভারের Balance Note remarks থেকে;
+  // remarks-এ না থাকা পার্টির জন্য DB RPC-এর as-of হিসাব ফলব্যাক)।
   useEffect(() => {
     if (!openingBalOn || openingTried.current || openingMaps || openingLoading) return;
     openingTried.current = true;
@@ -562,12 +597,12 @@ function MyHandoverPage() {
       try {
         const { data: lastHand, error: handErr } = await supabase
           .from("cash_handovers")
-          .select("closing_date, entry_date")
-          .in("status", ["submitted", "approved"])
+          .select("closing_date, entry_date, remarks")
+          .in("status", ["pending", "approved"])
           .order("closing_date", { ascending: false })
           .limit(1);
         if (handErr) throw new Error(handErr.message);
-        const row = (lastHand?.[0] ?? null) as { closing_date?: string | null; entry_date?: string | null } | null;
+        const row = (lastHand?.[0] ?? null) as { closing_date?: string | null; entry_date?: string | null; remarks?: string | null } | null;
         const asof = String(row?.closing_date || row?.entry_date || "");
         if (!asof) {
           // কোনো Submit to MD-ই হয়নি → ওপেনিং = বর্তমান ব্যালেন্স (পার্থক্য 0)
@@ -585,7 +620,12 @@ function MyHandoverPage() {
           if (String(r.party_kind ?? "") === "agency") agency[name] = entry;
           else vendor[name] = entry;
         }
-        setOpeningMaps({ vendor, agency });
+        // সর্বশেষ Submit-এর Balance Note-এ লেখা "Current balance"-ই আসল ওপেনিং — ওভাররাইড করে।
+        const parsed = parseBalanceNoteRemarks(String(row?.remarks ?? ""));
+        setOpeningMaps({
+          vendor: { ...vendor, ...parsed.vendor },
+          agency: { ...agency, ...parsed.agency },
+        });
         setOpeningDate(asof);
       } catch {
         toast.error("Opening balance লোড করা যায়নি");
@@ -1181,10 +1221,10 @@ function MyHandoverPage() {
                     {openingLoading
                       ? "লোড হচ্ছে…"
                       : openingDate
-                      ? `— সর্বশেষ Submit to MD (${formatDate(openingDate)})-এর পরের ব্যালেন্স`
+                      ? `— সর্বশেষ Submit to MD (${formatDate(openingDate)})-এর সময়ের current balance`
                       : openingDate === ""
                       ? "— আগে কোনো Submit to MD হয়নি"
-                      : "— সর্বশেষ Submit to MD-এর পরের ব্যালেন্স"}
+                      : "— সর্বশেষ Submit to MD-এর সময়ের current balance"}
                   </span>
                 </label>
                 <div className="grid sm:grid-cols-2 gap-2">
@@ -1194,6 +1234,8 @@ function MyHandoverPage() {
                     checkedSet={checkedVendors}
                     onToggle={(name, on) => setCheckedVendors((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
                     loading={balsLoading}
+                    kind="vendor"
+                    openingMap={openingBalOn && openingDate ? openingMaps?.vendor : null}
                   />
                   <BalanceList
                     title="Agency Current Balance"
@@ -1201,6 +1243,8 @@ function MyHandoverPage() {
                     checkedSet={checkedAgents}
                     onToggle={(name, on) => setCheckedAgents((prev) => { const n = new Set(prev); if (on) n.add(name); else n.delete(name); return n; })}
                     loading={balsLoading}
+                    kind="agency"
+                    openingMap={openingBalOn && openingDate ? openingMaps?.agency : null}
                   />
                 </div>
               </div>
