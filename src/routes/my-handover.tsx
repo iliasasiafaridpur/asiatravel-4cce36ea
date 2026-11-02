@@ -598,7 +598,7 @@ function MyHandoverPage() {
         const { data: lastHand, error: handErr } = await supabase
           .from("cash_handovers")
           .select("closing_date, entry_date, remarks")
-          .in("status", ["submitted", "approved"])
+          .in("status", ["pending", "approved"])
           .order("closing_date", { ascending: false })
           .limit(1);
         if (handErr) throw new Error(handErr.message);
