@@ -1,0 +1,615 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+/* Global font-size bump: increases all text by 3px relative to default 16px.
+   Applied with !important to override Tailwind preflight. */
+html, :root { font-size: 19px !important; }
+body { font-size: 1rem !important; }
+
+
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.98 0.01 230);
+  --foreground: oklch(0.18 0.04 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 250);
+  --primary: oklch(0.55 0.18 245);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --secondary: oklch(0.95 0.02 240);
+  --secondary-foreground: oklch(0.25 0.05 250);
+  --muted: oklch(0.95 0.015 240);
+  --muted-foreground: oklch(0.5 0.03 250);
+  --accent: oklch(0.7 0.15 200);
+  --accent-foreground: oklch(0.99 0.005 250);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0.005 250);
+  --success: oklch(0.65 0.17 155);
+  --success-foreground: oklch(0.99 0.005 250);
+  --warning: oklch(0.78 0.16 80);
+  --warning-foreground: oklch(0.2 0.04 250);
+  --info: oklch(0.65 0.15 230);
+  --info-foreground: oklch(0.99 0.005 250);
+  --border: oklch(0.9 0.015 240);
+  --input: oklch(0.92 0.015 240);
+  --ring: oklch(0.55 0.18 245);
+  --sidebar: oklch(0.98 0.01 230);
+  --sidebar-foreground: oklch(0.18 0.04 250);
+  --sidebar-primary: oklch(0.55 0.18 245);
+  --sidebar-primary-foreground: oklch(0.99 0.005 250);
+  --sidebar-accent: oklch(0.95 0.02 240);
+  --sidebar-accent-foreground: oklch(0.25 0.05 250);
+  --sidebar-border: oklch(0.9 0.015 240);
+  --sidebar-ring: oklch(0.55 0.18 245);
+  --gradient-hero: linear-gradient(135deg, oklch(0.55 0.18 245), oklch(0.7 0.15 200));
+  --gradient-card: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.015 235));
+  --shadow-card: 0 4px 20px -8px oklch(0.55 0.18 245 / 0.15);
+  --shadow-glow: 0 0 30px oklch(0.55 0.18 245 / 0.25);
+}
+
+.dark {
+  /* Deep slate-navy midnight base (#0f172a-ish) */
+  --background: oklch(0.205 0.03 255);
+  --foreground: oklch(0.97 0.01 240);
+  --card: oklch(0.27 0.035 255);
+  --card-foreground: oklch(0.97 0.01 240);
+  --popover: oklch(0.27 0.035 255);
+  --popover-foreground: oklch(0.97 0.01 240);
+  --primary: oklch(0.74 0.17 220);
+  --primary-foreground: oklch(0.16 0.025 250);
+  --secondary: oklch(0.32 0.035 255);
+  --secondary-foreground: oklch(0.97 0.01 240);
+  --muted: oklch(0.3 0.03 255);
+  --muted-foreground: oklch(0.8 0.025 240);
+  --accent: oklch(0.74 0.16 200);
+  --accent-foreground: oklch(0.16 0.025 250);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.99 0.005 250);
+  --success: oklch(0.7 0.17 155);
+  --success-foreground: oklch(0.16 0.025 250);
+  --warning: oklch(0.78 0.16 80);
+  --warning-foreground: oklch(0.16 0.025 250);
+  --info: oklch(0.72 0.15 230);
+  --info-foreground: oklch(0.16 0.025 250);
+  /* Sharper, brighter borders so inputs are clearly visible */
+  --border: oklch(0.45 0.04 240);
+  --input: oklch(0.45 0.04 240);
+  --ring: oklch(0.78 0.15 200);
+  --sidebar: oklch(0.22 0.03 255);
+  --sidebar-foreground: oklch(0.97 0.01 240);
+  --sidebar-primary: oklch(0.74 0.17 220);
+  --sidebar-primary-foreground: oklch(0.16 0.025 250);
+  --sidebar-accent: oklch(0.32 0.035 255);
+  --sidebar-accent-foreground: oklch(0.97 0.01 240);
+  --sidebar-border: oklch(0.4 0.035 250);
+  --sidebar-ring: oklch(0.78 0.15 200);
+  --gradient-hero: linear-gradient(135deg, oklch(0.74 0.17 220), oklch(0.74 0.16 200));
+  --gradient-card: linear-gradient(180deg, oklch(0.29 0.035 255), oklch(0.25 0.035 255));
+  --shadow-card: 0 4px 20px -8px oklch(0 0 0 / 0.6);
+  --shadow-glow: 0 0 30px oklch(0.74 0.17 220 / 0.35);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01";
+  }
+  .dark body {
+    background-color: #090d16;
+    background-image:
+      radial-gradient(at 12% 8%, rgba(30, 27, 75, 0.7) 0px, transparent 55%),
+      radial-gradient(at 88% 6%, rgba(4, 47, 46, 0.65) 0px, transparent 55%),
+      radial-gradient(at 6% 92%, rgba(4, 47, 46, 0.6) 0px, transparent 55%),
+      radial-gradient(at 92% 94%, rgba(30, 27, 75, 0.7) 0px, transparent 55%),
+      radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.55) 0px, transparent 70%);
+    background-attachment: fixed;
+  }
+  /* Hide number input arrows */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+}
+
+/* Global 2-color repeating row tints (A B A B ...) — SOFT / LIGHT.
+   Code still uses idx % 4, so tint-0/2 = blue (A) and tint-1/3 = green (B). */
+/* Light mode: gently tinted, readable with dark text */
+.row-tint-0, .row-tint-2 { background-color: #eaf2fc !important; color: #0f172a !important; } /* A: soft blue */
+.row-tint-1, .row-tint-3 { background-color: #ebf5ec !important; color: #0f172a !important; } /* B: soft green */
+/* Hover = darken the row's OWN tint color (no cyan overlay) */
+.row-tint-0:hover, .row-tint-1:hover, .row-tint-2:hover, .row-tint-3:hover {
+  filter: brightness(0.9) saturate(1.15) !important;
+  box-shadow: none !important;
+}
+/* Dark mode: softer, lighter muted tones */
+.dark .row-tint-0, .dark .row-tint-2 { background-color: #2b3850 !important; color: #ffffff !important; }
+.dark .row-tint-1, .dark .row-tint-3 { background-color: #2a3c3c !important; color: #ffffff !important; }
+.dark .row-tint-0:hover, .dark .row-tint-1:hover,
+.dark .row-tint-2:hover, .dark .row-tint-3:hover {
+  filter: brightness(1.35) saturate(1.25) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Payment rows must stay green even when global row tints set text colors. */
+.ledger-payment-row,
+.ledger-payment-row > td,
+.ledger-payment-row > td * {
+  color: #16a34a !important;
+}
+.dark .ledger-payment-row,
+.dark .ledger-payment-row > td,
+.dark .ledger-payment-row > td * {
+  color: #4ade80 !important;
+}
+
+/* বাতিল / ফেরত করা এন্ট্রি — সার্চে এলে ধূসর রঙে ও বিশেষ চিহ্নসহ দেখানো হয় */
+tr.cancelled-row.row-tint-0, tr.cancelled-row.row-tint-1,
+tr.cancelled-row.row-tint-2, tr.cancelled-row.row-tint-3 {
+  background-color: #e7e7e9 !important;
+  color: #6b7280 !important;
+  box-shadow: inset 4px 0 0 0 #f43f5e !important;
+}
+.dark tr.cancelled-row.row-tint-0, .dark tr.cancelled-row.row-tint-1,
+.dark tr.cancelled-row.row-tint-2, .dark tr.cancelled-row.row-tint-3 {
+  background-color: #2a2d33 !important;
+  color: #9ca3af !important;
+  box-shadow: inset 4px 0 0 0 #f43f5e !important;
+}
+tr.cancelled-row .font-mono { text-decoration: line-through; text-decoration-color: rgba(244, 63, 94, 0.7); }
+
+/* Generic table rows (no tint class): darken on hover */
+table tbody tr { transition: filter 0.15s ease, background-color 0.15s ease; }
+table tbody tr:not([class*="row-tint-"]):hover {
+  filter: brightness(0.95) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+.dark table tbody tr:not([class*="row-tint-"]):hover {
+  filter: none !important;
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+
+/* Make the native date/time picker indicator clearly visible */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="week"]::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  /* Tint to primary blue so the icon stands out on light & dark backgrounds */
+  filter: invert(34%) sepia(94%) saturate(1352%) hue-rotate(202deg) brightness(95%) contrast(95%);
+  padding: 2px;
+  border-radius: 4px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover,
+input[type="week"]::-webkit-calendar-picker-indicator:hover {
+  background-color: hsl(var(--accent) / 0.4);
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="month"]::-webkit-calendar-picker-indicator,
+.dark input[type="week"]::-webkit-calendar-picker-indicator {
+  /* Lighter cyan tint for dark mode */
+  filter: invert(70%) sepia(60%) saturate(500%) hue-rotate(170deg) brightness(110%) contrast(95%);
+}
+
+/* Sharper focus rings on inputs/textareas/selects/search bars (dark theme) */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select,
+.dark [role="combobox"] {
+  border-color: #475569;
+}
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.dark textarea:focus,
+.dark textarea:focus-visible,
+.dark select:focus,
+.dark [role="combobox"]:focus,
+.dark [role="combobox"][data-state="open"] {
+  outline: none;
+  border-color: #2dd4bf !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.45) !important;
+}
+
+/* Strong, clearly visible highlight for a row scrolled-to from Smart Search */
+.row-selected,
+.row-selected:hover {
+  background-color: #f5c16f !important;
+  color: #0f172a !important;
+  outline: 2px solid #b45309 !important;
+  box-shadow: inset 6px 0 0 0 #b45309, 0 4px 14px -4px rgba(0,0,0,0.35) !important;
+}
+.dark .row-selected,
+.dark .row-selected:hover {
+  background-color: #1d6b66 !important;
+  color: #ffffff !important;
+  outline: 2px solid #2dd4bf !important;
+  box-shadow: inset 6px 0 0 0 #2dd4bf, 0 4px 16px -4px rgba(0,0,0,0.6) !important;
+}
+.row-selected td, .dark .row-selected td { color: inherit !important; }
+
+/* GLOBAL last-clicked / active row highlight — persists until another row is
+   clicked. Applied everywhere (all module data pages, customer & vendor
+   ledgers, my accounts, etc.) via a delegated click handler in __root.tsx.
+   Cyan glow look matching the requested reference. */
+.row-active,
+.row-active:hover {
+  background-color: #d3f1fb !important;
+  color: #0f172a !important;
+  box-shadow: inset 4px 0 0 0 #06b6d4, 0 0 0 2px #06b6d4 !important;
+}
+.dark .row-active,
+.dark .row-active:hover {
+  background-color: #0f3b4a !important;
+  color: #ffffff !important;
+  box-shadow: inset 4px 0 0 0 #22d3ee, 0 0 0 2px #22d3ee !important;
+}
+.row-active td, .dark .row-active td { color: inherit !important; }
+
+/* PERSISTENT "row I just worked on" highlight (status change / due receive /
+   view / edit / search). Stays RED until another row is clicked. Defined after
+   .row-active so it always wins when both classes are present on a row. */
+.row-worked,
+.row-worked:hover {
+  background-color: #fdeeee !important;
+  color: #7f1d1d !important;
+  box-shadow: inset 5px 0 0 0 #f87171, 0 0 0 1px #fca5a5 !important;
+}
+.dark .row-worked,
+.dark .row-worked:hover {
+  background-color: #3a1f1f !important;
+  color: #ffffff !important;
+  box-shadow: inset 5px 0 0 0 #f87171, 0 0 0 1px #ef4444 !important;
+}
+.row-worked td, .dark .row-worked td { color: inherit !important; }
+
+
+
+
+@media print {
+  body { background: white !important; background-image: none !important; color: black !important; }
+  aside, nav, [data-sidebar], header.app-header { display: none !important; }
+  .print\:hidden { display: none !important; }
+  main, .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  table { font-size: 11px; }
+  .border, .border-border\/60 { border-color: #999 !important; }
+  [class*="row-tint-"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ============================================================
+   MOBILE: dense stacked-card layout for data tables
+   Apply .responsive-cards to a <Table> and .responsive-cards-wrap
+   to its overflow wrapper. Below md (<768px) each row renders as a
+   compact card with label:value pairs. Actions float at top-right.
+   Cells opt-in with data-label="..." for the inline label prefix.
+   ============================================================ */
+@media (max-width: 767px) {
+  .responsive-cards-wrap {
+    overflow-x: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .responsive-cards { display: block !important; width: 100% !important; }
+  .responsive-cards > thead { display: none !important; }
+  .responsive-cards > tbody { display: block !important; width: 100% !important; }
+  .responsive-cards > tbody > tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    position: relative;
+    width: 100% !important;
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    margin-bottom: 8px;
+    padding: 8px 44px 8px 10px; /* room for action bar at top-right */
+    background: hsl(var(--card));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    gap: 1px;
+  }
+  /* Tap-to-expand chevron hint */
+  .responsive-cards > tbody > tr::after {
+    content: "›";
+    position: absolute;
+    left: 6px;
+    bottom: 4px;
+    font-size: 14px;
+    line-height: 1;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .responsive-cards > tbody > tr > td {
+    display: flex !important;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100% !important;
+    padding: 2px 0 !important;
+    border: none !important;
+    white-space: normal !important;
+    text-align: left !important;
+    min-width: 0 !important;
+    font-size: 12.5px;
+    line-height: 1.3;
+  }
+  /* Inline label from data-label attribute */
+  .responsive-cards > tbody > tr > td[data-label]::before {
+    content: attr(data-label) ":";
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  /* Primary cell (first) — prominent, no label prefix, full width */
+  .responsive-cards > tbody > tr > td:first-child {
+    display: block !important;
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 5px !important;
+    border-bottom: 1px dashed hsl(var(--border)) !important;
+    margin-bottom: 3px;
+  }
+  .responsive-cards > tbody > tr > td:first-child::before { content: none; }
+
+  /* Right-aligned amount cells — value on right, tabular nums */
+  .responsive-cards > tbody > tr > td.text-right,
+  .responsive-cards > tbody > tr > td[class*="text-right"] {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .responsive-cards > tbody > tr > td.text-right > span,
+  .responsive-cards > tbody > tr > td.text-right > button { text-align: right; }
+
+  /* Last cell = Actions — floating top-right corner */
+  .responsive-cards > tbody > tr > td:last-child {
+    position: absolute !important;
+    top: 4px;
+    right: 4px;
+    width: auto !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  .responsive-cards > tbody > tr > td:last-child::before { content: none; }
+  .responsive-cards > tbody > tr > td:last-child button {
+    height: 32px !important;
+    width: 32px !important;
+  }
+  .responsive-cards > tbody > tr > td:last-child svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  /* Density: compact — smaller everything, tighter rows */
+  html[data-density="compact"] .responsive-cards > tbody > tr {
+    padding: 6px 40px 6px 8px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+  }
+  html[data-density="compact"] .responsive-cards > tbody > tr > td { font-size: 11.5px; padding: 1px 0 !important; }
+  html[data-density="compact"] .responsive-cards > tbody > tr > td:first-child { font-size: 13px; padding-bottom: 3px !important; margin-bottom: 2px; }
+  html[data-density="compact"] .responsive-cards > tbody > tr > td[data-label]::before { font-size: 10px; }
+}
+
+/* Floating "+ নতুন এন্ট্রি" button for mobile module pages */
+@media (max-width: 767px) {
+  .module-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 50;
+    height: 56px;
+    min-width: 56px;
+    padding: 0 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2);
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(var(--primary) / 0.6);
+  }
+  .module-fab:active { transform: translateY(1px); }
+}
+@media (min-width: 768px) {
+  .module-fab { display: none !important; }
+}
+
+/* Larger tap targets on mobile for icon buttons in the app header */
+@media (max-width: 767px) {
+  header .h-8, header .h-9 { min-height: 40px; }
+  header button[aria-label], header .icon-btn { min-width: 40px; min-height: 40px; }
+}
+
+/* Density toggle button — mobile only */
+.density-toggle { display: none; }
+@media (max-width: 767px) {
+  .density-toggle { display: inline-flex; }
+}
+
+/* ============================================================
+   MOBILE (<768px): finance-row auto-stack
+   Any <div class="finance-row"> with a multi-col grid layout is
+   converted to a compact stacked card. The amount column (last
+   text-right child) floats to the top-right of the card so the
+   money is always visible at a glance.
+   ============================================================ */
+@media (max-width: 767px) {
+  .finance-row {
+    display: block !important;
+    padding: 10px 12px !important;
+    position: relative;
+    border-radius: 10px;
+    margin: 6px 4px !important;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .finance-row > div {
+    padding: 3px 0 !important;
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+  /* Amount cell (right-aligned) → floating top-right */
+  .finance-row > div.text-right {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    text-align: right !important;
+    max-width: 45%;
+  }
+  /* Reserve space for the floating amount cell */
+  .finance-row > div:not(.text-right):first-child { padding-right: 90px !important; }
+
+  html[data-density="compact"] .finance-row {
+    padding: 6px 10px !important;
+    margin: 3px 2px !important;
+  }
+  html[data-density="compact"] .finance-row > div { padding: 1px 0 !important; font-size: 11.5px; }
+  html[data-density="compact"] .finance-row > div p { line-height: 1.25 !important; }
+}
+
+/* ============================================================
+   MOBILE (<768px): .mobile-cards-table — convert any <table> or
+   shadcn <Table> inside a wrapper to stacked cards. Works both
+   when the class is on the wrapper div or on the <table> itself.
+   thead is hidden; each <tr> becomes a card; each <td> stacks
+   its content vertically. Use data-label="..." on <td>/<TableCell>
+   for an inline "Label: value" prefix.
+   ============================================================ */
+@media (max-width: 767px) {
+  .mobile-cards-table { overflow-x: visible !important; border: none !important; min-width: 0 !important; }
+  .mobile-cards-table table,
+  table.mobile-cards-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .mobile-cards-table thead { display: none !important; }
+  .mobile-cards-table tbody { display: block !important; width: 100% !important; }
+  .mobile-cards-table tbody > tr {
+    display: block !important;
+    position: relative;
+    width: 100% !important;
+    padding: 8px 10px !important;
+    margin-bottom: 6px !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 10px !important;
+    background: hsl(var(--card));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .mobile-cards-table tbody > tr > td {
+    display: block !important;
+    width: 100% !important;
+    padding: 2px 0 !important;
+    border: none !important;
+    text-align: left !important;
+    white-space: normal !important;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .mobile-cards-table tbody > tr > td:empty { display: none !important; }
+  .mobile-cards-table tbody > tr > td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-size: 10.5px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    margin-right: 4px;
+  }
+  /* Right-aligned numeric cells → keep on their own line, tabular */
+  .mobile-cards-table tbody > tr > td[class*="text-right"] {
+    text-align: left !important;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  html[data-density="compact"] .mobile-cards-table tbody > tr {
+    padding: 5px 8px !important;
+    margin-bottom: 4px !important;
+    border-radius: 8px !important;
+  }
+  html[data-density="compact"] .mobile-cards-table tbody > tr > td { font-size: 11px; padding: 1px 0 !important; }
+  html[data-density="compact"] .mobile-cards-table tbody > tr > td[data-label]::before { font-size: 9.5px; }
+}
+
+/* ============================================================
+   MOBILE: sticky summary bar — pin key financial totals just
+   under the fixed header so they stay visible while scrolling.
+   ============================================================ */
+@media (max-width: 767px) {
+  .mobile-sticky-summary {
+    position: sticky;
+    top: 56px; /* below the fixed 14 (h-14) header */
+    z-index: 20;
+    background: hsl(var(--background) / 0.96);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 6px 8px !important;
+    margin: -8px -8px 6px !important;
+    border-bottom: 1px solid hsl(var(--border));
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .mobile-sticky-summary > * {
+    gap: 4px !important;
+  }
+}
+
+
