@@ -9,7 +9,8 @@ import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/modules";
 import { printDocHtml, buildFileTitle } from "@/lib/print-export";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoImg from "@/assets/brand/logo.png";
+const logoAsset = { url: logoImg };
 
 type Row = Record<string, unknown> & { id: string };
 

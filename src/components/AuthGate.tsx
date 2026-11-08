@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
-import logoAsset from "@/assets/logo-readable.png.asset.json";
+import logo_readableImg from "@/assets/brand/logo-readable.png";
+const logoAsset = { url: logo_readableImg };
 
 function phoneToEmail(phone: string) {
   const clean = phone.replace(/[^0-9]/g, "");

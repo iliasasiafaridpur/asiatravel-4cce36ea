@@ -336,7 +336,7 @@ function DashboardPage() {
 
   const { data: officeCashBalance = 0 } = useQuery({
     queryKey: ["dashboard", "office_cash_balance", isAdmin],
-    enabled: isAdmin,
+    enabled: false,
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
@@ -363,8 +363,10 @@ function DashboardPage() {
     },
   });
 
-  const shownCashBalance = isAdmin ? officeCashBalance : Number(myBalance?.currentBalance ?? 0);
-  const shownCashLabel = isAdmin ? "Office Cash" : meName;
+  // Always show the logged-in user's own received cash balance, regardless of role.
+  void officeCashBalance;
+  const shownCashBalance = Number(myBalance?.currentBalance ?? 0);
+  const shownCashLabel = meName;
   const profileName = (uid?: string | null) =>
     profiles.find((p) => p.user_id === uid)?.full_name ?? null;
 

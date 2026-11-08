@@ -22,7 +22,8 @@ import { toast } from "sonner";
 import { BookOpen, CheckCircle2, Clock, Printer, Search, User2, Users, XCircle } from "lucide-react";
 import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpenseHitsUserBalance, methodLabel, DISCOUNT_LABEL } from "@/lib/payment-methods";
 import { buildFileTitle, printDocHtml } from "@/lib/print-export";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoImg from "@/assets/brand/logo.png";
+const logoAsset = { url: logoImg };
 
 const fmt = (n: number) => `৳ ${(Number(n) || 0).toLocaleString()}`;
 

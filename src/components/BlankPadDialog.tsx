@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Printer, FileText, X } from "lucide-react";
 import { printDocHtml, buildFileTitle, buildPadHeaderHtml } from "@/lib/print-export";
 import { formatDate } from "@/lib/modules";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoImg from "@/assets/brand/logo.png";
+const logoAsset = { url: logoImg };
 import { toast } from "sonner";
 
 const AGENCY = {

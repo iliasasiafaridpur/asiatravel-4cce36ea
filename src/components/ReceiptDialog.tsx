@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Printer, X, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { buildFileTitle } from "@/lib/print-export";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoImg from "@/assets/brand/logo.png";
+const logoAsset = { url: logoImg };
 
 
 export interface ReceiptInfo {

@@ -1,6 +1,6 @@
 // Auto-print script appended only for the print/PDF flow.
 const AUTO_PRINT_SCRIPT =
-  `<script>window.onload=function(){setTimeout(function(){window.print();},250);setTimeout(function(){window.close();},800);}<\/script>`;
+  `<script>window.onload=function(){var go=function(){setTimeout(function(){window.print();setTimeout(function(){window.close();},500);},200);};var imgs=Array.prototype.slice.call(document.images);var left=imgs.filter(function(i){return !i.complete;}).length;if(!left){go();return;}var done=false;var fin=function(){if(done)return;done=true;go();};imgs.forEach(function(i){if(!i.complete){i.onload=i.onerror=function(){left--;if(left<=0)fin();};}});setTimeout(fin,3000);}<\/script>`;
 
 // Company details for the "Pad" letterhead (matches BlankPadDialog).
 const PAD_AGENCY = {

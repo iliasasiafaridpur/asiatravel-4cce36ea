@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import logoAsset from "@/assets/brand-mark.png.asset.json";
+import brand_markImg from "@/assets/brand/brand-mark.png";
+const logoAsset = { url: brand_markImg };
 import {
   LayoutDashboard,
   ClipboardList,

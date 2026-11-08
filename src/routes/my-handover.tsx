@@ -240,7 +240,9 @@ const parseBalanceNoteRemarks = (text: string) => {
     if (/^agency\s*:/i.test(line)) { kind = "agency"; continue; }
     const m = /^(.+?):\s*(?:opening balance|current balance)-(.*)$/.exec(line);
     if (!m || !kind) continue;
-    const seg = m[2];
+    // "opening ... Current balance-..." লাইনে আসল current অংশটুকুই নিতে হবে।
+    const ci = m[2].search(/Current balance-/i);
+    const seg = (ci >= 0 ? m[2].slice(ci + "Current balance-".length) : m[2]).replace(/\(.*\)\s*$/, "");
     const dueM = /Due\s*(-?[\d,]+)\/-/.exec(seg);
     const advM = /Adv\s*(-?[\d,]+)\/-/.exec(seg);
     if (!dueM && !advM) continue;
@@ -282,7 +284,7 @@ function BalanceList({ title, rows, checkedSet, onToggle, loading, kind, opening
                 <span className="text-muted-foreground"> · Adv </span>{fmt(r.advance)}
                 {openingMap && openingMap[r.name] && (
                   <span className="font-medium text-rose-600">
-                    {" "}({fmt(netOf(kind, openingMap[r.name]) - netOf(kind, r))}/-)
+                    {" "}({fmt(netOf(kind, r) - netOf(kind, openingMap[r.name]))}/-)
                   </span>
                 )}
               </span>
@@ -650,7 +652,7 @@ function MyHandoverPage() {
     const line = (kind: "vendor" | "agency", name: string, cur: { due: number; advance: number }) => {
       const open = openingDate === "" ? cur : openingMaps?.[kind]?.[name] ?? null;
       if (openingBalOn && open) {
-        const diff = Math.round(net(kind, open) - net(kind, cur));
+        const diff = Math.round(net(kind, cur) - net(kind, open));
         return `${name}: opening balance-${parts(open)} Current balance-${parts(cur)} (${diff}/-)`;
       }
       return `${name}: current balance-${parts(cur)}`;
@@ -1206,12 +1208,34 @@ function MyHandoverPage() {
                 Balance Note
               </label>
             </div>
-            <Textarea
-              rows={3}
-              value={finalRemarks}
-              onChange={(e) => setRemarks(stripNote(e.target.value))}
-              placeholder="MD এর জন্য নোট…"
-            />
+            {balanceNote ? (
+              <div className="grid sm:grid-cols-2 rounded-md border overflow-hidden">
+                <div className="p-2 text-sm whitespace-pre-wrap break-words border-b sm:border-b-0 sm:border-r max-h-60 overflow-y-auto">
+                  {balanceNote.split("\n").map((ln, i) => {
+                    const m = /^(.*)(\(-?\d+\/-\))\s*$/.exec(ln);
+                    return (
+                      <div key={i}>
+                        {m ? (<>{m[1]}<span className="font-semibold text-destructive">{m[2]}</span></>) : ln}
+                      </div>
+                    );
+                  })}
+                </div>
+                <Textarea
+                  rows={4}
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="এখানে নিজের নোট লিখুন (Enter দিয়ে নতুন লাইন)…"
+                  className="border-0 rounded-none focus-visible:ring-0 min-h-full resize-y"
+                />
+              </div>
+            ) : (
+              <Textarea
+                rows={3}
+                value={finalRemarks}
+                onChange={(e) => setRemarks(stripNote(e.target.value))}
+                placeholder="MD এর জন্য নোট…"
+              />
+            )}
             {balanceNoteOn && (
               <div className="mt-2 rounded-md border p-2 space-y-2">
                 <label className="flex items-center gap-2 text-xs font-medium cursor-pointer select-none">

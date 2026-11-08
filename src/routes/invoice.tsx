@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { LookupSelect } from "@/components/LookupSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, Search, User, IdCard, ReceiptText, WalletCards, MapPin, Phone, Mail, Plus, Trash2, FileText } from "lucide-react";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoImg from "@/assets/brand/logo.png";
+const logoAsset = { url: logoImg };
 import { BlankPadDialog } from "@/components/BlankPadDialog";
 
 

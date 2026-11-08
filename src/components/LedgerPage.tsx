@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { formatDate, statusBadgeClass, isAdvancePayment, type ModuleSchema, type Field } from "@/lib/modules";
-import logoAsset from "@/assets/logo.png.asset.json";
+import logoImg from "@/assets/brand/logo.png";
+const logoAsset = { url: logoImg };
 import { AdvanceBadge } from "@/components/AdvanceBadge";
 import { PageWatermark } from "@/components/PageWatermark";
 
