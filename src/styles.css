@@ -613,3 +613,79 @@ input[type="week"]::-webkit-calendar-picker-indicator:hover {
 }
 
 
+
+/* ============================================================
+   MOBILE ONLY (<768px): sample-card layout for module lists.
+   Top action bar (View/Edit/Delete once) → Date/ID/status block →
+   each section as a bordered tile: label left, values right.
+   Uses theme colours only. Desktop/tablet untouched.
+   ============================================================ */
+@media (max-width: 767px) {
+  .responsive-cards > tbody > tr {
+    border: 1.5px solid hsl(var(--primary) / 0.55) !important;
+    border-radius: 18px !important;
+    padding: 56px 12px 12px 12px !important;
+    margin-bottom: 14px !important;
+    gap: 10px !important;
+    overflow: hidden;
+    box-shadow: 0 0 14px -6px hsl(var(--primary) / 0.6) !important;
+  }
+  /* top action bar strip */
+  .responsive-cards > tbody > tr::before {
+    content: "";
+    position: absolute; left: 0; right: 0; top: 0; height: 46px;
+    background: hsl(var(--primary) / 0.12);
+    border-bottom: 1px solid hsl(var(--primary) / 0.35);
+    pointer-events: none;
+  }
+  .responsive-cards > tbody > tr::after { display: none; }
+
+  /* Date / ID / status / by — header block */
+  .responsive-cards > tbody > tr > td:first-child {
+    padding: 2px 4px 12px 4px !important;
+    border-bottom: 1px solid hsl(var(--primary) / 0.35) !important;
+    margin-bottom: 2px;
+  }
+  .responsive-cards > tbody > tr > td:first-child > div > div:first-child { font-size: 22px !important; font-weight: 800; line-height: 1.15; }
+  .responsive-cards > tbody > tr > td:first-child .font-mono { font-size: 13px !important; font-weight: 700; }
+  .responsive-cards > tbody > tr > td:first-child .text-\[10px\] { font-size: 13px !important; font-weight: 600; margin-top: 6px; }
+  .responsive-cards > tbody > tr > td:first-child [data-row-noopen] { margin-top: 6px; }
+
+  /* Section tiles: label left, value block right */
+  .responsive-cards > tbody > tr > td:not(:first-child):not(:last-child) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px;
+    border: 1px solid hsl(var(--primary) / 0.3) !important;
+    border-radius: 14px;
+    background: hsl(var(--muted) / 0.35);
+    padding: 12px 12px !important;
+    font-size: 14px !important;
+    line-height: 1.45;
+  }
+  .responsive-cards > tbody > tr > td:not(:first-child):not(:last-child)::before {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: hsl(var(--primary)) !important;
+    flex: 0 0 38%;
+  }
+  .responsive-cards > tbody > tr > td:not(:first-child):not(:last-child) > * {
+    flex: 1 1 auto; min-width: 0 !important; text-align: left;
+  }
+  .responsive-cards > tbody > tr > td:not(:first-child):not(:last-child) .text-xs,
+  .responsive-cards > tbody > tr > td:not(:first-child):not(:last-child) .text-sm { font-size: 14px !important; }
+  .responsive-cards > tbody > tr > td.text-right > *,
+  .responsive-cards > tbody > tr > td[class*="text-right"] > * { text-align: right !important; font-weight: 700; }
+
+  /* Actions — top-right, round buttons, appears once */
+  .responsive-cards > tbody > tr > td:last-child {
+    top: 6px !important; right: 10px !important;
+    background: transparent !important; border: none !important;
+  }
+  .responsive-cards > tbody > tr > td:last-child > div { gap: 10px !important; }
+  .responsive-cards > tbody > tr > td:last-child button {
+    height: 34px !important; width: 34px !important;
+    border-radius: 9999px !important;
+  }
+}

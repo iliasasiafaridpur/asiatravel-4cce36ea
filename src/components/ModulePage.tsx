@@ -2245,7 +2245,81 @@ export function ModulePage({ module: mod }: Props) {
       <Card>
         <CardContent className="p-3 sm:p-4">
           {monthPager && <div className="mb-3">{monthPager}</div>}
-          <div className="overflow-x-auto rounded-md border responsive-cards-wrap">
+          {stackedCols && (
+            <div className="md:hidden space-y-3">
+              {loading ? (
+                <div className="text-center text-muted-foreground py-8">লোড হচ্ছে...</div>
+              ) : loadError ? (
+                <div className="text-center py-8 space-y-2">
+                  <p className="text-sm text-destructive">লোড করতে সমস্যা: {loadError}</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void load(true)}>আবার লোড করুন</Button>
+                </div>
+              ) : pageRows.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">কোনো এন্ট্রি পাওয়া যায়নি</div>
+              ) : pageRows.map((r, idx) => {
+                const [refCol, heroCol, ...restCols] = stackedCols;
+                const amountCol = restCols.find((c) => c.key === "amount");
+                const midCols = restCols.filter((c) => c.key !== "amount");
+                return (
+                  <div
+                    key={r.id}
+                    id={`mrow-${r.id}`}
+                    className={`rounded-2xl border-2 border-primary/60 shadow-lg overflow-hidden row-tint-${idx % 4} ${selectedId === r.id ? "row-worked" : ""} ${canCancel && r.cancelled ? "opacity-70 grayscale" : ""}`}
+                    onClick={(e) => {
+                      const t = e.target as HTMLElement;
+                      if (t.closest('button,a,[role="menuitem"],[role="menu"],input,select,textarea,[data-row-noopen]')) return;
+                      selectRow(r.id);
+                      setProfileRow(r);
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-2 px-3 py-2 border-b border-primary/40 bg-primary/10">
+                      <div className="min-w-0 text-sm">{refCol.render(r)}</div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" title="View" onClick={() => { selectRow(r.id); setDetailRow(r); }}>
+                          <Eye className="h-4 w-4 text-primary" />
+                        </Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" title="এডিট করুন" onClick={() => { selectRow(r.id); startEdit(r); }}><Pencil className="h-4 w-4" /></Button>
+                        {canShowDelete(r) && (
+                          <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" title="ডিলিট করুন" onClick={() => {
+                            selectRow(r.id);
+                            const owner = r.created_by as string | null | undefined;
+                            if (owner && user?.id && owner !== user.id) {
+                              toast.error("এটি অন্য ইউজারের এন্ট্রি — আপনি ডিলিট করতে পারবেন না।");
+                              return;
+                            }
+                            requestDelete(r);
+                          }}><Trash2 className="h-4 w-4 text-rose-500" /></Button>
+                        )}
+                      </div>
+                    </div>
+                    {heroCol && (
+                      <div className="px-3 py-2.5 border-b border-primary/30">
+                        <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">{heroCol.header}</div>
+                        <div className="text-base">{heroCol.render(r)}</div>
+                      </div>
+                    )}
+                    {midCols.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 p-3">
+                        {midCols.map((c) => (
+                          <div key={c.key} className="rounded-lg border border-primary/30 bg-background/40 p-2 min-w-0 text-xs break-words">
+                            <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">{c.header}</div>
+                            {c.render(r)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {amountCol && (
+                      <div className="mx-3 mb-3 rounded-lg border border-primary/40 bg-primary/5 p-2.5">
+                        <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">{amountCol.header}</div>
+                        <div className="[&>div]:text-left [&>div]:whitespace-normal">{amountCol.render(r)}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className={`overflow-x-auto rounded-md border responsive-cards-wrap ${stackedCols ? "hidden md:block" : ""}`}>
 
             <Table className="responsive-cards">
               <TableHeader>
