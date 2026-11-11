@@ -20,6 +20,7 @@ import {
 } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Rows3 } from "lucide-react";
@@ -322,6 +323,7 @@ function RootComponent() {
               <main className="flex-1 p-2 sm:p-5 max-w-full overflow-x-hidden pt-16 md:pt-2">
                 <Outlet />
               </main>
+              <MobileBottomNav />
             </div>
           </div>
         </SidebarProvider>

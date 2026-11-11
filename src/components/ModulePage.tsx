@@ -24,7 +24,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X, Plane, Rows3 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Wallet, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Save, Ban, Eye, UserRound, Users, Building2, X, Plane, Rows3, SlidersHorizontal } from "lucide-react";
 import { PasswordConfirmDialog, verifyCurrentPassword } from "@/components/PasswordConfirmDialog";
 import { toast } from "sonner";
 import { TicketRefundDialog } from "@/components/TicketRefundDialog";
@@ -193,6 +193,7 @@ export function ModulePage({ module: mod }: Props) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [dueOnly, setDueOnly] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -2044,11 +2045,26 @@ export function ModulePage({ module: mod }: Props) {
       </div>
 
 
-      <Card>
+      <Card className="module-filter-panel">
         <CardContent className="p-2 sm:p-2.5">
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-1.5 items-end justify-between">
-              <div className="flex flex-wrap gap-1.5 items-end">
+          <div className="module-filter-layout space-y-2">
+            <div className="module-filter-heading">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setMobileFiltersOpen((v) => !v)}
+                aria-expanded={mobileFiltersOpen}
+                aria-controls="module-filter-options"
+                className="w-full justify-between gap-2"
+              >
+                <span className="flex min-w-0 items-center gap-2"><SlidersHorizontal className="h-4 w-4 shrink-0" /> ফিল্টার
+                  {(statusFilter !== "all" || Object.values(fieldFilters).some((v) => v && v !== "all") || startDate || endDate || statusChangeDate || statusChangeStatus || dueOnly || showCancelled) && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="ফিল্টার সক্রিয়" />}
+                </span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${mobileFiltersOpen ? "rotate-180" : ""}`} />
+              </Button>
+            </div>
+            <div id="module-filter-options" data-open={mobileFiltersOpen} className="module-filter-options flex flex-wrap gap-1.5 items-end justify-between">
+              <div className="module-filter-fields flex flex-wrap gap-1.5 items-end">
                 {hasDateFilter && (
                   <>
                     <div className="space-y-0.5 w-32">
@@ -2092,7 +2108,7 @@ export function ModulePage({ module: mod }: Props) {
                   </div>
                 )}
                 {supportsStatusChangeFilter && (
-                  <div className="flex flex-wrap gap-1.5 items-end rounded-md border border-sky-300 bg-sky-50 dark:bg-sky-950/30 px-2 py-1">
+                  <div className="module-status-filter flex flex-wrap gap-1.5 items-end rounded-md border border-sky-300 bg-sky-50 dark:bg-sky-950/30 px-2 py-1">
                     <div className="space-y-0.5">
                       <Label className="text-xs font-medium text-sky-700 dark:text-sky-300">স্টাটাস পরিবর্তনের তারিখ</Label>
                       <DateInput value={statusChangeDate} onChange={(e) => setStatusChangeDate(e.target.value)} className="h-8 px-2 text-sm w-36" />
@@ -2152,13 +2168,13 @@ export function ModulePage({ module: mod }: Props) {
                 </Button>
               </div>
               {mod.key === "bmet" && (
-                <div className="shrink-0 flex items-center gap-2">
+                <div className="module-filter-tools shrink-0 flex items-center gap-2">
                   <BmetQuickManage rows={rows} onChanged={() => { void load(true); }} />
                   <BmetMonthlyPrint rows={rows} idColumn={mod.idColumn} />
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="module-filter-search flex items-center gap-2">
               <div className="relative flex-1 min-w-0 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
