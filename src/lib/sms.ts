@@ -15,13 +15,13 @@ export const SMS_TAGS = [
   "{ref_id}",
   "{price}",
   "{due_amount}",
-  "{company}"
+  "{company}",
 ];
 
 export const DEFAULT_STATUS_TEMPLATE =
-  "প্রিয় {customer_name}, আপনার {service_name} ({ref_id}) এর বর্তমান অবস্থা: {status}। ধন্যবাদ, {company}";
+  "Dear {customer_name}, your {service_name} ({ref_id}) status: {status}. Regards, {company}";
 export const DEFAULT_DUE_TEMPLATE =
-  "প্রিয় {customer_name}, আপনার {service_name} ({ref_id}) বাবদ ৳{due_amount} বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। {company}";
+  "Dear {customer_name}, reminder: BDT {due_amount} is due for {service_name} ({ref_id}). Regards, {company}";
 
 /** BD mobile → 8801XXXXXXXXX; returns null if not a valid BD mobile. */
 export function normalizeBdMobile(raw: unknown): string | null {
@@ -60,20 +60,14 @@ export async function sendStatusSms(opts: {
     supabase.from("sms_settings").select("company_name").eq("id", 1).maybeSingle(),
   ]);
 
-  // মোট মূল্য হিসাব (টিকিটে sold_price, অন্য সার্ভিসে bill_amount বা contract_amount)
-  const rawPrice = Number(
-    opts.row.sold_price ??
-    opts.row.bill_amount ??
-    opts.row.contract_amount ??
-    opts.row.amount ??
-    0
-  );
+  const sold = Number(opts.row.sold_price ?? 0);
+  const recv = Number(opts.row.received_amount ?? opts.row.received ?? opts.row.paid_amount ?? 0);
+  const disc = Number(opts.row.discount_amount ?? 0);
+  const autoDue = Math.max(0, sold - recv - disc);
+  const effectiveDue = opts.due !== undefined ? opts.due : autoDue;
 
-  // স্বয়ংক্রিয় বকেয়া হিসাব: মোট মূল্য - জমা - ডিসকাউন্ট
-  const rawReceived = Number(opts.row.received_amount ?? opts.row.receive_amount ?? 0);
-  const rawDiscount = Number(opts.row.discount ?? 0);
-  const autoDue = Math.max(0, rawPrice - rawReceived - rawDiscount);
-  const finalDue = opts.due !== undefined ? Number(opts.due) : autoDue;
+  const formattedPrice = sold > 0 ? (sold >= 1000 ? sold.toLocaleString("en-US") : String(sold)) : "";
+  const formattedDue = effectiveDue > 0 ? (effectiveDue >= 1000 ? effectiveDue.toLocaleString("en-US") : String(effectiveDue)) : "0";
 
   const message = fillTemplate(tpl?.body || DEFAULT_STATUS_TEMPLATE, {
     customer_name: String(opts.row.passenger_name ?? ""),
@@ -81,8 +75,8 @@ export async function sendStatusSms(opts: {
     service_name: opts.serviceName,
     status: opts.status,
     ref_id: opts.refId,
-    price: rawPrice > 0 ? rawPrice.toLocaleString("en-US") : "0",
-    due_amount: finalDue > 0 ? finalDue.toLocaleString("en-US") : "0",
+    price: formattedPrice,
+    due_amount: formattedDue,
     company: s?.company_name ?? "",
   });
 
