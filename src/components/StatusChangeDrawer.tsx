@@ -18,6 +18,7 @@ import { useCurrentUser, displayName } from "@/hooks/useCurrentUser";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
 import { generateNextId } from "@/lib/idgen";
 import { speakDelivery } from "@/lib/voice";
+import { sendStatusSms, normalizeBdMobile } from "@/lib/sms";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod } from "@/lib/payment-methods";
@@ -90,6 +91,7 @@ export function StatusChangeDrawer({
   const [targetStatus, setTargetStatus] = useState<string>("");
   const [eventDate, setEventDate] = useState<string>(todayIso());
   const [saving, setSaving] = useState(false);
+  const [smsOn, setSmsOn] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptInfo | null>(null);
 
   const order = request?.statusOrder && request.statusOrder.length > 0
@@ -448,6 +450,12 @@ export function StatusChangeDrawer({
         },
       } as Parameters<typeof toast.success>[1]);
       if (markDelivered) speakDelivery(String(request.row.passenger_name ?? ""));
+      if (smsOn && normalizeBdMobile(request.row.mobile)) {
+        void sendStatusSms({ row: request.row, moduleKey: request.moduleKey ?? "", status: finalStatus, serviceName: request.serviceType, refId: request.refId })
+          .then((r) => r.ok ? toast.success("SMS পাঠানো হয়েছে") : toast.error("SMS যায়নি: " + (r.error ?? "")))
+          .catch(() => toast.error("SMS যায়নি"));
+      }
+      setSmsOn(false);
       onApplied();
       onClose();
     } catch (e) {
@@ -731,6 +739,13 @@ export function StatusChangeDrawer({
 
         </div>
 
+          {normalizeBdMobile(request?.row.mobile) && !isSame && (
+            <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
+              <input type="checkbox" className="h-4 w-4 accent-primary" checked={smsOn} onChange={(e) => setSmsOn(e.target.checked)} />
+              <span>কাস্টমারকে SMS পাঠান</span>
+              <span className="ml-auto font-mono text-muted-foreground">{String(request?.row.mobile ?? "")}</span>
+            </label>
+          )}
           <div className="shrink-0 -mx-0.5 flex gap-2 border-t bg-popover px-0.5 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2">
             {isDeliveredWithDue ? (
               <Button

@@ -10,6 +10,7 @@ import {
   Globe2,
   Wallet,
   Settings as SettingsIcon,
+  MessageSquare,
   ShieldCheck,
   Crown,
   HandCoins,
@@ -82,6 +83,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { to: "/help", title: "সহায়িকা / Help", icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/15" },
       { to: "/users", title: "User Management", icon: ShieldCheck, color: "text-indigo-400", bg: "bg-indigo-500/15" },
+      { to: "/sms", title: "SMS সিস্টেম", icon: MessageSquare, color: "text-emerald-400", bg: "bg-emerald-500/15" },
       { to: "/settings", title: "Settings", icon: SettingsIcon, color: "text-slate-300", bg: "bg-slate-500/20" },
     ],
   },

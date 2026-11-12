@@ -1177,6 +1177,102 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_logs: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          mobile: string
+          module_key: string | null
+          passenger_name: string | null
+          ref_id: string | null
+          response: string | null
+          sent_by: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          message: string
+          mobile: string
+          module_key?: string | null
+          passenger_name?: string | null
+          ref_id?: string | null
+          response?: string | null
+          sent_by?: string | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          mobile?: string
+          module_key?: string | null
+          passenger_name?: string | null
+          ref_id?: string | null
+          response?: string | null
+          sent_by?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
+      sms_settings: {
+        Row: {
+          api_key: string | null
+          api_url: string
+          company_name: string | null
+          enabled: boolean
+          id: number
+          sender_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_url?: string
+          company_name?: string | null
+          enabled?: boolean
+          id?: number
+          sender_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_url?: string
+          company_name?: string | null
+          enabled?: boolean
+          id?: number
+          sender_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_templates: {
+        Row: {
+          body: string
+          id: string
+          module_key: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          id?: string
+          module_key: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          id?: string
+          module_key?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           agency_sold: string | null
