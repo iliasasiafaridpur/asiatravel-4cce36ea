@@ -13,6 +13,7 @@ import { resilientInsert, resilientUpdate } from "@/lib/offline-queue";
 import { DUE_RECEIVE_METHODS, isVendorReceivedMethod } from "@/lib/payment-methods";
 import { settleVendorBillByBooking } from "@/lib/vendor-settle";
 import { Wallet } from "lucide-react";
+import { normalizeBdMobile, sendPaymentReceiptSms } from "@/lib/sms";
 import { toast } from "sonner";
 
 const CONFIG = {
@@ -52,6 +53,7 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
   const [methodAmounts, setMethodAmounts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState("");
   const [withDelivery, setWithDelivery] = useState(false);
+  const [sendSmsOn, setSendSmsOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -176,6 +178,16 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
         }
       }
       toast.success("মোট Due-এর পেমেন্ট সংরক্ষিত হয়েছে");
+      const smsMobile = String(parent.mobile ?? "");
+      if (sendSmsOn && enteredPayment > 0 && normalizeBdMobile(smsMobile)) {
+        const remainingDue = Math.max(0, totalDue - entered);
+        void sendPaymentReceiptSms({
+          mobile: smsMobile, moduleKey: preselect.serviceKey, customerName: String(parent.passenger_name ?? ""),
+          serviceName: cfg.type, refId: String(parent[cfg.idCol] ?? ""), paid: enteredPayment, due: remainingDue, receiptNo: baseReceiptId,
+        }).then((r) => r.ok ? toast.success("Payment SMS পাঠানো হয়েছে") : toast.error("SMS যায়নি: " + (r.error ?? "")))
+          .catch(() => toast.error("SMS যায়নি"));
+      }
+      setSendSmsOn(false);
       onDone?.();
       onOpenChange(false);
     } catch (error) {
@@ -209,6 +221,12 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
               </div>
             ) : <div><Label>Method</Label><Select value={method} onValueChange={setMethod}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{DUE_RECEIVE_METHODS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></div>}
             <label className="flex items-center gap-2 text-sm"><Checkbox checked={withDelivery} onCheckedChange={(value) => setWithDelivery(value === true)} /> মূল সার্ভিস Delivery-সহ গ্রহণ</label>
+            {parent && normalizeBdMobile(parent.mobile) && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox checked={sendSmsOn} onCheckedChange={(v) => setSendSmsOn(v === true)} />
+                Send payment confirmation SMS to customer ({String(parent.mobile)})
+              </label>
+            )}
             <div><Label>Remarks</Label><Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} className="mt-1" /></div>
             <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>বাতিল</Button><Button onClick={submit} disabled={saving || entered <= 0}>{saving ? "সেভ হচ্ছে…" : "পেমেন্ট গ্রহণ করুন"}</Button></DialogFooter>
           </div>

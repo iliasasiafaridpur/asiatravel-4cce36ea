@@ -7,7 +7,9 @@ import { Separator } from "@/components/ui/separator";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, statusBadgeClass, MODULES, SERVICE_CATEGORIES, moduleByKey } from "@/lib/modules";
-import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle, Wallet } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Layers, PhoneCall, MessageCircle, Wallet, MessageSquareText } from "lucide-react";
+import { SmsComposeDialog } from "@/components/SmsComposeDialog";
+import { buildLatestStatusSms } from "@/lib/sms";
 import { MobileColorPicker } from "@/components/MobileColorPicker";
 import { useMobileColors, mobileColorTextClass } from "@/hooks/useMobileColors";
 import { CombinedDueReceiveDialog, type CombinedDuePreselect } from "@/components/CombinedDueReceiveDialog";
@@ -108,6 +110,7 @@ export function PassengerProfileDrawer({
   const [duePreselect, setDuePreselect] = useState<CombinedDuePreselect | null>(null);
   // Bumped after a payment is taken so the profile reloads its numbers.
   const [refreshTick, setRefreshTick] = useState(0);
+  const [smsOpen, setSmsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { colorFor } = useMobileColors();
 
@@ -408,6 +411,7 @@ export function PassengerProfileDrawer({
   );
   const timelineLabel = selectedSvc?.moduleLabel ?? "";
   const timelineRefId = selectedSvc?.refId ?? "";
+  const smsRefId = timelineRefId || String((timelineMod?.idColumn ? timelineRow[timelineMod.idColumn] : "") ?? "");
 
   // Cost Price follows the selected service (same as the timeline above).
   const timelineIsTicket = timelineModuleKey === "tickets";
@@ -471,6 +475,17 @@ export function PassengerProfileDrawer({
                         >
                           <MessageCircle className="h-3.5 w-3.5" />
                         </a>
+                      ) : null}
+                      {row.mobile ? (
+                        <button
+                          type="button"
+                          onClick={() => setSmsOpen(true)}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-500/15 text-sky-400 ring-1 ring-inset ring-sky-500/30 transition-colors hover:bg-sky-500/25"
+                          aria-label={`SMS ${String(row.mobile)}`}
+                          title="সর্বশেষ অবস্থার SMS পাঠান"
+                        >
+                          <MessageSquareText className="h-3.5 w-3.5" />
+                        </button>
                       ) : null}
                     </span>
                   </div>
@@ -929,6 +944,24 @@ export function PassengerProfileDrawer({
       </Sheet>
 
       {/* Due Receive launched from inside the passenger profile */}
+      <SmsComposeDialog
+        open={smsOpen}
+        onOpenChange={setSmsOpen}
+        title="সর্বশেষ অবস্থার SMS"
+        mobile={String(row.mobile ?? "")}
+        kind="status"
+        moduleKey={timelineModuleKey}
+        refId={smsRefId}
+        name={String(timelineRow.passenger_name ?? "")}
+        info={<div>Service: <b>{timelineMod?.label ?? ""}</b> {smsRefId} · Status: <b>{timelineStatus || "—"}</b></div>}
+        build={() => buildLatestStatusSms({
+          row: { ...timelineRow, status: timelineStatus },
+          moduleKey: String(timelineModuleKey ?? ""),
+          serviceName: timelineMod?.label ?? "service",
+          refId: smsRefId,
+          due: selectedSvc?.due ?? due,
+        })}
+      />
       <CombinedDueReceiveDialog
         open={!!duePreselect}
         onOpenChange={(v) => { if (!v) setDuePreselect(null); }}

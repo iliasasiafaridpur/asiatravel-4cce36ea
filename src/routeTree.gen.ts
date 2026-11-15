@@ -22,6 +22,7 @@ import { Route as MyHandoverRouteImport } from './routes/my-handover'
 import { Route as OtherRouteImport } from './routes/other'
 import { Route as SaudiVisaRouteImport } from './routes/saudi-visa'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SmsRouteImport } from './routes/sms'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as AgencyLedgerIndexRouteImport } from './routes/agency-ledger.index'
@@ -95,6 +96,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SmsRoute = SmsRouteImport.update({
+  id: '/sms',
+  path: '/sms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TicketsRoute = TicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/other': typeof OtherRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
+  '/sms': typeof SmsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/other': typeof OtherRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
+  '/sms': typeof SmsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/other': typeof OtherRoute
   '/saudi-visa': typeof SaudiVisaRoute
   '/settings': typeof SettingsRoute
+  '/sms': typeof SmsRoute
   '/tickets': typeof TicketsRoute
   '/users': typeof UsersRoute
   '/agency-ledger/$name': typeof AgencyLedgerNameRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/other'
     | '/saudi-visa'
     | '/settings'
+    | '/sms'
     | '/tickets'
     | '/users'
     | '/agency-ledger/$name'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/other'
     | '/saudi-visa'
     | '/settings'
+    | '/sms'
     | '/tickets'
     | '/users'
     | '/agency-ledger/$name'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/other'
     | '/saudi-visa'
     | '/settings'
+    | '/sms'
     | '/tickets'
     | '/users'
     | '/agency-ledger/$name'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   OtherRoute: typeof OtherRoute
   SaudiVisaRoute: typeof SaudiVisaRoute
   SettingsRoute: typeof SettingsRoute
+  SmsRoute: typeof SmsRoute
   TicketsRoute: typeof TicketsRoute
   UsersRoute: typeof UsersRoute
   AgencyLedgerNameRoute: typeof AgencyLedgerNameRoute
@@ -383,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sms': {
+      id: '/sms'
+      path: '/sms'
+      fullPath: '/sms'
+      preLoaderRoute: typeof SmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tickets': {
       id: '/tickets'
       path: '/tickets'
@@ -449,6 +469,7 @@ const rootRouteChildren: RootRouteChildren = {
   OtherRoute: OtherRoute,
   SaudiVisaRoute: SaudiVisaRoute,
   SettingsRoute: SettingsRoute,
+  SmsRoute: SmsRoute,
   TicketsRoute: TicketsRoute,
   UsersRoute: UsersRoute,
   AgencyLedgerNameRoute: AgencyLedgerNameRoute,

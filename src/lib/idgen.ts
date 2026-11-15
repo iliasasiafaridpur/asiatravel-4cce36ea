@@ -66,20 +66,29 @@ export async function generateNextId(mod: ModuleSchema, entryDate?: string): Pro
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     throw new Error("ইন্টারনেট নেই — নতুন এন্ট্রি করা যাবে না।");
   }
-  try {
-    const spec = buildRpcSpec(mod, entryDate);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await withTimeout(
-      supabase.rpc(spec.fn as never, spec.params as never) as unknown as Promise<{ data: unknown; error: unknown }>,
-      4000,
-    );
-    if (error || !data) return localId(mod, entryDate);
-    return data as string;
-  } catch (e) {
-    if (typeof navigator !== "undefined" && navigator.onLine === false) throw e;
-    return localId(mod, entryDate);
+  // Never invent a random serial. Retry the database up to 3 times; if it
+  // still fails, stop the save with a clear message so the serial stays sequential.
+  const spec = buildRpcSpec(mod, entryDate);
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase.rpc(spec.fn as never, spec.params as never) as unknown as Promise<{ data: unknown; error: unknown }>,
+        10000,
+      );
+      if (!error && data) return data as string;
+      lastErr = error;
+    } catch (e) {
+      lastErr = e;
+    }
+    await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
   }
+  console.error("idgen failed", lastErr);
+  throw new Error("সিরিয়াল নম্বর তৈরি হয়নি — ইন্টারনেট চেক করে আবার Save করুন।");
 }
+
+// Kept only for reference; no longer used (random serials caused TKT-2611-522).
+void localId;
 
 // Public helper: what to attach to an offline-queued insert payload so it can
 // be regenerated at drain time. Callers do:

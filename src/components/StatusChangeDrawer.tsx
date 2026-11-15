@@ -450,7 +450,7 @@ export function StatusChangeDrawer({
         },
       } as Parameters<typeof toast.success>[1]);
       if (markDelivered) speakDelivery(String(request.row.passenger_name ?? ""));
-      if (smsOn && normalizeBdMobile(request.row.mobile)) {
+      if (smsOn && !["BOOK","NEW"].includes(finalStatus) && normalizeBdMobile(request.row.mobile)) {
         void sendStatusSms({ row: request.row, moduleKey: request.moduleKey ?? "", status: finalStatus, serviceName: request.serviceType, refId: request.refId })
           .then((r) => r.ok ? toast.success("SMS পাঠানো হয়েছে") : toast.error("SMS যায়নি: " + (r.error ?? "")))
           .catch(() => toast.error("SMS যায়নি"));
@@ -739,7 +739,7 @@ export function StatusChangeDrawer({
 
         </div>
 
-          {normalizeBdMobile(request?.row.mobile) && !isSame && (
+          {normalizeBdMobile(request?.row.mobile) && !isSame && !["BOOK","NEW"].includes(next) && (
             <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
               <input type="checkbox" className="h-4 w-4 accent-primary" checked={smsOn} onChange={(e) => setSmsOn(e.target.checked)} />
               <span>কাস্টমারকে SMS পাঠান</span>

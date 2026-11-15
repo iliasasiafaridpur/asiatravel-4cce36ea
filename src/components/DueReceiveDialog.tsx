@@ -17,6 +17,7 @@ import { formatDate } from "@/lib/modules";
 import { resilientInsert, resilientUpdate, isNetworkError } from "@/lib/offline-queue";
 import { DUE_RECEIVE_METHODS, isMdReceivedMethod, isVendorReceivedMethod, methodLabel } from "@/lib/payment-methods";
 import { settleVendorBillByBooking } from "@/lib/vendor-settle";
+import { normalizeBdMobile, sendPaymentReceiptSms } from "@/lib/sms";
 
 // সার্ভিস টেবিলের ম্যাপিং — কোন কলামে received টাকা থাকে + extra context column
 const SERVICES = [
@@ -105,6 +106,7 @@ export function DueReceiveDialog({
   const [multiMode, setMultiMode] = useState(false);
   const [methodAmts, setMethodAmts] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<string>("");
+  const [sendSmsOn, setSendSmsOn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState<"Pending" | "Delivered">("Pending");
   const [savingDelivery, setSavingDelivery] = useState(false);
@@ -470,6 +472,15 @@ export function DueReceiveDialog({
         }
       }
 
+      if (sendSmsOn && amt > 0 && normalizeBdMobile(selected.mobile)) {
+        void sendPaymentReceiptSms({
+          mobile: selected.mobile, moduleKey: selected.service.key, customerName: selected.passenger,
+          serviceName: selected.service.type, refId: selected.refId, paid: amt,
+          due: Math.max(0, selected.sold - newRecv - newDiscount), receiptNo: baseReceiptId,
+        }).then((r) => r.ok ? toast.success("Payment SMS পাঠানো হয়েছে") : toast.error("SMS যায়নি: " + (r.error ?? "")))
+          .catch(() => toast.error("SMS যায়নি"));
+        setSendSmsOn(false);
+      }
       // update local state
       setItems((prev) =>
         prev.map((r) => (r.id === selected.id
@@ -707,6 +718,12 @@ export function DueReceiveDialog({
                       />
                     </div>
                   </div>
+                )}
+                {normalizeBdMobile(selected.mobile) && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={sendSmsOn} onChange={(e) => setSendSmsOn(e.target.checked)} className="h-4 w-4 accent-primary" />
+                    Send payment confirmation SMS to customer ({selected.mobile})
+                  </label>
                 )}
                 <div className="text-[11px] text-muted-foreground -mt-1">
                   Due: {selected.due.toLocaleString()}

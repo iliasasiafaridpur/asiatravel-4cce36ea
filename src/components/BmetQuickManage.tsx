@@ -16,6 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { LookupSelect } from "@/components/LookupSelect";
 import { formatDate } from "@/lib/modules";
+import { sendStatusSms, normalizeBdMobile } from "@/lib/sms";
 import { useMobileColors, mobileColorTextClass, useSetMobileColor } from "@/hooks/useMobileColors";
 import { Zap, Phone, PhoneOff, PhoneCall } from "lucide-react";
 
@@ -70,6 +71,7 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
   const [vendor, setVendor] = useState<string>("");
   const [costPrices, setCostPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [smsOn, setSmsOn] = useState(false);
   const [nameQuery, setNameQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
   const [onlyPending, setOnlyPending] = useState(false);
@@ -216,6 +218,13 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
       }
 
       toast.success(`${ids.length}টি রেকর্ড আপডেট হয়েছে`);
+      if (smsOn) {
+        const st = String(patch.status);
+        const targets = rows.filter((r) => ids.includes(r.id) && normalizeBdMobile(r.mobile));
+        void Promise.all(targets.map((r) => sendStatusSms({ row: { ...r, status: st }, moduleKey: "bmet", status: st, serviceName: "BMET Card", refId: String(r.bmet_id ?? "") }).catch(() => ({ ok: false }))))
+          .then((res) => { const ok = res.filter((x) => x.ok).length; toast[ok === res.length ? "success" : "error"](`SMS: ${ok}/${res.length} পাঠানো হয়েছে`); });
+      }
+      setSmsOn(false);
       reset();
       setOpen(false);
       await onChanged();
@@ -449,7 +458,10 @@ export function BmetQuickManage({ rows, onChanged }: Props) {
                   <LookupSelect kind="vendor" value={vendor} onChange={setVendor} compact />
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-sm">
+                  <input type="checkbox" className="h-4 w-4 accent-primary" checked={smsOn} onChange={(e) => setSmsOn(e.target.checked)} /> SMS
+                </label>
                 <Button variant="outline" onClick={() => setOpen(false)}>বাতিল</Button>
                 <Button onClick={submit} disabled={saving || selected.size === 0 || (mode === "send" && !vendor)}>
                   {saving ? "প্রসেস হচ্ছে..." : currentOption.btn}

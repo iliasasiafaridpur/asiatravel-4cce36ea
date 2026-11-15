@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { SmsComposeDialog } from "@/components/SmsComposeDialog";
+import { buildAgencyDueSms } from "@/lib/sms";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, moduleByKey } from "@/lib/modules";
 import { partySerialCode } from "@/lib/format";
@@ -83,8 +85,7 @@ import {
   Printer,
   ChevronDown,
   ChevronRight,
-  Clock,
-} from "lucide-react";
+  Clock, MessageSquareText } from "lucide-react";
 import { toast } from "sonner";
 import { generateNextId } from "@/lib/idgen";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -268,6 +269,7 @@ export function PartyLedgerPage({
   const [preparedBy, setPreparedBy] = useState(false);
   // Address-label (খাম/কুরিয়ার ঠিকানা) print state.
   const [addrOpen, setAddrOpen] = useState(false);
+  const [smsPhone, setSmsPhone] = useState<string | null>(null);
   const [addrSize, setAddrSize] = useState<"a4" | "a5" | "a6" | "a7">("a5");
   // Orientation: খামের লেখা উপর-নিচ (portrait) নাকি ডান-বাম (landscape)।
   const [addrOrient, setAddrOrient] = useState<"portrait" | "landscape">("landscape");
@@ -2282,6 +2284,17 @@ export function PartyLedgerPage({
       </Dialog>
 
       {/* খাম / কুরিয়ার ঠিকানা লেবেল প্রিন্ট */}
+      <SmsComposeDialog
+        open={!!smsPhone}
+        onOpenChange={(o) => { if (!o) setSmsPhone(null); }}
+        title="Agency Due Reminder"
+        mobile={smsPhone ?? ""}
+        kind="agency_due"
+        moduleKey="agency"
+        name={displayName}
+        info={<div>Agency: <b>{displayName}</b> · Outstanding Due: <b className="text-destructive">৳{Math.max(0, totals.due).toLocaleString()}</b></div>}
+        build={() => buildAgencyDueSms(displayName, Math.max(0, totals.due))}
+      />
       <Dialog open={addrOpen} onOpenChange={setAddrOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -2873,6 +2886,17 @@ export function PartyLedgerPage({
                           >
                             <MessageCircle className="h-3.5 w-3.5" />
                           </a>
+                          {isCustomer && (
+                            <button
+                              type="button"
+                              onClick={() => setSmsPhone(ph.phone)}
+                              className="inline-flex h-6 items-center gap-1 rounded-full bg-sky-500/15 px-2 text-[11px] font-semibold text-sky-400 ring-1 ring-inset ring-sky-500/30 transition-colors hover:bg-sky-500/25"
+                              aria-label={`Due reminder SMS ${ph.phone}`}
+                              title="Send Due Reminder SMS"
+                            >
+                              <MessageSquareText className="h-3.5 w-3.5" /> Due Reminder
+                            </button>
+                          )}
                         </div>
                       ))
                     ) : (
