@@ -960,6 +960,8 @@ export function PassengerProfileDrawer({
           serviceName: timelineMod?.label ?? "service",
           refId: smsRefId,
           due: selectedSvc?.due ?? due,
+          bill: selectedSvc?.sold ?? totalBill,
+          paid: selectedSvc ? selectedSvc.received + selectedSvc.discount : totalReceived + totalDiscount,
         })}
       />
       <CombinedDueReceiveDialog

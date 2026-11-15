@@ -7,7 +7,7 @@ export const SMS_MODULES = [
   { key: "other", label: "Other" },
 ] as const;
 
-export const SMS_TAGS = ["{customer_name}", "{passport_no}", "{service_name}", "{status}", "{ref_id}", "{due_amount}", "{company}"];
+export const SMS_TAGS = ["{customer_name}", "{passport_no}", "{service_name}", "{status}", "{ref_id}", "{bill_amount}", "{paid_amount}", "{due_amount}", "{company}"];
 
 export const DEFAULT_STATUS_TEMPLATE =
   "প্রিয় {customer_name}, আপনার {service_name} ({ref_id}) এর বর্তমান অবস্থা: {status}। ধন্যবাদ, {company}";
@@ -60,7 +60,7 @@ export const DEFAULT_PAYMENT_PAID_TEMPLATE =
 export const DEFAULT_AGENCY_DUE_TEMPLATE =
   "Dear {agency_name}, this is a gentle reminder that your current outstanding balance with {company} is BDT {due_amount}. Please settle the due at your earliest convenience. Thank you, {company}";
 export const DEFAULT_LATEST_STATUS_TEMPLATE =
-  "Dear {customer_name}, your {service_name} ({ref_id}) current status: {status}. Thank you, {company}";
+  "Dear {customer_name}, your {service_name} ({ref_id}) status: {status}. Total Bill: BDT {bill_amount}, Paid: BDT {paid_amount}, Due: BDT {due_amount}. Thank you, {company}";
 
 const money = (n: unknown) => {
   const v = Number(String(n ?? 0).replace(/,/g, ""));
@@ -95,12 +95,15 @@ export async function buildAgencyDueSms(agencyName: string, due: number) {
 }
 
 /** Latest-status message for a booking row: uses the saved status template, else a generic one. */
-export async function buildLatestStatusSms(o: { row: Record<string, unknown>; moduleKey: string; serviceName: string; refId: string; due: number }) {
+export async function buildLatestStatusSms(o: { row: Record<string, unknown>; moduleKey: string; serviceName: string; refId: string; due: number; bill?: number; paid?: number }) {
   const status = String(o.row.status ?? "").trim() || "PROCESSING";
-  const t = await loadTpl(o.moduleKey, status);
+  // Profile SMS always carries status + bill summary; editable via the "LATEST_STATUS" template.
+  const t = await loadTpl(o.moduleKey, "LATEST_STATUS");
   return fillTemplate(t.body || DEFAULT_LATEST_STATUS_TEMPLATE, {
     customer_name: String(o.row.passenger_name ?? ""), passport_no: String(o.row.passport ?? ""),
     service_name: o.serviceName, status, ref_id: o.refId,
-    price: money(o.row.sold_price), fare: money(o.row.sold_price), due_amount: money(o.due), due: money(o.due), company: t.company,
+    price: money(o.row.sold_price), fare: money(o.row.sold_price), due_amount: money(o.due), due: money(o.due),
+    bill_amount: money(o.bill ?? o.row.sold_price), bill: money(o.bill ?? o.row.sold_price),
+    paid_amount: money(o.paid ?? 0), paid: money(o.paid ?? 0), company: t.company,
   });
 }

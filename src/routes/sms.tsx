@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, Save, RefreshCw } from "lucide-react";
 import { moduleByKey } from "@/lib/modules";
-import { SMS_MODULES, SMS_TAGS, DEFAULT_STATUS_TEMPLATE, DEFAULT_DUE_TEMPLATE, normalizeBdMobile, DEFAULT_PAYMENT_RECEIPT_TEMPLATE, DEFAULT_PAYMENT_PAID_TEMPLATE, DEFAULT_AGENCY_DUE_TEMPLATE } from "@/lib/sms";
+import { SMS_MODULES, SMS_TAGS, DEFAULT_STATUS_TEMPLATE, DEFAULT_DUE_TEMPLATE, normalizeBdMobile, DEFAULT_PAYMENT_RECEIPT_TEMPLATE, DEFAULT_PAYMENT_PAID_TEMPLATE, DEFAULT_AGENCY_DUE_TEMPLATE, DEFAULT_LATEST_STATUS_TEMPLATE } from "@/lib/sms";
 import { sendSms } from "@/lib/sms.functions";
 
 export const Route = createFileRoute("/sms")({
@@ -97,9 +97,9 @@ function TemplatesTab() {
   const [mk, setMk] = useState<string>(SMS_MODULES[0].key);
   const [rows, setRows] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const statuses = mk === "agency" ? ["AGENCY_DUE_REMINDER"] : [...(moduleByKey(mk)?.statuses ?? []).slice(1), "DUE_REMINDER", "PAYMENT_RECEIPT", "PAYMENT_PAID"];
-  const tplLabel: Record<string, string> = { DUE_REMINDER: "বকেয়া রিমাইন্ডার", PAYMENT_RECEIPT: "Payment Receipt (বকেয়া বাকি থাকলে)", PAYMENT_PAID: "Payment Receipt (সম্পূর্ণ পরিশোধ)", AGENCY_DUE_REMINDER: "Agency Due Reminder" };
-  const tplDefault: Record<string, string> = { DUE_REMINDER: DEFAULT_DUE_TEMPLATE, PAYMENT_RECEIPT: DEFAULT_PAYMENT_RECEIPT_TEMPLATE, PAYMENT_PAID: DEFAULT_PAYMENT_PAID_TEMPLATE, AGENCY_DUE_REMINDER: DEFAULT_AGENCY_DUE_TEMPLATE };
+  const statuses = mk === "agency" ? ["AGENCY_DUE_REMINDER"] : [...(moduleByKey(mk)?.statuses ?? []).slice(1), "DUE_REMINDER", "PAYMENT_RECEIPT", "PAYMENT_PAID", "LATEST_STATUS"];
+  const tplLabel: Record<string, string> = { DUE_REMINDER: "বকেয়া রিমাইন্ডার", PAYMENT_RECEIPT: "Payment Receipt (বকেয়া বাকি থাকলে)", PAYMENT_PAID: "Payment Receipt (সম্পূর্ণ পরিশোধ)", AGENCY_DUE_REMINDER: "Agency Due Reminder", LATEST_STATUS: "Profile SMS (সর্বশেষ অবস্থা + বিল)" };
+  const tplDefault: Record<string, string> = { DUE_REMINDER: DEFAULT_DUE_TEMPLATE, PAYMENT_RECEIPT: DEFAULT_PAYMENT_RECEIPT_TEMPLATE, PAYMENT_PAID: DEFAULT_PAYMENT_PAID_TEMPLATE, AGENCY_DUE_REMINDER: DEFAULT_AGENCY_DUE_TEMPLATE, LATEST_STATUS: DEFAULT_LATEST_STATUS_TEMPLATE };
   useEffect(() => {
     void supabase.from("sms_templates").select("status, body").eq("module_key", mk).then(({ data }) =>
       setRows(Object.fromEntries((data ?? []).map((r) => [r.status, r.body]))));
