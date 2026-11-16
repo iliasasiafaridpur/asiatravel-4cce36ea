@@ -106,7 +106,12 @@ async function sendSmsBrowser(i: Input): Promise<{ ok: boolean; error?: string }
 export async function sendSms(args: { data: Input }): Promise<{ ok: boolean; error?: string }> {
   try {
     const r = await sendSmsServer(args);
-    if (r && typeof r === "object" && "ok" in r) return r as { ok: boolean; error?: string };
+    // Vercel-এ server না থাকলে raw Response (ok=false, error নেই) আসে — তখন browser দিয়ে পাঠাই।
+    if (typeof Response !== "undefined" && r instanceof Response) throw new Error("raw response");
+    if (r && typeof r === "object" && typeof (r as { ok?: unknown }).ok === "boolean") {
+      const rr = r as { ok: boolean; error?: string };
+      if (rr.ok || (rr.error && String(rr.error).trim())) return rr;
+    }
     throw new Error("bad response");
   } catch {
     return sendSmsBrowser(args.data);

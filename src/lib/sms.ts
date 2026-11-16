@@ -26,7 +26,9 @@ export function normalizeBdMobile(raw: unknown): string | null {
 }
 
 export function fillTemplate(body: string, vars: Record<string, string | number | null | undefined>): string {
-  return body.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : m === "{company}" ? "" : ""));
+  const out = body.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : m === "{company}" ? "" : ""));
+  // SMS-এ BMET কার্ডের নাম সবসময় "BMET EC CARD" লেখা হবে।
+  return out.replace(/BMET\s+(?:EC\s+)?(?:Card|কার্ড)/gi, "BMET EC CARD");
 }
 
 import { supabase } from "@/integrations/supabase/client";
