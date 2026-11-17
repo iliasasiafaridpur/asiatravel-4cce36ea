@@ -23,6 +23,8 @@ export interface Field {
   showWhen?: { field: string; equals: string[] };
   /** For date fields: disallow selecting/entering a future date (max = today). */
   noFuture?: boolean;
+  /** Render the One Way / Return / Multi-City airport builder (air tickets). */
+  tripBuilder?: boolean;
 }
 
 export const LEDGER_SERVICE_TYPES = [
@@ -126,7 +128,7 @@ export const MODULES: ModuleSchema[] = [
         label: "TRIP ROAD",
         type: "text",
         showInList: true,
-        lookup: "route",
+        tripBuilder: true,
         section: "passenger",
         required: true,
       },

@@ -1,3 +1,4 @@
+import { parseTrip, prettyTrip } from "@/lib/trip";
 import { DateInput } from "@/components/ui/date-input";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -83,6 +84,13 @@ const blankItem = (type = "tickets"): InvoiceItem => ({
 
 function splitRoute(s: string): { from: string; to: string } {
   if (!s) return { from: "", to: "" };
+  if (/⇄|\|/.test(s)) {
+    const t = parseTrip(s);
+    const l0 = t.legs[0] ?? { from: "", to: "" };
+    if (t.type === "return") return { from: l0.from, to: `${l0.to} ⇄ ${l0.from}${t.returnDate ? ` (Return ${prettyTrip(t.returnDate)})` : ""}` };
+    return { from: l0.from, to: t.legs.map((l, i) => (i === 0 ? l.to : `${l.to}${l.date ? ` (${prettyTrip(l.date)})` : ""}`)).join(" → ") };
+  }
+  if (s.includes("→")) { const [a, b] = s.split("→").map((x) => x.trim()); return { from: a, to: b ?? "" }; }
   const parts = s.split(/\s*(?:->|→|–|—|-|\/|to)\s*/i).map((p) => p.trim()).filter(Boolean);
   return { from: parts[0] || s.trim(), to: parts[1] || "" };
 }

@@ -1,4 +1,6 @@
 import { DateInput } from "@/components/ui/date-input";
+import { TripBuilder } from "@/components/TripBuilder";
+import { prettyTrip, tripTypeLabel } from "@/lib/trip";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
@@ -1564,7 +1566,7 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "trip", header: "Trip", render: (r) => (
             <div className="min-w-[140px]">
-              <div className="font-medium">{String(r.trip_road ?? "—")}</div>
+              <div className="font-medium">{r.trip_road ? prettyTrip(String(r.trip_road)) : "—"}{r.trip_road ? <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">{tripTypeLabel(String(r.trip_road))}</span> : null}</div>
               {r.airline ? <div className="text-xs text-muted-foreground leading-tight">{String(r.airline)}</div> : null}
               {r.flight_date ? <div className="text-xs text-muted-foreground leading-tight">✈ {formatDate(r.flight_date as string)}</div> : null}
               {r.pnr ? subLine("PNR", String(r.pnr)) : null}
@@ -1688,7 +1690,7 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium">{String(r.service_name ?? "—")}</div>
               {r.airline ? <div className="text-xs text-muted-foreground leading-tight">{String(r.airline)}</div> : null}
-              {r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{String(r.trip_road)}</div> : null}
+              {r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{prettyTrip(String(r.trip_road))}</div> : null}
               {r.flight_date ? <div className="text-xs text-muted-foreground leading-tight">✈ {formatDate(r.flight_date as string)}</div> : null}
             </div>
           )},
@@ -2982,6 +2984,7 @@ export function fieldGridStyle(field: Field): React.CSSProperties {
   if (field.type === "textarea") return { gridColumn: "span 2" };
   if (field.name === "passenger_name") return { gridColumn: "span 2" };
   if (field.name === "airline") return { gridColumn: "span 2" };
+  if (field.tripBuilder) return { gridColumn: "1 / -1" };
   if (field.type === "number") return { gridColumn: "span 1", maxWidth: 130 };
   if (field.lookup) return { gridColumn: "span 2" };
   return {};
@@ -2999,7 +3002,9 @@ function FormField({ field, value, onChange, disabled }: {
     <div className="space-y-0.5 min-w-0">
 
       <Label className="text-[11px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
-      {field.lookup ? (
+      {field.tripBuilder ? (
+        <TripBuilder value={strVal} onChange={(v) => onChange(v)} />
+      ) : field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (
         <Textarea value={strVal} onChange={(e) => onChange(e.target.value)} rows={1} className="min-h-9" />
