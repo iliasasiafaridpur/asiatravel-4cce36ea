@@ -113,7 +113,7 @@ export function TripBuilder({ value, onChange }: { value: string; onChange: (v: 
           {trip.type === "multi_city" && <div className="text-[10px] font-semibold text-muted-foreground">Flight {i + 1}{i === 0 ? " (তারিখ: উপরের Flight Date)" : ""}</div>}
           <div className="flex items-center gap-1">
             <AirportInput value={l.from} placeholder="From (DAC)" onChange={(v) => setLeg(i, { from: v })} />
-            <span className="text-muted-foreground">{trip.type === "return" ? "⇄" : "→"}</span>
+            <Button type="button" size="sm" variant="outline" title="From ⇄ To অদলবদল" aria-label="From ও To অদলবদল করুন" className="h-7 w-7 shrink-0 p-0 text-sm" onClick={() => setLeg(i, { from: l.to, to: l.from })}>⇄</Button>
             <AirportInput value={l.to} placeholder="To (JED)" onChange={(v) => setLeg(i, { to: v })} />
             {trip.type === "multi_city" && trip.legs.length > 2 && (
               <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => update({ ...trip, legs: trip.legs.filter((_, j) => j !== i) })}>✕</Button>
