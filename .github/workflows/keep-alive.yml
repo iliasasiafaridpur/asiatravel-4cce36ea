@@ -1,21 +1,17 @@
 name: Keep database awake
 on:
   schedule:
-    - cron: "0 3 */3 * *"   # every 3 days
+    - cron: "0 3 */3 * *"   # প্রতি ৩ দিন পর পর স্বয়ংক্রিয়ভাবে চলবে
   workflow_dispatch:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
     steps:
       - name: Ping database
         env:
           URL: ${{ secrets.SUPABASE_URL }}
           KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
-          echo "Status: $code"
-          curl -s -o /dev/null "$URL/auth/v1/health" -H "apikey: $KEY"
-      - name: Keep workflow active
-        uses: gautamkrishnar/keepalive-workflow@v2
+          CLEAN_URL="${URL%/}"
+          curl -s "$CLEAN_URL/auth/v1/health" -H "apikey: $KEY"
+          echo "Database ping successful!"
