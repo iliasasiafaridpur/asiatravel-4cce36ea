@@ -1,5 +1,5 @@
 import { DateInput } from "@/components/ui/date-input";
-import { TripBuilder } from "@/components/TripBuilder";
+import { TripBuilder, AirlineInput } from "@/components/TripBuilder";
 import { prettyTrip, tripTypeLabel } from "@/lib/trip";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,6 +139,7 @@ function emptyForm(mod: ModuleSchema): Record<string, unknown> {
     else if (field.type === "date" && field.name === "entry_date") f[field.name] = todayIso();
     else if (field.type === "select") f[field.name] = field.defaultEmpty ? "" : (field.options?.[0] ?? "");
     else if (field.lookup === "sub_agency") f[field.name] = "Self";
+    else if (field.tripBuilder) f[field.name] = "DAC";
     else f[field.name] = "";
   }
   return f;
@@ -845,12 +846,16 @@ export function ModulePage({ module: mod }: Props) {
       const recvCols = ["received", "received_amount", "paid_amount"];
       const recvAmount = recvCols.reduce((sum, c) => sum + Number((payload as Record<string, unknown>)[c] ?? 0), 0);
 
-      if (user?.id) {
-        if (!isEdit) (payload as Record<string, unknown>).created_by = user.id;
+      // লগইন তথ্য লোড না হলে receipt তৈরি হয় না — তাই সেভের আগে নিশ্চিত করা হয়।
+      let uid = user?.id ?? null;
+      if (!uid) uid = (await supabase.auth.getUser()).data.user?.id ?? null;
+      if (!uid && recvAmount > 0 && !isEdit) throw new Error("লগইন তথ্য পাওয়া যায়নি — পেজ রিফ্রেশ করে আবার সেভ করুন");
+      if (uid) {
+        if (!isEdit) (payload as Record<string, unknown>).created_by = uid;
         // received_by ("কে টাকা নিয়েছিল") শুধু নতুন এন্ট্রিতে সেট হবে। এডিটে received
         // ফিল্ড locked থাকে (টাকা বদলায় না), তাই পুরনো collector-কে ওভাররাইট করা যাবে না —
         // নইলে নাম/তারিখ ঠিক করলেও audit-trail নষ্ট হতো।
-        if (recvAmount > 0 && !isEdit) (payload as Record<string, unknown>).received_by = user.id;
+        if (recvAmount > 0 && !isEdit) (payload as Record<string, unknown>).received_by = uid;
       }
       // এন্ট্রিতে টাকা গৃহীত হলে চয়ন করা মাধ্যম সংরক্ষণ — এটি থেকে DB trigger
       // (sync_service_receipt) receipt-এর method ঠিক করবে (Cash=স্টাফ, বাকি=MD)।
@@ -3004,6 +3009,8 @@ function FormField({ field, value, onChange, disabled }: {
       <Label className="text-[11px] font-medium text-muted-foreground leading-tight">{field.label}{field.required && <span className="text-rose-500"> *</span>}</Label>
       {field.tripBuilder ? (
         <TripBuilder value={strVal} onChange={(v) => onChange(v)} />
+      ) : field.lookup === "airline" ? (
+        <AirlineInput value={strVal} onChange={(v) => onChange(v)} />
       ) : field.lookup ? (
         <LookupSelect kind={field.lookup} value={strVal} onChange={(v) => onChange(v)} defaults={field.lookupDefaults} />
       ) : field.type === "textarea" ? (

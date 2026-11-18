@@ -16,6 +16,15 @@ function country(code: string) {
   try { regionNames ??= new Intl.DisplayNames(["en"], { type: "region" }); return regionNames.of(code) ?? code; } catch { return code; }
 }
 
+function recent(key: string): string[] {
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; }
+}
+function pushRecent(key: string, v: string) {
+  if (!v.trim()) return;
+  try { localStorage.setItem(key, JSON.stringify([v, ...recent(key).filter((x) => x !== v)].slice(0, 10))); } catch { /* ignore */ }
+}
+const RA = "recent_airports", RL = "recent_airlines";
+
 function AirportInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   const [q, setQ] = useState(value);
   const [open, setOpen] = useState(false);
@@ -29,7 +38,11 @@ function AirportInput({ value, onChange, placeholder }: { value: string; onChang
   }, []);
   const results = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return [];
+    if (!s) {
+      const r = recent(RA);
+      const base = r.length ? r : ["DAC", "CGP", "ZYL", "JED", "RUH", "DMM", "KWI", "DXB", "DOH", "KUL"];
+      return base.map((c) => list.find((a) => a[0] === c) ?? ([c, "", "", ""] as Airport));
+    }
     const exact: Airport[] = [], starts: Airport[] = [], other: Airport[] = [];
     for (const a of list) {
       const code = a[0].toLowerCase();
@@ -55,7 +68,7 @@ function AirportInput({ value, onChange, placeholder }: { value: string; onChang
             <button
               type="button"
               key={a[0] + a[1]}
-              onMouseDown={(e) => { e.preventDefault(); onChange(a[0]); setQ(a[0]); setOpen(false); }}
+              onMouseDown={(e) => { e.preventDefault(); onChange(a[0]); setQ(a[0]); setOpen(false); pushRecent(RA, a[0]); }}
               className="block w-full px-3 py-1.5 text-left text-xs hover:bg-accent"
             >
               <span className="font-bold text-primary">{a[0]}</span> — {a[1]}
@@ -97,7 +110,7 @@ export function TripBuilder({ value, onChange }: { value: string; onChange: (v: 
       </div>
       {trip.legs.map((l, i) => (
         <div key={i} className="space-y-1">
-          {trip.type === "multi_city" && <div className="text-[10px] font-semibold text-muted-foreground">Flight {i + 1}{i === 0 ? " (তারিখ: Flight Date ঘরে)" : ""}</div>}
+          {trip.type === "multi_city" && <div className="text-[10px] font-semibold text-muted-foreground">Flight {i + 1}{i === 0 ? " (তারিখ: উপরের Flight Date)" : ""}</div>}
           <div className="flex items-center gap-1">
             <AirportInput value={l.from} placeholder="From (DAC)" onChange={(v) => setLeg(i, { from: v })} />
             <span className="text-muted-foreground">{trip.type === "return" ? "⇄" : "→"}</span>
@@ -122,6 +135,70 @@ export function TripBuilder({ value, onChange }: { value: string; onChange: (v: 
           onClick={() => update({ ...trip, legs: [...trip.legs, { from: trip.legs[trip.legs.length - 1]?.to ?? "", to: "", date: "" }] })}>
           + Add Another Flight
         </Button>
+      )}
+    </div>
+  );
+}
+
+const AIRLINES: [string, string][] = [
+  ["BG","Biman Bangladesh Airlines"],["BS","US-Bangla Airlines"],["2A","Air Astra"],["VQ","Novoair"],
+  ["SV","Saudia"],["XY","flynas"],["F3","flyadeal"],["EK","Emirates"],["FZ","flydubai"],["EY","Etihad Airways"],
+  ["G9","Air Arabia"],["QR","Qatar Airways"],["KU","Kuwait Airways"],["J9","Jazeera Airways"],["GF","Gulf Air"],
+  ["WY","Oman Air"],["OV","SalamAir"],["TK","Turkish Airlines"],["PC","Pegasus Airlines"],["MS","EgyptAir"],
+  ["RJ","Royal Jordanian"],["ME","Middle East Airlines"],["IX","Air India Express"],["AI","Air India"],["6E","IndiGo"],
+  ["UK","Vistara"],["SG","SpiceJet"],["UL","SriLankan Airlines"],["PK","Pakistan International Airlines"],
+  ["MH","Malaysia Airlines"],["AK","AirAsia"],["D7","AirAsia X"],["OD","Batik Air Malaysia"],["SQ","Singapore Airlines"],
+  ["TR","Scoot"],["TG","Thai Airways"],["FD","Thai AirAsia"],["WE","Thai Smile"],["CX","Cathay Pacific"],
+  ["CZ","China Southern Airlines"],["MU","China Eastern Airlines"],["CA","Air China"],["GA","Garuda Indonesia"],
+  ["PR","Philippine Airlines"],["5J","Cebu Pacific"],["VN","Vietnam Airlines"],["KE","Korean Air"],["OZ","Asiana Airlines"],
+  ["JL","Japan Airlines"],["NH","ANA All Nippon Airways"],["BA","British Airways"],["VS","Virgin Atlantic"],
+  ["LH","Lufthansa"],["AF","Air France"],["KL","KLM"],["LX","Swiss"],["OS","Austrian Airlines"],["IB","Iberia"],
+  ["AZ","ITA Airways"],["SU","Aeroflot"],["AA","American Airlines"],["DL","Delta Air Lines"],["UA","United Airlines"],
+  ["AC","Air Canada"],["QF","Qantas"],["NZ","Air New Zealand"],["ET","Ethiopian Airlines"],["KQ","Kenya Airways"],
+  ["SA","South African Airways"],["AT","Royal Air Maroc"],["UZ","Buraq Air"],["HY","Uzbekistan Airways"],
+  ["KC","Air Astana"],["FJ","Fiji Airways"],["W5","Mahan Air"],["IR","Iran Air"],["IA","Iraqi Airways"],
+  ["RB","Syrian Air"],["H9","Himalaya Airlines"],["RA","Nepal Airlines"],["U4","Buddha Air"],["KB","Druk Air"],
+  ["8M","Myanmar Airways International"],["MK","Air Mauritius"],["8Q","Maldivian"],["Q2","Maldivian Airlines"],
+];
+
+export function AirlineInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const results = useMemo(() => {
+    const s = value.trim().toLowerCase();
+    if (!s || !open) {
+      const r = recent(RL);
+      return (r.length ? r : AIRLINES.slice(0, 10).map((a) => a[1])).slice(0, 10);
+    }
+    return AIRLINES.filter(([c, n]) => c.toLowerCase() === s || n.toLowerCase().includes(s)).map((a) => a[1]).slice(0, 12);
+  }, [value, open]);
+  const pick = (v: string) => { onChange(v); pushRecent(RL, v); setOpen(false); };
+  return (
+    <div ref={box} className="relative min-w-0">
+      <input
+        value={value}
+        placeholder="Airline (নাম বা কোড)"
+        onFocus={() => setOpen(true)}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onBlur={() => { if (value.trim()) pushRecent(RL, value.trim()); }}
+        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+      {open && results.length > 0 && (
+        <div className="absolute z-50 mt-1 max-h-64 w-[min(22rem,80vw)] overflow-auto rounded-md border bg-popover text-popover-foreground shadow-lg">
+          {results.map((n) => {
+            const code = AIRLINES.find((a) => a[1] === n)?.[0];
+            return (
+              <button type="button" key={n} onMouseDown={(e) => { e.preventDefault(); pick(n); }} className="block w-full px-3 py-1.5 text-left text-xs hover:bg-accent">
+                {code && <span className="font-bold text-primary">{code}</span>} {code ? "— " : ""}{n}
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
