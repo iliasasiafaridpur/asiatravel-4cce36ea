@@ -86,6 +86,7 @@ export type ExtraServiceRow = {
   received_amount: number;
   vendor_cost: number;
   notes: string;
+  vendor_name?: string;
 };
 
 type Row = Record<string, unknown> & { id: string };
@@ -732,7 +733,7 @@ export function ModulePage({ module: mod }: Props) {
     if (supportsExtra) {
       void supabase
         .from("extra_services" as never)
-        .select("id,service_name,service_price,vendor_cost,received_amount,notes")
+        .select("id,service_name,service_price,vendor_cost,received_amount,notes,vendor_name")
         .eq("source_table", mod.table)
         .eq("source_id", r.id)
         .order("created_at", { ascending: true })
@@ -744,6 +745,7 @@ export function ModulePage({ module: mod }: Props) {
             received_amount: Number(x.received_amount ?? 0),
             vendor_cost: Number(x.vendor_cost ?? 0),
             notes: String(x.notes ?? ""),
+            vendor_name: String(x.vendor_name ?? ""),
           }));
           setExtraServices(rows);
           setShowExtra(rows.length > 0);
@@ -780,6 +782,7 @@ export function ModulePage({ module: mod }: Props) {
       if (!name) continue;
       const row = {
         ...base,
+        vendor_name: (ex.vendor_name || "").trim() || base.vendor_name,
         service_name: name,
         service_price: Number(ex.service_price) || 0,
         received_amount: Number(ex.received_amount) || 0,
@@ -2837,9 +2840,9 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, 
   vendorName: string;
   headerExtra?: ReactNode;
 }) {
-  const addRow = () => {
+  const addRow = (name = "") => {
     setShow(true);
-    setRows((p) => [...p, { service_name: "", service_price: 0, received_amount: 0, vendor_cost: 0, notes: "" }]);
+    setRows((p) => [...p, { service_name: name, service_price: 0, received_amount: 0, vendor_cost: 0, notes: "", vendor_name: vendorName || "" }]);
   };
   const update = (i: number, patch: Partial<ExtraServiceRow>) =>
     setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -2849,13 +2852,13 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, 
     <div className="mt-4 border-t pt-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Extra Service
+          সার্ভিস ম্যানেজমেন্ট (Service Management)
         </h3>
-        <div className="flex items-center gap-2">
-          {headerExtra}
-          <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-8 gap-1">
-            <Plus className="h-3.5 w-3.5" /> Extra Service
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => addRow()} className="h-8 gap-1">
+            <Plus className="h-3.5 w-3.5" /> Manage Service
           </Button>
+          {headerExtra}
         </div>
       </div>
 
@@ -2901,6 +2904,14 @@ export function ExtraServiceSection({ rows, setRows, show, setShow, vendorName, 
                   value={ex.received_amount || ""}
                   onChange={(e) => update(i, { received_amount: Number(e.target.value) || 0 })}
                   placeholder="0"
+                />
+              </div>
+              <div className="space-y-1" style={{ width: 200, maxWidth: "100%" }}>
+                <Label className="text-sm font-medium">Vendor</Label>
+                <LookupSelect
+                  kind="vendor"
+                  value={ex.vendor_name || ""}
+                  onChange={(v) => update(i, { vendor_name: v })}
                 />
               </div>
               <div className="space-y-1" style={{ width: 140, maxWidth: "100%" }}>
