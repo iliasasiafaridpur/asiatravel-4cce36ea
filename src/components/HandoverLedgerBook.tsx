@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
+import { routeOnly, tripDatesLine } from "@/lib/trip";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -130,6 +131,7 @@ type ServiceInfo = {
   /** Whether this service table actually tracks a vendor cost. Agency ledger does not. */
   tracks_cost: boolean;
   flight_date: string | null;
+  trip_raw?: string | null;
   delivery_date: string | null;
   has_delivery: boolean;
   extra_names: string[];
@@ -357,7 +359,8 @@ export function HandoverLedgerInline({
             svcMap[`${cfg.table}:${row.id as string}`] = {
               country: typeof cfg.country === "function"
                 ? cfg.country()
-                : (row[cfg.country] as string | null) ?? null,
+                : (cfg.country === "trip_road" ? (routeOnly(row[cfg.country] as string | null) || null) : ((row[cfg.country] as string | null) ?? null)),
+              trip_raw: cfg.country === "trip_road" ? ((row.trip_road as string | null) ?? null) : null,
               service_name: cfg.serviceNameField
                 ? (cfg.table === "agency_ledger"
                     ? (AGENCY_MODULE_LABELS[String(row[cfg.serviceNameField] ?? "")] ?? null)
@@ -1188,7 +1191,7 @@ function buildHandoverSlipBody(args: {
       + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
       + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
       + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
-      + (info?.airline ? `<span class="sub">${esc(info.airline)}${info.flight_date ? ` - ${esc(formatDate(info.flight_date))}` : ""}</span>` : "")
+      + ((info?.airline || info?.flight_date) ? `<span class="sub">${esc([info?.airline, tripDatesLine(info?.trip_raw, info?.flight_date)].filter(Boolean).join(" · "))}</span>` : "")
       + (r.source === "manual" && r.remarks ? `<span class="sub">📝 ${esc(r.remarks)}</span>` : "");
     const vendorBit = info?.vendor
       ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
@@ -1865,6 +1868,9 @@ function HandoverCard({
                       {info?.country && (
                         <div className="text-sm text-muted-foreground leading-tight">{info.country}</div>
                       )}
+                      {(info?.airline || info?.flight_date) && (
+                        <div className="text-sm text-muted-foreground leading-tight">{[info.airline, tripDatesLine(info.trip_raw, info.flight_date)].filter(Boolean).join(" · ")}</div>
+                      )}
                       {methodsLabel && (
                         <div className="text-[11px] text-muted-foreground leading-tight">{methodsLabel}</div>
                       )}
@@ -2005,9 +2011,9 @@ function HandoverCard({
                     {info?.country && (
                       <div className="text-sm text-muted-foreground leading-tight">{info.country}</div>
                     )}
-                    {info?.airline && (
+                    {(info?.airline || info?.flight_date) && (
                       <div className="text-sm text-muted-foreground leading-tight">
-                        {info.airline}{info.flight_date ? ` - ${formatDate(info.flight_date)}` : ""}
+                        {[info.airline, tripDatesLine(info.trip_raw, info.flight_date)].filter(Boolean).join(" · ")}
                       </div>
                     )}
                     {r.source === "manual" && r.remarks && (

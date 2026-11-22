@@ -1,6 +1,6 @@
 import { DateInput } from "@/components/ui/date-input";
 import { TripBuilder, AirlineInput } from "@/components/TripBuilder";
-import { prettyTrip, tripTypeLabel } from "@/lib/trip";
+import { routeOnly, tripDatesLine, tripTypeLabel } from "@/lib/trip";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resilientInsert } from "@/lib/offline-queue";
@@ -1574,9 +1574,9 @@ export function ModulePage({ module: mod }: Props) {
           )},
           { key: "trip", header: "Trip", render: (r) => (
             <div className="min-w-[140px]">
-              <div className="font-medium">{r.trip_road ? prettyTrip(String(r.trip_road)) : "—"}{r.trip_road ? <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">{tripTypeLabel(String(r.trip_road))}</span> : null}</div>
+              <div className="font-medium">{r.trip_road ? routeOnly(String(r.trip_road)) : "—"}{r.trip_road ? <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">{tripTypeLabel(String(r.trip_road))}</span> : null}</div>
               {r.airline ? <div className="text-xs text-muted-foreground leading-tight">{String(r.airline)}</div> : null}
-              {r.flight_date ? <div className="text-xs text-muted-foreground leading-tight">✈ {formatDate(r.flight_date as string)}</div> : null}
+              {r.flight_date || r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{tripDatesLine(r.trip_road as string, r.flight_date as string)}</div> : null}
               {r.pnr ? subLine("PNR", String(r.pnr)) : null}
             </div>
           )},
@@ -1698,8 +1698,8 @@ export function ModulePage({ module: mod }: Props) {
             <div>
               <div className="font-medium">{String(r.service_name ?? "—")}</div>
               {r.airline ? <div className="text-xs text-muted-foreground leading-tight">{String(r.airline)}</div> : null}
-              {r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{prettyTrip(String(r.trip_road))}</div> : null}
-              {r.flight_date ? <div className="text-xs text-muted-foreground leading-tight">✈ {formatDate(r.flight_date as string)}</div> : null}
+              {r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{routeOnly(String(r.trip_road))}</div> : null}
+              {r.flight_date || r.trip_road ? <div className="text-xs text-muted-foreground leading-tight">{tripDatesLine(r.trip_road as string, r.flight_date as string)}</div> : null}
             </div>
           )},
           { key: "parties", header: "Agency / Vendor", render: (r) => (

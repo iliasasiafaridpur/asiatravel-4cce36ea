@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { routeOnly, tripDatesLine } from "@/lib/trip";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -211,8 +212,9 @@ function svcLine(rec: Receipt): string {
   if (label) bits.push(label);
   if (svc.country) bits.push(String(svc.country));
   if (svc.airline) bits.push(String(svc.airline));
-  if (svc.route) bits.push(String(svc.route));
-  if (svc.flight_date) bits.push(`✈ ${formatDate(svc.flight_date)}`);
+  if (svc.route) bits.push(routeOnly(String(svc.route)));
+  const dl = tripDatesLine(svc.route, svc.flight_date);
+  if (dl) bits.push(dl);
   return bits.join(" · ");
 }
 
@@ -791,8 +793,8 @@ function MyHandoverPage() {
         const svcTitle = info.service_name || cleanSvcType(r.service_type) || TABLE_LABELS[tbl] || "Service";
         const region = [
           info.country || "",
-          info.airline ? `${info.airline}${info.flight_date ? ` · ✈ ${formatDate(info.flight_date)}` : ""}` : "",
-          info.route || "",
+          [info.airline, tripDatesLine(info.route, info.flight_date)].filter(Boolean).join(" · "),
+          routeOnly(info.route),
         ].filter(Boolean).join(" · ");
 
         const billCell = bill > 0

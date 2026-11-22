@@ -55,3 +55,38 @@ export function prettyTrip(raw: string): string {
     return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
   });
 }
+
+function fmtD(d: string): string {
+  const dt = new Date(d + "T00:00:00");
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+/** Clean route only (no pipes / RET / dates): "DAC ⇄ JED", "DAC → DXB → LHR". */
+export function routeOnly(raw: string | null | undefined): string {
+  const s = (raw ?? "").trim();
+  if (!s) return "";
+  const t = parseTrip(s);
+  const l = t.legs;
+  if (t.type === "return") return `${l[0]?.from ?? ""} ⇄ ${l[0]?.to ?? ""}`;
+  if (t.type === "multi_city") {
+    const pts: string[] = [];
+    l.forEach((x, i) => {
+      if (i === 0 || pts[pts.length - 1] !== x.from) pts.push(x.from);
+      pts.push(x.to);
+    });
+    return pts.filter(Boolean).join(" → ");
+  }
+  return s.includes("→") ? `${l[0]?.from} → ${l[0]?.to}` : s;
+}
+
+/** Dates line: "✈ 15 Nov 2026 · ↩ Return 25 Nov 2026" or multi-city leg dates. */
+export function tripDatesLine(raw: string | null | undefined, flightDate: string | null | undefined): string {
+  const t = parseTrip(raw ?? "");
+  const bits: string[] = [];
+  if (flightDate) bits.push(`✈ ${fmtD(flightDate)}`);
+  if (t.type === "return" && t.returnDate) bits.push(`↩ Return ${fmtD(t.returnDate)}`);
+  if (t.type === "multi_city") {
+    t.legs.forEach((x, i) => { if (i > 0 && x.date) bits.push(`${x.from}→${x.to} ${fmtD(x.date)}`); });
+  }
+  return bits.join(" · ");
+}
