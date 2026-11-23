@@ -1135,13 +1135,15 @@ function buildHandoverSlipBody(args: {
       const { info, previousPaid, futurePaid, lastPast, lastFuture, bill, discount, dueAfterThis,
         isAdvance, past, cashSum, mdSum, mdRecs, vendorSum, batchSum } = m;
       const dateCell = `${esc(formatDate(first.entry_date))}`
-        + (first.ref_id ? `<span class="sub mono">${esc((first.ref_id ?? "").replace(/-\d+$/, ""))}</span>` : "");
+        + (first.ref_id ? `<span class="sub mono">${esc(first.ref_id ?? "")}</span>` : "");
       const custCell = `<span class="b">${esc(first.passenger_name || "—")}</span>`
         + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
       const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
       const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
         + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
         + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
+        + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
+        + ((info?.airline || info?.flight_date) ? `<span class="sub">${esc([info?.airline, tripDatesLine(info?.trip_raw, info?.flight_date)].filter(Boolean).join(" · "))}</span>` : "")
         + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`
         + (first.source === "manual" && first.remarks ? `<span class="sub">📝 ${esc(first.remarks)}</span>` : "");
       const vendorBit = info?.vendor
