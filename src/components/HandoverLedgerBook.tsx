@@ -1138,13 +1138,11 @@ function buildHandoverSlipBody(args: {
         + (first.ref_id ? `<span class="sub mono">${esc(first.ref_id ?? "")}</span>` : "");
       const custCell = `<span class="b">${esc(first.passenger_name || "—")}</span>`
         + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
-      const methodsLabel = recs.map((x) => methodLabel(x.method)).filter(Boolean).join(" + ");
       const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
         + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
         + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
         + (info?.country ? `<span class="sub">${esc(info.country)}</span>` : "")
         + ((info?.airline || info?.flight_date) ? `<span class="sub">${esc([info?.airline, tripDatesLine(info?.trip_raw, info?.flight_date)].filter(Boolean).join(" · "))}</span>` : "")
-        + `<span class="sub">${esc(methodsLabel)} · মোট ${esc(fmt(batchSum))}</span>`
         + (first.source === "manual" && first.remarks ? `<span class="sub">📝 ${esc(first.remarks)}</span>` : "");
       const vendorBit = info?.vendor
         ? `<span class="sub">V: ${esc(info.vendor)}${info.vendor_price > 0 ? ` -${Math.round(info.vendor_price).toLocaleString()}/` : (info.tracks_cost ? " ⚠️" : "")}</span>`
@@ -1836,7 +1834,6 @@ function HandoverCard({
                 const first = row.recs[0];
                 const { info, previousPaid, lastPast, bill, discount, due, dueAfterThis, isAdvance, past, cashSum, mdSum, vendorSum, futurePaid, lastFuture } = row.m;
                 const isHighlighted = row.recs.some((x) => x.id === highlightId);
-                const methodsLabel = Array.from(new Set(row.recs.map((x) => methodLabel(x.method)).filter(Boolean))).join(" + ");
                 return (
                   <tr
                     key={`batch-${first.id}`}
@@ -1872,9 +1869,6 @@ function HandoverCard({
                       )}
                       {(info?.airline || info?.flight_date) && (
                         <div className="text-sm text-muted-foreground leading-tight">{[info.airline, tripDatesLine(info.trip_raw, info.flight_date)].filter(Boolean).join(" · ")}</div>
-                      )}
-                      {methodsLabel && (
-                        <div className="text-[11px] text-muted-foreground leading-tight">{methodsLabel}</div>
                       )}
                       {first.source === "manual" && first.remarks && (
                         <div className="text-xs text-muted-foreground/80 italic leading-tight mt-0.5 whitespace-pre-wrap">📝 {first.remarks}</div>
