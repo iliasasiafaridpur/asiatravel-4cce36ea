@@ -477,6 +477,7 @@ export function DueReceiveDialog({
           mobile: selected.mobile, moduleKey: selected.service.key, customerName: selected.passenger,
           serviceName: selected.service.type, refId: selected.refId, paid: amt,
           due: Math.max(0, selected.sold - newRecv - newDiscount), receiptNo: baseReceiptId,
+          bill: selected.sold, totalPaid: newRecv, discount: newDiscount,
         }).then((r) => r.ok ? toast.success("Payment SMS পাঠানো হয়েছে") : toast.error("SMS যায়নি: " + (r.error ?? "")))
           .catch(() => toast.error("SMS যায়নি"));
         setSendSmsOn(false);

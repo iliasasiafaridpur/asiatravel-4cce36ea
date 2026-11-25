@@ -184,6 +184,9 @@ export function CombinedDueReceiveDialog({ open, onOpenChange, preselect, onDone
         void sendPaymentReceiptSms({
           mobile: smsMobile, moduleKey: preselect.serviceKey, customerName: String(parent.passenger_name ?? ""),
           serviceName: cfg.type, refId: String(parent[cfg.idCol] ?? ""), paid: enteredPayment, due: remainingDue, receiptNo: baseReceiptId,
+          bill: lines.reduce((sum, line) => sum + line.bill, 0),
+          totalPaid: lines.reduce((sum, line) => sum + line.received, 0) + enteredPayment,
+          discount: lines.reduce((sum, line) => sum + line.discount, 0) + entered - enteredPayment,
         }).then((r) => r.ok ? toast.success("Payment SMS পাঠানো হয়েছে") : toast.error("SMS যায়নি: " + (r.error ?? "")))
           .catch(() => toast.error("SMS যায়নি"));
       }
