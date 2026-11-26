@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { routeOnly, tripDatesLine } from "@/lib/trip";
+import { resolveHandoverPassports } from "@/lib/handover-passports";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -468,6 +469,15 @@ export function HandoverLedgerInline({
         );
       }
 
+      const passports = await resolveHandoverPassports(Object.keys(svcMap), async (table, rowIds, columns) => {
+        const { data, error } = await supabase.from(table as never).select(columns).in("id", rowIds);
+        if (error) { toast.error("পাসপোর্টের তথ্য লোড হয়নি: " + error.message); return []; }
+        return (data ?? []) as unknown as Record<string, unknown>[];
+      });
+      for (const [key, passport] of Object.entries(passports)) {
+        const info = svcMap[key];
+        if (info && passport) info.passport = passport;
+      }
 
       if (cancelled) return;
       setHandovers(hvs);
@@ -1137,7 +1147,7 @@ function buildHandoverSlipBody(args: {
       const dateCell = `${esc(formatDate(first.entry_date))}`
         + (first.ref_id ? `<span class="sub mono">${esc(first.ref_id ?? "")}</span>` : "");
       const custCell = `<span class="b">${esc(first.passenger_name || "—")}</span>`
-        + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
+        + `<span class="sub">A: ${esc(info?.agent || "Self")}${info?.passport ? ` · ${esc(info.passport)}` : ""}</span>`;
       const svcCell = `<span>${esc(primaryServiceLabel(first, info))}</span>`
         + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
         + (info?.service_name && first.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")
@@ -1186,7 +1196,7 @@ function buildHandoverSlipBody(args: {
     const dateCell = `${esc(formatDate(r.entry_date))}`
       + (r.ref_id ? `<span class="sub mono">${esc(r.ref_id)}</span>` : "");
     const custCell = `<span class="b">${esc(r.passenger_name || "—")}</span>`
-      + `<span class="sub">A: ${esc(info?.agent || "Self")}</span>`;
+      + `<span class="sub">A: ${esc(info?.agent || "Self")}${info?.passport ? ` · ${esc(info.passport)}` : ""}</span>`;
     const svcCell = `<span>${esc(primaryServiceLabel(r, info))}</span>`
       + (info?.extra_names?.length ? `<span class="sub violet">+ ${esc(info.extra_names.map((name) => `Extra Service — ${name}`).join(" + "))}</span>` : "")
       + (info?.service_name && r.service_table !== "agency_ledger" ? `<span class="sub">${esc(info.service_name)}</span>` : "")

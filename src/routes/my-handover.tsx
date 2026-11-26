@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { routeOnly, tripDatesLine } from "@/lib/trip";
+import { resolveHandoverPassports } from "@/lib/handover-passports";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,14 @@ import { isCashMethod, isMdReceivedMethod, isVendorReceivedMethod, vendorExpense
 import { cacheRead, isOffline, readModuleCache } from "@/lib/offline-cache";
 
 export const Route = createFileRoute("/my-handover")({
-  head: () => ({ meta: [{ title: "আমার ক্যাশ হিসাব" }] }),
+  head: () => ({ meta: [
+    { title: "আমার ক্যাশ হ্যান্ডওভার — Asia Travel" },
+    { name: "description", content: "Asia Travel-এর কর্মীদের ক্যাশ হ্যান্ডওভার ও জমার বিবরণ।" },
+    { property: "og:title", content: "আমার ক্যাশ হ্যান্ডওভার — Asia Travel" },
+    { property: "og:description", content: "ক্যাশ হ্যান্ডওভার ও জমার বিবরণ।" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MyHandoverPage,
 });
 
@@ -78,6 +86,7 @@ const TABLE_LABELS: Record<string, string> = {
   kuwait_visas: "কুয়েত ভিসা",
   others: "Other Service",
   agency_ledger: "Agency Ledger",
+  extra_services: "Extra Service",
 };
 
 // Agency-ledger collective payments store service_type like
@@ -144,15 +153,26 @@ const SVC_CONFIGS: Record<string, { cols: string; map: (r: Record<string, unknow
       delivery_date: r.delivery_date as string, has_delivery: true,
     }),
   },
+  extra_services: {
+    cols: "id,service_name,service_price,received_amount,discount_amount,vendor_cost,vendor_name,agency_sold,passport,source_table,source_id",
+    map: (r) => ({
+      service_name: r.service_name as string, bill: Number(r.service_price ?? 0),
+      received: Number(r.received_amount ?? 0), discount: Number(r.discount_amount ?? 0),
+      vendor: r.vendor_name as string, vendor_price: Number(r.vendor_cost ?? 0),
+      agent: r.agency_sold as string, passport: r.passport as string,
+      tracks_cost: true, has_delivery: false,
+      src_table: (r.source_table as string | null) ?? null, src_id: (r.source_id as string | null) ?? null,
+    }),
+  },
   agency_ledger: {
-    cols: "id,country_route,agent_name,total_bill,discount_amount,received_amount,service_type,source_table,source_id",
+    cols: "id,country_route,agent_name,passport,total_bill,discount_amount,received_amount,service_type,source_table,source_id",
     map: (r) => ({
       service_name: TABLE_LABELS[r.service_type as string] || undefined,
       // Agency ledger has NO vendor of its own — the agency is the customer.
       // The real vendor lives in the underlying source job; keep vendor null
       // here and let resolveAgencyVendors() fill in the true vendor name.
       country: r.country_route as string, bill: Number(r.total_bill ?? 0), vendor: null,
-      agent: r.agent_name as string, discount: Number(r.discount_amount ?? 0), received: Number(r.received_amount ?? 0), tracks_cost: false, has_delivery: false,
+      agent: r.agent_name as string, passport: r.passport as string, discount: Number(r.discount_amount ?? 0), received: Number(r.received_amount ?? 0), tracks_cost: false, has_delivery: false,
       src_table: (r.source_table as string | null) ?? null, src_id: (r.source_id as string | null) ?? null,
     }),
   },
@@ -404,6 +424,13 @@ function MyHandoverPage() {
           }
         }
         await resolveAgencyVendors(svcMap);
+        const passports = await resolveHandoverPassports(Object.keys(svcMap), async (table, ids) =>
+          (readModuleCache(table) as Record<string, unknown>[]).filter(row => ids.includes(String(row.id))),
+        );
+        for (const [key, passport] of Object.entries(passports)) {
+          const info = svcMap[key];
+          if (info && passport) info.passport = passport;
+        }
         for (const rec of recs) {
           const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
           rec.svc = k ? svcMap[k] : undefined;
@@ -491,6 +518,15 @@ function MyHandoverPage() {
         })
       );
       await resolveAgencyVendors(svcMap);
+      const passports = await resolveHandoverPassports(Object.keys(svcMap), async (table, ids, columns) => {
+        const { data, error } = await supabase.from(table as never).select(columns).in("id", ids);
+        if (error) { toast.error("পাসপোর্টের তথ্য লোড হয়নি: " + error.message); return []; }
+        return (data ?? []) as unknown as Record<string, unknown>[];
+      });
+      for (const [key, passport] of Object.entries(passports)) {
+        const info = svcMap[key];
+        if (info && passport) info.passport = passport;
+      }
       for (const rec of recs) {
         const k = rec.service_table && rec.service_row_id ? `${rec.service_table}:${rec.service_row_id}` : "";
         rec.svc = k ? svcMap[k] : undefined;
